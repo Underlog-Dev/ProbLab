@@ -1,0 +1,2121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prop Lab">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAB7ElEQVR42u3WsQmAMBBA0fQ2jiDiFu7iMC5m5Uo2NraCKVKIxNyDX4YQ7l6R1PWDlC0ZgeAQHIJDcAgOwSE4BIfgEBwSHIJDcAgOwSE4BIfgEByCQ4JDcAgOwSE4BIfgEByCQ3BIcAgOwfHrxn0pCQ444BAcgkNwCA7BYStwwAEHHHDAAQcccMAhOASH4BAcgkNwBMdR2wLggAMOOOCAAw444IADDjjggAMOOOCAAw444IADDjjggAMOOOCAAw444IADDjjggAMOOOCAAw444uI4t+lZJSfvU86ezC7gs3dmNZTfCQcccMDRJA5/Dn8OOOCAAw444IADDjjgiIBjXo+S4IADDjjggAMOOOCAAw444IADjuhw4YADDjjggAMOOOCAAw444IADDjjggAMOOOCAAw444IADDjjggAMOOOCAA47ION4dGRxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAAQcccMABBxxwwAEHHHDAERWH2ggOwSE4BIfgEByCQ3AIDsEhOCQ4BIfgEByCQ3AIDsEhOASHBIfgEByCQ3AIDlXeBa+KyUigOwWGAAAAAElFTkSuQmCC">
+<link rel="icon" href="data:,">
+<style>
+:root{--bg:#0b1020;--card:#121a30;--line:#1f2a48;--text:#e6e9f2;--muted:#8f9bbd;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#fbbf24}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:rgba(11,16,32,.96);backdrop-filter:blur(8px);padding:calc(10px + env(safe-area-inset-top)) 12px 6px}
+.brand{font-weight:700;font-size:18px}.brand small{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+nav{display:flex;gap:8px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.tab{flex:none;padding:8px 13px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px}
+.tab.on{background:var(--blue);border-color:var(--blue)}
+main{padding:12px;max-width:980px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.stack>*+*{margin-top:12px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:700px){.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}}
+.g3{grid-template-columns:repeat(2,1fr)}
+@media(min-width:700px){.g3{grid-template-columns:repeat(3,1fr)}}
+.g6{grid-template-columns:repeat(3,1fr)}
+@media(min-width:700px){.g6{grid-template-columns:repeat(6,1fr)}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+input,select,textarea{width:100%;background:#0b1226;border:1px solid #26335a;border-radius:10px;padding:10px;color:var(--text);font:inherit;font-size:16px}
+textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+input[type=checkbox]{width:auto}
+button{font:inherit;color:var(--text);cursor:pointer;border:0}
+button.pri{background:var(--blue);border-radius:10px;padding:11px 16px;font-weight:600}
+button.ghost{background:transparent;border:1px solid #26335a;border-radius:10px;padding:9px 13px}
+button.danger{background:transparent;border:1px solid #7f1d1d;color:#fca5a5;border-radius:10px;padding:6px 10px;font-size:13px}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tile{text-align:center;background:#0e1730;border-radius:10px;padding:8px 4px}
+.tile b{display:block;font-size:20px}.tile span{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{color:var(--muted);font-weight:500;text-align:left;padding:6px;cursor:pointer;white-space:nowrap}
+td{padding:6px;border-top:1px solid var(--line)}
+.scroll{overflow-x:auto}
+.muted{color:var(--muted)}.small{font-size:12px}
+.warn{color:var(--amber);font-size:13px}
+.good{color:var(--green)}.bad{color:var(--red)}
+.pick{display:block;width:100%;text-align:left;background:#0e1730;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-top:6px}
+.pick small{color:var(--muted)}
+.chip{display:inline-block;background:#0e1730;border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;color:var(--muted)}
+.step{display:flex;gap:10px}.step .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--blue);display:grid;place-items:center;font-weight:700;font-size:14px}
+canvas{width:100%;height:230px;display:block}
+h2{font-size:17px;margin:0 0 6px}h3{font-size:15px;margin:0 0 6px}
+ol,ul{padding-left:20px;margin:6px 0}
+a{color:#7db3ff}
+.big{font-size:26px;font-weight:700}
+.hl td{background:#16244a}
+.filebtn{display:block;text-align:center;background:#2563eb;color:#fff;border-radius:10px;padding:12px;font-weight:600;cursor:pointer}
+
+</style>
+<title>Prop Lab</title>
+</head>
+<body>
+<header><div class="brand">Prop Lab<small>personal research</small></div><nav id="nav"></nav></header>
+<main id="view"><div class="card">Loading…</div></main>
+<noscript><main><div class="card">Prop Lab needs JavaScript turned on.</div></main></noscript>
+<script>
+const __m = {};
+__m['store'] = (() => {
+// Tiny key-value store. Uses the phone/browser's IndexedDB; falls back to memory (used by the tests).
+
+class MemoryStore {
+  constructor() { this.m = new Map(); }
+  async get(k) { return this.m.has(k) ? structuredClone(this.m.get(k)) : undefined; }
+  async set(k, v) { this.m.set(k, structuredClone(v)); }
+  async del(k) { this.m.delete(k); }
+  async entries(prefix = '') { return [...this.m.entries()].filter(([k]) => k.startsWith(prefix)).map(([k, v]) => [k, structuredClone(v)]); }
+  async keys(prefix = '') { return [...this.m.keys()].filter(k => k.startsWith(prefix)); }
+  async clear() { this.m.clear(); }
+}
+
+class IdbStore {
+  constructor(db) { this.db = db; }
+  _tx(mode, fn) {
+    return new Promise((res, rej) => {
+      const t = this.db.transaction('kv', mode); const s = t.objectStore('kv');
+      const out = fn(s); t.oncomplete = () => res(out.result !== undefined ? out.result : undefined); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  }
+  get(k) { return this._tx('readonly', s => s.get(k)); }
+  set(k, v) { return this._tx('readwrite', s => s.put(v, k)); }
+  del(k) { return this._tx('readwrite', s => s.delete(k)); }
+  clear() { return this._tx('readwrite', s => s.clear()); }
+  keys(prefix = '') {
+    return new Promise((res, rej) => {
+      const out = []; const t = this.db.transaction('kv', 'readonly'); const s = t.objectStore('kv');
+      const range = prefix ? IDBKeyRange.bound(prefix, prefix + '￿') : undefined;
+      const req = s.openKeyCursor(range);
+      req.onsuccess = () => { const c = req.result; if (c) { out.push(c.key); c.continue(); } else res(out); };
+      req.onerror = () => rej(req.error);
+    });
+  }
+  entries(prefix = '') {
+    return new Promise((res, rej) => {
+      const out = []; const t = this.db.transaction('kv', 'readonly'); const s = t.objectStore('kv');
+      const range = prefix ? IDBKeyRange.bound(prefix, prefix + '￿') : undefined;
+      const req = s.openCursor(range);
+      req.onsuccess = () => { const c = req.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); };
+      req.onerror = () => rej(req.error);
+    });
+  }
+}
+
+async function openStore() {
+  if (typeof indexedDB === 'undefined') return new MemoryStore();
+  try {
+    const db = await new Promise((res, rej) => {
+      const r = indexedDB.open('proplab', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return new IdbStore(db);
+  } catch { return new MemoryStore(); }
+}
+
+return { MemoryStore, openStore };
+})();
+__m['football'] = (() => {
+// Football data: API-Football adapter (free plan), parsing, sync, markets, opponent and referee profiles.
+
+const BASE = 'https://v3.football.api-sports.io';
+
+// Add a competition later by adding one line (ids are API-Football league ids).
+const LEAGUES = {
+  epl: { id: 39, name: 'Premier League' },
+  laliga: { id: 140, name: 'La Liga' },
+  bundesliga: { id: 78, name: 'Bundesliga' },
+  seriea: { id: 135, name: 'Serie A' },
+  ligue1: { id: 61, name: 'Ligue 1' },
+  mls: { id: 253, name: 'MLS' },
+};
+
+class ApiError extends Error {
+  constructor(kind, message, detail) { super(message); this.kind = kind; this.detail = detail; }
+}
+
+const defaultSeason = (d = new Date()) => (d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1);
+
+const defaultSleep = ms => new Promise(r => setTimeout(r, ms));
+
+class ApiFootball {
+  constructor(key, { fetchImpl, minGapMs = 6200, sleep = defaultSleep, onRequest = () => {} } = {}) {
+    this.key = (key || '').trim();
+    this.fetch = fetchImpl || (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : null);
+    this.minGapMs = minGapMs; this.sleep = sleep; this.onRequest = onRequest;
+    this.lastAt = 0; this.used = 0;
+  }
+
+  async get(path, params = {}) {
+    if (!this.key) throw new ApiError('auth', 'No API key saved yet. Paste your free key in Setup first.');
+    const wait = this.lastAt + this.minGapMs - Date.now();
+    if (wait > 0) await this.sleep(wait); // free plan allows 10 requests per minute
+    this.lastAt = Date.now();
+    const url = new URL(BASE + path);
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    let res;
+    try { res = await this.fetch(url.toString(), { headers: { 'x-apisports-key': this.key } }); }
+    catch (e) {
+      throw new ApiError('network', 'Could not reach API-Football. Check your internet connection. If other websites work, the provider may be blocking requests made straight from a web page (see the Setup help).', String(e));
+    }
+    this.used++; this.onRequest();
+    if (res.status === 429) throw new ApiError('rate', 'Too many requests too quickly. Wait a minute and try again.');
+    if (res.status === 401 || res.status === 403) throw new ApiError('auth', 'API-Football rejected the key. Check it was pasted in full.');
+    if (!res.ok) throw new ApiError('http', `API-Football returned an error (HTTP ${res.status}).`);
+    let body;
+    try { body = await res.json(); } catch { throw new ApiError('http', 'API-Football sent a reply the app could not read.'); }
+    const errs = body.errors;
+    const hasErrs = errs && (Array.isArray(errs) ? errs.length : Object.keys(errs).length);
+    if (hasErrs) {
+      const o = Array.isArray(errs) ? { other: errs.join('; ') } : errs;
+      const msg = Object.values(o).join('; ');
+      if (o.token) throw new ApiError('auth', 'API-Football rejected the key. Check it was pasted in full.', msg);
+      if (o.plan) throw new ApiError('plan', `Your free plan does not allow this: ${msg}`, msg);
+      if (o.rateLimit) throw new ApiError('rate', 'Too many requests too quickly. Wait a minute and try again.', msg);
+      if (o.requests) throw new ApiError('quota', 'You have used today\'s free requests. They reset at midnight UTC (1am UK time in summer, midnight in winter).', msg);
+      throw new ApiError('other', `API-Football said: ${msg}`, msg);
+    }
+    return body;
+  }
+
+  async status() {
+    const b = await this.get('/status');
+    const r = b.response || {};
+    return { plan: r.subscription?.plan ?? null, active: r.subscription?.active ?? null, used: r.requests?.current ?? null, limit: r.requests?.limit_day ?? null, email: r.account?.email ?? null };
+  }
+
+  /** Which seasons can this key read? One small request per season. */
+  async probeSeasons(leagueKey, seasons) {
+    const out = [];
+    for (const season of seasons) {
+      try {
+        const b = await this.get('/fixtures', { league: LEAGUES[leagueKey].id, season, last: 1 });
+        out.push({ season, ok: true, hasData: (b.response || []).length > 0 });
+      } catch (e) {
+        if (e.kind === 'plan') out.push({ season, ok: false, message: e.detail || e.message });
+        else throw e;
+      }
+    }
+    return out;
+  }
+
+  async nextFixture(teamId) {
+    const b = await this.get('/fixtures', { team: teamId, next: 1 });
+    const f = (b.response || [])[0];
+    return f ? { date: f.fixture.date, referee: f.fixture.referee || null, home: f.teams.home, away: f.teams.away, leagueName: f.league?.name } : null;
+  }
+}
+
+// ---------- parsing ----------
+
+const COUNT_FIELDS = ['shots', 'shots_on_target', 'goals', 'assists', 'tackles', 'interceptions', 'blocks', 'fouls_committed', 'fouls_drawn',
+  'yellow_cards', 'red_cards', 'offsides', 'passes', 'key_passes', 'dribbles_attempted', 'dribbles_success', 'duels_total', 'duels_won', 'saves', 'goals_conceded'];
+// API-Football sends blank (null) instead of 0. We only turn blanks into zeros when the match clearly has stats.
+const PER_FIELD = ['shots', 'shots_on_target', 'tackles', 'interceptions', 'blocks', 'fouls_committed', 'fouls_drawn', 'passes', 'key_passes', 'dribbles_attempted', 'dribbles_success', 'duels_total', 'duels_won'];
+const FIXTURE_LEVEL = ['goals', 'assists', 'yellow_cards', 'red_cards', 'offsides', 'goals_conceded'];
+const EVIDENCE = ['passes', 'duels_total', 'shots', 'tackles', 'fouls_committed', 'fouls_drawn'];
+const MIN_EVIDENCE_ROWS = 10;
+
+function parsePlayerStats(block) {
+  const out = [];
+  for (const p of block.players || []) {
+    const s = (p.statistics || [])[0] || {};
+    const g = s.games || {}, sh = s.shots || {}, go = s.goals || {}, pa = s.passes || {}, ta = s.tackles || {}, du = s.duels || {},
+      dr = s.dribbles || {}, fo = s.fouls || {}, ca = s.cards || {};
+    if (g.minutes === null || g.minutes === undefined) continue; // did not play
+    out.push({
+      pid: p.player.id, name: p.player.name, minutes: g.minutes, started: g.substitute ? 0 : 1, position: g.position || null,
+      shots: sh.total ?? null, shots_on_target: sh.on ?? null, goals: go.total ?? null, assists: go.assists ?? null,
+      saves: go.saves ?? null, goals_conceded: go.conceded ?? null,
+      tackles: ta.total ?? null, interceptions: ta.interceptions ?? null, blocks: ta.blocks ?? null,
+      fouls_committed: fo.committed ?? null, fouls_drawn: fo.drawn ?? null,
+      yellow_cards: ca.yellow ?? null, red_cards: ca.red ?? null, offsides: s.offsides ?? null,
+      passes: pa.total ?? null, key_passes: pa.key ?? null, dribbles_attempted: dr.attempts ?? null, dribbles_success: dr.success ?? null,
+      duels_total: du.total ?? null, duels_won: du.won ?? null,
+    });
+  }
+  return out;
+}
+
+/** Turns provider blanks into zeros only where the match has real stats. Returns whether the match is covered. */
+function normalizeRows(rows) {
+  const evidence = rows.filter(r => EVIDENCE.some(f => r[f] !== null)).length;
+  if (evidence < MIN_EVIDENCE_ROWS) return false;
+  for (const f of PER_FIELD) {
+    if (rows.filter(r => r[f] !== null).length >= 2) for (const r of rows) if (r[f] === null) r[f] = 0;
+  }
+  for (const f of FIXTURE_LEVEL) for (const r of rows) if (r[f] === null) r[f] = 0;
+  for (const r of rows) if (r.saves === null && r.position === 'G') r.saves = 0;
+  return true;
+}
+
+function buildFixtureRecord(f, blocks, leagueKey, season, fetchedAt = Date.now()) {
+  const home = f.teams.home, away = f.teams.away, rows = [];
+  for (const b of blocks) {
+    const tid = b.team.id;
+    for (const r of parsePlayerStats(b)) rows.push({ ...r, tid, oid: tid === home.id ? away.id : home.id, home: tid === home.id ? 1 : 0 });
+  }
+  const covered = normalizeRows(rows);
+  const ref = f.fixture.referee ? String(f.fixture.referee).split(',')[0].trim() : null;
+  return {
+    id: f.fixture.id, league: leagueKey, season, date: f.fixture.date, referee: ref, covered,
+    home: { id: home.id, name: home.name }, away: { id: away.id, name: away.name },
+    score: { home: f.goals?.home ?? null, away: f.goals?.away ?? null }, rows, fetchedAt,
+  };
+}
+
+// ---------- sync ----------
+
+const fxKey = (league, season, id) => `fx:${league}:${season}:${id}`;
+
+async function syncLeague({ api, store, leagueKey, season, maxRequests = 40, onProgress = () => {}, shouldStop = () => false, now = () => Date.now(), listMaxAgeMs = 12 * 3600e3 }) {
+  const L = LEAGUES[leagueKey];
+  const listKey = `fxlist:${leagueKey}:${season}`;
+  let spent = 0, stoppedReason = null, error = null, added = 0, noData = 0;
+  let list = await store.get(listKey);
+  if (!list || now() - list.fetchedAt > listMaxAgeMs) {
+    const b = await api.get('/fixtures', { league: L.id, season, status: 'FT' });
+    spent++;
+    list = { fetchedAt: now(), fixtures: (b.response || []).map(f => ({ fixture: { id: f.fixture.id, date: f.fixture.date, referee: f.fixture.referee || null }, teams: { home: { id: f.teams.home.id, name: f.teams.home.name }, away: { id: f.teams.away.id, name: f.teams.away.name } }, goals: f.goals })) };
+    await store.set(listKey, list);
+  }
+  const have = new Set((await store.keys(`fx:${leagueKey}:${season}:`)).map(k => Number(k.split(':')[3])));
+  const pending = list.fixtures.filter(f => !have.has(f.fixture.id)).sort((a, b) => (a.fixture.date < b.fixture.date ? 1 : -1));
+  onProgress({ phase: 'start', total: pending.length, spent });
+  for (const f of pending) {
+    if (spent >= maxRequests) { stoppedReason = 'request budget reached'; break; }
+    if (shouldStop()) { stoppedReason = 'stopped by you'; break; }
+    try {
+      const b = await api.get('/fixtures/players', { fixture: f.fixture.id });
+      spent++;
+      const rec = buildFixtureRecord(f, b.response || [], leagueKey, season, now());
+      if (!rec.rows.length) noData++;
+      await store.set(fxKey(leagueKey, season, f.fixture.id), rec);
+      added++;
+      onProgress({ phase: 'fixture', added, total: pending.length, spent, date: f.fixture.date });
+    } catch (e) {
+      if (['rate', 'quota', 'auth', 'plan', 'network'].includes(e.kind)) { stoppedReason = e.message; error = e.kind; break; }
+      error = e.kind; spent++; // odd single-match error: skip it, carry on
+    }
+  }
+  await store.set(`synced:${leagueKey}:${season}`, { at: now(), listSize: list.fixtures.length });
+  return { leagueKey, season, listSize: list.fixtures.length, alreadyStored: have.size, added, noData, remaining: pending.length - added, spent, stoppedReason, error, complete: pending.length - added === 0 };
+}
+
+async function loadFixtures(store) {
+  return (await store.entries('fx:')).map(([, v]) => v);
+}
+
+// ---------- index ----------
+
+function buildIndex(fixtures) {
+  const teams = new Map();
+  for (const f of fixtures) { teams.set(String(f.home.id), f.home); teams.set(String(f.away.id), f.away); }
+  const players = new Map();
+  const sorted = [...fixtures].sort((a, b) => (a.date < b.date ? 1 : -1)); // newest first
+  for (const f of sorted) {
+    for (const r of f.rows) {
+      let p = players.get(String(r.pid));
+      if (!p) { p = { id: r.pid, key: 'fb:' + r.pid, name: r.name, teamId: r.tid, team: teams.get(String(r.tid))?.name || '?', position: r.position, league: f.league, rows: [] }; players.set(String(r.pid), p); }
+      p.rows.push({ ...r, fid: f.id, date: f.date, season: f.season, league: f.league, opp: teams.get(String(r.oid))?.name || '?', referee: f.referee, covered: f.covered });
+    }
+  }
+  return { players, teams, fixtures: sorted };
+}
+
+// ---------- markets ----------
+
+const add = (a, b) => (a === null && b === null ? null : (a || 0) + (b || 0));
+const FOOTBALL_MARKETS = [
+  { key: 'tackles', label: 'Tackles', group: 'Priority', get: r => r.tackles },
+  { key: 'fouls_committed', label: 'Fouls committed', group: 'Priority', get: r => r.fouls_committed },
+  { key: 'fouls_drawn', label: 'Fouls drawn', group: 'Priority', get: r => r.fouls_drawn },
+  { key: 'shots', label: 'Total shots', group: 'Priority', get: r => r.shots },
+  { key: 'shots_on_target', label: 'Shots on target', group: 'Priority', get: r => r.shots_on_target },
+  { key: 'goals', label: 'Goals (anytime scorer = over 0.5)', group: 'Priority', get: r => r.goals },
+  { key: 'assists', label: 'Assists', group: 'Priority', get: r => r.assists },
+  { key: 'cards_total', label: 'Cards (yellow + red)', group: 'Priority', get: r => add(r.yellow_cards, r.red_cards) },
+  { key: 'yellow_cards', label: 'Yellow cards', group: 'Priority', get: r => r.yellow_cards },
+  { key: 'goal_contrib', label: 'Goal contributions (goals + assists)', group: 'More', get: r => add(r.goals, r.assists) },
+  { key: 'offsides', label: 'Offsides', group: 'More', get: r => r.offsides },
+  { key: 'interceptions', label: 'Interceptions', group: 'More', get: r => r.interceptions },
+  { key: 'blocks', label: 'Blocks', group: 'More', get: r => r.blocks },
+  { key: 'duels_won', label: 'Duels won', group: 'More', get: r => r.duels_won },
+  { key: 'passes', label: 'Passes attempted', group: 'More', get: r => r.passes },
+  { key: 'key_passes', label: 'Key passes', group: 'More', get: r => r.key_passes },
+  { key: 'dribbles_attempted', label: 'Dribbles attempted', group: 'More', get: r => r.dribbles_attempted },
+  { key: 'dribbles_success', label: 'Successful dribbles', group: 'More', get: r => r.dribbles_success },
+  { key: 'saves', label: 'Goalkeeper saves', group: 'Goalkeeper', positions: ['G'], get: r => r.saves },
+  { key: 'goals_conceded', label: 'Goals conceded (goalkeeper)', group: 'Goalkeeper', positions: ['G'], get: r => r.goals_conceded },
+];
+
+// Kept in the app so they are visible and ready for a future data source. They are NOT selectable and show no numbers.
+const FOOTBALL_UNAVAILABLE = [
+  ['Shots inside / outside the box', 'API-Football does not provide shot locations per player.'],
+  ['Tackles won / attempted', 'Only total tackles are provided, no won/attempted split.'],
+  ['Clearances', 'Not in the free provider\'s player stats.'],
+  ['Aerial duels won', 'Only total duels are provided.'],
+  ['Crosses, long balls, touches', 'Not provided per player.'],
+  ['Chances created', 'Key passes (available) is the nearest measure.'],
+  ['First goalscorer', 'Needs per-match event data, which costs extra requests on the free plan.'],
+  ['Clean sheets, keeper passes, keeper claims', 'Not provided (goalkeeper saves and goals conceded are).'],
+  ['Bookmaker odds feeds (automatic)', 'Free sources do not carry UK football player props. Use manual odds entry.'],
+];
+
+const marketValue = (market, row) => {
+  if (market.positions && !market.positions.includes(row.position)) return null;
+  const v = market.get(row);
+  return v === undefined ? null : v;
+};
+
+/** Rows of one player for one market: [{value, exposure(minutes), ...row meta}], newest first. Rows without data are kept with value null. */
+const marketRows = (player, market) => player.rows.map(r => ({ ...r, value: marketValue(market, r), exposure: r.minutes }));
+
+// ---------- matchup profiles (computed only from matches you have synced) ----------
+
+const POS = ['G', 'D', 'M', 'F'];
+
+function opponentProfile(fixtures, teamId, market) {
+  const against = { total: [], G: [], D: [], M: [], F: [] }, own = [], league = { total: [], G: [], D: [], M: [], F: [] };
+  const sumRows = (rows) => { const v = rows.map(r => marketValue(market, r)).filter(x => x !== null); return v.length ? v.reduce((s, x) => s + x, 0) : null; };
+  for (const f of fixtures) {
+    if (!f.covered) continue;
+    for (const side of [f.home.id, f.away.id]) {
+      const opp = f.rows.filter(r => r.tid !== side);
+      const sides = { total: sumRows(opp) };
+      for (const g of POS) sides[g] = sumRows(opp.filter(r => r.position === g));
+      for (const k of Object.keys(sides)) if (sides[k] !== null) league[k].push(sides[k]);
+      if (side === teamId) {
+        for (const k of Object.keys(sides)) if (sides[k] !== null) against[k].push(sides[k]);
+        const mine = sumRows(f.rows.filter(r => r.tid === side)); if (mine !== null) own.push(mine);
+      }
+    }
+  }
+  const avg = a => (a.length ? Math.round(100 * a.reduce((s, x) => s + x, 0) / a.length) / 100 : null);
+  const out = { matches: against.total.length, byPosition: {}, ownTotalAvg: avg(own) };
+  for (const k of ['total', ...POS]) out.byPosition[k] = { n: against[k].length, concededAvg: avg(against[k]), leagueAvg: avg(league[k]) };
+  return out;
+}
+
+function refereeProfile(fixtures, name) {
+  const per = (list) => {
+    const m = list.filter(f => f.covered);
+    const sum = k => m.reduce((s, f) => s + f.rows.reduce((t, r) => t + (r[k] || 0), 0), 0);
+    const n = m.length;
+    const avg = x => (n ? Math.round(100 * x / n) / 100 : null);
+    return { n, yellow: avg(sum('yellow_cards')), red: avg(sum('red_cards')), fouls: avg(sum('fouls_committed')) };
+  };
+  return { referee: per(fixtures.filter(f => f.referee === name)), all: per(fixtures) };
+}
+
+const refereeNames = fixtures => [...new Set(fixtures.map(f => f.referee).filter(Boolean))].sort();
+
+return { LEAGUES, ApiError, defaultSeason, ApiFootball, MIN_EVIDENCE_ROWS, parsePlayerStats, normalizeRows, buildFixtureRecord, fxKey, syncLeague, loadFixtures, buildIndex, FOOTBALL_MARKETS, FOOTBALL_UNAVAILABLE, marketValue, marketRows, opponentProfile, refereeProfile, refereeNames };
+})();
+__m['us'] = (() => {
+// American sports: free public sources where they exist (MLB, NHL), plus CSV import for any sport (NBA, NFL).
+
+const num = v => (typeof v === 'number' && !Number.isNaN(v) ? v : (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)) ? Number(v) : null));
+const all = (...vals) => (vals.some(v => v === null || v === undefined) ? null : vals.reduce((s, x) => s + x, 0));
+
+const m = (key, label, get, dist = 'count', role) => ({ key, label, get, dist, role });
+const f = k => s => (s[k] === undefined ? null : s[k]);
+
+const SPORTS = {
+  nba: {
+    label: 'NBA', source: 'import',
+    statKeys: ['points', 'rebounds', 'assists', 'threes', 'steals', 'blocks'],
+    markets: [
+      m('points', 'Points', f('points'), 'normal'), m('rebounds', 'Rebounds', f('rebounds')), m('assists', 'Assists', f('assists')),
+      m('threes', 'Three-pointers made', f('threes')), m('steals', 'Steals', f('steals')), m('blocks', 'Blocks', f('blocks')),
+      m('pra', 'Points + rebounds + assists', s => all(s.points, s.rebounds, s.assists), 'normal'),
+      m('pr', 'Points + rebounds', s => all(s.points, s.rebounds), 'normal'),
+      m('pa', 'Points + assists', s => all(s.points, s.assists), 'normal'),
+      m('ra', 'Rebounds + assists', s => all(s.rebounds, s.assists), 'normal'),
+    ],
+  },
+  nfl: {
+    label: 'NFL', source: 'import',
+    statKeys: ['pass_yards', 'pass_tds', 'rush_yards', 'rec_yards', 'receptions', 'touchdowns'],
+    markets: [
+      m('pass_yards', 'Passing yards', f('pass_yards'), 'normal'), m('pass_tds', 'Passing touchdowns', f('pass_tds')),
+      m('rush_yards', 'Rushing yards', f('rush_yards'), 'normal'), m('rec_yards', 'Receiving yards', f('rec_yards'), 'normal'),
+      m('receptions', 'Receptions', f('receptions')), m('touchdowns', 'Touchdowns (any)', f('touchdowns')),
+      m('rush_rec_yards', 'Rushing + receiving yards', s => all(s.rush_yards, s.rec_yards), 'normal'),
+    ],
+  },
+  nhl: {
+    label: 'NHL', source: 'nhle',
+    statKeys: ['shots', 'goals', 'assists', 'points', 'saves'],
+    markets: [
+      m('shots', 'Shots on goal', f('shots')), m('goals', 'Goals', f('goals')), m('assists', 'Assists', f('assists')),
+      m('points', 'Points', f('points')), m('saves', 'Saves (goalies)', f('saves'), 'count', 'goalie'),
+    ],
+  },
+  mlb: {
+    label: 'MLB', source: 'mlb',
+    statKeys: ['hits', 'total_bases', 'home_runs', 'rbi', 'walks', 'strikeouts', 'p_strikeouts', 'p_outs', 'p_walks', 'hits_allowed', 'earned_runs'],
+    markets: [
+      m('hits', 'Hits', f('hits'), 'count', 'hitter'), m('total_bases', 'Total bases', f('total_bases'), 'count', 'hitter'),
+      m('home_runs', 'Home runs', f('home_runs'), 'count', 'hitter'), m('rbi', 'RBIs', f('rbi'), 'count', 'hitter'),
+      m('walks', 'Walks (batter)', f('walks'), 'count', 'hitter'), m('strikeouts', 'Strikeouts (batter)', f('strikeouts'), 'count', 'hitter'),
+      m('p_strikeouts', 'Pitcher strikeouts', f('p_strikeouts'), 'count', 'pitcher'), m('p_outs', 'Pitcher outs', f('p_outs'), 'count', 'pitcher'),
+      m('p_walks', 'Pitcher walks', f('p_walks'), 'count', 'pitcher'), m('hits_allowed', 'Hits allowed', f('hits_allowed'), 'count', 'pitcher'),
+      m('earned_runs', 'Earned runs', f('earned_runs'), 'count', 'pitcher'),
+    ],
+  },
+};
+
+function seasonOfDate(sport, date) {
+  const y = Number(date.slice(0, 4)), mo = Number(date.slice(5, 7));
+  if (sport === 'mlb') return y;
+  if (sport === 'nfl') return mo >= 8 ? y : y - 1;
+  return mo >= 9 ? y : y - 1; // NBA, NHL start in autumn
+}
+
+// ---------- MLB (statsapi.mlb.com, public, no key) ----------
+const mlbPlayersUrl = season => `https://statsapi.mlb.com/api/v1/sports/1/players?season=${season}&hydrate=currentTeam`;
+const mlbGameLogUrl = (id, group, season) => `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&group=${group}&season=${season}`;
+
+function parseMlbPlayers(json) {
+  return (json?.people || []).filter(p => p && p.id && p.fullName).map(p => {
+    const pos = p.primaryPosition?.abbreviation || '';
+    return { id: p.id, name: p.fullName, team: p.currentTeam?.name || '', pos, defaultRole: pos === 'P' ? 'pitcher' : 'hitter' };
+  });
+}
+
+const outsFromIp = ip => { if (ip === undefined || ip === null) return null; const [w, fr = '0'] = String(ip).split('.'); const a = Number(w), b = Number(fr); return Number.isNaN(a) || Number.isNaN(b) ? null : a * 3 + b; };
+
+function parseMlbGameLog(json, role, season) {
+  const splits = json?.stats?.[0]?.splits;
+  if (!Array.isArray(splits)) throw new Error('MLB returned data in a format the app did not expect.');
+  return splits.filter(s => s.date).map(s => {
+    const st = s.stat || {};
+    const stats = role === 'pitcher'
+      ? { p_strikeouts: num(st.strikeOuts), p_outs: num(st.outs) ?? outsFromIp(st.inningsPitched), p_walks: num(st.baseOnBalls), hits_allowed: num(st.hits), earned_runs: num(st.earnedRuns) }
+      : { hits: num(st.hits), total_bases: num(st.totalBases), home_runs: num(st.homeRuns), rbi: num(st.rbi), walks: num(st.baseOnBalls), strikeouts: num(st.strikeOuts) };
+    return { date: s.date, opp: s.opponent?.name || '?', home: !!s.isHome, season, stats };
+  });
+}
+
+// ---------- NHL (api-web.nhle.com, public, no key) ----------
+const nhlSearchUrl = q => `https://search.d3.nhle.com/api/v1/search/player?culture=en-us&limit=20&q=${encodeURIComponent(q)}&active=true`;
+const nhlGameLogUrl = (id, season) => `https://api-web.nhle.com/v1/player/${id}/game-log/${season}/2`;
+const nhlSeasonCode = (d = new Date()) => { const y = d.getUTCMonth() >= 8 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; return `${y}${y + 1}`; };
+
+function parseNhlSearch(json) {
+  if (!Array.isArray(json)) throw new Error('NHL search returned data in a format the app did not expect.');
+  return json.filter(p => p.playerId && p.name).map(p => ({ id: Number(p.playerId), name: p.name, pos: p.positionCode || '', team: p.teamAbbrev || p.lastTeamAbbrev || '' }));
+}
+
+function parseNhlGameLog(json) {
+  const log = json?.gameLog;
+  if (!Array.isArray(log)) throw new Error('NHL returned data in a format the app did not expect.');
+  return log.filter(g => g.gameDate).map(g => {
+    const goalie = g.shotsAgainst !== undefined;
+    return {
+      date: g.gameDate, opp: g.opponentAbbrev || '?', home: g.homeRoadFlag === 'H', season: seasonOfDate('nhl', g.gameDate),
+      stats: { goals: num(g.goals), assists: num(g.assists), points: num(g.points), shots: goalie ? null : num(g.shots),
+        saves: goalie && num(g.shotsAgainst) !== null && num(g.goalsAgainst) !== null ? g.shotsAgainst - g.goalsAgainst : null },
+    };
+  });
+}
+
+// ---------- stored player records ----------
+const usKey = (sport, id) => `us:${sport}:${id}`;
+
+function mergeGames(existing, incoming) {
+  const map = new Map();
+  for (const g of [...(existing || []), ...incoming]) map.set(`${g.date}|${g.opp}`, g);
+  return [...map.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+function usRows(record, market) {
+  return record.games.map(g => {
+    const v = market.get(g.stats || {});
+    return { value: v === undefined ? null : v, exposure: 1, date: g.date, season: g.season ?? seasonOfDate(record.sport, g.date), home: g.home ? 1 : 0, opp: g.opp || '?' };
+  });
+}
+
+// ---------- CSV import (works for every sport; the data is whatever you paste) ----------
+const boolish = s => { const v = String(s).trim().toLowerCase(); if (['1', 'h', 'home', 'true', 'yes'].includes(v)) return true; if (['0', 'a', 'away', 'r', 'road', 'false', 'no', ''].includes(v)) return false; return null; };
+
+function templateCsv(sport) {
+  const keys = SPORTS[sport].statKeys;
+  return ['date,opponent,home,' + keys.join(','), '2026-01-01,ABC,1,' + keys.map(() => '').join(',')].join('\n');
+}
+
+function parseCsvGames(text, sport) {
+  const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const errors = [], games = [];
+  if (lines.length < 2) return { games, errors: ['Paste a header row and at least one game row.'] };
+  const head = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const keys = SPORTS[sport].statKeys;
+  if (!head.includes('date')) return { games, errors: ['The first row must include a "date" column.'] };
+  const unknown = head.filter(h => !['date', 'opponent', 'home', ...keys].includes(h));
+  if (unknown.length) errors.push(`Ignored unknown columns: ${unknown.join(', ')}`);
+  lines.slice(1).forEach((line, i) => {
+    const cells = line.split(',').map(c => c.trim());
+    const row = Object.fromEntries(head.map((h, j) => [h, cells[j] ?? '']));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) { errors.push(`Row ${i + 2}: date must look like 2026-01-31.`); return; }
+    const stats = {}; let bad = false;
+    for (const k of keys) {
+      if (!head.includes(k)) continue;
+      if (row[k] === '') { stats[k] = null; continue; }
+      const v = num(row[k]);
+      if (v === null) { errors.push(`Row ${i + 2}: "${row[k]}" in ${k} is not a number.`); bad = true; } else stats[k] = v;
+    }
+    const home = row.home === undefined ? false : boolish(row.home);
+    if (home === null) { errors.push(`Row ${i + 2}: home must be 1/0 or home/away.`); bad = true; }
+    if (!bad) games.push({ date: row.date, opp: row.opponent || '?', home: !!home, season: seasonOfDate(sport, row.date), stats });
+  });
+  return { games, errors };
+}
+
+return { SPORTS, seasonOfDate, mlbPlayersUrl, mlbGameLogUrl, parseMlbPlayers, parseMlbGameLog, nhlSearchUrl, nhlGameLogUrl, nhlSeasonCode, parseNhlSearch, parseNhlGameLog, usKey, mergeGames, usRows, templateCsv, parseCsvGames };
+})();
+__m['teams'] = (() => {
+// Names differ between sources ("Man United" / "Manchester United"). These helpers make them comparable.
+
+const normName = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/['’`.]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+const STRIP = new Set(['fc', 'afc', 'cf', 'sc', 'ac', 'ssc', 'ud', 'cd', 'rcd', 'sv', 'vfl', 'vfb', 'tsg', 'fsv', 'ogc', 'rc', '1']);
+const base = s => normName(s).split(' ').filter(w => w && !STRIP.has(w)).join(' ');
+
+// [canonical, ...other spellings]. Add more lines here if a team's name does not match across files.
+const GROUPS = [
+  // England
+  ['arsenal'], ['aston villa', 'villa'], ['bournemouth'], ['brentford'], ['brighton', 'brighton and hove albion', 'brighton & hove albion'], ['burnley'], ['chelsea'],
+  ['crystal palace', 'palace'], ['everton'], ['fulham'], ['leeds', 'leeds united'], ['leicester', 'leicester city'], ['liverpool'], ['manchester city', 'man city'],
+  ['manchester united', 'man united', 'man utd', 'manchester utd'], ['newcastle', 'newcastle united'], ['nottingham forest', 'nottm forest', 'forest'], ['southampton'], ['sunderland'],
+  ['tottenham', 'tottenham hotspur', 'spurs'], ['west ham', 'west ham united'], ['wolves', 'wolverhampton wanderers', 'wolverhampton'], ['ipswich', 'ipswich town'], ['sheffield united', 'sheffield utd'],
+  // Spain
+  ['athletic club', 'ath bilbao', 'athletic bilbao'], ['atletico madrid', 'ath madrid', 'atletico de madrid', 'atletico'], ['barcelona', 'fc barcelona', 'barca'], ['real betis', 'betis'],
+  ['celta vigo', 'celta', 'celta de vigo'], ['espanyol', 'espanol', 'rcd espanyol'], ['getafe'], ['girona'], ['levante'], ['mallorca', 'rcd mallorca'], ['osasuna', 'ca osasuna'],
+  ['rayo vallecano', 'vallecano'], ['real madrid'], ['real sociedad', 'sociedad'], ['sevilla'], ['valencia'], ['villarreal'], ['alaves', 'deportivo alaves'], ['elche'], ['real oviedo', 'oviedo'],
+  ['las palmas'], ['real valladolid', 'valladolid'], ['leganes'],
+  // Germany
+  ['bayern munich', 'bayern munchen', 'fc bayern munchen', 'bayern'], ['borussia dortmund', 'dortmund', 'bvb'], ['bayer leverkusen', 'leverkusen', 'bayer 04 leverkusen'],
+  ['rb leipzig', 'leipzig', 'rasenballsport leipzig'], ['eintracht frankfurt', 'ein frankfurt', 'frankfurt'], ['vfb stuttgart', 'stuttgart'],
+  ['borussia monchengladbach', 'mgladbach', 'm gladbach', 'gladbach', 'borussia mgladbach', 'monchengladbach'], ['werder bremen', 'bremen', 'sv werder bremen'], ['wolfsburg', 'vfl wolfsburg'],
+  ['freiburg', 'sc freiburg'], ['mainz', 'mainz 05', 'fsv mainz 05'], ['hoffenheim', 'tsg hoffenheim', 'tsg 1899 hoffenheim'], ['union berlin', '1 fc union berlin'], ['augsburg', 'fc augsburg'],
+  ['heidenheim', '1 fc heidenheim'], ['st pauli', 'fc st pauli'], ['koln', 'fc koln', '1 fc koln', 'cologne'], ['hamburg', 'hamburger sv'],
+  // Italy
+  ['inter', 'inter milan', 'internazionale', 'fc internazionale milano'], ['milan', 'ac milan'], ['juventus'], ['napoli'], ['roma', 'as roma'], ['lazio'], ['atalanta'], ['fiorentina'], ['bologna'],
+  ['torino'], ['udinese'], ['genoa'], ['cagliari'], ['lecce'], ['verona', 'hellas verona'], ['parma'], ['como'], ['sassuolo'], ['cremonese'], ['pisa'],
+  // France
+  ['paris saint germain', 'paris sg', 'psg', 'paris saint-germain'], ['marseille', 'olympique marseille'], ['lyon', 'olympique lyonnais'], ['monaco', 'as monaco'], ['lille', 'losc lille', 'losc'],
+  ['nice', 'ogc nice'], ['rennes', 'stade rennais'], ['lens', 'rc lens'], ['strasbourg', 'rc strasbourg'], ['nantes', 'fc nantes'], ['toulouse'], ['brest', 'stade brestois'],
+  ['reims', 'stade de reims'], ['montpellier'], ['auxerre'], ['angers'], ['le havre'], ['st etienne', 'saint etienne'], ['metz', 'fc metz'], ['lorient'],
+];
+const ALIAS = new Map();
+for (const g of GROUPS) { const canon = base(g[0]); for (const v of g) ALIAS.set(base(v), canon); }
+
+/** Comparable key for a team name. */
+const normTeam = s => { const b = base(s); return ALIAS.get(b) || b; };
+const teamSlug = s => normTeam(s).replace(/ /g, '-');
+const sameTeam = (a, b) => !!a && !!b && normTeam(a) === normTeam(b);
+
+return { normName, normTeam, teamSlug, sameTeam };
+})();
+__m['context'] = (() => {
+// Fixtures, team news and team-level match stats that you import. Nothing here is guessed: if it was not imported, it is not shown.
+const { normTeam, sameTeam } = __m['teams'];
+const { normName } = __m['teams'];
+
+async function loadContext(store) {
+  const f = (await store.get('ctx:fixtures')) || { items: [] }, n = (await store.get('ctx:news')) || { items: [] };
+  const tm = (await store.entries('tm:')).map(([, v]) => v);
+  return { fixtures: f.items, fixturesAt: f.updatedAt || null, news: n.items, newsAt: n.updatedAt || null, tm };
+}
+const nextFixtureFor = (ctx, team, today) => (ctx.fixtures || []).filter(f => f.date >= today && (sameTeam(f.home, team) || sameTeam(f.away, team))).sort((a, b) => (a.date < b.date ? -1 : 1))[0] || null;
+const newsForTeam = (ctx, team) => (ctx.news || []).filter(n => sameTeam(n.team, team));
+const newsForPlayer = (ctx, team, player) => newsForTeam(ctx, team).filter(n => normName(n.player) === normName(player));
+
+const avg = a => (a.length ? Math.round(100 * a.reduce((s, x) => s + x, 0) / a.length) / 100 : null);
+const FIELDS = { shots: ['hs', 'as'], sot: ['hst', 'ast'], fouls: ['hf', 'af'], yellows: ['hy', 'ay'], corners: ['hc', 'ac'] };
+
+/** Per-match averages for a team (what it does, and what opponents do against it), from football-data.co.uk imports. */
+function teamTendencies(tm, team, league = null) {
+  const mine = tm.filter(r => (!league || r.league === league) && (sameTeam(r.home, team) || sameTeam(r.away, team)));
+  const all = tm.filter(r => !league || r.league === league);
+  const out = { n: mine.length, for: {}, against: {}, leagueN: all.length, league: {} };
+  for (const [k, [h, a]] of Object.entries(FIELDS)) {
+    const f = [], g = [], l = [];
+    for (const r of mine) { const home = sameTeam(r.home, team); const mv = home ? r[h] : r[a], ov = home ? r[a] : r[h]; if (mv !== null) f.push(mv); if (ov !== null) g.push(ov); }
+    for (const r of all) { if (r[h] !== null) l.push(r[h]); if (r[a] !== null) l.push(r[a]); }
+    out.for[k] = avg(f); out.against[k] = avg(g); out.league[k] = avg(l);
+  }
+  return out;
+}
+function refereeTendencies(tm, ref) {
+  const key = normName(ref); const mine = tm.filter(r => r.referee && normName(r.referee) === key);
+  const per = list => { const f = list.filter(r => r.hf !== null && r.af !== null).map(r => r.hf + r.af), y = list.filter(r => r.hy !== null && r.ay !== null).map(r => r.hy + r.ay); return { n: list.length, fouls: avg(f), yellows: avg(y) }; };
+  return { ref: per(mine), all: per(tm.filter(r => r.referee)) };
+}
+const refNamesFromTm = tm => [...new Set(tm.map(r => r.referee).filter(Boolean))].sort();
+
+return { loadContext, nextFixtureFor, newsForTeam, newsForPlayer, teamTendencies, refereeTendencies, refNamesFromTm };
+})();
+__m['state'] = (() => {
+const { openStore } = __m['store'];
+const { ApiFootball, loadFixtures, buildIndex, FOOTBALL_MARKETS, marketRows } = __m['football'];
+const { SPORTS, usRows } = __m['us'];
+const { loadContext } = __m['context'];
+
+const app = {
+  store: null, fixtures: [], index: { players: new Map(), teams: new Map(), fixtures: [] },
+  ctx: { fixtures: [], news: [], tm: [] }, pending: null,            // hand-off from research screens to the Value screen
+  redraw: null,
+  research: {},             // remembered control settings per screen
+};
+
+const ls = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
+};
+const getKey = () => ls.get('proplab.key');
+const setKey = k => ls.set('proplab.key', (k || '').trim());
+
+const utcDay = () => new Date().toISOString().slice(0, 10);
+const usageToday = () => Number(ls.get('proplab.usage.' + utcDay())) || 0;
+const bump = () => ls.set('proplab.usage.' + utcDay(), String(usageToday() + 1));
+const makeApi = () => new ApiFootball(getKey(), { onRequest: bump });
+
+async function init() { app.store = await openStore(); await reload(); }
+async function reload() { app.fixtures = await loadFixtures(app.store); app.index = buildIndex(app.fixtures); app.ctx = await loadContext(app.store); }
+
+async function usRecords(sport) { return (await app.store.entries(`us:${sport}:`)).map(([, v]) => v); }
+
+/** Rows (newest first) for any stored player, used by the research, value and saved-price screens. */
+async function rowsFor(sport, playerKey, marketKey) {
+  if (sport === 'football') {
+    const pid = String(playerKey).replace(/^fb:/, '');
+    const p = app.index.players.get(pid); const market = FOOTBALL_MARKETS.find(m => m.key === marketKey);
+    if (!p || !market) return null;
+    return { name: p.name, team: p.team, market, rows: marketRows(p, market), exposure: 'minutes', dist: 'count', player: p };
+  }
+  const rec = await app.store.get(playerKey); const market = SPORTS[sport]?.markets.find(m => m.key === marketKey);
+  if (!rec || !market) return null;
+  return { name: rec.name, team: rec.meta?.team || '', market, rows: usRows(rec, market), exposure: 'game', dist: market.dist, record: rec };
+}
+
+return { app, getKey, setKey, usageToday, makeApi, init, reload, usRecords, rowsFor };
+})();
+__m['ui'] = (() => {
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = v => (v === null || v === undefined ? 'n/a' : v);
+const opts = (items, selected) => items.map(([v, l]) => `<option value="${esc(v)}" ${String(v) === String(selected) ? 'selected' : ''}>${esc(l)}</option>`).join('');
+
+function toast(msg) {
+  let t = $('#toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:#1f2a48;border:1px solid #3b82f6;padding:12px;border-radius:12px;z-index:50;display:none'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+function download(filename, text, mime = 'text/plain') {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** Click a column heading to sort that table. */
+function sortable(table) {
+  if (!table) return;
+  $$('th', table).forEach((th, i) => {
+    th.onclick = () => {
+      const rows = [...table.rows].slice(1); const dir = th.dataset.d = th.dataset.d === 'a' ? 'd' : 'a';
+      const val = c => c.dataset.v ?? c.textContent.trim();
+      rows.sort((a, b) => { const x = val(a.cells[i]), y = val(b.cells[i]); const n = x !== '' && y !== '' && !isNaN(x) && !isNaN(y); return (n ? x - y : x.localeCompare(y)) * (dir === 'a' ? 1 : -1); });
+      rows.forEach(r => table.appendChild(r));
+    };
+  });
+}
+
+const debounce = (fn, ms = 200) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const BOOKMAKERS = ['Bet365', 'Sky Bet', 'Paddy Power', 'Betfair', 'William Hill', 'Betfred', 'Coral', 'Ladbrokes', 'Unibet', 'BetMGM', 'Other'];
+
+return { $, $$, esc, fmt, opts, toast, download, sortable, debounce, BOOKMAKERS };
+})();
+__m['analytics'] = (() => {
+// Pure maths. No network, no storage, no DOM. Everything here is unit-tested.
+
+const sum = a => a.reduce((s, x) => s + x, 0);
+const mean = a => sum(a) / a.length;
+const median = a => {
+  const s = [...a].sort((x, y) => x - y);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const r1 = x => Math.round(x * 10) / 10;
+const r2 = x => Math.round(x * 100) / 100;
+
+const isNum = x => typeof x === 'number' && !Number.isNaN(x);
+
+/** Historical frequency of beating a line. Values that are null/undefined (provider gave nothing) are ignored. */
+function hitRate(values, line, side = 'over') {
+  const v = values.filter(isNum);
+  const n = v.length;
+  if (!n) return { n: 0, hits: 0, hitPct: null, avg: null, median: null, max: null, min: null, distribution: {} };
+  const hit = side === 'under' ? x => x < line : x => x > line;
+  const hits = v.filter(hit).length;
+  const distribution = {};
+  for (const x of v) { const k = Math.round(x); distribution[k] = (distribution[k] || 0) + 1; }
+  return { n, hits, hitPct: r1(100 * hits / n), avg: r2(mean(v)), median: median(v), max: Math.max(...v), min: Math.min(...v), distribution };
+}
+
+/** P(X > line) for Poisson(lam). */
+function poissonSf(line, lam) {
+  const k = Math.floor(line);
+  let cdf = 0, term = Math.exp(-lam);
+  for (let i = 0; i <= k; i++) { if (i > 0) term *= lam / i; cdf += term; }
+  return Math.max(0, 1 - cdf);
+}
+
+/** P(X > line) for a negative binomial with the given mean and variance (variance > mean). */
+function negbinSf(line, mu, variance) {
+  if (variance <= mu * 1.0001) return poissonSf(line, mu);
+  const p = mu / variance, r = mu * p / (1 - p), k = Math.floor(line);
+  let cdf = 0, pmf = Math.pow(p, r);
+  for (let i = 0; i <= k; i++) { if (i > 0) pmf *= (i - 1 + r) / i * (1 - p); cdf += pmf; }
+  return Math.max(0, 1 - cdf);
+}
+
+function erf(x) { // Abramowitz-Stegun 7.1.26
+  const s = Math.sign(x); x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return s * y;
+}
+const normalCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+/** P(X > line) for a normal approximation (used for yardage-type markets). */
+const normalSf = (line, mu, sd) => 1 - normalCdf((line - mu) / sd);
+
+/**
+ * Rate-based estimate of P(over line).
+ * rows: [{value, exposure}] where exposure is minutes (football) or 1 per game (US sports).
+ * Scales the observed per-exposure rate to `expected` exposure. Count markets use Poisson, or negative binomial when the
+ * sample is over-dispersed; `dist: 'normal'` is for yardage markets. Returns ok:false (never a made-up number) if the sample is too small.
+ */
+function rateModel(rows, line, expected, { minSample = 8, minExposure = 0, dist = 'count' } = {}) {
+  const use = rows.filter(r => isNum(r.value) && r.exposure > 0 && r.exposure >= minExposure);
+  if (use.length < minSample) return { ok: false, reason: `Need at least ${minSample} games with data for this estimate; only ${use.length} stored.` };
+  const rate = sum(use.map(r => r.value)) / sum(use.map(r => r.exposure));
+  const mu = rate * expected;
+  const scaled = use.map(r => r.value * expected / r.exposure);
+  const m = mean(scaled);
+  const variance = sum(scaled.map(x => (x - m) ** 2)) / (scaled.length - 1);
+  let prob, model;
+  if (dist === 'normal') {
+    const sd = Math.sqrt(variance);
+    if (!(sd > 0)) return { ok: false, reason: 'All stored results are identical, so the spread cannot be estimated.' };
+    prob = normalSf(line, mu, sd); model = 'normal approximation';
+  } else if (variance > mu * 1.05) { prob = negbinSf(line, mu, variance); model = 'negative binomial'; }
+  else { prob = poissonSf(line, mu); model = 'Poisson'; }
+  prob = Math.min(0.999, Math.max(0.001, prob));
+  return { ok: true, model, mean: r2(mu), variance: r2(variance), sample: use.length, probOver: Math.round(prob * 10000) / 10000 };
+}
+
+const evPct = (prob, odds) => r2((prob * odds - 1) * 100);
+const fairOdds = prob => (prob > 0 ? r2(1 / prob) : null);
+function removeVig(oddsA, oddsB) {
+  const a = 1 / oddsA, b = 1 / oddsB, t = a + b;
+  return { a: Math.round(a / t * 10000) / 10000, b: Math.round(b / t * 10000) / 10000, marginPct: r2((t - 1) * 100) };
+}
+const kelly = (prob, odds) => { const b = odds - 1; return b > 0 ? Math.max(0, (prob * b - (1 - prob)) / b) : 0; };
+
+/** UK-friendly odds input: "2.5", "5/4", "evens". Returns decimal odds or null. */
+function parseOdds(t) {
+  if (t === null || t === undefined) return null;
+  const s = String(t).trim().toLowerCase();
+  if (!s) return null;
+  if (s === 'evs' || s === 'evens' || s === 'even') return 2;
+  if (s.includes('/')) {
+    const [a, b] = s.split('/').map(Number);
+    if (!(a > 0) || !(b > 0)) return null;
+    return Math.round((a / b + 1) * 1000) / 1000;
+  }
+  const d = Number(s);
+  return d > 1 ? d : null;
+}
+
+/** Closing line value %: positive means you got a better price than the closing price. */
+const clvPct = (placed, closing) => (placed > 1 && closing > 1 ? r2((placed / closing - 1) * 100) : null);
+
+function betSummary(bets) {
+  const settled = bets.filter(b => ['won', 'lost', 'void'].includes(b.result));
+  const pl = b => (b.result === 'won' ? b.stake * (b.odds - 1) : b.result === 'lost' ? -b.stake : 0);
+  const staked = sum(settled.filter(b => b.result !== 'void').map(b => b.stake));
+  const profit = sum(settled.map(pl));
+  const decided = settled.filter(b => b.result !== 'void');
+  const group = key => {
+    const o = {};
+    for (const b of settled) { const k = key === 'month' ? (b.date || '').slice(0, 7) : (b[key] || 'unknown'); o[k] = r2((o[k] || 0) + pl(b)); }
+    return o;
+  };
+  const clvs = bets.map(b => clvPct(b.odds, b.closingOdds)).filter(isNum);
+  return {
+    bets: bets.length, settled: settled.length, staked: r2(staked), profit: r2(profit),
+    roiPct: staked ? r2(100 * profit / staked) : null,
+    winRatePct: decided.length ? r1(100 * decided.filter(b => b.result === 'won').length / decided.length) : null,
+    avgClvPct: clvs.length ? r2(mean(clvs)) : null,
+    bySport: group('sport'), byMarket: group('market'), byBookmaker: group('bookmaker'), byMonth: group('month'),
+  };
+}
+
+return { sum, mean, median, hitRate, poissonSf, negbinSf, normalCdf, normalSf, rateModel, evPct, fairOdds, removeVig, kelly, parseOdds, clvPct, betSummary };
+})();
+__m['research'] = (() => {
+// Shared research helpers for football and US sports rows: [{value, exposure, date, season, home, started?, opp, ...}] newest first.
+const { hitRate } = __m['analytics'];
+
+function applyFilters(rows, { last = null, season = null, venue = '', startedOnly = false, minMinutes = 0, opp = '' } = {}) {
+  let r = rows.filter(x => x.value !== null && x.value !== undefined);
+  if (season) r = r.filter(x => x.season === season);
+  if (venue === 'home') r = r.filter(x => x.home); else if (venue === 'away') r = r.filter(x => !x.home);
+  if (startedOnly) r = r.filter(x => x.started === 1);
+  if (minMinutes) r = r.filter(x => (x.minutes ?? Infinity) >= minMinutes);
+  if (opp) r = r.filter(x => x.opp === opp);
+  return last ? r.slice(0, last) : r;
+}
+
+/** Hit rate for the same line across the standard splits. `rows` must already have the minutes filter applied. */
+function buildSplits(rows, line, side, { opp = '' } = {}) {
+  const v = rows.filter(x => x.value !== null && x.value !== undefined);
+  const seasons = [...new Set(v.map(x => x.season))].sort((a, b) => b - a);
+  const mk = (label, list) => ({ label, ...hitRate(list.map(x => x.value), line, side) });
+  const out = [
+    mk('Last 5', v.slice(0, 5)), mk('Last 10', v.slice(0, 10)), mk('Last 15', v.slice(0, 15)), mk('Last 20', v.slice(0, 20)),
+    mk(seasons[0] ? `Season ${seasons[0]}` : 'Current season', v.filter(x => x.season === seasons[0])),
+    mk(seasons[1] ? `Season ${seasons[1]}` : 'Previous season', v.filter(x => x.season === seasons[1])),
+    mk('Home', v.filter(x => x.home)), mk('Away', v.filter(x => !x.home)),
+  ];
+  if (v.some(x => x.started === 0 || x.started === 1)) {
+    out.push(mk('Starts', v.filter(x => x.started === 1)), mk('As substitute', v.filter(x => x.started === 0)));
+  }
+  if (opp) out.push(mk('vs ' + opp, v.filter(x => x.opp === opp)));
+  return out;
+}
+
+const lastAvgMinutes = (rows, n = 5) => {
+  const m = rows.filter(r => typeof r.minutes === 'number').slice(0, n).map(r => r.minutes);
+  return m.length ? Math.round(m.reduce((s, x) => s + x, 0) / m.length) : null;
+};
+
+return { applyFilters, buildSplits, lastAvgMinutes };
+})();
+__m['charts'] = (() => {
+// Small canvas bar chart with a dashed reference line for the betting line. No libraries, works offline.
+
+function niceMax(v) { if (v <= 4) return 4; if (v <= 10) return Math.ceil(v); const p = 10 ** Math.floor(Math.log10(v)); return Math.ceil(v / (p / 2)) * (p / 2); }
+
+/** values/labels are oldest -> newest (left -> right). */
+function drawBars(canvas, { values, labels, line, side = 'over' }) {
+  const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight || 230;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
+  const L = 34, R = 8, T = 18, B = 26, pw = W - L - R, ph = H - T - B;
+  const max = niceMax(Math.max(line, ...values) * 1.1);
+  const y = v => T + ph - (v / max) * ph;
+  c.font = '11px -apple-system, sans-serif'; c.textAlign = 'right'; c.textBaseline = 'middle';
+  const step = max <= 10 ? 1 : max / 5;
+  for (let t = 0; t <= max + 1e-9; t += step) {
+    c.strokeStyle = '#1f2a48'; c.beginPath(); c.moveTo(L, y(t)); c.lineTo(W - R, y(t)); c.stroke();
+    c.fillStyle = '#8f9bbd'; c.fillText(String(Math.round(t * 10) / 10), L - 5, y(t));
+  }
+  const n = values.length, slot = pw / n, bw = Math.min(40, slot * 0.7);
+  c.textAlign = 'center';
+  values.forEach((v, i) => {
+    const x = L + slot * i + (slot - bw) / 2;
+    const hit = side === 'under' ? v < line : v > line;
+    c.fillStyle = hit ? '#22c55e' : '#ef4444';
+    c.fillRect(x, y(v), bw, Math.max(1, y(0) - y(v)));
+    c.fillStyle = '#e6e9f2'; c.textBaseline = 'bottom'; c.fillText(String(v), x + bw / 2, y(v) - 2);
+    if (n <= 12 || i % Math.ceil(n / 12) === 0) { c.fillStyle = '#8f9bbd'; c.textBaseline = 'top'; c.fillText(labels[i] || '', x + bw / 2, H - B + 6); }
+  });
+  c.strokeStyle = '#fbbf24'; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(L, y(line)); c.lineTo(W - R, y(line)); c.stroke(); c.setLineDash([]);
+  c.fillStyle = '#fbbf24'; c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(`line ${line}`, W - R, y(line) - 3);
+}
+
+return { niceMax, drawBars };
+})();
+__m['view-research'] = (() => {
+// Shared research panel: market, line, filters, hit rate, chart, splits and match list. Used for football and US sports.
+const { hitRate } = __m['analytics'];
+const { applyFilters, buildSplits } = __m['research'];
+const { drawBars } = __m['charts'];
+const { $, $$, esc, fmt, opts } = __m['ui'];
+const { app } = __m['state'];
+
+const marketOptions = markets => {
+  const groups = [...new Set(markets.map(m => m.group || ''))];
+  return groups.map(g => {
+    const items = markets.filter(m => (m.group || '') === g).map(m => `<option value="${esc(m.key)}">${esc(m.label)}</option>`).join('');
+    return g ? `<optgroup label="${esc(g)}">${items}</optgroup>` : items;
+  }).join('');
+};
+
+/**
+ * cfg: { id, markets, getRows(marketKey) -> rows newest first, hasMinutes, hasStarts, seasons[], opponents[],
+ *        defaultMarket, getMatchupOpp(), onUpdate(ctx), onValue(ctx), name }
+ */
+function researchPanel(root, cfg) {
+  const st = app.research[cfg.id] = Object.assign({ market: cfg.defaultMarket || cfg.markets[0].key, side: 'over', line: 1.5, last: 10, venue: '', season: '', started: false, minMin: 1, opp: '' }, app.research[cfg.id] || {});
+  if (!cfg.markets.some(m => m.key === st.market)) st.market = cfg.markets[0].key;
+  if (app.pending && app.pending.panel === cfg.id) { Object.assign(st, app.pending.set); app.pending = null; }
+
+  root.innerHTML = `<div class="card stack">
+    <div class="grid g4">
+      <div><label>Market</label><select data-f="market">${marketOptions(cfg.markets)}</select></div>
+      <div><label>Over / under</label><select data-f="side"><option value="over">Over</option><option value="under">Under</option></select></div>
+      <div><label>Line</label><input data-f="line" type="number" step="0.5" inputmode="decimal"></div>
+      <div><label>Last matches</label><select data-f="last">${opts([[5, 'Last 5'], [10, 'Last 10'], [15, 'Last 15'], [20, 'Last 20'], [0, 'All stored']], st.last)}</select></div>
+      <div><label>Venue</label><select data-f="venue">${opts([['', 'Home + away'], ['home', 'Home only'], ['away', 'Away only']], st.venue)}</select></div>
+      <div><label>Season</label><select data-f="season">${opts([['', 'All seasons'], ...cfg.seasons.map(s => [s, String(s)])], st.season)}</select></div>
+      ${cfg.hasMinutes ? '<div><label>Minimum minutes played</label><input data-f="minMin" type="number" inputmode="numeric" min="0" max="90"></div>' : ''}
+      ${cfg.opponents.length ? `<div><label>Only matches against</label><select data-f="opp">${opts([['', 'Any opponent'], ...cfg.opponents.map(o => [o, o])], st.opp)}</select></div>` : ''}
+      ${cfg.hasStarts ? '<div style="align-self:end"><label style="color:var(--text);font-size:14px"><input data-f="started" type="checkbox"> Starts only</label></div>' : ''}
+    </div>
+    <div class="row" data-quick>${[0.5, 1.5, 2.5, 3.5].map(v => `<button class="tab" data-line="${v}">${st.side === 'under' ? 'Under' : 'Over'} ${v}</button>`).join('')}<button class="tab" data-typical>Typical line</button></div>
+    <div data-out></div></div>`;
+
+  const f = k => $(`[data-f="${k}"]`, root);
+  f('market').value = st.market; f('side').value = st.side; f('line').value = st.line;
+  if (f('minMin')) f('minMin').value = st.minMin;
+  if (f('started')) f('started').checked = st.started;
+
+  const read = () => {
+    st.market = f('market').value; st.side = f('side').value;
+    const l = parseFloat(f('line').value); if (!Number.isNaN(l)) st.line = l;
+    st.last = Number(f('last').value); st.venue = f('venue').value; st.season = f('season').value ? Number(f('season').value) : '';
+    if (f('minMin')) st.minMin = Number(f('minMin').value) || 0;
+    if (f('opp')) st.opp = f('opp').value;
+    if (f('started')) st.started = f('started').checked;
+  };
+
+  let ctx = null;
+  const update = () => {
+    const rowsAll = cfg.getRows(st.market);
+    const market = cfg.markets.find(m => m.key === st.market);
+    const filtered = applyFilters(rowsAll, { last: st.last || null, season: st.season || null, venue: st.venue, startedOnly: st.started, minMinutes: cfg.hasMinutes ? st.minMin : 0, opp: st.opp });
+    const hr = hitRate(filtered.map(r => r.value), st.line, st.side);
+    const missing = rowsAll.filter(r => r.value === null).length;
+    const splits = buildSplits(applyFilters(rowsAll, { minMinutes: cfg.hasMinutes ? st.minMin : 0 }), st.line, st.side, { opp: cfg.getMatchupOpp ? cfg.getMatchupOpp() : '' });
+    ctx = { st: { ...st }, market, rowsAll, filtered, hr };
+    const out = $('[data-out]', root);
+    const sideWord = st.side === 'under' ? 'Under' : 'Over';
+    out.innerHTML = `<div class="grid g6">
+        ${[['Matches', hr.n], ['Hits', hr.hits], ['Hit %', hr.hitPct === null ? 'n/a' : hr.hitPct + '%'], ['Average', fmt(hr.avg)], ['Median', fmt(hr.median)], ['High / low', hr.n ? `${hr.max} / ${hr.min}` : 'n/a']].map(([a, b]) => `<div class="tile"><b>${b}</b><span>${a}</span></div>`).join('')}</div>
+      ${hr.n ? '<canvas></canvas>' : '<p class="warn">No stored matches with data for these filters. Nothing is estimated or filled in.</p>'}
+      <p class="small muted">${sideWord} ${st.line} ${esc(market.label)}. This is how often it happened in the matches shown. It is not the chance it happens next time and says nothing about whether a price is good value.</p>
+      ${Number.isInteger(st.line) ? '<p class="warn">Whole-number line: bookmakers usually refund a result exactly on the line. This hit rate counts it as a miss.</p>' : ''}
+      ${missing ? `<p class="small muted">${missing} stored match${missing > 1 ? 'es' : ''} had no data for this stat from the provider and ${missing > 1 ? 'are' : 'is'} left out.</p>` : ''}
+      <div class="small muted">Spread: ${Object.entries(hr.distribution).map(([k, v]) => `${k}: ${v}x`).join(' · ') || 'n/a'}</div>
+      <h3>Same line, different slices</h3>
+      <div class="scroll"><table><tr><th>Slice</th><th>Matches</th><th>Hits</th><th>Hit %</th><th>Avg</th></tr>${splits.map(s => `<tr><td>${esc(s.label)}</td><td>${s.n}</td><td>${s.hits}</td><td>${s.hitPct === null ? 'n/a' : s.hitPct + '%'}</td><td>${fmt(s.avg)}</td></tr>`).join('')}</table></div>
+      ${hr.n ? `<h3>Match by match</h3><div class="scroll"><table><tr><th>Date</th><th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}${cfg.hasStarts ? '<th>Start</th>' : ''}<th>${esc(market.label.split(' (')[0])}</th></tr>${filtered.map(r => {
+        const hit = st.side === 'under' ? r.value < st.line : r.value > st.line;
+        return `<tr><td>${esc((r.date || '').slice(0, 10))}</td><td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td>${r.minutes}</td>` : ''}${cfg.hasStarts ? `<td>${r.started ? 'Y' : 'N'}</td>` : ''}<td class="${hit ? 'good' : 'bad'}"><b>${r.value}</b></td></tr>`;
+      }).join('')}</table></div>` : ''}
+      <div class="row"><button class="pri" data-value>Check value with my odds</button></div>`;
+    const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { const asc = [...filtered].reverse(); drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => (r.date || '').slice(5, 10).split('-').reverse().join('/')), line: st.line, side: st.side }); } };
+    draw(); app.redraw = draw;
+    const vb = $('[data-value]', out); if (vb) vb.onclick = () => cfg.onValue && cfg.onValue(ctx);
+    if (cfg.onUpdate) cfg.onUpdate(ctx);
+  };
+
+  $$('[data-f]', root).forEach(el => { el.onchange = () => { read(); if (el.dataset.f === 'side') $$('[data-line]', root).forEach(b => { b.textContent = `${st.side === 'under' ? 'Under' : 'Over'} ${b.dataset.line}`; }); update(); }; if (el.type === 'number') el.oninput = () => { read(); update(); }; });
+  $$('[data-line]', root).forEach(b => { b.onclick = () => { f('line').value = st.line = Number(b.dataset.line); update(); }; });
+  $('[data-typical]', root).onclick = () => { const v = cfg.getRows(st.market).filter(r => r.value !== null).slice(0, st.last || 1000).map(r => r.value); if (v.length) { const a = v.reduce((s, x) => s + x, 0) / v.length; f('line').value = st.line = Math.floor(a) + 0.5; update(); } };
+  update();
+  return { refresh: update, current: () => ctx };
+}
+
+return { researchPanel };
+})();
+__m['view-football'] = (() => {
+const { refNamesFromTm, newsForPlayer, newsForTeam, nextFixtureFor, teamTendencies, refereeTendencies } = __m['context'];
+const { FOOTBALL_MARKETS, LEAGUES, marketRows, opponentProfile, refereeProfile, refereeNames } = __m['football'];
+const { lastAvgMinutes } = __m['research'];
+const { sameTeam, normName } = __m['teams'];
+const { app, getKey, makeApi } = __m['state'];
+const { $, esc, fmt, opts, debounce } = __m['ui'];
+const { researchPanel } = __m['view-research'];
+
+function viewFootball(root) {
+  if (!app.index.players.size) {
+    root.innerHTML = `<div class="card"><h2>No football data yet</h2><p>This screen shows real match stats once you have downloaded some. Open <b>Setup</b>, paste your free API-Football key, and press Sync. Nothing here is ever made up.</p><a href="#setup"><button class="pri">Go to Setup</button></a></div>`;
+    return;
+  }
+  const leaguesPresent = [...new Set([...app.index.players.values()].map(p => p.league))];
+  root.innerHTML = `<div class="card stack"><div class="grid g3"><div><label>League</label><select id="lg">${opts([['', 'All leagues'], ...leaguesPresent.map(k => [k, LEAGUES[k]?.name || k])], app.research.fbLeague || '')}</select></div>
+    <div style="grid-column:span 2"><label>Search player or team</label><input id="q" placeholder="e.g. Bruno" autocomplete="off"></div></div><div id="list"></div></div><div id="detail"></div>`;
+
+  const search = () => {
+    const q = $('#q', root).value.trim().toLowerCase(), lg = $('#lg', root).value; app.research.fbLeague = lg;
+    let list = [...app.index.players.values()].filter(p => (!lg || p.league === lg) && (!q || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q)));
+    list.sort((a, b) => b.rows.length - a.rows.length);
+    list = list.slice(0, q ? 15 : 8);
+    $('#list', root).innerHTML = list.map(p => `<button class="pick" data-id="${p.id}">${esc(p.name)} <small>${esc(p.team)} · ${esc(p.position || '?')} · ${p.rows.length} matches stored</small></button>`).join('') || '<p class="muted small">No players match.</p>';
+    root.querySelectorAll('.pick').forEach(b => { b.onclick = () => { app.research.fbPlayer = b.dataset.id; show(app.index.players.get(app.research.fbPlayer)); $('#list', root).innerHTML = ''; $('#detail', root).scrollIntoView({ behavior: 'smooth' }); }; });
+  };
+  $('#q', root).oninput = debounce(search); $('#lg', root).onchange = search;
+  search();
+  if (app.research.fbPlayer && app.index.players.has(app.research.fbPlayer)) show(app.index.players.get(app.research.fbPlayer));
+
+  function show(p) {
+    const markets = FOOTBALL_MARKETS.filter(m => !m.positions || p.rows.some(r => m.positions.includes(r.position)));
+    const seasons = [...new Set(p.rows.map(r => r.season))].sort((a, b) => b - a);
+    const opponents = [...new Set(p.rows.map(r => r.opp))].sort();
+    const teamsAll = [...app.index.teams.values()].filter(t => t.id !== p.teamId).sort((a, b) => a.name.localeCompare(b.name));
+    const refs = [...new Set([...refereeNames(app.fixtures), ...refNamesFromTm(app.ctx.tm)])].sort();
+    const mu = app.research.matchup = Object.assign({ oppId: '', ref: '' }, app.research.matchup);
+    const avgMin = lastAvgMinutes(p.rows);
+    $('#detail', root).innerHTML = `<div class="card"><h2>${esc(p.name)}</h2><div class="muted small">${esc(p.team)} · ${esc(p.position || '?')} · ${p.rows.length} matches stored · typical recent minutes ${fmt(avgMin)} (average of last 5 appearances, not a line-up forecast)</div></div>
+      <div id="rp"></div>
+      <div class="card stack"><h2>Matchup</h2>
+        <div class="grid g3"><div><label>Upcoming opponent</label><select id="mo">${opts([['', 'Choose…'], ...teamsAll.map(t => [t.id, t.name])], mu.oppId)}</select></div>
+        <div><label>Referee (optional)</label><select id="mr">${opts([['', 'Not chosen'], ...refs.map(r => [r, r])], mu.ref)}</select></div>
+        <div style="align-self:end"><button class="ghost" id="nf" style="width:100%">Use next fixture</button></div></div>
+        <div id="nfout" class="small muted"></div><div id="muout"></div></div>
+      <div class="card stack" id="ctxcard"></div>`;
+    $('#ctxcard', root).innerHTML = contextHtml(p);
+
+    const oppName = () => (mu.oppId ? app.index.teams.get(String(mu.oppId))?.name || '' : '');
+    const panel = researchPanel($('#rp', root), {
+      id: 'fb', markets, seasons, opponents, hasMinutes: true, hasStarts: true, name: p.name,
+      getRows: key => marketRows(p, FOOTBALL_MARKETS.find(m => m.key === key)),
+      getMatchupOpp: oppName,
+      onUpdate: ctx => renderMatchup(ctx),
+      onValue: ctx => { app.pending = { sport: 'football', playerKey: p.key, marketKey: ctx.st.market, side: ctx.st.side, line: ctx.st.line }; location.hash = 'value'; },
+    });
+
+    function renderMatchup(ctx) {
+      const out = $('#muout', root); if (!out) return;
+      if (!mu.oppId && !mu.ref) { out.innerHTML = '<p class="small muted">Pick an opponent to see how many of this stat the opposition\'s players typically record against them, compared with the average team. It is calculated only from matches you have synced, so check the match counts.</p>'; return; }
+      let html = '';
+      if (mu.oppId) {
+        const prof = opponentProfile(app.fixtures, app.index.teams.get(String(mu.oppId)).id, ctx.market);
+        const names = { total: 'All outfield + GK', G: 'Goalkeepers', D: 'Defenders', M: 'Midfielders', F: 'Forwards' };
+        html += `<h3>${esc(oppName())}: ${esc(ctx.market.label)} made against them</h3>
+          ${prof.matches ? `<div class="scroll"><table><tr><th>Opposing players</th><th>Matches</th><th>Avg vs ${esc(oppName())}</th><th>Avg vs all teams</th><th>Diff</th></tr>
+          ${['total', 'G', 'D', 'M', 'F'].map(k => { const r = prof.byPosition[k]; const d = r.concededAvg !== null && r.leagueAvg !== null ? Math.round((r.concededAvg - r.leagueAvg) * 100) / 100 : null; return `<tr class="${k === p.position ? 'hl' : ''}"><td>${names[k]}${k === p.position ? ' ← ' + esc(p.name.split(' ').pop()) : ''}</td><td>${r.n}</td><td>${fmt(r.concededAvg)}</td><td>${fmt(r.leagueAvg)}</td><td class="${d > 0 ? 'good' : d < 0 ? 'bad' : ''}">${d === null ? 'n/a' : (d > 0 ? '+' : '') + d}</td></tr>`; }).join('')}</table></div>
+          <p class="small muted">Based on ${prof.matches} stored match${prof.matches > 1 ? 'es' : ''} for ${esc(oppName())}. Positions are as listed by the provider for that match. Small samples are noisy. ${esc(oppName())}'s own team total averages ${fmt(prof.ownTotalAvg)} per match.</p>` : '<p class="warn">No stored matches for this team yet, so no matchup numbers can be calculated. Sync more of the league.</p>'}`;
+        const teamId = p.teamId; const last = app.fixtures.filter(f => f.home.id === teamId || f.away.id === teamId).map(f => f.date).sort().pop();
+        if (last && mu.nextDate) html += `<p class="small muted">${esc(p.team)}'s last stored match was ${esc(last.slice(0, 10))}; next fixture ${esc(mu.nextDate.slice(0, 10))} (${Math.round((new Date(mu.nextDate) - new Date(last)) / 864e5)} days later).</p>`;
+      }
+      if (mu.ref) {
+        const r = refereeProfile(app.fixtures, mu.ref);
+        html += `<h3>Referee ${esc(mu.ref)}</h3>${r.referee.n ? `<div class="scroll"><table><tr><th></th><th>Matches</th><th>Yellows / match</th><th>Reds / match</th><th>Fouls / match</th></tr>
+          <tr><td>${esc(mu.ref)}</td><td>${r.referee.n}</td><td>${fmt(r.referee.yellow)}</td><td>${fmt(r.referee.red)}</td><td>${fmt(r.referee.fouls)}</td></tr>
+          <tr><td>All stored matches</td><td>${r.all.n}</td><td>${fmt(r.all.yellow)}</td><td>${fmt(r.all.red)}</td><td>${fmt(r.all.fouls)}</td></tr></table></div>` : '<p class="warn">No stored matches with this referee.</p>'}`;
+      }
+      html += tendencyHtml(mu.oppId ? app.index.teams.get(String(mu.oppId)) : null, mu.ref);
+      out.innerHTML = html;
+    }
+
+    $('#mo', root).onchange = e => { mu.oppId = e.target.value; mu.nextDate = ''; panel.refresh(); };
+    $('#mr', root).onchange = e => { mu.ref = e.target.value; panel.refresh(); };
+    $('#nf', root).onclick = async () => {
+      const out = $('#nfout', root);
+      const imp = nextFixtureFor(app.ctx, p.team, new Date().toISOString().slice(0, 10));
+      if (imp) {
+        const oppN = sameTeam(imp.home, p.team) ? imp.away : imp.home;
+        out.textContent = `Next (imported): ${imp.home} v ${imp.away}, ${imp.date}${imp.kickoff ? ' ' + imp.kickoff : ''}${imp.referee ? ', referee ' + imp.referee : ''}.`;
+        const t = [...app.index.teams.values()].find(x => sameTeam(x.name, oppN));
+        if (t) { mu.oppId = String(t.id); $('#mo', root).value = mu.oppId; } else out.textContent += ' That team has no stored matches yet.';
+        if (imp.referee) { const m = refs.find(r => normName(r) === normName(imp.referee)); if (m) { mu.ref = m; $('#mr', root).value = m; } }
+        panel.refresh(); return;
+      }
+      if (!getKey()) { out.textContent = 'No imported fixture for this team. Import a fixtures file on the Data screen (or add a free API key in Setup).'; return; }
+      out.textContent = 'Looking up…';
+      try {
+        const nx = await makeApi().nextFixture(p.teamId);
+        if (!nx) { out.textContent = 'No upcoming fixture was returned.'; return; }
+        const opp = nx.home.id === p.teamId ? nx.away : nx.home;
+        out.textContent = `Next: ${nx.home.name} v ${nx.away.name}, ${nx.date.slice(0, 16).replace('T', ' ')}${nx.referee ? ', referee ' + nx.referee : ''}${nx.leagueName ? ' (' + nx.leagueName + ')' : ''}.`;
+        mu.nextDate = nx.date;
+        if (app.index.teams.has(String(opp.id))) { mu.oppId = String(opp.id); $('#mo', root).value = mu.oppId; } else out.textContent += ' That team has no synced matches yet.';
+        const ref = nx.referee ? nx.referee.split(',')[0].trim() : ''; if (ref && refs.includes(ref)) { mu.ref = ref; $('#mr', root).value = ref; }
+        panel.refresh();
+      } catch (e) { out.textContent = e.message; }
+    };
+  }
+}
+
+const STATUS_LABEL = { out: 'Out', doubtful: 'Doubtful', suspended: 'Suspended', returning: 'Returning', likely_start: 'Likely to start', rested: 'Rested', other: 'Note' };
+function contextHtml(p) {
+  const ctx = app.ctx, today = new Date().toISOString().slice(0, 10);
+  const mine = newsForPlayer(ctx, p.team, p.name), others = newsForTeam(ctx, p.team).filter(n => !mine.includes(n));
+  const nx = nextFixtureFor(ctx, p.team, today);
+  const line = n => `<li><b>${esc(n.player)}</b>: ${esc(STATUS_LABEL[n.status])}${n.detail ? ' - ' + esc(n.detail) : ''} <span class="muted">(as of ${esc(n.asOf)}${n.source ? ', ' + esc(n.source) : ''})</span></li>`;
+  let h = '<h3>Fixture and team news (imported)</h3>';
+  if (!ctx.news.length && !ctx.fixtures.length) return h + '<p class="small muted">Nothing imported yet. On the Data screen, import a fixtures or team-news file to see the next match and injury notes here. Until then, check club sources before betting.</p>';
+  h += nx ? `<p class="small"><b>Next fixture:</b> ${esc(nx.home)} v ${esc(nx.away)}, ${esc(nx.date)}${nx.kickoff ? ' ' + esc(nx.kickoff) : ''}${nx.referee ? ', referee ' + esc(nx.referee) : ''}</p>` : '<p class="small muted">No upcoming fixture for this team in the imported fixtures.</p>';
+  h += mine.length ? `<p class="small warn">News about this player:</p><ul class="small">${mine.map(line).join('')}</ul>` : '<p class="small muted">No imported news about this player. That does not mean he is fit: it only means nothing was imported.</p>';
+  if (others.length) h += `<details><summary class="small">Other ${esc(p.team)} news (${others.length})</summary><ul class="small">${others.map(line).join('')}</ul></details>`;
+  h += `<p class="small muted">News last imported ${ctx.newsAt ? new Date(ctx.newsAt).toLocaleDateString() : 'never'}. It is only as current as your last import.</p>`;
+  return h;
+}
+function tendencyHtml(opp, ref) {
+  const tm = app.ctx.tm; if (!tm.length) return '';
+  let h = '';
+  if (opp) { const t = teamTendencies(tm, opp.name, null); if (t.n) h += `<h3>${esc(opp.name)}: team averages per match (${t.n} matches, football-data.co.uk)</h3><div class="scroll"><table><tr><th></th><th>Shots</th><th>On target</th><th>Fouls</th><th>Yellows</th></tr>
+    <tr><td>Own team</td><td>${t.for.shots ?? 'n/a'}</td><td>${t.for.sot ?? 'n/a'}</td><td>${t.for.fouls ?? 'n/a'}</td><td>${t.for.yellows ?? 'n/a'}</td></tr>
+    <tr><td>Opponents vs them</td><td>${t.against.shots ?? 'n/a'}</td><td>${t.against.sot ?? 'n/a'}</td><td>${t.against.fouls ?? 'n/a'}</td><td>${t.against.yellows ?? 'n/a'}</td></tr>
+    <tr><td>Average team</td><td>${t.league.shots ?? 'n/a'}</td><td>${t.league.sot ?? 'n/a'}</td><td>${t.league.fouls ?? 'n/a'}</td><td>${t.league.yellows ?? 'n/a'}</td></tr></table></div><p class="small muted">Team totals, not player stats.</p>`; }
+  if (ref) { const r = refereeTendencies(tm, ref); if (r.ref.n) h += `<h3>Referee ${esc(ref)} (${r.ref.n} matches)</h3><p class="small">Fouls per match ${r.ref.fouls ?? 'n/a'} (all referees ${r.all.fouls ?? 'n/a'}). Yellows per match ${r.ref.yellows ?? 'n/a'} (all ${r.all.yellows ?? 'n/a'}).</p>`; }
+  return h;
+}
+
+return { viewFootball, tendencyHtml };
+})();
+__m['value'] = (() => {
+// Turns a real stored sample plus a bookmaker price you typed in into an estimate of value. Pure and tested.
+const { hitRate, rateModel, evPct, fairOdds, kelly, removeVig } = __m['analytics'];
+
+/**
+ * rows: [{value, exposure}] newest first (value null = no data).
+ * side: 'over' | 'under'. odds: decimal odds for YOUR side. otherOdds: optional decimal odds for the other side of the same line.
+ */
+function evaluate({ rows, side, line, odds, otherOdds = null, expectedExposure, minExposure = 0, dist = 'count', sampleN = 20 }) {
+  const sample = rows.filter(r => r.value !== null && r.value !== undefined && (r.exposure ?? 1) >= minExposure).slice(0, sampleN);
+  const model = rateModel(sample, line, expectedExposure, { minSample: 8, dist });
+  const hit = hitRate(sample.map(r => r.value), line, side);
+  const out = { model, hit, sampleSize: sample.length, flags: [], odds, side, line };
+  if (Number.isInteger(line)) out.flags.push('Whole-number line: a result exactly on the line is usually a refund. This estimate does not model refunds, so use a .5 line for a clean estimate.');
+  if (!model.ok) return out;
+  const p = side === 'over' ? model.probOver : 1 - model.probOver;
+  out.prob = Math.round(p * 10000) / 10000;
+  out.fair = fairOdds(p);
+  out.ev = evPct(p, odds);
+  out.kellyQuarter = Math.round(kelly(p, odds) * 25 * 100) / 100; // quarter Kelly as % of bankroll
+  out.confidence = sample.length < 12 ? 'low' : sample.length < 25 ? 'medium' : 'higher';
+  if (otherOdds) { const v = removeVig(odds, otherOdds); out.market = { probSide: v.a, marginPct: v.marginPct, diffPts: Math.round((p - v.a) * 1000) / 10 }; }
+  if (hit.hitPct !== null && Math.abs(hit.hitPct / 100 - p) > 0.15) out.flags.push(`The estimate (${(p * 100).toFixed(0)}%) and the recent hit rate (${hit.hitPct}%) disagree by more than 15 points. Look at why before trusting either.`);
+  if (sample.length < 12) out.flags.push('Small sample. Treat this as a rough guide only.');
+  if (odds >= 6) out.flags.push('Long odds: estimates are least reliable at the tails.');
+  if (out.ev > 25) out.flags.push('A very high EV usually means something is missing from the estimate (line-up, role, minutes, injury). Check before assuming it is real.');
+  if (out.ev > 0) out.verdict = 'The estimate puts this above break-even. That is a reason to look closer, not proof of value.';
+  else out.verdict = 'The estimate puts this below break-even at this price.';
+  return out;
+}
+
+return { evaluate };
+})();
+__m['view-scanner'] = (() => {
+// Prop Finder (research scanner) and Odds & Scanner (your saved prices, EV ranked, bookmaker comparison, arbitrage check).
+const { hitRate } = __m['analytics'];
+const { applyFilters } = __m['research'];
+const { FOOTBALL_MARKETS, LEAGUES, marketRows } = __m['football'];
+const { evaluate } = __m['value'];
+const { app, rowsFor } = __m['state'];
+const { $, $$, esc, fmt, opts, sortable, toast, BOOKMAKERS } = __m['ui'];
+
+function viewFinder(root) {
+  if (!app.index.players.size) { root.innerHTML = '<div class="card"><h2>Prop Finder</h2><p>No football data synced yet. Open <a href="#setup">Setup</a> first.</p></div>'; return; }
+  const s = app.research.finder = Object.assign({ league: '', market: 'tackles', line: 1.5, side: 'over', last: 10, minSample: 8, minHit: 60, minAvgMin: 60, venue: '' }, app.research.finder || {});
+  const leagues = [...new Set([...app.index.players.values()].map(p => p.league))];
+  const groups = ['Priority', 'More', 'Goalkeeper'];
+  root.innerHTML = `<div class="card stack"><h2>Football Prop Finder</h2>
+    <p class="small muted">Lists players who have often cleared a line in their recent stored matches. This is research, not a betting tip: a high hit rate does not mean a price is good value. Use the Value checker with a real price.</p>
+    <div class="grid g4"><div><label>League</label><select id="lg">${opts([['', 'All stored leagues'], ...leagues.map(k => [k, LEAGUES[k]?.name || k])], s.league)}</select></div>
+      <div><label>Market</label><select id="mk">${groups.map(g => `<optgroup label="${g}">${FOOTBALL_MARKETS.filter(m => m.group === g).map(m => `<option value="${m.key}">${esc(m.label)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      <div><label>Over / under</label><select id="sd">${opts([['over', 'Over'], ['under', 'Under']], s.side)}</select></div>
+      <div><label>Line</label><input id="ln" type="number" step="0.5" value="${s.line}"></div>
+      <div><label>Look at last N matches</label><input id="la" type="number" value="${s.last}"></div>
+      <div><label>Minimum matches in sample</label><input id="ms" type="number" value="${s.minSample}"></div>
+      <div><label>Minimum hit %</label><input id="mh" type="number" value="${s.minHit}"></div>
+      <div><label>Minimum average minutes</label><input id="ma" type="number" value="${s.minAvgMin}"></div>
+      <div><label>Venue</label><select id="vn">${opts([['', 'Any'], ['home', 'Home only'], ['away', 'Away only']], s.venue)}</select></div></div>
+    <div class="row"><button class="pri" id="go">Find players</button></div></div><div id="out"></div>`;
+  $('#mk', root).value = s.market;
+  const run = () => {
+    s.league = $('#lg', root).value; s.market = $('#mk', root).value; s.side = $('#sd', root).value; s.line = parseFloat($('#ln', root).value); s.last = Number($('#la', root).value) || 10; s.minSample = Number($('#ms', root).value) || 1; s.minHit = Number($('#mh', root).value) || 0; s.minAvgMin = Number($('#ma', root).value) || 0; s.venue = $('#vn', root).value;
+    const market = FOOTBALL_MARKETS.find(m => m.key === s.market); const res = [];
+    for (const p of app.index.players.values()) {
+      if (s.league && p.league !== s.league) continue;
+      const rows = applyFilters(marketRows(p, market), { last: s.last, venue: s.venue, minMinutes: 1 });
+      if (rows.length < s.minSample) continue;
+      const mins = rows.map(r => r.minutes); const avgMin = mins.reduce((a, b) => a + b, 0) / mins.length;
+      if (avgMin < s.minAvgMin) continue;
+      const hr = hitRate(rows.map(r => r.value), s.line, s.side);
+      if (hr.hitPct === null || hr.hitPct < s.minHit) continue;
+      res.push({ p, hr, avgMin, trend: rows.slice(0, 5).map(r => r.value).join(' ') });
+    }
+    res.sort((a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n);
+    $('#out', root).innerHTML = `<div class="card"><p class="small muted">${res.length} player${res.length === 1 ? '' : 's'} matched${res.length > 100 ? ' (showing 100)' : ''}. Click a column to sort. The "Last 5" column is newest first.</p>
+      ${res.length ? `<div class="scroll"><table id="t"><tr><th>Player</th><th>Team</th><th>Matches</th><th>Hit %</th><th>Avg</th><th>Avg min</th><th>Last 5</th><th></th></tr>${res.slice(0, 100).map(r => `<tr><td>${esc(r.p.name)}</td><td>${esc(r.p.team)}</td><td>${r.hr.n}</td><td data-v="${r.hr.hitPct}">${r.hr.hitPct}%</td><td>${r.hr.avg}</td><td>${Math.round(r.avgMin)}</td><td>${esc(r.trend)}</td><td><button class="ghost" data-id="${r.p.id}">Open</button></td></tr>`).join('')}</table></div>` : '<p class="warn">No players match. Loosen the filters or sync more matches.</p>'}</div>`;
+    sortable($('#t', root));
+    $$('[data-id]', root).forEach(b => { b.onclick = () => { app.research.fbPlayer = b.dataset.id; app.pending = { panel: 'fb', set: { market: s.market, side: s.side, line: s.line, last: s.last, venue: s.venue } }; location.hash = 'football'; }; });
+  };
+  $('#go', root).onclick = run;
+}
+
+async function viewOdds(root) {
+  const prices = (await app.store.get('prices')) || [];
+  root.innerHTML = `<div class="card"><h2>Odds &amp; Scanner</h2>
+    <p class="small muted">No automatic bookmaker feed is connected. I checked the free options: none carries UK football player props (tackles, fouls, shots, cards) at no cost. So this screen works from prices you save from the Value checker. Each is re-evaluated against your stored stats and ranked by estimated EV. The screen is ready for an automatic feed later.</p></div><div id="out" class="stack"></div>`;
+  const out = $('#out', root);
+  if (!prices.length) { out.innerHTML = '<div class="card"><p>No saved prices yet. Use <a href="#value">Value</a>, type a bookmaker price and press <b>Save this price</b>.</p></div>'; return; }
+  const rows = [];
+  for (const pr of prices) {
+    const d = await rowsFor(pr.sport, pr.playerKey, pr.marketKey);
+    const fb = pr.sport === 'football';
+    const r = d ? evaluate({ rows: d.rows, side: pr.side, line: pr.line, odds: pr.odds, otherOdds: pr.other, expectedExposure: fb ? pr.minutes : 1, minExposure: fb ? 15 : 0, dist: d.dist, sampleN: pr.sample }) : null;
+    rows.push({ pr, r });
+  }
+  const groupKey = x => `${x.pr.playerKey}|${x.pr.marketKey}|${x.pr.side}|${x.pr.line}`;
+  const best = new Map();
+  for (const x of rows) { const k = groupKey(x); if (!best.has(k) || x.pr.odds > best.get(k).pr.odds) best.set(k, x); }
+  const age = at => { const h = (Date.now() - at) / 36e5; return h < 1 ? 'under an hour ago' : h < 48 ? Math.round(h) + ' h ago' : Math.round(h / 24) + ' days ago'; };
+  const sorted = [...rows].sort((a, b) => (b.r?.ev ?? -1e9) - (a.r?.ev ?? -1e9));
+  out.innerHTML = `<div class="card"><h3>Saved prices, best estimated EV first</h3><div class="scroll"><table id="t"><tr><th>Player</th><th>Bet</th><th>Book</th><th>Odds</th><th>Est. chance</th><th>Fair odds</th><th>EV %</th><th>Confidence</th><th>Saved</th><th></th></tr>
+    ${sorted.map(({ pr, r }) => `<tr><td>${esc(pr.player)}</td><td>${pr.side === 'under' ? 'U' : 'O'} ${pr.line} ${esc(pr.market)}</td><td>${esc(pr.book)}${best.get(groupKey({ pr })).pr.id === pr.id && rows.filter(y => groupKey(y) === groupKey({ pr })).length > 1 ? ' <span class="chip">best</span>' : ''}</td><td>${pr.odds}</td>
+    <td>${r?.prob ? (r.prob * 100).toFixed(1) + '%' : 'n/a'}</td><td>${fmt(r?.fair)}</td><td data-v="${r?.ev ?? ''}" class="${r?.ev > 0 ? 'good' : r?.ev < 0 ? 'bad' : ''}">${r?.ev === undefined ? 'n/a' : r.ev}</td><td>${r?.confidence || (r ? 'too few games' : 'data missing')}</td><td>${age(pr.at)}</td><td><button class="danger" data-del="${pr.id}">✕</button></td></tr>`).join('')}</table></div>
+    <p class="small muted">Prices are only as fresh as the time you saved them, so re-check before betting. EV comes from a rough model: treat positive values as "worth checking", especially with few games or high EV.</p></div>`;
+  sortable($('#t', root));
+  $$('[data-del]', root).forEach(b => { b.onclick = async () => { await app.store.set('prices', prices.filter(p => String(p.id) !== b.dataset.del)); viewOdds(root); }; });
+
+  // comparison of same bet across bookmakers + simple two-way check
+  const comps = [...new Set(rows.map(groupKey))].map(k => rows.filter(x => groupKey(x) === k)).filter(g => g.length > 1);
+  if (comps.length) {
+    const div = document.createElement('div'); div.className = 'card';
+    div.innerHTML = `<h3>Same bet at different bookmakers</h3>${comps.map(g => `<p><b>${esc(g[0].pr.player)}</b> ${g[0].pr.side} ${g[0].pr.line} ${esc(g[0].pr.market)}: ${g.sort((a, b) => b.pr.odds - a.pr.odds).map(x => `${esc(x.pr.book)} ${x.pr.odds}`).join(' · ')}</p>`).join('')}`;
+    out.appendChild(div);
+  }
+  const arbs = [];
+  for (const k of new Set(rows.map(groupKey))) {
+    const over = rows.filter(x => groupKey(x) === k && x.pr.side === 'over'); const [pk, mk, , ln] = k.split('|');
+    const under = rows.filter(x => `${x.pr.playerKey}|${x.pr.marketKey}|${x.pr.line}` === `${pk}|${mk}|${ln}` && x.pr.side === 'under');
+    if (over.length && under.length) { const o = over.sort((a, b) => b.pr.odds - a.pr.odds)[0], u = under.sort((a, b) => b.pr.odds - a.pr.odds)[0]; const imp = 1 / o.pr.odds + 1 / u.pr.odds; if (imp < 1) arbs.push({ o, u, imp }); }
+  }
+  if (arbs.length) {
+    const div = document.createElement('div'); div.className = 'card';
+    div.innerHTML = `<h3>Possible arbitrage in your saved prices</h3>${arbs.map(a => `<p>${esc(a.o.pr.player)} ${a.o.pr.line} ${esc(a.o.pr.market)}: over ${a.o.pr.odds} at ${esc(a.o.pr.book)} and under ${a.u.pr.odds} at ${esc(a.u.pr.book)} (combined ${(a.imp * 100).toFixed(1)}%).</p>`).join('')}
+      <p class="warn">Not risk-free. Your saved prices may be stale or already withdrawn, limits can cap your stake, and the two bookmakers may use different stat sources, void rules or settlement. Confirm both prices and rules before relying on it.</p>`;
+    out.appendChild(div);
+  }
+}
+
+return { viewFinder, viewOdds };
+})();
+__m['view-value'] = (() => {
+// Value checker: real stored stats + a price you type in -> estimated probability, fair odds and EV.
+const { FOOTBALL_MARKETS } = __m['football'];
+const { SPORTS } = __m['us'];
+const { parseOdds } = __m['analytics'];
+const { evaluate } = __m['value'];
+const { app, rowsFor, usRecords } = __m['state'];
+const { $, esc, opts, BOOKMAKERS, toast } = __m['ui'];
+
+const SPORT_OPTS = [['football', 'Football'], ['nba', 'NBA'], ['nfl', 'NFL'], ['nhl', 'NHL'], ['mlb', 'MLB']];
+
+async function listPlayers(sport) {
+  if (sport === 'football') return [...app.index.players.values()].sort((a, b) => b.rows.length - a.rows.length).map(p => ({ key: p.key, name: p.name, sub: `${p.team} · ${p.rows.length} matches` }));
+  return (await usRecords(sport)).map(r => ({ key: `us:${sport}:${r.id}`, name: r.name, sub: `${r.games.length} games` })).sort((a, b) => a.name.localeCompare(b.name));
+}
+const marketsFor = sport => (sport === 'football' ? FOOTBALL_MARKETS : SPORTS[sport].markets);
+
+async function viewValue(root) {
+  const v = app.research.value = Object.assign({ sport: 'football', playerKey: '', market: 'tackles', side: 'over', line: 1.5, odds: '', other: '', book: 'Bet365', minutes: 80, sample: 20, minMin: 15 }, app.research.value || {});
+  if (app.pending) { Object.assign(v, app.pending); app.pending = null; }
+  let players = await listPlayers(v.sport);
+  root.innerHTML = `<div class="card stack"><h2>Value checker</h2>
+    <p class="small muted">Type a price you can see at a UK bookmaker. The app compares it with a simple estimate built from the player's real stored games. The app never supplies or guesses prices.</p>
+    <div class="grid g3"><div><label>Sport</label><select id="sp">${opts(SPORT_OPTS, v.sport)}</select></div>
+      <div style="grid-column:span 2"><label>Player (saved only)</label><select id="pl"></select></div></div>
+    <div class="grid g4"><div><label>Market</label><select id="mk"></select></div>
+      <div><label>Over / under</label><select id="sd">${opts([['over', 'Over'], ['under', 'Under']], v.side)}</select></div>
+      <div><label>Line</label><input id="ln" type="number" step="0.5" inputmode="decimal" value="${esc(v.line)}"></div>
+      <div><label>Bookmaker</label><select id="bk">${opts(BOOKMAKERS.map(b => [b, b]), v.book)}</select></div>
+      <div><label>Your side's odds (e.g. 2.1 or 11/10)</label><input id="od" inputmode="decimal" value="${esc(v.odds)}" placeholder="2.10"></div>
+      <div><label>Other side's odds (optional)</label><input id="ot" inputmode="decimal" value="${esc(v.other)}" placeholder="1.72"></div>
+      <div id="expw"><label id="expl">Expected minutes</label><input id="ex" type="number" inputmode="numeric" value="${esc(v.minutes)}"></div>
+      <div><label>Games to use (most recent)</label><input id="sa" type="number" inputmode="numeric" value="${esc(v.sample)}"></div></div>
+    <div class="row"><button class="pri" id="go">Estimate value</button><button class="ghost" id="save">Save this price</button></div></div>
+    <div id="out"></div>`;
+
+  const fillPlayers = () => {
+    $('#pl', root).innerHTML = players.length ? opts(players.map(p => [p.key, `${p.name} (${p.sub})`]), v.playerKey) : '<option value="">No saved players for this sport</option>';
+    if (players.length && !players.some(p => p.key === v.playerKey)) v.playerKey = players[0].key;
+    $('#pl', root).value = v.playerKey;
+  };
+  const fillMarkets = () => {
+    const ms = marketsFor(v.sport);
+    $('#mk', root).innerHTML = ms.map(m => `<option value="${esc(m.key)}">${esc(m.label)}</option>`).join('');
+    if (!ms.some(m => m.key === v.market)) v.market = ms[0].key;
+    $('#mk', root).value = v.market;
+    const fb = v.sport === 'football'; $('#expw', root).style.display = fb ? '' : 'none';
+  };
+  fillPlayers(); fillMarkets();
+  const read = () => { v.playerKey = $('#pl', root).value; v.market = $('#mk', root).value; v.side = $('#sd', root).value; v.line = parseFloat($('#ln', root).value); v.book = $('#bk', root).value; v.odds = $('#od', root).value; v.other = $('#ot', root).value; v.minutes = Number($('#ex', root).value) || 80; v.sample = Number($('#sa', root).value) || 20; };
+  $('#sp', root).onchange = async e => { v.sport = e.target.value; players = await listPlayers(v.sport); v.playerKey = ''; fillPlayers(); fillMarkets(); };
+
+  const compute = async () => {
+    read();
+    const odds = parseOdds(v.odds), other = v.other ? parseOdds(v.other) : null; const out = $('#out', root);
+    if (!v.playerKey) { out.innerHTML = '<div class="card warn">Pick a saved player first. Sync football data or add a US player on its screen.</div>'; return null; }
+    if (Number.isNaN(v.line)) { out.innerHTML = '<div class="card warn">Enter a line, for example 1.5.</div>'; return null; }
+    if (!odds) { out.innerHTML = '<div class="card warn">Enter the bookmaker\'s odds as decimal (2.10) or fractional (11/10).</div>'; return null; }
+    if (v.other && !other) { out.innerHTML = '<div class="card warn">The other side\'s odds are not valid. Leave it blank or enter e.g. 1.72.</div>'; return null; }
+    const d = await rowsFor(v.sport, v.playerKey, v.market);
+    if (!d) { out.innerHTML = '<div class="card warn">That player or market is no longer stored.</div>'; return null; }
+    const fb = v.sport === 'football';
+    const r = evaluate({ rows: d.rows, side: v.side, line: v.line, odds, otherOdds: other, expectedExposure: fb ? v.minutes : 1, minExposure: fb ? v.minMin : 0, dist: d.dist, sampleN: v.sample });
+    const sideWord = v.side === 'under' ? 'Under' : 'Over';
+    out.innerHTML = `<div class="card stack"><h3>${esc(d.name)}: ${sideWord} ${v.line} ${esc(d.market.label)} @ ${esc(v.odds)} (${esc(v.book)})</h3>
+      ${r.model.ok ? `<div class="grid g4"><div class="tile"><b class="${r.ev > 0 ? 'good' : 'bad'}">${r.ev > 0 ? '+' : ''}${r.ev}%</b><span>Estimated EV</span></div><div class="tile"><b>${(r.prob * 100).toFixed(1)}%</b><span>Estimated chance</span></div><div class="tile"><b>${r.fair}</b><span>Fair odds</span></div><div class="tile"><b>${r.confidence}</b><span>Confidence</span></div></div>
+        <p>${esc(r.verdict)}</p>
+        <p class="small muted">Model: <b>${esc(r.model.model)}</b> from the ${r.sampleSize} most recent games with data${fb ? ` (≥${v.minMin} min each), scaled to ${v.minutes} expected minutes` : ''}. Expected result ${r.model.mean}. Recent hit rate for comparison: ${r.hit.hitPct === null ? 'n/a' : r.hit.hitPct + '% (' + r.hit.hits + '/' + r.hit.n + ')'}.</p>
+        ${r.market ? `<p class="small">Bookmaker's own view with their margin removed: ${(r.market.probSide * 100).toFixed(1)}% (margin ${r.market.marginPct}%). The estimate is ${Math.abs(r.market.diffPts)} points ${r.market.diffPts >= 0 ? 'higher' : 'lower'}.</p>` : '<p class="small muted">Tip: enter the other side\'s odds to see the bookmaker\'s margin-free probability as a second opinion.</p>'}
+        <p class="small muted">A sensible stake if the estimate were exactly right (quarter Kelly): ${r.kellyQuarter}% of your bankroll. The estimate is rough, so many people use less.</p>` : `<p class="warn">${esc(r.model.reason)}</p>`}
+      ${r.flags.map(f => `<p class="warn">⚠ ${esc(f)}</p>`).join('')}
+      <p class="small muted"><b>What this does not know:</b> whether the player starts, injuries, tactics, the referee or the opponent, and exactly how your bookmaker settles the stat. Check these before betting. Estimated EV above zero means "worth a closer look", not "will win".</p>
+      <div class="row"><button class="ghost" id="addbet">Add to My Bets</button></div></div>`;
+    const ab = $('#addbet', root); if (ab) ab.onclick = () => { app.pending = { bet: { sport: v.sport === 'football' ? 'football' : v.sport, subject: d.name, market: d.market.label, selection: `${sideWord} ${v.line}`, bookmaker: v.book, odds, ev: r.ev ?? '' } }; location.hash = 'bets'; };
+    return { d, odds, r };
+  };
+  $('#go', root).onclick = compute;
+  $('#save', root).onclick = async () => {
+    read(); const odds = parseOdds(v.odds); const d = await rowsFor(v.sport, v.playerKey, v.market);
+    if (!odds || !d || Number.isNaN(v.line)) { toast('Enter a player, line and valid odds first.'); return; }
+    const list = (await app.store.get('prices')) || [];
+    list.unshift({ id: Date.now(), at: Date.now(), sport: v.sport, playerKey: v.playerKey, player: d.name, marketKey: v.market, market: d.market.label, side: v.side, line: v.line, book: v.book, odds, other: v.other ? parseOdds(v.other) : null, minutes: v.minutes, sample: v.sample });
+    await app.store.set('prices', list.slice(0, 500)); toast('Price saved. See Odds & Scanner.');
+  };
+  if (app.research.valueAuto) { app.research.valueAuto = false; }
+}
+
+return { listPlayers, marketsFor, viewValue };
+})();
+__m['view-us'] = (() => {
+// NBA / NFL / NHL / MLB. NHL and MLB can download from free public sources; every sport can import your own CSV.
+const { SPORTS, usKey, mergeGames, parseCsvGames, templateCsv, mlbPlayersUrl, mlbGameLogUrl, parseMlbPlayers, parseMlbGameLog, nhlSearchUrl, nhlGameLogUrl, parseNhlSearch, parseNhlGameLog, nhlSeasonCode, usRows } = __m['us'];
+const { app, usRecords } = __m['state'];
+const { $, $$, esc, opts, toast, debounce } = __m['ui'];
+const { researchPanel } = __m['view-research'];
+
+const getJson = async url => {
+  let r;
+  try { r = await fetch(url); } catch { throw new Error('Could not reach the data source. Check your connection, or the source may block requests from a web page. You can still import a CSV.'); }
+  if (!r.ok) throw new Error(`The data source returned an error (HTTP ${r.status}).`);
+  return r.json();
+};
+const mlbSeason = () => { const d = new Date(); return d.getUTCMonth() >= 2 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; };
+
+async function viewUS(root, sport) {
+  const S = SPORTS[sport];
+  const records = (await usRecords(sport)).sort((a, b) => a.name.localeCompare(b.name));
+  const sel = app.research['us' + sport] = app.research['us' + sport] || {};
+  const canDownload = S.source !== 'import';
+  root.innerHTML = `<div class="card"><h2>${S.label} player research</h2>
+    <p class="small muted">${canDownload ? `Game logs download from a free public ${S.label} source (no key, no account). You can also import a CSV.` : `${S.label} has no free public stats source that I could verify, so this screen works from data you import (CSV). Nothing is pre-filled or invented.`}
+    Bookmaker odds are not loaded for ${S.label}; type prices in on the Value screen.</p></div>
+    <div class="card stack"><h3>Your saved ${S.label} players</h3><div id="saved"></div></div>
+    <div id="rp"></div>
+    <div class="card stack"><h3>Add a player</h3>${canDownload ? '<div id="dl" class="stack"></div><hr style="border-color:#1f2a48;width:100%">' : ''}
+      <div class="stack"><b>Import from CSV</b><p class="small muted">Copy the games from any site you are allowed to use (for example a spreadsheet you keep). First row is the column names. Blank cells stay blank (they are never counted as zero).</p>
+      <div class="grid g3"><div><label>Player name</label><input id="cn" placeholder="Name"></div><div><label>Team (optional)</label><input id="ct"></div><div style="align-self:end"><button class="ghost" id="ctpl" style="width:100%">Copy column template</button></div></div>
+      <textarea id="csv" placeholder="${esc(templateCsv(sport))}"></textarea><div class="row"><button class="pri" id="cimp">Save player</button></div><div id="cmsg" class="small"></div></div></div>`;
+
+  const renderSaved = async () => {
+    const recs = (await usRecords(sport)).sort((a, b) => a.name.localeCompare(b.name));
+    $('#saved', root).innerHTML = recs.length ? recs.map(r => `<div class="row" style="justify-content:space-between"><button class="pick" style="flex:1;margin:0" data-k="${esc(usKey(sport, r.id))}">${esc(r.name)} <small>${esc(r.meta?.team || '')} · ${r.games.length} games · ${esc(r.source)}</small></button><button class="danger" data-del="${esc(usKey(sport, r.id))}">Delete</button></div>`).join('') : '<p class="muted small">None yet. Add one below.</p>';
+    $$('[data-k]', root).forEach(b => { b.onclick = () => { sel.key = b.dataset.k; showPlayer(); $('#rp', root).scrollIntoView({ behavior: 'smooth' }); }; });
+    $$('[data-del]', root).forEach(b => { b.onclick = async () => { if (confirm('Delete this saved player and its games?')) { await app.store.del(b.dataset.del); if (sel.key === b.dataset.del) sel.key = ''; renderSaved(); showPlayer(); } }; });
+  };
+
+  async function showPlayer() {
+    const rp = $('#rp', root);
+    const rec = sel.key ? await app.store.get(sel.key) : null;
+    if (!rec) { rp.innerHTML = ''; return; }
+    const hasStat = m => rec.games.some(g => m.get(g.stats || {}) !== null && m.get(g.stats || {}) !== undefined);
+    let markets = S.markets.filter(hasStat);
+    if (rec.role) markets = markets.filter(m => !m.role || m.role === rec.role || m.role === 'goalie' && rec.role === 'goalie');
+    if (!markets.length) markets = S.markets;
+    const seasons = [...new Set(rec.games.map(g => g.season))].sort((a, b) => b - a);
+    const opponents = [...new Set(rec.games.map(g => g.opp).filter(o => o && o !== '?'))].sort();
+    rp.innerHTML = `<div class="card"><h2>${esc(rec.name)}</h2><div class="muted small">${esc(rec.meta?.team || '')} ${rec.role ? '· ' + esc(rec.role) : ''} · ${rec.games.length} games stored · source: ${esc(rec.source)}${rec.updatedAt ? ' · updated ' + esc(new Date(rec.updatedAt).toISOString().slice(0, 10)) : ''}</div></div><div id="panel"></div>
+      <div class="card"><h3>Not available here</h3><p class="small muted">Opponent-defence profiles, injuries and projected usage are not loaded for ${S.label} in this free version. The screen is ready for them when a free source is added.</p></div>`;
+    researchPanel($('#panel', rp), {
+      id: 'us' + sport, markets, seasons, opponents, hasMinutes: false, hasStarts: false, defaultMarket: markets[0].key,
+      getRows: key => usRows(rec, S.markets.find(m => m.key === key)),
+      onValue: ctx => { app.pending = { sport, playerKey: sel.key, marketKey: ctx.st.market, side: ctx.st.side, line: ctx.st.line }; location.hash = 'value'; },
+    });
+  }
+
+  // ----- free downloads -----
+  if (canDownload) {
+    const dl = $('#dl', root);
+    dl.innerHTML = `<b>Download from free public source</b>
+      <div class="row"><input id="dq" placeholder="Search player name" style="flex:1"><button class="ghost" id="dgo">Search</button></div><div id="dres"></div><div id="dmsg" class="small muted"></div>`;
+    const msg = t => { $('#dmsg', root).textContent = t; };
+    const search = async () => {
+      const q = $('#dq', root).value.trim(); if (q.length < 2) return;
+      msg('Searching…'); $('#dres', root).innerHTML = '';
+      try {
+        let list;
+        if (sport === 'nhl') list = parseNhlSearch(await getJson(nhlSearchUrl(q)));
+        else { const all = parseMlbPlayers(await getJson(mlbPlayersUrl(mlbSeason()))); list = all.filter(p => p.name.toLowerCase().includes(q.toLowerCase())).slice(0, 20); }
+        msg(list.length ? '' : 'No players found.');
+        $('#dres', root).innerHTML = list.map(p => `<button class="pick" data-id="${p.id}" data-n="${esc(p.name)}" data-t="${esc(p.team)}" data-p="${esc(p.pos || '')}" data-r="${esc(p.defaultRole || '')}">${esc(p.name)} <small>${esc(p.team)} ${esc(p.pos || '')}</small></button>`).join('');
+        $$('#dres .pick', root).forEach(b => { b.onclick = () => download({ id: Number(b.dataset.id), name: b.dataset.n, team: b.dataset.t, pos: b.dataset.p, role: b.dataset.r }); });
+      } catch (e) { msg(e.message); }
+    };
+    $('#dgo', root).onclick = search; $('#dq', root).oninput = debounce(search, 400);
+
+    async function download(p) {
+      msg(`Downloading ${p.name}…`);
+      try {
+        let games = [], role = null;
+        if (sport === 'nhl') {
+          const codes = [nhlSeasonCode(), String(Number(nhlSeasonCode().slice(0, 4)) - 1) + nhlSeasonCode().slice(0, 4)];
+          for (const c of codes) { try { games = mergeGames(games, parseNhlGameLog(await getJson(nhlGameLogUrl(p.id, c)))); } catch (e) { if (c === codes[0]) throw e; } }
+          role = p.pos === 'G' ? 'goalie' : 'skater';
+        } else {
+          role = p.role || 'hitter'; const season = mlbSeason();
+          for (const s of [season, season - 1]) { try { games = mergeGames(games, parseMlbGameLog(await getJson(mlbGameLogUrl(p.id, role === 'pitcher' ? 'pitching' : 'hitting', s)), role, s)); } catch (e) { if (s === season) throw e; } }
+        }
+        if (!games.length) { msg('The source returned no games for this player (off-season or no appearances).'); return; }
+        const old = await app.store.get(usKey(sport, p.id));
+        await app.store.set(usKey(sport, p.id), { sport, id: p.id, name: p.name, role, meta: { team: p.team }, source: sport === 'nhl' ? 'NHL public API' : 'MLB Stats API', updatedAt: Date.now(), games: mergeGames(old?.games, games) });
+        sel.key = usKey(sport, p.id); msg(`Saved ${games.length} games for ${p.name}.`); await renderSaved(); showPlayer();
+      } catch (e) { msg(e.message); }
+    }
+  }
+
+  // ----- CSV import -----
+  $('#ctpl', root).onclick = async () => { try { await navigator.clipboard.writeText(templateCsv(sport)); toast('Template copied. Paste it into a spreadsheet or the box below.'); } catch { $('#csv', root).value = templateCsv(sport); } };
+  $('#cimp', root).onclick = async () => {
+    const name = $('#cn', root).value.trim(); const m = $('#cmsg', root);
+    if (!name) { m.innerHTML = '<span class="bad">Enter a player name.</span>'; return; }
+    const { games, errors } = parseCsvGames($('#csv', root).value, sport);
+    if (!games.length) { m.innerHTML = `<span class="bad">${errors.map(esc).join('<br>')}</span>`; return; }
+    const id = 'csv-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const old = await app.store.get(usKey(sport, id));
+    await app.store.set(usKey(sport, id), { sport, id, name, role: null, meta: { team: $('#ct', root).value.trim() }, source: 'CSV import', updatedAt: Date.now(), games: mergeGames(old?.games, games) });
+    m.innerHTML = `<span class="good">Saved ${games.length} games.</span>${errors.length ? '<br><span class="warn">' + errors.map(esc).join('<br>') + '</span>' : ''}`;
+    sel.key = usKey(sport, id); await renderSaved(); showPlayer();
+  };
+
+  await renderSaved(); showPlayer();
+}
+
+return { viewUS };
+})();
+__m['view-bets'] = (() => {
+const { betSummary, parseOdds, clvPct } = __m['analytics'];
+const { app } = __m['state'];
+const { $, $$, esc, fmt, opts, download, toast, BOOKMAKERS } = __m['ui'];
+
+const SPORTS = [['football', 'Football'], ['nba', 'NBA'], ['nfl', 'NFL'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['other', 'Other']];
+const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const betsToCsv = bets => ['date,sport,league,subject,market,selection,bookmaker,stake_gbp,decimal_odds,result,profit_gbp,est_ev_pct,closing_odds,clv_pct']
+  .concat(bets.map(b => { const p = b.result === 'won' ? b.stake * (b.odds - 1) : b.result === 'lost' ? -b.stake : b.result === 'void' ? 0 : ''; return [b.date, b.sport, b.league, b.subject, b.market, b.selection, b.bookmaker, b.stake, b.odds, b.result, p === '' ? '' : Math.round(p * 100) / 100, b.ev, b.closingOdds, clvPct(b.odds, b.closingOdds)].map(csvCell).join(','); })).join('\n');
+
+async function viewBets(root) {
+  let bets = (await app.store.get('bets')) || [];
+  const pre = app.pending?.bet; if (app.pending?.bet) app.pending = null;
+  const today = new Date().toISOString().slice(0, 10);
+  const save = async () => { await app.store.set('bets', bets); };
+  const draw = () => {
+    const s = betSummary(bets);
+    const grp = (t, o) => `<div class="card"><h3>${t} (profit £)</h3>${Object.entries(o).map(([k, v]) => `<div class="row" style="justify-content:space-between"><span>${esc(k)}</span><b class="${v >= 0 ? 'good' : 'bad'}">${v}</b></div>`).join('') || '<p class="small muted">No settled bets yet.</p>'}</div>`;
+    $('#sum', root).innerHTML = `<div class="grid g4">${[['Profit £', s.profit], ['ROI', s.roiPct === null ? 'n/a' : s.roiPct + '%'], ['Win rate', s.winRatePct === null ? 'n/a' : s.winRatePct + '%'], ['Avg closing line value', s.avgClvPct === null ? 'n/a' : s.avgClvPct + '%']].map(([a, b]) => `<div class="tile"><b>${b}</b><span>${a}</span></div>`).join('')}</div>
+      <p class="small muted">${s.bets} bets, ${s.settled} settled, £${s.staked} staked on settled bets (voids excluded). Closing line value needs the closing odds, which you enter yourself.</p>
+      <div class="grid">${grp('By sport', s.bySport)}${grp('By market', s.byMarket)}${grp('By bookmaker', s.byBookmaker)}${grp('By month', s.byMonth)}</div>`;
+    $('#list', root).innerHTML = bets.length ? `<div class="scroll"><table><tr><th>Date</th><th>Bet</th><th>Book</th><th>Stake</th><th>Odds</th><th>EV est.</th><th>Closing</th><th>Result</th><th></th></tr>${bets.map(b => `<tr><td>${esc(b.date)}</td><td>${esc(b.subject)}<br><span class="small muted">${esc(b.market)} ${esc(b.selection)}</span></td><td>${esc(b.bookmaker)}</td><td>£${b.stake}</td><td>${b.odds}</td><td>${fmt(b.ev === '' ? null : b.ev)}</td><td><input data-c="${b.id}" value="${esc(b.closingOdds ?? '')}" style="width:70px;padding:6px" inputmode="decimal"></td><td><select data-r="${b.id}" style="padding:6px">${opts(['pending', 'won', 'lost', 'void'].map(x => [x, x]), b.result)}</select></td><td><button class="danger" data-d="${b.id}">✕</button></td></tr>`).join('')}</table></div>` : '<p class="muted">No bets recorded yet.</p>';
+    $$('[data-r]', root).forEach(el => { el.onchange = async () => { bets.find(b => String(b.id) === el.dataset.r).result = el.value; await save(); draw(); }; });
+    $$('[data-c]', root).forEach(el => { el.onchange = async () => { const o = el.value.trim() ? parseOdds(el.value) : null; if (el.value.trim() && !o) { toast('Closing odds not valid.'); return; } bets.find(b => String(b.id) === el.dataset.c).closingOdds = o; await save(); draw(); }; });
+    $$('[data-d]', root).forEach(el => { el.onclick = async () => { if (confirm('Delete this bet?')) { bets = bets.filter(b => String(b.id) !== el.dataset.d); await save(); draw(); } }; });
+  };
+  root.innerHTML = `<div class="card stack"><h2>My Bets</h2><div id="sum"></div></div>
+    <div class="card stack"><h3>Add a bet</h3><div class="grid g4">
+      <div><label>Date</label><input id="d" type="date" value="${today}"></div><div><label>Sport</label><select id="sp">${opts(SPORTS, pre?.sport || 'football')}</select></div>
+      <div><label>League (optional)</label><input id="lg"></div><div><label>Player or team</label><input id="su" value="${esc(pre?.subject || '')}"></div>
+      <div><label>Market</label><input id="mk" value="${esc(pre?.market || '')}"></div><div><label>Selection</label><input id="se" value="${esc(pre?.selection || '')}" placeholder="Over 1.5"></div>
+      <div><label>Bookmaker</label><select id="bk">${opts(BOOKMAKERS.map(b => [b, b]), pre?.bookmaker || 'Bet365')}</select></div><div><label>Stake £</label><input id="st" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label>Odds (2.1 or 11/10)</label><input id="od" inputmode="decimal" value="${esc(pre?.odds || '')}"></div><div><label>Estimated EV % when placed</label><input id="ev" type="number" step="0.01" value="${esc(pre?.ev ?? '')}"></div>
+      <div><label>Result</label><select id="re">${opts(['pending', 'won', 'lost', 'void'].map(x => [x, x]), 'pending')}</select></div></div>
+      <div class="row"><button class="pri" id="add">Save bet</button></div><div id="msg" class="small"></div></div>
+    <div class="card stack"><h3>All bets</h3><div id="list"></div></div>
+    <div class="card stack"><h3>Backup &amp; export</h3><p class="small muted">Your bets live only on this device. Download a backup regularly (see Setup for a full backup of everything).</p>
+      <div class="row"><button class="ghost" id="csv">Download bets as CSV</button></div></div>`;
+  $('#add', root).onclick = async () => {
+    const g = id => $('#' + id, root).value.trim(), odds = parseOdds(g('od')), stake = Number(g('st')); const m = $('#msg', root);
+    if (!g('su') || !g('mk') || !g('se')) { m.innerHTML = '<span class="bad">Fill in player/team, market and selection.</span>'; return; }
+    if (!odds) { m.innerHTML = '<span class="bad">Odds not valid (use 2.1 or 11/10).</span>'; return; }
+    if (!(stake > 0)) { m.innerHTML = '<span class="bad">Enter a stake above zero.</span>'; return; }
+    bets.unshift({ id: Date.now(), date: g('d'), sport: g('sp'), league: g('lg'), subject: g('su'), market: g('mk'), selection: g('se'), bookmaker: g('bk'), stake, odds, result: g('re'), ev: g('ev') === '' ? '' : Number(g('ev')), closingOdds: null });
+    bets.sort((a, b) => (a.date < b.date ? 1 : -1)); await save(); m.innerHTML = '<span class="good">Saved.</span>'; draw();
+  };
+  $('#csv', root).onclick = () => download('proplab-bets.csv', betsToCsv(bets), 'text/csv');
+  draw();
+}
+
+return { betsToCsv, viewBets };
+})();
+__m['view-calc'] = (() => {
+const { evPct, fairOdds, kelly, removeVig, parseOdds } = __m['analytics'];
+const { $, esc } = __m['ui'];
+
+function viewCalc(root) {
+  root.innerHTML = `<div class="card stack"><h2>EV and stake</h2><div class="grid"><div><label>Your estimated chance %</label><input id="p" type="number" value="50" inputmode="decimal"></div><div><label>Odds (2.1 or 11/10)</label><input id="o" value="2.1" inputmode="decimal"></div></div><div id="r1"></div></div>
+    <div class="card stack"><h2>Remove the bookmaker's margin</h2><div class="grid"><div><label>Over odds</label><input id="a" value="1.8" inputmode="decimal"></div><div><label>Under odds</label><input id="b" value="2.0" inputmode="decimal"></div></div><div id="r2"></div></div>
+    <div class="card stack"><h2>Two-way arbitrage check</h2><div class="grid g3"><div><label>Odds A</label><input id="x" value="2.1" inputmode="decimal"></div><div><label>Odds B</label><input id="y" value="2.0" inputmode="decimal"></div><div><label>Total stake £</label><input id="s" type="number" value="100"></div></div><div id="r3"></div>
+      <p class="warn">Never assume this is risk-free: prices change, stakes get limited, and two bookmakers may settle the same stat differently.</p></div>
+    <div class="card stack"><h2>Odds converter</h2><div class="grid"><div><label>Fractional or decimal</label><input id="c" value="5/4" inputmode="decimal"></div><div id="r4" style="align-self:end"></div></div></div>`;
+  const upd = () => {
+    const p = Number($('#p', root).value) / 100, o = parseOdds($('#o', root).value);
+    $('#r1', root).innerHTML = o && p > 0 && p < 1 ? `<p>EV <b class="${p * o > 1 ? 'good' : 'bad'}">${evPct(p, o)}%</b> · fair odds ${fairOdds(p)} · quarter-Kelly stake ${(kelly(p, o) * 25).toFixed(2)}% of bankroll</p>` : '<p class="warn">Enter a chance between 0 and 100 and valid odds.</p>';
+    const a = parseOdds($('#a', root).value), b = parseOdds($('#b', root).value);
+    if (a && b) { const v = removeVig(a, b); $('#r2', root).innerHTML = `<p>Over ${(v.a * 100).toFixed(1)}% · Under ${(v.b * 100).toFixed(1)}% · margin ${v.marginPct}%</p>`; } else $('#r2', root).innerHTML = '<p class="warn">Enter valid odds.</p>';
+    const x = parseOdds($('#x', root).value), y = parseOdds($('#y', root).value), s = Number($('#s', root).value);
+    if (x && y && s > 0) { const imp = 1 / x + 1 / y; $('#r3', root).innerHTML = imp < 1 ? `<p>Combined ${(imp * 100).toFixed(2)}%. Stake £${(s / x / imp).toFixed(2)} on A and £${(s / y / imp).toFixed(2)} on B: £${(s / imp - s).toFixed(2)} profit if both bets are accepted and settle as expected.</p>` : `<p>No arbitrage (combined ${(imp * 100).toFixed(2)}%).</p>`; } else $('#r3', root).innerHTML = '<p class="warn">Enter valid odds and stake.</p>';
+    const c = parseOdds($('#c', root).value); $('#r4', root).innerHTML = c ? `<p>Decimal <b>${c}</b> · implied ${(100 / c).toFixed(1)}%</p>` : '<p class="warn">Not valid.</p>';
+  };
+  root.querySelectorAll('input').forEach(i => { i.oninput = upd; }); upd();
+}
+
+return { viewCalc };
+})();
+__m['view-setup'] = (() => {
+const { LEAGUES, defaultSeason, syncLeague, ApiError, FOOTBALL_UNAVAILABLE } = __m['football'];
+const { app, getKey, setKey, makeApi, usageToday, reload } = __m['state'];
+const { $, esc, opts, download, toast } = __m['ui'];
+
+let running = false, stopFlag = false;
+
+async function exportBackup() {
+  const entries = await app.store.entries('');
+  return JSON.stringify({ app: 'proplab', version: 1, exportedAt: new Date().toISOString(), entries }, null, 0);
+}
+async function importBackup(text, store) {
+  let d; try { d = JSON.parse(text); } catch { throw new Error('That file is not a Prop Lab backup.'); }
+  if (d.app !== 'proplab' || !Array.isArray(d.entries)) throw new Error('That file is not a Prop Lab backup.');
+  for (const [k, v] of d.entries) await store.set(k, v);
+  return d.entries.length;
+}
+
+async function viewSetup(root) {
+  const key = getKey(); const season = defaultSeason();
+  const sel = app.research.setup = Object.assign({ league: 'epl', season, max: 40 }, app.research.setup || {});
+  const counts = {}; for (const f of app.fixtures) counts[f.league + ' ' + f.season] = (counts[f.league + ' ' + f.season] || 0) + 1;
+  root.innerHTML = `<div class="card stack"><h2>1. Free API-Football key</h2>
+    ${key ? '<p class="good">A key is saved on this device.</p>' : '<p class="warn">No key yet. Without one, football data cannot be downloaded.</p>'}
+    <ol class="small"><li>On a computer or this phone, open <b>dashboard.api-football.com</b> and tap <b>Register</b> (free, no card needed).</li><li>Confirm your email, sign in, and choose the <b>Free</b> plan. Do not add payment details.</li><li>On the dashboard find <b>My Access</b> and copy your <b>API key</b>.</li><li>Paste it below and press Save.</li></ol>
+    <div><label>Your API key</label><input id="key" type="password" autocomplete="off" placeholder="paste key here" value="${esc(key)}"></div>
+    <div class="row"><button class="pri" id="savekey">Save key</button><button class="ghost" id="test">Test key</button><button class="danger" id="clearkey">Remove key</button></div><div id="kmsg" class="small"></div>
+    <p class="small muted">The key stays on this device only and is sent only to API-Football.</p>
+    <p class="small muted">If "Test key" says it could not reach API-Football while your internet is working, the provider may be refusing requests made straight from a web page. That could not be checked while building the app. If it happens, no data is lost: tell whoever is helping you and a free workaround can be added.</p></div>
+  <div class="card stack"><h2>2. Download football data</h2>
+    <p class="small muted">The free plan allows about 100 requests a day and 10 a minute. Each match costs 1 request, so a league takes a few days to fill. Newest matches come first, and you can press Sync again any time: it carries on where it stopped and never re-downloads matches. Keep this page open while it runs.</p>
+    <div class="grid g3"><div><label>League</label><select id="lg">${opts(Object.entries(LEAGUES).map(([k, v]) => [k, v.name]), sel.league)}</select></div>
+      <div><label>Season (start year)</label><input id="se" type="number" value="${sel.season}"></div><div><label>Max requests this run</label><input id="mx" type="number" value="${sel.max}"></div></div>
+    <div class="row"><button class="pri" id="sync">Sync</button><button class="ghost" id="stop" disabled>Stop</button><button class="ghost" id="probe">Which seasons can my key read?</button></div>
+    <div id="prog" class="small"></div><div id="usage" class="small muted"></div></div>
+  <div class="card stack"><h3>What is stored on this device</h3><div class="small">${Object.entries(counts).map(([k, n]) => `${esc(k)}: ${n} matches`).join('<br>') || 'No football matches yet.'}</div></div>
+  <div class="card stack"><h2>3. Backup</h2><p class="small muted">Everything (matches, players, saved prices, bets) is kept in this browser. Clearing Safari data or removing the app can erase it, so download a backup now and then.</p>
+    <div class="row"><button class="ghost" id="bk">Download full backup</button><label class="ghost" style="margin:0;display:inline-block;border:1px solid #26335a;border-radius:10px;padding:9px 13px;color:var(--text);font-size:15px">Restore backup<input id="rs" type="file" accept=".json,application/json" style="display:none"></label></div><div id="bmsg" class="small"></div></div>
+  <div class="card"><h3>Not available with free data</h3><ul class="small muted">${FOOTBALL_UNAVAILABLE.map(([a, b]) => `<li><b>${esc(a)}:</b> ${esc(b)}</li>`).join('')}</ul></div>`;
+
+  const showUsage = () => { $('#usage', root).textContent = `Requests made from this device today (UTC day): ${usageToday()} of about 100 on the free plan.`; }; showUsage();
+  const km = t => { $('#kmsg', root).innerHTML = t; };
+  $('#savekey', root).onclick = () => { setKey($('#key', root).value); km('<span class="good">Saved.</span>'); };
+  $('#clearkey', root).onclick = () => { setKey(''); $('#key', root).value = ''; km('Key removed.'); };
+  $('#test', root).onclick = async () => {
+    setKey($('#key', root).value); km('Testing…');
+    try { const s = await makeApi().status(); km(`<span class="good">Key works.</span> Plan: ${esc(s.plan ?? 'unknown')}${s.used !== null ? `, used ${s.used}/${s.limit} today` : ''}.`); }
+    catch (e) { km(`<span class="bad">${esc(e.message)}</span>`); }
+  };
+  $('#probe', root).onclick = async () => {
+    const p = $('#prog', root); p.textContent = 'Checking seasons (3 requests)…';
+    try {
+      const y = defaultSeason(); const res = await makeApi().probeSeasons($('#lg', root).value, [y, y - 1, y - 2]);
+      p.innerHTML = res.map(r => `${r.season}: ${r.ok ? (r.hasData ? '<span class="good">readable</span>' : 'readable but no matches yet') : `<span class="bad">not allowed</span> (${esc(r.message)})`}`).join('<br>') + '<br><span class="muted">Only seasons marked readable can be downloaded on your free plan. Seasons outside the free allowance are not available without paying, and the app will not ask you to.</span>'; showUsage();
+    } catch (e) { p.innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+  };
+  $('#stop', root).onclick = () => { stopFlag = true; };
+  $('#sync', root).onclick = async () => {
+    if (running) return; running = true; stopFlag = false;
+    sel.league = $('#lg', root).value; sel.season = Number($('#se', root).value); sel.max = Number($('#mx', root).value) || 40;
+    $('#sync', root).disabled = true; $('#stop', root).disabled = false; const p = $('#prog', root);
+    try {
+      const r = await syncLeague({ api: makeApi(), store: app.store, leagueKey: sel.league, season: sel.season, maxRequests: sel.max, shouldStop: () => stopFlag,
+        onProgress: x => { if (x.phase === 'fixture') p.textContent = `Downloaded ${x.added} of ${x.total} remaining matches (latest ${x.date.slice(0, 10)})… ${x.spent} requests used.`; else p.textContent = `${x.total} matches still to download. Starting…`; showUsage(); } });
+      await reload();
+      p.innerHTML = `<b>${r.complete ? 'Finished.' : 'Paused.'}</b> Added ${r.added} matches (${r.alreadyStored} were already stored, ${r.remaining} still to do). ${r.noData ? `${r.noData} had no player stats from the provider. ` : ''}${r.stoppedReason ? `<br>Reason: ${esc(r.stoppedReason)}` : ''}${r.remaining ? '<br>Press Sync again later (tomorrow if you hit the daily limit) to continue.' : ''}`;
+      if (r.listSize === 0) p.innerHTML += '<br><span class="warn">The provider returned no finished matches for this league and season. Your free plan may not include it. Use "Which seasons can my key read?".</span>';
+    } catch (e) { p.innerHTML = `<span class="bad">${esc(e instanceof ApiError ? e.message : 'Something went wrong: ' + e.message)}</span>`; await reload(); }
+    running = false; $('#sync', root).disabled = false; $('#stop', root).disabled = true; showUsage();
+  };
+  $('#bk', root).onclick = async () => { download(`proplab-backup-${new Date().toISOString().slice(0, 10)}.json`, await exportBackup(), 'application/json'); };
+  $('#rs', root).onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const n = await importBackup(await f.text(), app.store); await reload(); $('#bmsg', root).innerHTML = `<span class="good">Restored ${n} items.</span>`; toast('Backup restored'); }
+    catch (err) { $('#bmsg', root).innerHTML = `<span class="bad">${esc(err.message)}</span>`; }
+  };
+}
+
+return { exportBackup, importBackup, viewSetup };
+})();
+__m['csv'] = (() => {
+// Small CSV reader: handles quotes, commas inside quotes, Windows line endings, a byte-order mark, and ; or tab separators.
+
+function parseCsv(text) {
+  const t = String(text ?? '').replace(/^﻿/, '');
+  const firstLine = t.split(/\r?\n/, 1)[0] || '';
+  const count = ch => { let n = 0, q = false; for (const c of firstLine) { if (c === '"') q = !q; else if (c === ch && !q) n++; } return n; };
+  const delim = [',', ';', '\t'].map(d => [d, count(d)]).sort((a, b) => b[1] - a[1])[0][1] > 0 ? [',', ';', '\t'].map(d => [d, count(d)]).sort((a, b) => b[1] - a[1])[0][0] : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  const endCell = () => { row.push(cell); cell = ''; };
+  const endRow = () => { endCell(); if (row.some(c => c.trim() !== '')) rows.push(row); row = []; };
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) {
+      if (c === '"') { if (t[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === delim) endCell();
+    else if (c === '\n') endRow();
+    else if (c === '\r') { /* ignore, \n ends the row */ }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) endRow();
+  return rows;
+}
+
+/** Header row -> array of objects. Header names are lower-cased with spaces turned into underscores. */
+function csvToObjects(text) {
+  const rows = parseCsv(text);
+  if (!rows.length) return { header: [], records: [] };
+  const header = rows[0].map(h => h.trim().toLowerCase().replace(/[\s-]+/g, '_'));
+  const records = rows.slice(1).map((r, i) => { const o = { _row: i + 2 }; header.forEach((h, j) => { o[h] = (r[j] ?? '').trim(); }); return o; });
+  return { header, records };
+}
+
+return { parseCsv, csvToObjects };
+})();
+__m['import'] = (() => {
+// Football data import: player match files (CSV or JSON), fixtures, team news, and football-data.co.uk team CSVs.
+// Rule everywhere: a blank means "unknown" and is stored as missing. It is never turned into a zero.
+const { csvToObjects } = __m['csv'];
+const { normName, normTeam, teamSlug, sameTeam } = __m['teams'];
+const { LEAGUES } = __m['football'];
+
+const STAT_FIELDS = ['shots', 'shots_on_target', 'goals', 'assists', 'tackles', 'fouls_committed', 'fouls_drawn', 'yellow_cards', 'red_cards', 'offsides',
+  'interceptions', 'blocks', 'passes', 'key_passes', 'dribbles_attempted', 'dribbles_success', 'duels_total', 'duels_won', 'saves', 'goals_conceded'];
+const PLAYER_CSV_HEADER = ['league', 'season', 'date', 'home_team', 'away_team', 'referee', 'complete', 'team', 'player', 'position', 'minutes', 'started', ...STAT_FIELDS, 'source'];
+const FIXTURES_CSV_HEADER = ['league', 'date', 'kickoff', 'home_team', 'away_team', 'referee', 'source'];
+const NEWS_CSV_HEADER = ['team', 'player', 'status', 'detail', 'as_of', 'source'];
+const NEWS_STATUSES = ['out', 'doubtful', 'suspended', 'returning', 'likely_start', 'rested', 'other'];
+
+const LEAGUE_NAMES = {
+  epl: ['epl', 'premier league', 'english premier league', 'england premier league', 'e0'], laliga: ['laliga', 'la liga', 'primera division', 'spain la liga', 'sp1'],
+  bundesliga: ['bundesliga', 'german bundesliga', '1 bundesliga', 'd1'], seriea: ['seriea', 'serie a', 'italian serie a', 'seria a', 'i1'], ligue1: ['ligue1', 'ligue 1', 'french ligue 1', 'f1'],
+  mls: ['mls', 'major league soccer'],
+};
+const LEAGUE_LOOKUP = new Map(); for (const [k, v] of Object.entries(LEAGUE_NAMES)) for (const n of v) LEAGUE_LOOKUP.set(normName(n), k);
+const resolveLeague = s => LEAGUE_LOOKUP.get(normName(s)) || null;
+
+const COL_ALIASES = { mins: 'minutes', min: 'minutes', pos: 'position', sot: 'shots_on_target', shots_ot: 'shots_on_target', fouls_won: 'fouls_drawn', fouls_suffered: 'fouls_drawn', fouls_conceded: 'fouls_committed',
+  yc: 'yellow_cards', rc: 'red_cards', hometeam: 'home_team', awayteam: 'away_team', ref: 'referee', goals_scored: 'goals', starter: 'started', is_starter: 'started', name: 'player', player_name: 'player',
+  tackles_total: 'tackles', cards_yellow: 'yellow_cards', cards_red: 'red_cards' };
+const aliasKey = k => COL_ALIASES[k] || k;
+
+const POSITION_MAP = { g: 'G', gk: 'G', goalkeeper: 'G', keeper: 'G', d: 'D', df: 'D', def: 'D', defender: 'D', cb: 'D', lb: 'D', rb: 'D', lwb: 'D', rwb: 'D', wb: 'D',
+  m: 'M', mf: 'M', mid: 'M', midfielder: 'M', cm: 'M', cdm: 'M', cam: 'M', dm: 'M', am: 'M', lm: 'M', rm: 'M', f: 'F', fw: 'F', fwd: 'F', forward: 'F', attacker: 'F', striker: 'F', st: 'F', cf: 'F', lw: 'F', rw: 'F', w: 'F' };
+
+const isBlank = v => v === undefined || v === null || String(v).trim() === '';
+const TRUE = new Set(['1', 'true', 'yes', 'y', 'starter', 'start', 'started', 't']), FALSE = new Set(['0', 'false', 'no', 'n', 'sub', 'bench', 'substitute', 'f']);
+
+function parseDateLoose(s, { dayFirst = false } = {}) {
+  const t = String(s ?? '').trim();
+  let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  if (m) return valid(m[1], m[2], m[3]);
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(t);
+  if (m && dayFirst) { const y = m[3].length === 2 ? (Number(m[3]) > 70 ? '19' : '20') + m[3] : m[3]; return valid(y, m[2].padStart(2, '0'), m[1].padStart(2, '0')); }
+  return null;
+}
+function valid(y, mo, d) { const dt = new Date(`${y}-${mo}-${d}T00:00:00Z`); return !Number.isNaN(dt.getTime()) && dt.getUTCMonth() + 1 === Number(mo) ? `${y}-${mo}-${d}` : null; }
+
+const seasonFor = (league, ymd) => { const y = Number(ymd.slice(0, 4)), m = Number(ymd.slice(5, 7)); return league === 'mls' ? y : (m >= 7 ? y : y - 1); };
+const parseSeason = (s, league, ymd) => {
+  if (isBlank(s)) return seasonFor(league, ymd);
+  const m = /^(\d{4})/.exec(String(s).trim()); return m ? Number(m[1]) : null;
+};
+const intOrNull = (v, max = 500) => { if (isBlank(v)) return { v: null }; const n = Number(String(v).trim()); return Number.isInteger(n) && n >= 0 && n <= max ? { v: n } : { err: `"${v}" is not a whole number from 0 to ${max}` }; };
+
+// ---------- detection ----------
+function detect(text, filename = '') {
+  const t = String(text ?? '').replace(/^﻿/, '').trim();
+  if (!t) return { kind: 'empty' };
+  if (t[0] === '{' || t[0] === '[') {
+    try { const j = JSON.parse(t); if (j && j.format === 'proplab-football') return { kind: 'json', json: j }; return { kind: 'unknown', why: 'This JSON file is not in the PropLab football format (it needs "format": "proplab-football").' }; }
+    catch (e) { return { kind: 'unknown', why: 'This looks like JSON but could not be read: ' + e.message }; }
+  }
+  const { header, records } = csvToObjects(t);
+  const h = new Set(header.map(aliasKey));
+  if (header.includes('hometeam') && header.includes('awayteam') && header.includes('div')) return { kind: 'fd-csv', header, records };
+  if (h.has('home_team') && h.has('away_team') && h.has('player')) return { kind: 'players-csv', header: [...h], records };
+  if (h.has('home_team') && h.has('away_team')) return { kind: 'fixtures-csv', header: [...h], records };
+  if (h.has('status') && h.has('player') && h.has('team')) return { kind: 'news-csv', header: [...h], records };
+  if (header.includes('hometeam') && header.includes('awayteam')) return { kind: 'fd-csv', header, records };
+  if (header.includes('home') && header.includes('away') && (header.includes('hg') || header.includes('res'))) return { kind: 'fd-results-only' };
+  return { kind: 'unknown', why: 'The columns were not recognised. A player file needs at least: league, date, home_team, away_team, team, player.' };
+}
+
+// ---------- player match data ----------
+function normaliseRecord(rec) { const o = {}; for (const [k, v] of Object.entries(rec)) o[aliasKey(String(k).toLowerCase().replace(/[\s-]+/g, '_'))] = v; return o; }
+
+/** rows: array of flat objects (one per player per match). Returns matches plus a list of problems. */
+function buildMatchesFromRows(rawRows, { defaultSource = '' } = {}) {
+  const errors = [], warnings = [], matches = new Map(); let rowsOk = 0, noMinutes = 0;
+  rawRows.forEach((raw, idx) => {
+    const r = normaliseRecord(raw); const rowNo = raw._row ?? idx + 1;
+    const bad = msg => { errors.push({ row: rowNo, msg }); };
+    const league = resolveLeague(r.league); if (!league) return bad(`Unknown league "${r.league ?? ''}". Use one of: ${Object.values(LEAGUES).map(l => l.name).join(', ')}.`);
+    const date = parseDateLoose(r.date); if (!date) return bad(`Date "${r.date ?? ''}" must look like 2026-10-03.`);
+    const season = parseSeason(r.season, league, date); if (season === null) return bad(`Season "${r.season}" not understood (use 2026 or 2026/27).`);
+    const home = String(r.home_team ?? '').trim(), away = String(r.away_team ?? '').trim(), team = String(r.team ?? '').trim(), player = String(r.player ?? '').trim();
+    if (!home || !away) return bad('home_team and away_team are required.');
+    if (sameTeam(home, away)) return bad('home_team and away_team are the same team.');
+    if (!player) return bad('player is required.');
+    if (/^example/i.test(player)) return bad('This is an example row from a template. Delete it.');
+    const isHome = sameTeam(team, home), isAway = sameTeam(team, away);
+    if (!isHome && !isAway) return bad(`team "${team}" is neither the home team (${home}) nor the away team (${away}).`);
+    const mins = intOrNull(r.minutes, 130); if (mins.err) return bad('minutes: ' + mins.err);
+    let started = null; if (!isBlank(r.started)) { const s = String(r.started).trim().toLowerCase(); if (TRUE.has(s)) started = 1; else if (FALSE.has(s)) started = 0; else return bad(`started "${r.started}" must be 1/0 or yes/no.`); }
+    let position = null; if (!isBlank(r.position)) { position = POSITION_MAP[String(r.position).trim().toLowerCase()] || null; if (!position) warnings.push(`Row ${rowNo}: position "${r.position}" not recognised, left blank.`); }
+    const stats = {}; for (const f of STAT_FIELDS) { const v = intOrNull(r[f]); if (v.err) return bad(`${f}: ${v.err}`); stats[f] = v.v; }
+    if (stats.shots !== null && stats.shots_on_target !== null && stats.shots_on_target > stats.shots) return bad('shots_on_target is higher than shots.');
+    if (stats.duels_total !== null && stats.duels_won !== null && stats.duels_won > stats.duels_total) return bad('duels_won is higher than duels_total.');
+    if (mins.v === null) noMinutes++;
+    const key = `${league}|${season}|${date}|${teamSlug(home)}|${teamSlug(away)}`;
+    let m = matches.get(key);
+    if (!m) { m = { key, league, season, date, home, away, referee: null, complete: null, score: null, source: '', rows: new Map() }; matches.set(key, m); }
+    if (!isBlank(r.referee) && !m.referee) m.referee = String(r.referee).split(',')[0].trim();
+    if (!isBlank(r.complete)) { const c = String(r.complete).trim().toLowerCase(); if (TRUE.has(c)) m.complete = true; else if (FALSE.has(c)) m.complete = m.complete ?? false; }
+    if (!isBlank(r.source) && !m.source) m.source = String(r.source).trim();
+    const pk = 'n:' + normName(player);
+    if (m.rows.has(pk)) { warnings.push(`Row ${rowNo}: ${player} appears twice in the same match; the later row is used.`); }
+    m.rows.set(pk, { pid: pk, name: player, teamName: isHome ? home : away, home: isHome ? 1 : 0, minutes: mins.v, started, position, ...stats });
+    rowsOk++;
+  });
+  if (noMinutes) warnings.push(`${noMinutes} row${noMinutes > 1 ? 's have' : ' has'} no minutes. Hit rates still work, but value estimates skip ${noMinutes > 1 ? 'them' : 'it'}.`);
+  for (const m of matches.values()) if (!m.source) m.source = defaultSource;
+  return { matches: [...matches.values()], errors, warnings, rowsOk };
+}
+
+function playersFromJson(j) {
+  const rows = [], errors = [];
+  if (!Array.isArray(j.matches)) return { rows, errors: [{ row: 0, msg: 'The file has no "matches" list.' }], matchMeta: [] };
+  j.matches.forEach((m, i) => {
+    if (!Array.isArray(m.players)) return;
+    m.players.forEach((p, k) => rows.push({ _row: `match ${i + 1}, player ${k + 1}`, league: m.league, season: m.season, date: m.date, home_team: m.home ?? m.home_team, away_team: m.away ?? m.away_team,
+      referee: m.referee, complete: m.complete === undefined ? '' : String(m.complete), source: m.source ?? j.source ?? '', team: p.team ?? '', player: p.name ?? p.player, position: p.position, minutes: p.minutes, started: p.started,
+      ...Object.fromEntries(STAT_FIELDS.map(f => [f, p[f] ?? p[Object.keys(COL_ALIASES).find(a => COL_ALIASES[a] === f && p[a] !== undefined)] ?? ''])) }));
+  });
+  return { rows, errors };
+}
+
+// ---------- fixtures and news ----------
+function parseFixtures(items) {
+  const out = [], errors = [];
+  items.forEach((raw, i) => {
+    const r = normaliseRecord(raw), row = raw._row ?? i + 1;
+    const league = resolveLeague(r.league), date = parseDateLoose(r.date);
+    if (!league) return errors.push({ row, msg: `Unknown league "${r.league ?? ''}".` });
+    if (!date) return errors.push({ row, msg: `Date "${r.date ?? ''}" must look like 2026-10-24.` });
+    const home = String(r.home_team ?? r.home ?? '').trim(), away = String(r.away_team ?? r.away ?? '').trim();
+    if (!home || !away) return errors.push({ row, msg: 'home_team and away_team are required.' });
+    out.push({ league, date, kickoff: isBlank(r.kickoff) ? '' : String(r.kickoff).trim(), home, away, referee: isBlank(r.referee) ? '' : String(r.referee).split(',')[0].trim(), source: String(r.source ?? '').trim() });
+  });
+  return { items: out, errors };
+}
+
+function parseNews(items) {
+  const out = [], errors = [];
+  items.forEach((raw, i) => {
+    const r = normaliseRecord(raw), row = raw._row ?? i + 1;
+    const team = String(r.team ?? '').trim(), player = String(r.player ?? '').trim(), status = String(r.status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const asOf = parseDateLoose(r.as_of);
+    if (!team || !player) return errors.push({ row, msg: 'team and player are required.' });
+    if (!NEWS_STATUSES.includes(status)) return errors.push({ row, msg: `status "${r.status ?? ''}" must be one of: ${NEWS_STATUSES.join(', ')}.` });
+    if (!asOf) return errors.push({ row, msg: `as_of "${r.as_of ?? ''}" must be a date like 2026-10-16 (when the news was true).` });
+    out.push({ team, player, status, detail: String(r.detail ?? '').trim(), asOf, source: String(r.source ?? '').trim() });
+  });
+  return { items: out, errors };
+}
+
+// ---------- football-data.co.uk team CSV ----------
+const FD_DIV = { E0: 'epl', SP1: 'laliga', D1: 'bundesliga', I1: 'seriea', F1: 'ligue1' };
+function parseFootballDataCsv(records) {
+  const out = [], errors = [], skippedDivs = new Map();
+  for (const raw of records) {
+    const r = raw, row = raw._row;
+    const div = String(r.div ?? '').toUpperCase(); const league = FD_DIV[div];
+    if (!league) { skippedDivs.set(div || '(blank)', (skippedDivs.get(div || '(blank)') || 0) + 1); continue; }
+    const date = parseDateLoose(r.date, { dayFirst: true }); if (!date) { errors.push({ row, msg: `Date "${r.date}" not understood.` }); continue; }
+    const g = k => { if (isBlank(r[k])) return null; const n = Number(r[k]); return Number.isInteger(n) && n >= 0 ? n : null; };
+    const rec = { league, season: seasonFor(league, date), date, home: r.hometeam, away: r.awayteam, referee: isBlank(r.referee) ? '' : r.referee.trim(),
+      hg: g('fthg'), ag: g('ftag'), hs: g('hs'), as: g('as'), hst: g('hst'), ast: g('ast'), hf: g('hf'), af: g('af'), hc: g('hc'), ac: g('ac'), hy: g('hy'), ay: g('ay'), hr: g('hr'), ar: g('ar') };
+    if (!rec.home || !rec.away) { errors.push({ row, msg: 'Missing team name.' }); continue; }
+    out.push(rec);
+  }
+  return { items: out, errors, skippedDivs: [...skippedDivs.entries()] };
+}
+const tmKey = r => `tm:${r.league}:${r.season}:${r.date.replace(/-/g, '')}-${teamSlug(r.home)}-${teamSlug(r.away)}`;
+
+// ---------- planning (what would change) and applying ----------
+const iso = d => `${d}T12:00:00+00:00`;
+const fixtureId = m => `imp-${m.date.replace(/-/g, '')}-${teamSlug(m.home)}-${teamSlug(m.away)}`;
+const fxStoreKey = m => `fx:${m.league}:${m.season}:${fixtureId(m)}`;
+
+/** existing: array of stored fixture records. Returns {fixtures (records to write), summary}. */
+function planPlayerImport(parsed, existing, { fileName = '', now = Date.now() } = {}) {
+  const teamIds = new Map(); const apiKeys = new Map(), impKeys = new Map();
+  for (const f of existing) {
+    for (const t of [f.home, f.away]) { const k = normTeam(t.name); if (!teamIds.has(k) || typeof t.id === 'number') teamIds.set(k, t.id); }
+    const k = `${f.league}|${f.date.slice(0, 10)}|${normTeam(f.home.name)}|${normTeam(f.away.name)}`;
+    if (String(f.id).startsWith('imp-')) impKeys.set(k, f); else apiKeys.set(k, f);
+  }
+  const idFor = name => { const k = normTeam(name); return teamIds.get(k) ?? 't:' + k.replace(/ /g, '-'); };
+  const newTeams = new Set(), fixtures = []; let replaced = 0, created = 0, skippedApi = 0, rows = 0, notComplete = 0;
+  for (const m of parsed.matches) {
+    const k = `${m.league}|${m.date}|${normTeam(m.home)}|${normTeam(m.away)}`;
+    if (apiKeys.has(k)) { skippedApi++; continue; }
+    for (const n of [m.home, m.away]) if (!teamIds.has(normTeam(n))) newTeams.add(n);
+    const old = impKeys.get(k);
+    const homeId = idFor(m.home), awayId = idFor(m.away);
+    const byPid = new Map((old?.rows || []).map(r => [r.pid, r]));
+    for (const r of m.rows.values()) {
+      const tid = r.home ? homeId : awayId, oid = r.home ? awayId : homeId;
+      const { teamName, ...rest } = r;
+      byPid.set(r.pid, { ...rest, tid, oid });
+    }
+    const allRows = [...byPid.values()];
+    const complete = m.complete ?? old?.complete ?? false;
+    const covered = complete === true && allRows.length >= 10;
+    if (!covered) notComplete++;
+    rows += m.rows.size;
+    if (old) replaced++; else created++;
+    fixtures.push({ id: fixtureId(m), league: m.league, season: m.season, date: iso(m.date), referee: m.referee ?? old?.referee ?? null, covered, complete,
+      home: { id: homeId, name: old?.home?.name ?? m.home }, away: { id: awayId, name: old?.away?.name ?? m.away }, score: old?.score ?? { home: null, away: null },
+      rows: allRows, fetchedAt: now, source: { kind: 'import', file: fileName, note: m.source || '', at: now } });
+  }
+  const dates = parsed.matches.map(m => m.date).sort();
+  const lgSeason = [...new Set(parsed.matches.map(m => `${LEAGUES[m.league].name} ${m.season}`))];
+  const apiLeagueSeasons = new Set(); for (const f of apiKeys.values()) apiLeagueSeasons.add(`${LEAGUES[f.league]?.name || f.league} ${f.season}`);
+  const overlap = lgSeason.filter(x => apiLeagueSeasons.has(x));
+  return { fixtures, summary: { matches: fixtures.length, created, replaced, skippedApi, rows, notComplete, newTeams: [...newTeams], from: dates[0], to: dates[dates.length - 1], leagueSeasons: lgSeason, overlapApi: overlap } };
+}
+
+async function applyFixtures(store, fixtures) { for (const f of fixtures) await store.set(`fx:${f.league}:${f.season}:${f.id}`, f); }
+
+async function mergeContext(store, { fixtures = [], news = [] }, { now = Date.now() } = {}) {
+  const out = { fixtures: 0, news: 0 };
+  if (fixtures.length) {
+    const cur = (await store.get('ctx:fixtures')) || { items: [] };
+    const k = f => `${f.league}|${f.date}|${normTeam(f.home)}|${normTeam(f.away)}`;
+    const map = new Map(cur.items.map(f => [k(f), f])); for (const f of fixtures) map.set(k(f), f);
+    const today = new Date(now - 7 * 864e5).toISOString().slice(0, 10);
+    await store.set('ctx:fixtures', { items: [...map.values()].filter(f => f.date >= today).sort((a, b) => (a.date < b.date ? -1 : 1)), updatedAt: now }); out.fixtures = fixtures.length;
+  }
+  if (news.length) {
+    const cur = (await store.get('ctx:news')) || { items: [] };
+    const k = n => `${normTeam(n.team)}|${normName(n.player)}`;
+    const map = new Map(cur.items.map(n => [k(n), n])); for (const n of news) { const o = map.get(k(n)); if (!o || n.asOf >= o.asOf) map.set(k(n), n); }
+    const cutoff = new Date(now - 45 * 864e5).toISOString().slice(0, 10);
+    await store.set('ctx:news', { items: [...map.values()].filter(n => n.asOf >= cutoff), updatedAt: now }); out.news = news.length;
+  }
+  return out;
+}
+
+async function applyTeamMatches(store, items) { for (const r of items) await store.set(tmKey(r), r); }
+
+/** Parse any supported file into a plan the screen can preview. Nothing is saved here. */
+function prepareImport(text, fileName, existingFixtures, opts = {}) {
+  const d = detect(text, fileName);
+  const base = { kind: d.kind, fileName, errors: [], warnings: [] };
+  if (d.kind === 'empty') return { ...base, kind: 'unknown', fatal: 'The file is empty.' };
+  if (d.kind === 'unknown') return { ...base, fatal: d.why };
+  if (d.kind === 'fd-results-only') return { ...base, fatal: 'This file has results only (no shots, fouls or cards), so there is nothing to import from it.' };
+  if (d.kind === 'players-csv' || d.kind === 'json') {
+    let rows, errors = [], fixtures = [], news = [];
+    if (d.kind === 'json') { const p = playersFromJson(d.json); rows = p.rows; errors = p.errors;
+      if (Array.isArray(d.json.fixtures)) { const f = parseFixtures(d.json.fixtures.map((x, i) => ({ ...x, _row: `fixture ${i + 1}` }))); fixtures = f.items; errors = errors.concat(f.errors); }
+      if (Array.isArray(d.json.team_news)) { const n = parseNews(d.json.team_news.map((x, i) => ({ ...x, _row: `news ${i + 1}` }))); news = n.items; errors = errors.concat(n.errors); } }
+    else rows = d.records;
+    const built = buildMatchesFromRows(rows, { defaultSource: d.kind === 'json' ? (d.json.source || '') : '' });
+    const plan = built.matches.length ? planPlayerImport(built, existingFixtures, { fileName, now: opts.now }) : null;
+    if (!plan && !fixtures.length && !news.length) return { ...base, fatal: 'No valid matches, fixtures or news were found in this file.', errors: errors.concat(built.errors), warnings: built.warnings };
+    return { ...base, plan, fixtures, news, errors: errors.concat(built.errors), warnings: built.warnings, generated: d.json?.generated || '' };
+  }
+  if (d.kind === 'fixtures-csv') { const f = parseFixtures(d.records); return { ...base, fixtures: f.items, errors: f.errors, fatal: f.items.length ? null : 'No valid fixtures found.' }; }
+  if (d.kind === 'news-csv') { const n = parseNews(d.records); return { ...base, news: n.items, errors: n.errors, fatal: n.items.length ? null : 'No valid team news rows found.' }; }
+  if (d.kind === 'fd-csv') { const t = parseFootballDataCsv(d.records);
+    return { ...base, teamMatches: t.items, errors: t.errors, warnings: t.skippedDivs.map(([dv, n]) => `Skipped ${n} rows from division ${dv} (not one of the five supported leagues).`), fatal: t.items.length ? null : 'No usable rows found.' }; }
+  return { ...base, fatal: 'Unsupported file.' };
+}
+
+async function commitImport(store, prepared, { now = Date.now() } = {}) {
+  const done = { matches: 0, fixtures: 0, news: 0, teamMatches: 0 };
+  if (prepared.plan) { await applyFixtures(store, prepared.plan.fixtures); done.matches = prepared.plan.fixtures.length; }
+  if (prepared.fixtures?.length || prepared.news?.length) { const c = await mergeContext(store, { fixtures: prepared.fixtures || [], news: prepared.news || [] }, { now }); done.fixtures = c.fixtures; done.news = c.news; }
+  if (prepared.teamMatches?.length) { await applyTeamMatches(store, prepared.teamMatches); done.teamMatches = prepared.teamMatches.length; }
+  const log = (await store.get('meta:imports')) || [];
+  log.unshift({ at: now, file: prepared.fileName, kind: prepared.kind, ...done }); await store.set('meta:imports', log.slice(0, 50));
+  return done;
+}
+
+// ---------- templates ----------
+const templateFor = kind => ({ players: PLAYER_CSV_HEADER, fixtures: FIXTURES_CSV_HEADER, news: NEWS_CSV_HEADER }[kind] || []).join(',') + '\n';
+
+return { STAT_FIELDS, PLAYER_CSV_HEADER, FIXTURES_CSV_HEADER, NEWS_CSV_HEADER, NEWS_STATUSES, resolveLeague, POSITION_MAP, parseDateLoose, seasonFor, detect, buildMatchesFromRows, playersFromJson, parseFixtures, parseNews, parseFootballDataCsv, tmKey, fixtureId, fxStoreKey, planPlayerImport, applyFixtures, mergeContext, applyTeamMatches, prepareImport, commitImport, templateFor };
+})();
+__m['view-data'] = (() => {
+const { app, reload } = __m['state'];
+const { $, esc, download } = __m['ui'];
+const { prepareImport, commitImport, templateFor, STAT_FIELDS } = __m['import'];
+const { LEAGUES } = __m['football'];
+
+const CLAUDE_REQUEST = `Please research the latest football data and give me ONE file I can import into my PropLab app. Rules: use only real, checkable sources and name them in the "source" field; never estimate or invent a number. If you cannot find a stat for a player, leave it blank (do not write 0 unless the stat really was zero). Output a JSON file in this format:
+{"format":"proplab-football","generated":"YYYY-MM-DD","source":"where it came from",
+ "matches":[{"league":"Premier League","season":2026,"date":"YYYY-MM-DD","home":"Team","away":"Team","referee":"Name","complete":true,
+   "players":[{"team":"Team","name":"Player","position":"D","minutes":90,"started":1,"tackles":3,"fouls_committed":1,"fouls_drawn":2,"shots":0,"shots_on_target":0,"goals":0,"assists":0,"yellow_cards":0}]}],
+ "fixtures":[{"league":"Premier League","date":"YYYY-MM-DD","kickoff":"15:00","home":"Team","away":"Team","referee":"Name","source":"..."}],
+ "team_news":[{"team":"Team","player":"Player","status":"out|doubtful|suspended|returning|likely_start|rested|other","detail":"...","as_of":"YYYY-MM-DD","source":"..."}]}
+Set "complete":true only if you listed every player who played in that match. Tell me plainly what you could not find.`;
+
+const KIND = { 'players-csv': 'player match stats (CSV)', json: 'PropLab JSON file', 'fixtures-csv': 'upcoming fixtures (CSV)', 'news-csv': 'team news (CSV)', 'fd-csv': 'football-data.co.uk team stats (CSV)' };
+let pending = null;
+
+async function viewData(root, notice = '') {
+  const log = (await app.store.get('meta:imports')) || [];
+  const counts = {}; for (const f of app.fixtures) { const k = `${LEAGUES[f.league]?.name || f.league} ${f.season}`; const c = counts[k] = counts[k] || { n: 0, imp: 0, last: '' }; c.n++; if (String(f.id).startsWith('imp-')) c.imp++; if (f.date > c.last) c.last = f.date; }
+  const c = app.ctx;
+  root.innerHTML = `<div class="card stack"><h2>Import football data</h2>
+    <p class="small muted">Pick a file from the Files app (or paste its text). You will see a preview first; nothing is saved until you tap Import. Blank cells stay "unknown": they are never turned into zeros.</p>
+    <label class="filebtn">Choose a file<input id="file" type="file" accept=".csv,.json,.txt,text/csv,application/json,text/plain" style="display:none"></label>
+    <details><summary class="small">Or paste the file's text</summary><textarea id="paste" rows="5" placeholder="Paste CSV or JSON here"></textarea><button class="ghost" id="usepaste">Preview pasted text</button></details>
+    <div id="preview"></div></div>
+  <div class="card stack"><h3>Ask Claude for a daily update</h3>
+    <p class="small muted">Copy this request, paste it into your Claude chat, save the file Claude gives you to Files, then import it above. Claude can only report what it can find from free public sources and will say what is missing.</p>
+    <div class="row"><button class="pri" id="copyreq">Copy request for Claude</button></div><div id="cmsg" class="small"></div></div>
+  <div class="card stack"><h3>What is stored</h3>
+    <div class="small">${Object.entries(counts).map(([k, v]) => `${esc(k)}: ${v.n} matches (${v.imp} imported), latest ${esc(v.last.slice(0, 10))}`).join('<br>') || 'No player match data yet.'}</div>
+    <div class="small muted">Upcoming fixtures: ${c.fixtures.length}${c.fixturesAt ? ' (updated ' + new Date(c.fixturesAt).toLocaleDateString() + ')' : ''} · Team news items: ${c.news.length}${c.newsAt ? ' (updated ' + new Date(c.newsAt).toLocaleDateString() + ')' : ''} · Team match stats: ${c.tm.length}</div>
+    ${log.length ? `<details><summary class="small">Import history</summary><div class="small">${log.slice(0, 10).map(l => `${new Date(l.at).toLocaleString()}: ${esc(l.file || 'pasted')} - ${l.matches} matches, ${l.fixtures} fixtures, ${l.news} news, ${l.teamMatches} team rows`).join('<br>')}</div></details>` : ''}
+    <div class="row"><button class="danger" id="delimp">Delete all imported player data</button></div><div id="dmsg" class="small"></div></div>
+  <div class="card stack"><h3>Blank templates</h3><p class="small muted">Header-only CSV files with the exact column names. Open them in a spreadsheet app, add real rows, and import.</p>
+    <div class="row"><button class="ghost" data-t="players">Player stats</button><button class="ghost" data-t="fixtures">Fixtures</button><button class="ghost" data-t="news">Team news</button></div>
+    <p class="small muted">Player stat columns: ${STAT_FIELDS.join(', ')}. For football-data.co.uk files (E0.csv, SP1.csv, D1.csv, I1.csv, F1.csv) just import them as they are.</p></div>`;
+
+  if (notice) $('#preview', root).innerHTML = notice;
+  const show = (text, name) => {
+    const prep = prepareImport(text, name, app.fixtures); pending = prep; const p = $('#preview', root);
+    const errs = prep.errors || [];
+    let h = `<div class="card"><b>${esc(name || 'Pasted text')}</b>: ${esc(KIND[prep.kind] || 'unrecognised')}`;
+    if (prep.fatal) { p.innerHTML = h + `<p class="bad">${esc(prep.fatal)}</p></div>`; pending = null; return; }
+    if (prep.plan) { const s = prep.plan.summary; h += `<ul class="small"><li>${s.matches} matches (${s.from} to ${s.to}), ${s.rows} player rows</li><li>${s.created} new, ${s.replaced} will update an earlier import</li>${s.newTeams.length ? `<li>New teams: ${esc(s.newTeams.join(', '))}</li>` : ''}${s.notComplete ? `<li class="warn">${s.notComplete} match(es) are not marked complete, so they are used for each player's hit rates but not for team matchup profiles.</li>` : ''}${s.skippedApi ? `<li class="warn">${s.skippedApi} match(es) already downloaded from API-Football were skipped, to avoid duplicates.</li>` : ''}</ul>`; }
+    if (prep.fixtures?.length) h += `<p class="small">${prep.fixtures.length} upcoming fixtures</p>`;
+    if (prep.news?.length) h += `<p class="small">${prep.news.length} team news items</p>`;
+    if (prep.teamMatches?.length) h += `<p class="small">${prep.teamMatches.length} matches of team-level stats (shots, fouls, cards). Team totals only, not player stats.</p>`;
+    for (const w of (prep.warnings || []).slice(0, 8)) h += `<p class="small warn">${esc(w)}</p>`;
+    if (errs.length) h += `<p class="small bad">${errs.length} row(s) have problems and will be skipped:</p><ul class="small">${errs.slice(0, 8).map(e => `<li>Row ${esc(e.row)}: ${esc(e.msg)}</li>`).join('')}</ul>${errs.length > 8 ? `<p class="small muted">…and ${errs.length - 8} more.</p>` : ''}`;
+    h += `<div class="row"><button class="pri" id="go">Import</button><button class="ghost" id="cancel">Cancel</button></div></div>`;
+    p.innerHTML = h;
+    $('#cancel', root).onclick = () => { pending = null; p.innerHTML = ''; };
+    $('#go', root).onclick = async () => { $('#go', root).disabled = true; try { const d = await commitImport(app.store, prep); await reload(); pending = null; viewData(root, `<div class="card"><b class="good">Imported.</b> <span class="small">${d.matches} matches, ${d.fixtures} fixtures, ${d.news} news, ${d.teamMatches} team rows.</span></div>`); } catch (e) { p.innerHTML = `<p class="bad">Import failed: ${esc(e.message)}. Nothing else was changed.</p>`; } };
+  };
+  $('#file', root).onchange = async e => { const f = e.target.files[0]; if (!f) return; try { show(await f.text(), f.name); } catch (err) { $('#preview', root).innerHTML = `<p class="bad">Could not read that file: ${esc(err.message)}</p>`; } e.target.value = ''; };
+  $('#usepaste', root).onclick = () => show($('#paste', root).value, '');
+  $('#copyreq', root).onclick = async () => { try { await navigator.clipboard.writeText(CLAUDE_REQUEST); $('#cmsg', root).innerHTML = '<span class="good">Copied. Paste it into Claude.</span>'; } catch { $('#cmsg', root).innerHTML = `<textarea rows="8" readonly>${esc(CLAUDE_REQUEST)}</textarea>`; } };
+  root.querySelectorAll('[data-t]').forEach(b => { b.onclick = () => download(`proplab-${b.dataset.t}-template.csv`, templateFor(b.dataset.t), 'text/csv'); });
+  $('#delimp', root).onclick = async () => {
+    if (!confirm('Delete all imported player matches, fixtures, news and team stats? API-Football downloads, bets and saved prices are kept.')) return;
+    for (const k of await app.store.keys('fx:')) { const f = await app.store.get(k); if (f && String(f.id).startsWith('imp-')) await app.store.del(k); }
+    for (const k of ['ctx:fixtures', 'ctx:news', 'meta:imports']) await app.store.del(k);
+    for (const k of await app.store.keys('tm:')) await app.store.del(k);
+    await reload(); viewData(root);
+  };
+}
+
+return { CLAUDE_REQUEST, viewData };
+})();
+__m['view-home'] = (() => {
+const { app, getKey, usageToday } = __m['state'];
+const { esc } = __m['ui'];
+const { FOOTBALL_UNAVAILABLE } = __m['football'];
+
+async function viewHome(root) {
+  const nPlayers = app.index.players.size, nMatches = app.fixtures.length, hasKey = !!getKey();
+  const bets = (await app.store.get('bets')) || [];
+  root.innerHTML = `<div class="card stack"><h2>Prop Lab</h2><p class="muted small">A private research tool. It shows real stats from free sources, lets you type in bookmaker prices and estimates whether a price looks worth a closer look. It does not tell you what will win and it never makes up numbers.</p></div>
+  <div class="card stack"><h3>Get started (about 5 minutes)</h3>
+    <div class="step"><div class="n">1</div><div><b>Import football stats (no key needed)</b><br><span class="small muted">On the Data screen, import a file of player stats, fixtures or team news. Optional: a free API-Football key on Setup.</span></div></div>
+    <div class="step"><div class="n">2</div><div><b>Download some matches</b><br><span class="small muted">${nMatches ? `Done: ${nMatches} matches and ${nPlayers} players stored.` : 'Use Data to import a file, or Setup to download with a free key.'}</span></div></div>
+    <div class="step"><div class="n">3</div><div><b>Research a player</b><br><span class="small muted">Football Research: pick a player, a market and a line to see hit rates and a chart.</span></div></div>
+    <div class="step"><div class="n">4</div><div><b>Type in a bookmaker price</b><br><span class="small muted">Value screen: enter odds you can see and get an estimate of EV, with the reasoning shown.</span></div></div>
+    <div class="row"><a href="#data"><button class="pri">Import data</button></a><a href="#setup"><button class="ghost">Setup / API key</button></a>${nPlayers ? '<a href="#football"><button class="ghost">Football Research</button></a>' : ''}</div></div>
+  <div class="card"><h3>This device today</h3><p class="small muted">API requests used today: ${usageToday()} of about 100 (free plan). Bets recorded: ${bets.length}.</p></div>
+  <div class="card"><h3>What is and is not included (free version)</h3><ul class="small muted">
+    <li><b>Football (EPL, La Liga, Bundesliga, Serie A, Ligue 1, MLS):</b> tackles, fouls committed and drawn, shots, shots on target, goals, assists, cards and more, from API-Football's free plan. Which seasons you can read depends on that plan.</li>
+    <li><b>NHL and MLB:</b> free public game logs. <b>NBA and NFL:</b> import your own CSV (no verified free source).</li>
+    <li><b>Bookmaker odds:</b> enter them yourself. No free feed carries UK player props.</li>
+    <li><b>Not available:</b> ${FOOTBALL_UNAVAILABLE.slice(0, 4).map(x => esc(x[0])).join('; ')}, and more (see Setup).</li></ul></div>`;
+}
+
+return { viewHome };
+})();
+__m['app'] = (() => {
+const { init, app } = __m['state'];
+const { $ } = __m['ui'];
+const { viewFootball } = __m['view-football'];
+const { viewFinder, viewOdds } = __m['view-scanner'];
+const { viewValue } = __m['view-value'];
+const { viewUS } = __m['view-us'];
+const { viewBets } = __m['view-bets'];
+const { viewCalc } = __m['view-calc'];
+const { viewSetup } = __m['view-setup'];
+const { viewData } = __m['view-data'];
+const { viewHome } = __m['view-home'];
+
+const TABS = [['home', 'Start'], ['data', 'Data'], ['football', 'Football Research'], ['finder', 'Prop Finder'], ['value', 'Value'], ['odds', 'Odds & Scanner'], ['nba', 'NBA'], ['nfl', 'NFL'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['calc', 'Calculators'], ['bets', 'My Bets'], ['setup', 'Setup']];
+const VIEWS = { home: viewHome, data: viewData, football: viewFootball, finder: viewFinder, value: viewValue, odds: viewOdds, calc: viewCalc, bets: viewBets, setup: viewSetup, nba: r => viewUS(r, 'nba'), nfl: r => viewUS(r, 'nfl'), nhl: r => viewUS(r, 'nhl'), mlb: r => viewUS(r, 'mlb') };
+
+async function render() {
+  const k = VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : 'home';
+  $('#nav').innerHTML = TABS.map(([id, l]) => `<button class="tab ${id === k ? 'on' : ''}" data-k="${id}">${l}</button>`).join('');
+  $('#nav').querySelectorAll('button').forEach(b => { b.onclick = () => { location.hash = b.dataset.k; }; });
+  const on = $('#nav .on'); if (on && on.scrollIntoView) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+  const root = $('#view'); root.innerHTML = '';
+  try { await VIEWS[k](root); } catch (e) { console.error(e); root.innerHTML = `<div class="card"><b class="bad">Something went wrong on this screen.</b><p class="small muted">${String(e.message).replace(/</g, '&lt;')}</p></div>`; }
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', render);
+window.addEventListener('resize', () => { if (app.redraw) app.redraw(); });
+init().then(render).catch(e => { $('#view').innerHTML = `<div class="card"><b class="bad">The app could not start.</b><p class="small">${String(e.message).replace(/</g, '&lt;')}</p></div>`; });
+
+return {  };
+})();
+</script>
+</body>
+</html>
