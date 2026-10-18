@@ -365,7 +365,7 @@ const NEWS_STATUS = { out: 'Out', doubtful: 'Doubtful', suspended: 'Suspended', 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const isCount = v => v === null || v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60);
 
-const emptyStore = () => ({ status: 'idle', error: '', manifest: null, fixtures: [], news: [], teamMatches: [], playerIndex: [], directory: [], directoryMeta: null, photos: null, playerFiles: new Map(), problems: [], teams: new Map(), teamRows: new Map(), refs: new Map(), updated: {} });
+const emptyStore = () => ({ status: 'idle', error: '', manifest: null, fixtures: [], rounds: {}, news: [], teamMatches: [], playerIndex: [], directory: [], directoryMeta: null, photos: null, playerFiles: new Map(), problems: [], teams: new Map(), teamRows: new Map(), refs: new Map(), updated: {} });
 const store = emptyStore();
 
 // ---- validation: invalid rows are dropped and counted, never repaired ----
@@ -389,7 +389,7 @@ async function loadCore(getJson, target = store) {
   target.manifest = manifest; const v = manifest.generated || '';
   const tryGet = async (file, label) => { try { return await getJson(file, { v }); } catch { target.problems.push(`${label} could not be loaded`); return null; } };
   const jobs = [];
-  if (manifest.fixtures) jobs.push(tryGet(manifest.fixtures.file, 'Fixtures').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.fixtures = keep(d.items, validFixture, 'fixture', target.problems); target.updated.fixtures = d.updated; } }));
+  if (manifest.fixtures) jobs.push(tryGet(manifest.fixtures.file, 'Fixtures').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.fixtures = keep(d.items, validFixture, 'fixture', target.problems); target.updated.fixtures = d.updated; target.rounds = d.rounds && typeof d.rounds === 'object' ? d.rounds : {}; } }));
   if (manifest.news) jobs.push(tryGet(manifest.news.file, 'Team news').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.news = keep(d.items, validNews, 'team news', target.problems); target.updated.news = d.updated; } }));
   for (const e of manifest.team_matches || []) jobs.push(tryGet(e.file, `Team stats ${e.league} ${e.season}`).then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { for (const r of keep(d.items, validTeamMatch, 'team match', target.problems)) target.teamMatches.push({ ...r, league: e.league, season: e.season }); target.updated['tm:' + e.league + e.season] = d.updated; } }));
   if (manifest.player_index) jobs.push(tryGet(manifest.player_index.file, 'Player index').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.playerIndex = keep(d.items, validIndexItem, 'player', target.problems); target.updated.players = d.updated; } }));
@@ -2538,7 +2538,7 @@ const LICENSING = [
     action: 'Owner review. Options: ask football-data.co.uk for written permission; or keep the site private (e.g. Cloudflare Pages + Access) so the JSON is not publicly redistributed. Do not add more reliance until resolved.',
     links: ['https://www.football-data.co.uk/data.php', 'https://www.football-data.co.uk/disclaimer.php', 'https://football-dataco.com/betting-data-licence-requirements'] },
   { id: 'openfootball', name: 'openfootball / football.json', url: 'https://github.com/openfootball/football.json', status: 'permitted',
-    data: 'Fixtures and kick-off times (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie 2026/27); Premier League results 2021/22 to 2025/26 for cross-checks.',
+    data: 'Fixtures, kick-off times and round (matchday) numbers (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie 2026/27; the rounds set Hiwi\'s Section "This Gameweek"); Premier League results 2021/22 to 2025/26 for cross-checks.',
     method: 'Download of the JSON files from GitHub.', terms: 'README: "The football.json schema, data and scripts are dedicated to the public domain. Use as you please with no restrictions whatsoever."',
     automated: 'Yes (public GitHub files).', storage: 'Yes.', display: 'Yes.', repo: 'Yes.', reason: 'Explicit public-domain dedication.', action: 'None. Credit kept as a courtesy.',
     links: ['https://github.com/openfootball/football.json/blob/master/README.md'] },
@@ -2744,9 +2744,56 @@ async function defenceTable(def) {
 
 return { TYPES, playerMarkets, scanPlayer, scanTeam, nflSampleText, oppContext, oppContextHtml, defenceTable };
 })();
+__m['gameweek'] = (() => {
+// "This Gameweek" for Hiwi's Section. All dates are UK dates (koUK converts each fixture's UTC kick-off, so GMT/BST is handled).
+//
+// Football, league with a round calendar (openfootball, stored in data-fixtures.json "rounds"):
+//   the current round is the earliest round whose last match day (UK) is today or later. This Gameweek = that league's
+//   upcoming fixtures dated up to that last match day. A rearranged match from another round played before then is included;
+//   a match of the round that was moved well past it is not. Once a round's last day has passed, the next round becomes current.
+// Football, league without round numbers (MLS, Scottish Premiership): the next run of consecutive match days (at most 4 days),
+//   starting with the next upcoming fixture.
+// NFL: the week of the next game to kick off (plus any rearranged game scheduled before that week's last game).
+// Nothing ever rolls over: if the current gameweek has no fixture left, the result is empty and the page says so.
+const { koUK } = __m['util'];
+
+const dayAdd = (ymd, n) => new Date(Date.parse(ymd + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+
+/** fixtures: ONE league's upcoming fixtures. rounds: [{ r, from, to }] or undefined. today: UK date 'YYYY-MM-DD'. */
+function leagueGameweek(fixtures, rounds, today) {
+  const ymd = f => koUK(f).ymd;
+  const cur = (rounds || []).filter(x => x && x.to >= today).sort((a, b) => (a.to < b.to ? -1 : a.to > b.to ? 1 : a.r - b.r))[0];
+  if (cur) return { kind: 'round', round: cur.r, from: cur.from, to: cur.to, fixtures: fixtures.filter(f => ymd(f) <= cur.to) };
+  if (!fixtures.length) return { kind: 'days', round: null, from: null, to: null, fixtures: [] };
+  const days = [...new Set(fixtures.map(ymd))].sort(); let to = days[0];
+  for (const d of days.slice(1)) { if (d === dayAdd(to, 1) && d <= dayAdd(days[0], 3)) to = d; else break; }
+  return { kind: 'days', round: null, from: days[0], to, fixtures: fixtures.filter(f => ymd(f) <= to) };
+}
+
+/** Every league's gameweek. upcoming: upcoming fixtures (any leagues). Returns Map league -> gameweek. */
+function footballGameweeks(upcoming, roundsByLeague, today, leagues) {
+  const out = new Map();
+  for (const lg of leagues) out.set(lg, leagueGameweek(upcoming.filter(f => f.league === lg), roundsByLeague?.[lg], today));
+  return out;
+}
+
+const NFL_POST = { 19: 'Wild Card round', 20: 'Divisional round', 21: 'Conference championships', 22: 'Super Bowl' };
+/** upcoming: NFL games that have not kicked off, sorted by kick-off. Returns { season, week, type, label, games } or null. */
+function nflWeek(upcoming) {
+  if (!upcoming.length) return null;
+  const g0 = upcoming[0];
+  const wk = upcoming.filter(g => g.season === g0.season && g.week === g0.week);
+  const last = wk.reduce((m, g) => { const k = koUK(g); const s = k.ymd + (k.hm || '99:99'); return s > m ? s : m; }, '');
+  const games = upcoming.filter(g => (g.season === g0.season && g.week === g0.week) || (koUK(g).ymd + (koUK(g).hm || '99:99')) <= last);
+  const label = g0.type === 'P' ? (NFL_POST[g0.week] || `Postseason week ${g0.week}`) : `Week ${g0.week}`;
+  return { season: g0.season, week: g0.week, type: g0.type, label, games };
+}
+
+return { leagueGameweek, footballGameweeks, nflWeek };
+})();
 __m['v-hiwi'] = (() => {
 // Hiwi's Section: a ready-made shortlist for someone new to sports research. No team or player needs choosing: PropLab scans the
-// upcoming games (next 7 days) and shows, per team or player and market, the most ambitious research line that reached the chosen
+// games of the current gameweek (each league's current round / the current NFL week; see gameweek.js), or all upcoming games on request, and shows, per team or player and market, the most ambitious research line that reached the chosen
 // percentage this season. Same engine as Plays (scanner.js). Ordered so that bigger samples beat tiny "perfect" records.
 const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, leaguesPresent, LEAGUE_NAMES } = __m['data'];
 const { marketDesc } = __m['markets'];
@@ -2760,30 +2807,40 @@ const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
 const { $, esc, koUK, fmtDay, fixtureId } = __m['util'];
 const { prefs, savePrefs } = __m['shared'];
+const { footballGameweeks, nflWeek } = __m['gameweek'];
 
 const ALL = '';
 // side: 'all' | 'over' | 'under' (Yes-only markets such as BTTS or anytime touchdown count as Over)
-const fb = { league: ALL, ent: ALL, market: ALL, q: '', side: 'all' };
-const nf = { ent: ALL, market: ALL, q: '', side: 'all' };
+// when: 'gw' = This Gameweek (default every time the page opens) | 'all' = All Upcoming
+const fb = { league: ALL, ent: ALL, market: ALL, q: '', side: 'all', when: 'gw' };
+const nf = { ent: ALL, market: ALL, q: '', side: 'all', when: 'gw' };
 const MIN_N = { football: 5, nfl: 4 };
-const DAYS = 7;
 // Wilson score lower bound (95%): rewards a high hit rate over a bigger sample more than a "perfect" record over very few games.
 const wilson = (hits, n, z = 1.96) => { if (!n) return 0; const p = hits / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; };
 const kickText = f => { const k = koUK(f); return `${fmtDay(k.ymd)}, ${k.hm ? k.hm + ' UK' : 'kick-off time TBC'}`; };
-const within = (f, now) => { const k = koUK(f).ymd; const lim = koUK({ ko_utc: new Date(now.getTime() + DAYS * 864e5).toISOString() }).ymd; return k <= lim; };
 
 async function viewHiwi(root, r, sport) {
-  const S = sport === 'nfl' ? nf : fb, now = new Date();
+  const S = sport === 'nfl' ? nf : fb, now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd;
+  S.when = 'gw'; // This Gameweek whenever the page is opened
   const ready = sport === 'nfl' ? nfl.status === 'ready' : store.status === 'ready';
-  root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Ready-made ideas for the next few days. Change the percentage if you like: the list updates by itself.</p></div></div>
+  root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Ready-made ideas for this gameweek. Change the percentage if you like: the list updates by itself.</p></div></div>
     <div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
   if (!ready) return;
   const hf = $('#hf', root), out = $('#hout', root);
   let reg = [], players = [], items = [], shownN = 30;
 
   // ---------- what can be chosen ----------
-  const fbFixtures = () => upcomingFixtures().filter(f => (!fb.league || f.league === fb.league) && within(f, now));
-  const nflGames = () => nflUpcoming(now).filter(g => within(g, now));
+  const fbLeagues = () => (fb.league ? [fb.league] : leaguesPresent());
+  const fbWeeks = () => footballGameweeks(upcomingFixtures(), store.rounds, todayUK, fbLeagues());
+  const fbFixtures = () => (fb.when === 'all' ? upcomingFixtures().filter(f => !fb.league || f.league === fb.league)
+    : [...fbWeeks().values()].flatMap(w => w.fixtures).sort((a, b) => { const x = koUK(a), y = koUK(b); return (x.ymd + (x.hm || '99:99')).localeCompare(y.ymd + (y.hm || '99:99')); }));
+  const nflWk = () => nflWeek(nflUpcoming(now));
+  const nflGames = () => (nf.when === 'all' ? nflUpcoming(now) : nflWk()?.games || []);
+  const dShort = d => fmtDay(d).replace(/^\w+ /, '');
+  const weekText = () => {
+    if (sport === 'nfl') { const w = nflWk(); return w ? `NFL ${w.season} ${w.label}` : 'No NFL games left this season'; }
+    return [...fbWeeks().entries()].filter(([, w]) => w.round || w.fixtures.length).map(([lg, w]) => `${LEAGUE_NAMES[lg]}: ${w.round ? `Matchday ${w.round}` : 'next match days'}${w.to ? ` (to ${dShort(w.to)})` : ''}${w.fixtures.length ? '' : ' – no fixtures left'}`).join(' · ');
+  };
   const entities = () => {
     if (sport === 'nfl') {
       const gs = nflGames(), teams = [...new Set(gs.flatMap(g => [g.away, g.home]))].sort((a, b) => teamName(a).localeCompare(teamName(b)));
@@ -2804,7 +2861,8 @@ async function viewHiwi(root, r, sport) {
     const allEnt = [...ent.games, ...ent.teams, ...ent.players]; if (S.ent && !allEnt.some(e => e[0] === S.ent)) S.ent = ALL;
     const og = (label, list) => { const l = list.filter(([, t]) => keep(t)); return l.length ? `<optgroup label="${esc(label)}">${l.map(([v, t]) => `<option value="${esc(v)}" ${v === S.ent ? 'selected' : ''}>${esc(t)}</option>`).join('')}</optgroup>` : ''; };
     hf.innerHTML = `<div class="field"><label for="hsport">Sport</label><select class="in" id="hsport"><option value="football" ${sport !== 'nfl' ? 'selected' : ''}>Football ⚽</option><option value="nfl" ${sport === 'nfl' ? 'selected' : ''}>American Football 🏈</option></select></div>
-      <div class="field"><label for="hleague">League</label><select class="in" id="hleague">${sport === 'nfl' ? '<option value="nfl" selected>NFL</option>' : `<option value="">All Leagues</option>${leaguesPresent().map(l => `<option value="${l}" ${l === fb.league ? 'selected' : ''}>${esc(LEAGUE_NAMES[l])}</option>`).join('')}`}</select></div>
+      <div class="field"><label for="hleague">League</label><select class="in" id="hleague">${sport === 'nfl' ? '<option value="nfl" selected>NFL</option>' : `<option value="">All Leagues</option>${leaguesPresent().map(l => `<option value="${l}" ${l === fb.league ? 'selected' : ''}>${esc(LEAGUE_NAMES[l])}</option>`).join('')}`}</select>
+        <div class="seg hside" id="hwhen" role="group" aria-label="Fixture dates" style="margin-top:6px">${[['gw', 'This Gameweek'], ['all', 'All Upcoming']].map(([v, l]) => `<button type="button" data-v="${v}" class="${S.when === v ? 'on' : ''}" aria-pressed="${S.when === v}">${l}</button>`).join('')}</div></div>
       <div class="field"><label for="hent">Teams/Match/Player</label><input class="in" id="hq" type="search" placeholder="Search to narrow the list" value="${esc(S.q)}" aria-label="Search teams, matches and players" style="margin-bottom:6px">
         <select class="in" id="hent"><option value="">All Teams, Matches &amp; Players</option>${og(sport === 'nfl' ? 'Games' : 'Matches', ent.games)}${og('Teams', ent.teams)}${og('Players', ent.players)}</select></div>
       <div class="field"><label for="hmk">Market</label><select class="in" id="hmk"><option value="">All Markets</option>${ms.map(([k, l]) => `<option value="${esc(k)}" ${k === S.market ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
@@ -2817,6 +2875,10 @@ async function viewHiwi(root, r, sport) {
     items = [];
     const pct = prefs.minPct, onlyMk = S.market, ent = S.ent, sides = S.side === 'all' ? ['over', 'under'] : [S.side];
     const want = (kind, id) => !ent || ent === kind + ':' + id;
+    // the same team or player scanned once per build (All Upcoming lists each of them for many games)
+    const mkMemo = new Map(); const tmk = lg => { if (!mkMemo.has(lg)) mkMemo.set(lg, fbTeamMarkets(lg).filter(m => !onlyMk || m.key === onlyMk)); return mkMemo.get(lg); };
+    let pmCache = null; const pmk = () => (pmCache ??= fbPlayerMarkets(players).filter(m => !onlyMk || m.key === onlyMk));
+    const memo = new Map(); const scanM = (key, rows, ms, o) => { if (!memo.has(key)) memo.set(key, scanOne(rows, ms, o).results); return memo.get(key); };
     if (sport === 'nfl') {
       const season = latestSeason(); const o = { sides, minPct: pct, last: 0, season, types: ['R'], venue: '' };
       for (const g of nflGames()) {
@@ -2825,13 +2887,13 @@ async function viewHiwi(root, r, sport) {
           const opp = abbr === g.home ? g.away : g.home;
           if (matchSel || want('t', abbr)) {
             const ms = NFL_TEAM_MARKETS.filter(m => !onlyMk || m.key === onlyMk);
-            if (ms.length) for (const x of scanOne(teamGameRows(abbr), ms, { lines: nflLines, ...o }).results) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: teamName(abbr), scope: x.def.key === 'gpts' ? 'both teams' : `${teamName(abbr)} only`, subj: { team: abbr } });
+            if (ms.length) for (const x of scanM('t:' + abbr, teamGameRows(abbr), ms, { lines: nflLines, ...o })) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: teamName(abbr), scope: x.def.key === 'gpts' ? 'both teams' : `${teamName(abbr)} only`, subj: { team: abbr } });
           }
           for (const p of nfl.players.filter(q => q.current && q.team === abbr && q.seasons.includes(season))) {
             if (!(matchSel || want('t', abbr) || want('p', p.id))) continue;
             if (ent && ent.startsWith('p:') && ent !== 'p:' + p.id) continue;
             const rows = (await loadGroup(p.group)).get(p.id) || []; const ms = playerMarkets(p, rows).filter(m => !onlyMk || m.key === onlyMk); if (!ms.length) continue;
-            for (const x of scanOne(rows, ms, { lines: nflLines, ...o }).results) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: p.name, scope: `${p.pos} · ${p.team}`, subj: { p, opp } });
+            for (const x of scanM('p:' + p.id, rows, ms, { lines: nflLines, ...o })) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: p.name, scope: `${p.pos} · ${p.team}`, subj: { p, opp } });
           }
         }
       }
@@ -2841,35 +2903,38 @@ async function viewHiwi(root, r, sport) {
         const o = { lines: fbLines, sides, minPct: pct, last: 0, season, venue: '' };
         for (const [name, slug] of [[f.home, teamSlugOf(f.home)], [f.away, teamSlugOf(f.away)]]) {
           if (matchSel || want('t', slug)) {
-            const ms = fbTeamMarkets(f.league).filter(m => !onlyMk || m.key === onlyMk);
-            if (ms.length && !(ent && ent.startsWith('p:'))) for (const x of scanOne(teamRowsFor(slug).filter(r => r.date < f.date), ms, o).results) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: name, scope: fbScope(x.def.key, name), subj: { name, slug, type: 'team' } });
+            const ms = tmk(f.league);
+            if (ms.length && !(ent && ent.startsWith('p:'))) for (const x of (tr => scanM(`t:${slug}:${tr.length}`, tr, ms, o))(teamRowsFor(slug).filter(r => r.date < f.date))) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: name, scope: fbScope(x.def.key, name), subj: { name, slug, type: 'team' } });
           }
           if (hasPlayerLogs(f.league)) {
-            const pm = fbPlayerMarkets(players).filter(m => !onlyMk || m.key === onlyMk); if (!pm.length) continue;
+            const pm = pmk(); if (!pm.length) continue;
             for (const p of players.filter(q => q.clubSlug === slug)) {
               if (!(matchSel || want('t', slug) || want('p', p.id))) continue;
               if (ent && ent.startsWith('p:') && ent !== 'p:' + p.id) continue;
-              for (const x of scanOne(p.rows.filter(r => r.date < f.date), pm, { ...o, exposureKey: 'minutes' }).results) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: p.name, scope: p.team, subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
+              for (const x of (pr => scanM(`p:${p.id}:${pr.length}`, pr, pm, { ...o, exposureKey: 'minutes' }))(p.rows.filter(r => r.date < f.date))) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: p.name, scope: p.team, subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
             }
           }
         }
       }
     }
     // ordering: strength of evidence (Wilson lower bound of the hit rate), then the actual hit rate, then kick-off time, then name
-    items.sort((a, b) => wilson(b.x.hr.hits, b.x.hr.n) - wilson(a.x.hr.hits, a.x.hr.n) || b.x.hr.hitPct - a.x.hr.hitPct || (koUK(a.fx || a.game).ymd + koUK(a.fx || a.game).hm).localeCompare(koUK(b.fx || b.game).ymd + koUK(b.fx || b.game).hm) || a.who.localeCompare(b.who));
+    for (const it of items) { it.w = wilson(it.x.hr.hits, it.x.hr.n); const k = koUK(it.fx || it.game); it.ko = k.ymd + (k.hm || '99:99'); }
+    items.sort((a, b) => b.w - a.w || b.x.hr.hitPct - a.x.hr.hitPct || a.ko.localeCompare(b.ko) || a.who.localeCompare(b.who));
   };
   const render = () => {
     reg = [];
     if (!items.length) {
-      const none = sport === 'nfl' ? !nflGames().length : !fbFixtures().length;
-      out.innerHTML = `<div class="banner info hiwiempty"><b>${none ? 'No games in the next 7 days for this choice.' : `Nothing reached ${prefs.minPct}% this season for this choice.`}</b> ${none ? 'Try another league, or come back closer to the weekend.' : 'Try a lower percentage, or All Markets.'}</div>`; return; }
+      const none = sport === 'nfl' ? !nflGames().length : !fbFixtures().length, gw = S.when === 'gw';
+      const what = sport === 'nfl' ? 'NFL games' : fb.league ? `${LEAGUE_NAMES[fb.league]} fixtures` : 'fixtures';
+      out.innerHTML = `${gw ? `<p class="xs muted hiwiweek">This Gameweek · ${esc(weekText())}</p>` : ''}<div class="banner info hiwiempty"><b>${none ? (gw ? `No ${what} left in this gameweek.` : `No upcoming ${what}.`) : `Nothing reached ${prefs.minPct}% this season for this choice.`}</b> ${none ? (gw ? 'Next gameweek is not shown automatically. Choose All Upcoming to see later fixtures.' : 'New fixtures appear here once they are published.') : 'Try a lower percentage, or All Markets.'}</div>`; return; }
     const unit = sport === 'nfl' ? 'game' : 'match';
     const cards = items.slice(0, shownN).map(it => { const ev = it.fx || it.game;
-      const head = `<div class="hiwifx"><b>${esc(it.fx ? `${it.fx.home} v ${it.fx.away}` : `${teamName(it.game.away)} at ${teamName(it.game.home)}`)}</b><span>${esc(it.fx ? leagueName(it.fx.league) : 'NFL')} · ${esc(kickText(ev))}</span></div>`;
+      const rnd = it.fx ? (it.fx.round ? ` · Matchday ${it.fx.round}` : '') : it.game.type === 'P' ? ' · Postseason' : ` · Week ${it.game.week}`;
+      const head = `<div class="hiwifx"><b>${esc(it.fx ? `${it.fx.home} v ${it.fx.away}` : `${teamName(it.game.away)} at ${teamName(it.game.home)}`)}</b><span>${esc((it.fx ? leagueName(it.fx.league) : 'NFL') + rnd)} · ${esc(kickText(ev))}</span></div>`;
       const o = { head, who: it.who, scope: it.scope, unit, sample: sport === 'nfl' ? "this season's games" : "this season's matches", lines: it.x.def.binary ? null : (sport === 'nfl' ? nflLines(it.x.def) : fbLines(it.x.def)), minPct: prefs.minPct,
         fmtOpp: sport === 'nfl' ? r => `${r.home ? 'v' : '@'} ${r.opp}` : null };
       const ri = reg.push({ x: it.x, o, cur: it.x.line, it }) - 1; return playCard(it.x, { ...o, ri }); }).join('');
-    out.innerHTML = `<p class="small muted">${items.length} idea${items.length === 1 ? '' : 's'} from ${sport === 'nfl' ? 'NFL games' : 'matches'} in the next 7 days, each the hardest line that still happened in at least ${prefs.minPct}% of this season's ${unit === 'game' ? 'games' : 'matches'}. Bigger samples come first.</p>${cards}
+    out.innerHTML = `${S.when === 'gw' ? `<p class="xs muted hiwiweek">This Gameweek · ${esc(weekText())}</p>` : ''}<p class="small muted">${items.length} idea${items.length === 1 ? '' : 's'} from ${sport === 'nfl' ? 'NFL games' : 'matches'} ${S.when === 'gw' ? 'in this gameweek' : 'in all upcoming fixtures'}, each the hardest line that still happened in at least ${prefs.minPct}% of this season's ${unit === 'game' ? 'games' : 'matches'}. Bigger samples come first.</p>${cards}
       ${items.length > shownN ? `<button class="btn" id="hmore">Show more (${items.length - shownN} left)</button>` : ''}
       <p class="xs muted">These are past results only. They do not predict what happens next, and they are not bookmaker prices. Lines are research lines (typical sportsbook ranges), not checked against a live bookmaker. Use the slider on a card to try other lines.</p>`;
     wireCards(out, reg, openDetails);
@@ -2895,7 +2960,9 @@ async function viewHiwi(root, r, sport) {
     else if (t.id === 'hent') S.ent = t.value; else if (t.id === 'hmk') S.market = t.value; else if (t.id === 'hpct') { prefs.minPct = Number(t.value); savePrefs(); } else return;
     drawFilters(); refresh();
   });
-  hf.addEventListener('click', e => { const b = e.target.closest('#hside button'); if (!b) return; S.side = b.dataset.v; drawFilters(); refresh(); });
+  hf.addEventListener('click', e => {
+    const w = e.target.closest('#hwhen button'); if (w) { if (S.when !== w.dataset.v) { S.when = w.dataset.v; drawFilters(); refresh(); } return; }
+    const b = e.target.closest('#hside button'); if (!b) return; S.side = b.dataset.v; drawFilters(); refresh(); });
   hf.addEventListener('input', e => {
     if (e.target.id === 'hpct') { $('#hpctv', hf).textContent = e.target.value + '%'; }
     if (e.target.id === 'hq') { S.q = e.target.value; const pos = e.target.selectionStart; drawFilters(); const q = $('#hq', hf); q.focus(); try { q.setSelectionRange(pos, pos); } catch {} }
