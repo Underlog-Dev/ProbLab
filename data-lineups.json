@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "note": "Team sheets for Premier League 18 Oct 2026, 14:00 kick-offs. Announced by the clubs about an hour before kick-off and passed to PropLab by the owner, who checked them at 12:59 UK time. Names, shirt numbers and formations only. Each line lists players left to right as seen from behind the team attacking up the pitch.",
+  "items": {
+    "epl:2026-10-18:afc-bournemouth:sunderland": {
+      "checked": "2026-10-18T11:59:00Z", "status": "confirmed", "source": "Official team sheets, checked by the PropLab owner",
+      "home": { "text": "4-2-3-1: 1 Đ. Petrović; 3 A. Truffert, 14 A. Silva, 5 J. Hill, 15 A. Smith (c); 10 R. Christie, 12 T. Adams; 16 M. Tavernier, 4 L. Cook, 37 Rayan; 9 Evanilson | Subs: 20 Michele Di Gregorio, 6 Julio Soler, 18 Bafodé Diakité, 19 Justin Kluivert, 24 Juanlu Sánchez, 21 Amine Adli, 11 Ben Gannon-Doak, 7 David Brooks, 30 Álvaro Rodriguez",
+        "out": [["Alex Scott", "Injured", "Muscle"], ["Eli Junior Kroupi", "Injured", "Foot"], ["Julián Araujo", "Injured", "Thigh"]] },
+      "away": { "text": "4-2-3-1: 22 R. Roefs; 17 R. Mandava, 15 O. Alderete, 4 K. Danso, 20 N. Mukiele; 27 N. Sadiki, 34 G. Xhaka (c); 11 C. Rigg, 28 E. Le Fée, 32 T. Hume; 57 T. Tuterov | Subs: 31 Melker Ellborg, 13 Luke O'Nien, 6 Dayann Methalie, 7 Chemsdine Talbi, 10 Nilson Angulo, 39 Malick Fofana, 29 Jules Ahoka, 19 Habib Diarra, 50 Juan Riquelme Angulo",
+        "out": [["Daniel Ballard", "Injured", "Hamstring"], ["Romaine Mundle", "Injured", "Knee"], ["Thomas Meunier", "Injured", "Hamstring"], ["Wilson Isidor", "Doubtful", "Knock"]] }
+    },
+    "epl:2026-10-18:leeds-united:manchester-united": {
+      "checked": "2026-10-18T11:59:00Z", "status": "confirmed", "source": "Official team sheets, checked by the PropLab owner",
+      "home": { "text": "3-4-2-1: 1 J. Trafford; 5 T. Muharemović, 30 N. Elvedi, 24 J. Justin; 3 G. Gudmundsson, 22 A. Tanaka, 4 E. Ampadu (c), 2 J. Bogle; 19 N. Okafor, 18 A. Stach; 9 D. Calvert-Lewin | Subs: 16 Michael Zetterer, 26 Melvin Bard, 15 Jaka Bijol, 44 Ilia Gruev, 8 Sean Longstaff, 10 Harry Wilson, 11 Brenden Aaronson, 23 Jean-Mattéo Bahoya, 14 Lukas Nmecha",
+        "out": [["Joe Rodon", "Injured", "Hamstring"], ["Mateo Joseph", "Injured", "Knee"], ["Daniel James", "Doubtful", "Back"]] },
+      "away": { "text": "4-2-3-1: 1 S. Lammens; 2 D. Dalot, 6 L. Martínez, 5 H. Maguire, 15 L. Yoro; 20 C. Baleba, 17 A. Santos; 8 B. Fernandes (c), 18 Y. Tielemans, 16 A. Diallo; 19 B. Mbeumo | Subs: 12 Karl Darlow, 4 Matthijs de Ligt, 3 Noussair Mazraoui, 41 Harry Amass, 7 Mason Mount, 31 Shea Lacey, 10 Matheus Cunha, 9 Marcus Rashford, 11 Joshua Zirkzee",
+        "out": [["Benjamin Šeško", "Injured", "Shin"], ["Manuel Ugarte", "Injured", "Cruciate ligament"], ["Patrick Dorgu", "Injured", "Hamstring"], ["Tom Heaton", "Injured", "Abdominal"], ["Kobbie Mainoo", "Doubtful", "Knock"], ["Luke Shaw", "Doubtful", "Knock"]] }
+    },
+    "epl:2026-10-18:brighton:crystal-palace": {
+      "checked": "2026-10-18T11:59:00Z", "status": "confirmed", "source": "Official team sheets, checked by the PropLab owner",
+      "home": { "text": "4-2-3-1: 1 B. Verbruggen; 21 O. Boscagli, 5 L. Dunk (c), 44 L. Vušković, 24 F. Kadıoğlu; 14 C. Andrés, 13 P. Groß; 29 M. De Cuyper, 26 Y. Ayari, 25 D. Gómez; 19 C. Kostoulas | Subs: 23 Jason Steele, 3 Jaouen Hadjam, 20 Costinha, 30 Michael Svoboda, 8 Jack Hinshelwood, 10 Georginio Rutter, 15 Ibrahim Osman, 33 Matt O'Riley, 35 Malick Yalcouyé",
+        "out": [["Pascal Struijk", "Suspended", "Red card"], ["Evan Ferguson", "Injured", "Ankle"], ["Femi Azeez", "Injured", "Muscle"], ["Kaoru Mitoma", "Injured", "Hamstring"], ["Mats Wieffer", "Injured", "Knee"], ["Stefanos Tzimas", "Injured", "Cruciate ligament"], ["Yankuba Minteh", "Injured", "Leg"], ["Zadok Yohanna", "Injured", "Knock"]] },
+      "away": { "text": "3-4-2-1: 44 W. Benítez; 6 J. Canvot, 26 C. Richards, 21 H. Ahanor; 3 T. Mitchell, 23 Q. Timber, 20 A. Wharton (c), 25 A. Khalaili; 10 Y. Pino, 18 D. Kamada; 22 J. Larsen | Subs: 31 Remi Matthews, 30 Óscar Mingueza, 8 Jefferson Lerma, 19 Will Hughes, 11 Dwight McNeil, 24 Darío Osorio, 14 Jean-Philippe Mateta, 7 Ismaïla Sarr, 9 Eddie Nketiah",
+        "out": [["Axel Disasi", "Suspended", "Red card"], ["Chadi Riad", "Injured", "Knee"], ["Ben Chilwell", "Doubtful", "Physical discomfort"]] }
+    }
+  }
+}
