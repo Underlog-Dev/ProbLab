@@ -157,6 +157,16 @@ canvas{cursor:pointer}
 .lineup,.pitch{max-width:100%;box-sizing:border-box}
 .prow{min-width:0}.lp{flex:1 1 0;min-width:0;max-width:78px;width:auto}
 .lpn{max-width:100%;overflow-wrap:anywhere}
+/* full-screen sheets sit below the iPhone status bar / Dynamic Island */
+.modal .sheet{padding:calc(12px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.modal [data-close]{position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:3;min-height:44px;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+/* match status on Fixtures (estimated from scheduled kick-off) */
+.live{display:inline-block;background:#d92d2d;color:#fff;font-weight:800;font-size:12px;letter-spacing:.06em;border-radius:6px;padding:2px 7px;animation:livepulse 1.6s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.live{animation:none}}
+.await{display:inline-block;font-size:11px;line-height:1.2;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 5px;white-space:normal;text-align:center}
+.pp{display:inline-block;font-size:11px;color:#f0b429;font-weight:700}
+.fx .time{width:auto;min-width:46px;max-width:74px;margin-right:6px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -262,8 +272,20 @@ const fixtureId = f => `${f.league}:${f.date}:${String(f.home).toLowerCase().rep
 
 // MLS seasons run within one calendar year (2026); Premier League seasons span two (2026/27).
 const seasonLabel = (league, s) => (league === 'mls' ? String(s) : `${s}/${String(s + 1).slice(2)}`);
+/**
+ * Match status estimated from the scheduled kick-off only (no live data): 'pre' before kick-off, 'live' for the first 2 hours,
+ * then 'awaiting' until a verified result is published (callers drop fixtures that already have one). 'postponed' if the fixture says so.
+ * Fixtures without a kick-off time stay 'pre' until their UK date has passed, then 'awaiting'.
+ */
+const LIVE_MS = 2 * 60 * 60 * 1000, AWAIT_MAX_MS = 4 * 24 * 60 * 60 * 1000;
+const fxStatus = (f, now = new Date()) => {
+  if (f.status === 'postponed') return 'postponed';
+  if (!f.ko_utc) return isUpcoming(f, now) ? 'pre' : 'awaiting';
+  const t = now.getTime() - Date.parse(f.ko_utc);
+  return t < 0 ? 'pre' : t < LIVE_MS ? 'live' : t < AWAIT_MAX_MS ? 'awaiting' : 'old';
+};
 
-return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, fmtKickUK, fixtureId, seasonLabel };
+return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, fmtKickUK, fixtureId, seasonLabel, LIVE_MS, fxStatus };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -1130,8 +1152,8 @@ const fmtTime = t => new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/Lon
 /** "19 B. Mbeumo (c)" -> { num: '19', name: 'B. Mbeumo', cap: true } */
 const splitName = raw => { let t = String(raw).trim(); const cap = /\(c\)/i.test(t); t = t.replace(/\(c\)/ig, '').trim();
   const m = /^(\d{1,2})\s+(.+)$/.exec(t); return m ? { num: m[1], name: m[2].trim(), cap } : { num: '', name: t, cap }; };
-const get = k => { try { return JSON.parse(localStorage.getItem(KEY + k) || 'null'); } catch { return null; } };
-const set = (k, v) => { try { if (v) localStorage.setItem(KEY + k, JSON.stringify(v)); else localStorage.removeItem(KEY + k); return true; } catch { return false; } };
+// The public site is view-only. Older versions let a device save its own team sheet; those copies are deleted so nothing local can override the published data.
+try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(KEY)) localStorage.removeItem(k); } } catch { /* storage blocked: nothing to clear */ }
 
 /**
  * Reads a team sheet such as "4-2-3-1: Lammens; Dalot, Martinez, Maguire, Yoro; Baleba, Santos; Fernandes, Tielemans, Diallo; Mbeumo | Subs: A, B".
@@ -1171,23 +1193,20 @@ function pitch(lu, team) {
 
 /** HTML for the lineup panel of one fixture. side: 'home' | 'away'. */
 function lineupPanel(f, side = 'home') {
-  const id = fixtureId(f), team = side === 'home' ? f.home : f.away, mine = get(id + '.' + side);
+  const id = fixtureId(f), team = side === 'home' ? f.home : f.away;
   const pub = published?.[id], pubSide = pub && pub.status === 'confirmed' ? pub[side] : null;
-  const saved = mine || (pubSide ? { text: pubSide.text, at: pub.checked } : null);
+  const saved = pubSide ? { text: pubSide.text, at: pub.checked } : null;
   const lu = saved ? parseLineup(saved.text) : null;
   const when = saved ? fmtTime(saved.at) : '';
-  const by = mine ? `entered by you ${esc(when)}` : `${esc(pub?.source || 'official team sheet')} · updated ${esc(when)} UK time`;
-  const out = !mine && pubSide?.out?.length ? `<p class="small" style="margin:6px 0 0"><b>Unavailable:</b> ${pubSide.out.map(([n, st, why]) => `${esc(n)} <span class="muted">(${esc(st)}${why ? ', ' + esc(why) : ''})</span>`).join(', ')}</p>` : '';
+  const by = `${esc(pub?.source || 'official team sheet')} · updated ${esc(when)} UK time`;
+  const out = pubSide?.out?.length ? `<p class="small" style="margin:6px 0 0"><b>Unavailable:</b> ${pubSide.out.map(([n, st, why]) => `${esc(n)} <span class="muted">(${esc(st)}${why ? ', ' + esc(why) : ''})</span>`).join(', ')}</p>` : '';
   return `<div class="lineup" data-lu="${esc(id)}" data-side="${side}">
     <div class="seg lutabs"><button type="button" data-lu-side="home" class="${side === 'home' ? 'on' : ''}">${esc(f.home)}</button><button type="button" data-lu-side="away" class="${side === 'away' ? 'on' : ''}">${esc(f.away)}</button></div>
-    ${lu && !lu.error ? `<div class="lustat ok"><b>Confirmed lineup</b> · ${by} · ${esc(lu.formation)}</div>${pitch(lu, team)}
+    ${lu && !lu.error ? `<div class="lustat ok"><b>Confirmed Lineup</b> · ${by} · ${esc(lu.formation)}</div>${pitch(lu, team)}
       ${lu.subs.length ? `<p class="small" style="margin:8px 0 0"><b>Substitutes:</b> ${lu.subs.map(raw => { const { num, name } = splitName(raw); const p = matchPlayer(name, team); const lbl = (num ? num + ' ' : '') + name; return p ? `<a href="#/player/${encodeURIComponent(p.id)}">${esc(lbl)}</a>` : esc(lbl); }).join(', ')}</p>` : '<p class="xs muted" style="margin:8px 0 0">Substitutes not entered.</p>'}${out}
-      ${mine ? '<p class="xs muted" style="margin:6px 0 0">Saved only on this device from the team sheet you entered. <button type="button" class="linkbtn" data-lu-clear>Remove</button></p>' : '<p class="xs muted" style="margin:6px 0 0">Published lineup. It does not update live; changes after this time are not shown.</p>'}`
-    : `<div class="lustat"><b>Lineup not yet available.</b> PropLab has no verified ${esc(team)} team sheet for this match, so no possible or predicted XI is shown.</div>`}
-    <details class="luadd"${lu && !lu.error ? '' : ' open'}><summary class="small">${lu && !lu.error ? 'Edit' : 'Add'} the confirmed ${esc(team)} lineup</summary>
-      <p class="xs muted">Copy it from the club's official team announcement. Format: <code>4-2-3-1: Keeper; four defenders; two midfielders; three attacking midfielders; striker | Subs: …</code> (separate groups with ";" and names with ",").</p>
-      <textarea class="in" rows="4" data-lu-text placeholder="4-2-3-1: Lammens; Dalot, Martínez, Maguire, Yoro; Baleba, Santos; Fernandes, Tielemans, Diallo; Mbeumo | Subs: …">${esc(saved?.text || '')}</textarea>
-      <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="btn" data-lu-save><b>Save lineup</b></button><span class="xs warn" data-lu-err>${lu?.error ? esc(lu.error) : ''}</span></div></details></div>`;
+      <p class="xs muted" style="margin:6px 0 0">Published lineup. It does not update live; changes after this time are not shown.</p>`
+    : `<div class="lustat"><b>Lineup not yet available</b></div>`}
+    </div>`;
 }
 
 /** Wires clicks inside any lineup panels under root. */
@@ -1198,14 +1217,6 @@ function wireLineups(root, fixtures) {
     const f = fixtures().find(x => fixtureId(x) === box.dataset.lu); if (!f) return;
     const redraw = side => { box.outerHTML = lineupPanel(f, side); };
     const tab = e.target.closest('[data-lu-side]'); if (tab) { redraw(tab.dataset.luSide); return; }
-    const side = box.dataset.side, k = box.dataset.lu + '.' + side;
-    if (e.target.closest('[data-lu-save]')) {
-      const text = box.querySelector('[data-lu-text]').value; const lu = parseLineup(text);
-      if (lu.error) { box.querySelector('[data-lu-err]').textContent = lu.error; return; }
-      if (!set(k, { text, at: Date.now() })) { box.querySelector('[data-lu-err]').textContent = 'This browser would not save it (private browsing?).'; return; }
-      redraw(side); return;
-    }
-    if (e.target.closest('[data-lu-clear]')) { set(k, null); redraw(side); }
   });
 }
 
@@ -1214,12 +1225,17 @@ return { loadPublishedLineups, parseLineup, lineupPanel, wireLineups };
 __m['v-fixtures'] = (() => {
 const { store, leagueName, newsForTeam, teamProfile, teamSlugOf, refereeProfile, resultsList, teamBySlug } = __m['data'];
 const { normTeam } = __m['teams'];
-const { $, $$, esc, fmtDay, fmtLong, todayYmd, isUpcoming, koUK, fixtureId } = __m['util'];
+const { $, $$, esc, fmtDay, fmtLong, todayYmd, koUK, fixtureId, fxStatus } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, leagueSelect, getLeague, setLeague } = __m['shared'];
 const { fxSort } = __m['data'];
 const { lineupPanel, wireLineups } = __m['lineup'];
 
 const ui = { tab: 'upcoming', q: '' };
+let ticker = null;
+const resKey = (lg, h, a) => `${lg}|${normTeam(h)}|${normTeam(a)}`;
+const dayDiff = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
+// What goes in the time column: kick-off time, a red LIVE badge, or "Awaiting result" (all estimated from the scheduled kick-off).
+const timeCell = (f, st) => (st === 'live' ? '<span class="live" aria-label="Live, estimated from scheduled kick-off">LIVE</span>' : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'postponed' ? '<span class="pp">P-P</span>' : esc(koUK(f).hm || 'TBC'));
 const NA = '<span class="muted">unavailable</span>';
 // One finished match: half-time score, goals (scorer, minute, penalty / own goal) above the team statistics. Missing figures say "unavailable", never 0.
 function resultDetail(m) {
@@ -1245,13 +1261,18 @@ async function viewFixtures(root, r) {
     const q = ui.q.trim().toLowerCase(); const hit = (a, b) => !q || (a + ' ' + b).toLowerCase().includes(q);
     let html = '';
     if (ui.tab === 'upcoming') {
-      const lg = getLeague(); const list = store.fixtures.filter(f => isUpcoming(f) && f.league === lg && hit(f.home, f.away)).sort(fxSort);
+      const lg = getLeague(), now = new Date();
+      // A fixture leaves this list only when its verified result is published (it then appears under Results).
+      const done = new Map(); for (const m of resultsList()) { const k = resKey(m.league, m.home, m.away); if (!done.has(k)) done.set(k, []); done.get(k).push(m.date); }
+      const hasResult = f => (done.get(resKey(f.league, f.home, f.away)) || []).some(d => dayDiff(d, f.date) <= 1); // MLS dates can differ by a day (US v UK date)
+      const list = store.fixtures.filter(f => f.league === lg && hit(f.home, f.away) && !hasResult(f) && fxStatus(f, now) !== 'old').sort(fxSort);
       const byDay = new Map(); for (const f of list) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
       html = list.length ? [...byDay.entries()].map(([k, fs]) => `<div class="dayh">${esc(fmtDay(k))} (UK date) · ${esc(leagueName(fs[0].league))}</div><div class="card">${fs.map(f => {
         const rp = f.referee ? refereeProfile(f.referee) : null;
-        return `<details class="fx"><summary><span class="time">${esc(koUK(f).hm || 'TBC')}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span>${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : 'Kick-off ' + esc(koUK(f).hm) + ' UK')}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
+        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span>${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : 'Kick-off ' + esc(koUK(f).hm) + ' UK')}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
         <div class="more"><a class="btn" href="#/plays?game=${encodeURIComponent(fixtureId(f))}"><b>View Match Plays (hit rates) →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}</div>`).join('')
         : '<div class="banner info"><b>No upcoming fixtures match.</b> Only fixtures that have been published appear here.</div>';
+      if (list.length) html = '<p class="xs muted" style="margin:0 0 8px">LIVE and Awaiting result are estimated from the scheduled kick-off. PropLab has no live scores or events; the final score appears under Results once verified.</p>' + html;
     } else {
       const list = resultsList().filter(m => m.league === getLeague() && hit(m.home, m.away)).slice(0, 60);
       const byDay = new Map(); for (const m of list) { if (!byDay.has(m.date)) byDay.set(m.date, []); byDay.get(m.date).push(m); }
@@ -1266,12 +1287,16 @@ async function viewFixtures(root, r) {
 </div>${leagueSelect()}
       <input class="in" id="fq" type="search" placeholder="Filter by team" aria-label="Filter by team" value="${esc(ui.q)}"></div>
     <div id="fxlist"></div>
-    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. All kick-off times are shown in UK time (MLS evening games often start after midnight UK). Times can change; fixtures disappear from Upcoming once kick-off has passed. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
+    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. All kick-off times are shown in UK time (MLS evening games often start after midnight UK). Times can change. Match status is estimated from the scheduled kick-off: LIVE for about two hours, then Awaiting result until the verified result is published. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
   $('#tabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.tab = b.dataset.t; $$('#tabs button', root).forEach(x => x.classList.toggle('on', x === b)); draw(); };
   $('#lgsel', root).onchange = e => { setLeague(e.target.value); draw(); };
   $('#fq', root).oninput = e => { ui.q = e.target.value; draw(); };
   wireLineups($('#fxlist', root), () => store.fixtures);
   draw();
+  // Refresh only the status badges every 30 s (open match panels are left alone); stops when this page is left.
+  if (ticker) clearInterval(ticker);
+  ticker = setInterval(() => { if (!root.isConnected || !$('#fxlist', root)) { clearInterval(ticker); ticker = null; return; } const now = new Date();
+    for (const el of $$('[data-st]', root)) { const f = store.fixtures.find(x => fixtureId(x) === el.dataset.st); if (!f) continue; const h = timeCell(f, fxStatus(f, now)); if (el.innerHTML !== h) el.innerHTML = h; } }, 30000);
 }
 
 return { viewFixtures };
@@ -1379,7 +1404,7 @@ const { $, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKickUK, fixtureId, avg }
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
 
 // minN is internal only (no on-screen control): every result shows its real number of matches instead.
-const ui = { games: new Set(), mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' };
+const ui = { gOpen: true, games: new Set(), mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' };
 const PCTS = [70, 75, 80, 85, 90, 95, 100];
 const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']];
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
@@ -1395,7 +1420,7 @@ function cardHtml(r, ctx = {}) {
   /* list newest first; the dots stay oldest -> newest */ const rows = [...r.rowsUsed].reverse().map(x => { const hit = r.side === 'under' ? x.value < r.line : x.value > r.line;
     return `<tr><td>${esc(fd(x.date))}</td><td>${s.type === 'team' ? `${x.home ? 'v' : 'at'} ${esc(x.opp)}` : `${x.home ? 'v' : 'at'} ${esc(x.opp || '')}`}</td><td class="n">${x.goals != null && x.goalsA != null ? `${x.goals}–${x.goalsA}` : ''}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('');
   const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'this season\'s'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} available)` : ''}`;
-  return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>
+  return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
     <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)}${r.def.key.startsWith('m.') && s.type === 'team' && !ctx.h2h ? ' (both teams, in ' + esc(s.name) + ' matches)' : ''}</div>
     <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span></div>
     <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
@@ -1407,7 +1432,7 @@ function cardHtml(r, ctx = {}) {
 
 async function viewPlays(root, r) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Hit Rate Finder</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
-  const g = r.q.get('game'); if (g) { ui.mode = 'game'; ui.game = g; ui.games = new Set([g]); ui.gvH = 'home'; ui.gvA = 'away'; const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.exLine = null; }
+  const g = r.q.get('game'); if (g) { ui.mode = 'game'; ui.game = g; ui.games = new Set([g]); ui.gOpen = false; ui.gvH = 'home'; ui.gvA = 'away'; const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.exLine = null; }
   let playerAll = null, defNote = '';
   // Every card on screen is registered so a tap can open its graph with the same subject, market, line, sample and Home/Away Form.
   let reg = [];
@@ -1469,7 +1494,7 @@ async function viewPlays(root, r) {
         <div class="tlist">${tms.map(t => `<label class="tcheck" data-name="${esc(t.name.toLowerCase())}"><input type="checkbox" value="${esc(t.slug)}" ${set.has(t.slug) ? 'checked' : ''}> ${esc(t.name)}</label>`).join('')}</div></div></details>
         <div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>
         ${haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })}`
-      : `<details class="teamsel" id="gselbox" open><summary><b>Games</b> <span id="gcount">${ui.games.size ? `${selFixtures().length} selected` : 'none selected'}</span> <span class="xs muted">(UK times)</span></summary>
+      : `<details class="teamsel" id="gselbox"${ui.gOpen ? ' open' : ''}><summary><b>Games</b> <span id="gcount">${ui.games.size ? `${selFixtures().length} selected` : 'none selected'}</span> <span class="xs muted">(UK times)</span></summary>
         <div class="stack" style="margin-top:8px"><div class="row" style="border:0;padding:0;gap:8px"><button class="chip" id="gall">Select all</button><button class="chip" id="gnone">Clear all</button></div>
         <div class="fxsel">${[...byDay.entries()].map(([d, fs]) => `<div class="fxday"><span>${esc(fmtDay(d))}</span><button class="chip" data-gday="${esc(d)}">Select day</button></div>${fs.map(x => `<label class="fxcheck"><input type="checkbox" data-g value="${esc(fixtureId(x))}" ${ui.games.has(fixtureId(x)) ? 'checked' : ''}><span><b>${esc(koUK(x).hm)}</b> ${esc(x.home)} v ${esc(x.away)}</span></label>`).join('')}`).join('')}</div>
         ${fx.length ? '' : '<p class="xs muted">No upcoming fixtures are published for this league.</p>'}</div></details>
@@ -1495,7 +1520,7 @@ async function viewPlays(root, r) {
   const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => p.league === league()).map(p => ({ id: p.id, type: 'player', name: p.name, club: p.team, clubSlug: teamSlugOf(p.team), href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
   const noPlayersNote = () => league() === 'epl' ? `<div class="banner info"><b>Premier League player statistics are not available.</b> No free source licenses Premier League player match statistics for public display, so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`
     : `<div class="banner info"><b>Player trends are waiting for data.</b> No verified ${esc(leagueName(league()))} player match logs are published yet, so no player results are shown. Nothing is estimated.</div>`;
-  const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Yellow and red cards are separate markets; no bookmaker card-points rules are assumed.</p>';
+  const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Yellow and red cards are separate markets; no bookmaker card-points rules are assumed. First-half corners and offsides are not offered: no permitted source used by PropLab publishes them (see Data &amp; sources).</p>';
 
   const drawBrowse = async () => {
     const set = selSet(), tms = leagueTeams();
@@ -1503,10 +1528,10 @@ async function viewPlays(root, r) {
     const teams = tms.filter(t => set.has(t.slug)).map(t => ({ id: t.slug, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: teamRowsFor(t.slug), nextFx: upcomingFixtures(league()).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null }));
     const players = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => set.has(p.clubSlug));
     let html = '';
-    if (ui.kind !== 'team' && !hasPlayers()) html += noPlayersNote();
+    if (ui.kind === 'player' && !hasPlayers()) html += noPlayersNote();
     if (ui.kind === 'player' && !hasPlayers()) { out.innerHTML = html; return; }
     const res = scan([...teams, ...players], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...baseOpts(), venue: ui.venue, kind: ui.kind });
-    if (!res.length) html += `<div class="banner info"><b>No qualifying trends.</b> Nothing among the ${set.size} selected team${set.size === 1 ? '' : 's'} reaches ${ui.minPct}% for ${esc(what())} in their ${periodWord()} ${venueWord(ui.venue)}matches.</div>`;
+    if (!res.length) html += `<div class="banner info"><b>No qualifying trends found.</b> Nothing among the ${set.size} selected team${set.size === 1 ? '' : 's'} reaches ${ui.minPct}% for ${esc(what())} in their ${periodWord()} ${venueWord(ui.venue)}matches.</div>`;
     else html += `<p class="xs muted" style="margin:0 0 8px">${res.length} qualifying trend${res.length === 1 ? '' : 's'} for ${set.size === tms.length ? 'all teams' : set.size + ' selected team' + (set.size === 1 ? '' : 's')}, ${periodWord()} ${venueWord(ui.venue) || 'home and away '}matches. ${ui.lineMode === 'exact' ? `Exact line: only ${esc(what())} is tested.` : 'One line per market and direction: the highest qualifying Over line, the lowest qualifying Under line.'} Dots run oldest to newest; filled = hit.</p>${res.slice(0, ui.shown).map(x => card(x)).join('')}${res.length > ui.shown ? `<button class="btn" id="more">Show more (${res.length - ui.shown} left)</button>` : ''}`;
     out.innerHTML = html + foot; const more = $('#more', out); if (more) more.onclick = () => { ui.shown += 40; draw(); };
   };
@@ -1516,7 +1541,8 @@ async function viewPlays(root, r) {
     if (!fsel.length) { out.innerHTML = `<div class="banner info"><b>Choose games.</b> Tick one or more upcoming ${esc(leagueName(league()))} matches above (or Select day) to see each team's recent form and head-to-head trends.</div>`; return; }
     let all = fsel.length > 1 ? `<p class="xs muted" style="margin:0 0 8px">${fsel.length} games selected. Each game is shown separately: home team, away team, then head to head. No team's matches are mixed with another team's.</p>` : '';
     for (const f of fsel) all += `<div class="gameblock">${await oneGame(f)}</div>`;
-    if (ui.kind !== 'team' && !hasPlayers()) all = noPlayersNote() + all;
+    if (ui.kind === 'player' && !hasPlayers()) all = noPlayersNote() + all;
+    else if (ui.kind === 'all' && !hasPlayers()) all += `<p class="xs muted">Player markets: ${league() === 'epl' ? 'Premier League player statistics are not available, so only team markets are shown.' : 'no player match logs are published for this league yet.'}</p>`;
     out.innerHTML = all + foot;
   };
   const oneGame = async f => {
@@ -1524,11 +1550,13 @@ async function viewPlays(root, r) {
     const subj = (slug, name) => ({ id: slug, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)) });
     const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKickUK(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
     const section = async (slug, name, venue) => {
-      const tRes = ui.kind === 'player' ? [] : scan([subj(slug, name)], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, venue, kind: 'team' });
+      const ex = ui.lineMode === 'exact'; const oo = ex ? { ...o, minPct: 0 } : o; // exact line: always show the real hit rate, flag it if below the minimum
+      const tRes = ui.kind === 'player' ? [] : scan([subj(slug, name)], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...oo, venue, kind: 'team' });
       const pl = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => p.clubSlug === slug).map(p => ({ ...p, rows: before(p.rows) }));
-      const pRes = pl.length ? scan(pl, defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, venue, kind: 'player' }) : [];
-      const res = [...tRes, ...pRes];
-      return `<section class="sec"><h2>${esc(name)} — recent form <span class="muted small">(${periodWord()} ${venueWord(venue) || 'home and away '}matches${venue ? ' · Home/Away Form ON' : ''})</span></h2>${res.length ? res.map(x => card(x, { links: x.subject.type === 'player' })).join('') : `<div class="banner info">No qualifying ${esc(name)} trends at ${ui.minPct}% for ${esc(what())} in ${periodWord()} ${venueWord(venue)}matches.</div>`}</section>`;
+      const pRes = pl.length ? scan(pl, defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...oo, venue, kind: 'player' }) : [];
+      const res = [...tRes, ...pRes].sort((a, b) => (ex ? b.hr.hitPct - a.hr.hitPct : 0));
+      const nQual = res.filter(x => x.hr.hitPct >= ui.minPct).length;
+      return `<section class="sec"><h2>${esc(name)} — recent form <span class="muted small">(${periodWord()} ${venueWord(venue) || 'home and away '}matches${venue ? ' · Home/Away Form ON' : ''})</span></h2>${ex && res.length && !nQual ? `<p class="xs muted" style="margin:0 0 6px">No qualifying trends found at ${ui.minPct}%. The actual historical hit rate is shown below.</p>` : ''}${res.length ? res.map(x => card(x, { links: x.subject.type === 'player', below: x.hr.hitPct < ui.minPct ? ui.minPct : 0 })).join('') : `<div class="banner info"><b>No qualifying trends found.</b> No ${esc(name)} market reaches ${ui.minPct}% for ${esc(what())} in ${periodWord()} ${venueWord(venue)}matches.</div>`}</section>`;
     };
     html += await section(hs, f.home, ui.gvH) + await section(as, f.away, ui.gvA);
     const atVenue = ui.hvenue === 'venue';
@@ -1537,7 +1565,7 @@ async function viewPlays(root, r) {
     if (!hh.ok) html += `<div class="banner info"><b>${hh.reason === 'gap' ? 'H2H gap too large.' : 'Not enough recent H2H data.'}</b> ${hh.reason === 'gap' ? `These teams have five ${atVenue ? 'meetings at this venue' : 'meetings'} in the last five years, but more than three years passed between ${esc(fmtLong(hh.gap[0]))} and ${esc(fmtLong(hh.gap[1]))}, so no H2H trends are shown.` : `${hh.n} of the 5 required ${atVenue ? `meetings at ${esc(f.home)}` : 'meetings'} within five years are in the published data, so no H2H trends are shown.${atVenue ? ' Switch Head to head to "All meetings" to use either venue.' : ''}`} The sample is never topped up with other matches. Both teams' recent form is still shown above.</div>`;
     else {
       const res = scan([{ id: 'h2h', type: 'team', name: `${f.home} v ${f.away}`, href: `#/team/${encodeURIComponent(hs)}`, rows: hh.rows }], { team: teamMarkets().filter(m => m.key.startsWith('m.')), player: [] }, TEAM_MARKETS, PLAYER_MARKETS, { ...o, last: 0, season: null, minN: 5, requireN: 5, kind: 'team' });
-      html += res.length ? res.map(x => card(x, { h2h: true, h2hVenue: atVenue, tag: `Head to head (last 5 meetings${atVenue ? ' at this venue' : ''})`, links: false })).join('') : `<div class="banner info">No head-to-head market reaches ${ui.minPct}% across their last 5 meetings (markets missing data in any of the 5 are left out).</div>`;
+      html += res.length ? res.map(x => card(x, { h2h: true, h2hVenue: atVenue, tag: `Head to head (last 5 meetings${atVenue ? ' at this venue' : ''})`, links: false })).join('') : `<div class="banner info"><b>No qualifying trends found.</b> No head-to-head market reaches ${ui.minPct}% across their last 5 meetings (markets missing data in any of the 5 are left out).</div>`;
     }
     html += '<p class="xs muted">H2H rules: only meetings within five years before this fixture, the five most recent, all five required, and no gap longer than three years between consecutive meetings. "At this venue" applies the same rules to meetings at the home team\'s ground only. Regular-season league matches only. The H2H sample ignores the Sample setting above.</p></section>';
     return html;
@@ -1568,10 +1596,12 @@ async function viewPlays(root, r) {
   };
   const updCount = () => { const n = selSet().size, t = leagueTeams().length; const c = $('#tcount', ctl); if (c) c.textContent = n === t ? `All ${t} teams selected` : `${n} team${n === 1 ? '' : 's'} selected`; };
   const filterList = () => { const q = ui.tq.trim().toLowerCase(); $$('.tcheck', ctl).forEach(l => { l.style.display = !q || l.dataset.name.includes(q) ? '' : 'none'; }); };
-  const redrawCtl = () => { const open = $('#tsel', ctl)?.open; drawCtl(); if (open && $('#tsel', ctl)) $('#tsel', ctl).open = true; filterList(); };
+  const redrawCtl = () => { drawCtl(); if (ui.tOpen && $('#tsel', ctl)) $('#tsel', ctl).open = true; filterList(); };
   // The exact line is only reset when the market (or league) changes. Sample, Home/Away Form, teams, game and threshold keep it.
   const RESET = [];
 
+  // details 'toggle' does not bubble: listen in the capture phase. Only a tap on the Games heading changes ui.gOpen.
+  ctl.addEventListener('toggle', e => { if (e.target.id === 'gselbox') ui.gOpen = e.target.open; if (e.target.id === 'tsel') ui.tOpen = e.target.open; }, true);
   ctl.addEventListener('click', e => {
     if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.slug)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
     if (e.target.id === 'gall' || e.target.id === 'gnone' || e.target.dataset.gday) { e.preventDefault(); const fx = upcomingFixtures(league());
@@ -1724,7 +1754,7 @@ async function viewFinder(root) {
   const curMarket = () => { const ms = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const k = ui.mode === 'teams' ? ui.market : ui.pmarket; return ms.find(m => m.key === k) || ms[0]; };
   const drawCtl = () => {
     const markets = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const key = ui.mode === 'teams' ? 'market' : 'pmarket'; const m = curMarket();
-    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p></div>
+    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p><p class="xs muted" style="margin:2px 0 0">First-half corners and offsides are not available: no permitted source publishes them.</p></div>
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Matches</label><div class="seg" id="lt">${[[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div></div>
@@ -1915,6 +1945,8 @@ async function viewAbout(root) {
     <li><b>Premier League player match statistics</b>: not available. No free source licenses them for public display, so Premier League player pages show directory information only.</li>
     <li><b>MLS player fouls, tackles, cards, offsides and saves</b>: not provided by American Soccer Analysis, so those MLS player markets are left out rather than shown as 0.</li>
     <li><b>MLS team corners, fouls, cards and half-time (first-half) scores</b>: not published by a free source we can use. MLS team research covers goals, both teams to score, shots and shots on target.</li>
+    <li><b>First-half corners</b> (match, team, opponent): not available for either league. football-data.co.uk records full-time corners only, and first-half corners are never estimated from full-time totals.</li>
+    <li><b>Offsides</b> (team, opponent, match): not available for either league. Neither football-data.co.uk (Premier League) nor American Soccer Analysis (MLS) publishes offsides.</li>
     <li><b>Goalscorers and goal minutes</b>: Premier League matches from 17 Oct 2026 onwards only; not available for older matches or for MLS.</li>
     <li><b>Player photos</b>: only checked, freely licensed Wikimedia Commons photos; every other player shows a silhouette.</li>
     <li><b>Other leagues:</b> only the Premier League and MLS are published.</li>
