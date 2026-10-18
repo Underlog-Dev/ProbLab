@@ -167,6 +167,7 @@ canvas{cursor:pointer}
 .await{display:inline-block;font-size:11px;line-height:1.2;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 5px;white-space:normal;text-align:center}
 .pp{display:inline-block;font-size:11px;color:#f0b429;font-weight:700}
 .fx .time{width:auto;min-width:46px;max-width:74px;margin-right:6px}
+.fxstats{width:100%;font-size:14px}.fxstats th,.fxstats td{padding:6px 5px}.fxstats td:first-child{white-space:normal;min-width:0}.fxstats th{font-size:11px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -191,9 +192,11 @@ const GROUPS = [
   ['manchester united', 'man united', 'man utd', 'manchester utd'], ['newcastle', 'newcastle united'], ['nottingham forest', 'nottm forest', 'forest'], ['southampton'], ['sunderland'],
   ['tottenham', 'tottenham hotspur', 'spurs'], ['west ham', 'west ham united'], ['wolves', 'wolverhampton wanderers', 'wolverhampton'], ['ipswich', 'ipswich town'], ['hull city', 'hull'], ['coventry city', 'coventry'], ['norwich city', 'norwich'], ['middlesbrough', 'boro'], ['sheffield wednesday', 'sheff wed'], ['sheffield united', 'sheffield utd'], ['luton', 'luton town'], ['watford'], ['west brom', 'west bromwich albion', 'west bromwich'],
   // Spain
-  ['athletic club', 'ath bilbao', 'athletic bilbao'], ['atletico madrid', 'ath madrid', 'atletico de madrid', 'atletico'], ['barcelona', 'fc barcelona', 'barca'], ['real betis', 'betis'],
-  ['celta vigo', 'celta', 'celta de vigo'], ['espanyol', 'espanol', 'rcd espanyol'], ['getafe'], ['girona'], ['levante'], ['mallorca', 'rcd mallorca'], ['osasuna', 'ca osasuna'],
-  ['rayo vallecano', 'vallecano'], ['real madrid'], ['real sociedad', 'sociedad'], ['sevilla'], ['valencia'], ['villarreal'], ['alaves', 'deportivo alaves'], ['elche'], ['real oviedo', 'oviedo'],
+  ['athletic club', 'ath bilbao', 'athletic bilbao'], ['atletico madrid', 'ath madrid', 'atletico de madrid', 'atletico', 'club atletico de madrid'], ['barcelona', 'fc barcelona', 'barca'], ['real betis', 'betis', 'real betis balompie'],
+  ['celta vigo', 'celta', 'celta de vigo'], ['espanyol', 'espanol', 'rcd espanyol', 'espanyol de barcelona'],
+  ['deportivo la coruna', 'la coruna', 'deportivo', 'deportivo de la coruna'], ['racing santander', 'santander', 'real racing club de santander', 'real racing club', 'racing de santander'],
+  ['malaga'], ['granada'], ['almeria', 'ud almeria'], ['cadiz'], ['getafe'], ['girona'], ['levante'], ['mallorca', 'rcd mallorca'], ['osasuna', 'ca osasuna'],
+  ['rayo vallecano', 'vallecano', 'rayo vallecano de madrid'], ['real madrid'], ['real sociedad', 'sociedad', 'real sociedad de futbol'], ['sevilla'], ['valencia'], ['villarreal'], ['alaves', 'deportivo alaves'], ['elche'], ['real oviedo', 'oviedo'],
   ['las palmas'], ['real valladolid', 'valladolid'], ['leganes'],
   // Germany
   ['bayern munich', 'bayern munchen', 'fc bayern munchen', 'bayern'], ['borussia dortmund', 'dortmund', 'bvb'], ['bayer leverkusen', 'leverkusen', 'bayer 04 leverkusen'],
@@ -228,7 +231,7 @@ const sameTeam = (a, b) => !!a && !!b && normTeam(a) === normTeam(b);
 // Friendly names for display (the canonical key is lower-case). Unlisted teams are shown title-cased.
 const DISPLAY = { 'leeds': 'Leeds United', 'newcastle': 'Newcastle United', 'brighton': 'Brighton', 'tottenham': 'Tottenham Hotspur', 'wolves': 'Wolverhampton Wanderers', 'west ham': 'West Ham United',
   'manchester city': 'Manchester City', 'manchester united': 'Manchester United', 'nottingham forest': 'Nottingham Forest', 'hull city': 'Hull City', 'coventry city': 'Coventry City', 'ipswich': 'Ipswich Town',
-  'leicester': 'Leicester City', 'bournemouth': 'AFC Bournemouth', 'sunderland': 'Sunderland', 'sheffield united': 'Sheffield United', 'luton': 'Luton Town', 'west brom': 'West Bromwich Albion', 'psg': 'Paris Saint-Germain', 'paris saint germain': 'Paris Saint-Germain',
+  'leicester': 'Leicester City', 'bournemouth': 'AFC Bournemouth', 'sunderland': 'Sunderland', 'sheffield united': 'Sheffield United', 'luton': 'Luton Town', 'west brom': 'West Bromwich Albion', 'psg': 'Paris Saint-Germain', 'atletico madrid': 'Atlético Madrid', 'athletic club': 'Athletic Club', 'alaves': 'Alavés', 'deportivo la coruna': 'Deportivo La Coruña', 'racing santander': 'Racing Santander', 'cadiz': 'Cádiz', 'almeria': 'Almería', 'leganes': 'Leganés', 'malaga': 'Málaga', 'celta vigo': 'Celta Vigo', 'paris saint germain': 'Paris Saint-Germain',
   'atlanta united': 'Atlanta United', 'montreal': 'CF Montréal', 'charlotte': 'Charlotte FC', 'chicago fire': 'Chicago Fire', 'columbus crew': 'Columbus Crew', 'dc united': 'D.C. United', 'cincinnati': 'FC Cincinnati',
   'inter miami': 'Inter Miami', 'new england revolution': 'New England Revolution', 'new york city': 'New York City FC', 'new york red bulls': 'New York Red Bulls', 'nashville': 'Nashville SC', 'orlando city': 'Orlando City',
   'philadelphia union': 'Philadelphia Union', 'toronto': 'Toronto FC', 'austin': 'Austin FC', 'colorado rapids': 'Colorado Rapids', 'dallas': 'FC Dallas', 'houston dynamo': 'Houston Dynamo', 'la galaxy': 'LA Galaxy',
@@ -536,7 +539,7 @@ function searchBox(root, opts = {}) {
     const q = input.value.trim(); if (!q) return close();
     items = search(ensure(), q, 6);
     box.innerHTML = items.length ? items.map((it, i) => `<a href="${href(it)}" data-i="${i}"><span class="t">${esc(it.name)}<br><small>${esc(it.sub)}</small></span><span class="badge">${it.type === 'player' ? 'Player' : 'Team'}</span></a>`).join('')
-      : `<div class="empty"><span class="muted">${store.status === 'ready' ? 'No match. Try a surname or club name. Only current Premier League and MLS squads are listed.' : 'Loading data…'}</span></div>`;
+      : `<div class="empty"><span class="muted">${store.status === 'ready' ? 'No match. Try a surname or club name. Players: current Premier League and MLS squads only. Teams: Premier League, La Liga and MLS.' : 'Loading data…'}</span></div>`;
     box.hidden = false;
   };
   input.addEventListener('input', debounce(show, 80));
@@ -586,7 +589,7 @@ async function viewHome(root) {
   <section class="sec"><h2>What is published <a href="#/about">Data &amp; sources</a></h2><div class="card"><dl class="kv">
     <dt>Last updated</dt><dd>${f.generated ? esc(fmtLong(f.generated)) : 'n/a'}</dd>
     <dt>Team match stats</dt><dd>${tm.length ? tm.map(e => `${esc(leagueName(e.league))} ${seasonLabel(e.league, e.season)}: ${e.count} matches to ${esc(fmtDay(e.through))}`).join('<br>') : 'None yet'}</dd>
-    <dt>Player directory</dt><dd>${store.directory.length ? `${store.directory.length} players (${['epl', 'mls'].map(l => `${leagueName(l)} ${store.directory.filter(d => d.league === l).length}`).join(', ')}), ${store.directoryMeta?.clubs?.length || 0} clubs · updated ${esc(fmtLong(store.directoryMeta?.updated))}` : 'Not published yet'}</dd>
+    <dt>Player directory</dt><dd>${store.directory.length ? `${store.directory.length} players (${[...new Set(store.directory.map(d => d.league))].map(l => `${leagueName(l)} ${store.directory.filter(d => d.league === l).length}`).join(', ')}), ${store.directoryMeta?.clubs?.length || 0} clubs · updated ${esc(fmtLong(store.directoryMeta?.updated))}` : 'Not published yet'}</dd>
     <dt>Player match logs</dt><dd>${pm.length ? `${pRows.toLocaleString()} player rows` : 'Not published yet'}</dd>
     <dt>Upcoming fixtures</dt><dd>${store.fixtures.length}</dd><dt>Team news items</dt><dd>${store.news.length}</dd></dl>
     ${pm.length ? '' : '<p class="small muted" style="margin:12px 0 0">Every player has a profile with club, position, fixtures and team news. Player match statistics (shots, tackles, fouls, cards) will appear on a profile only once verified match logs are published.</p>'}</div></section>` : ''}`;
@@ -622,7 +625,7 @@ async function viewPlayers(root, r) {
       <section class="sec"><h2>Clubs</h2><div class="card"><div class="list">${teams.map(t => rowHtml({ type: 'team', id: t.slug, name: t.name, sub: leagueName(t.league) + (dirN ? ' · squad and team stats' : '') })).join('')}</div></div></section>
       ${featured.length ? `<section class="sec"><h2>${hasLogs ? 'Players with match logs' : 'Players with team news'}</h2><div class="card"><div class="list">${featured.slice(0, 60).map(p => rowHtml({ type: 'player', id: p.id, name: p.name, sub: `${p.team} · ${leagueName(p.league)}${p.hasLogs ? ` · ${p.n} match${p.n === 1 ? '' : 'es'}` : ''}` })).join('')}</div></div></section>` : ''}`;
   }
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Search</h1><p class="muted" style="margin-top:-4px">Find any team or player in the Premier League and MLS.</p>${ready ? leagueSelect() : ''}<div id="sb"></div><div id="res">${body}</div>`;
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Search</h1><p class="muted" style="margin-top:-4px">Find any Premier League, La Liga or MLS team, or any Premier League or MLS player.</p>${ready ? leagueSelect() : ''}<div id="sb"></div><div id="res">${body}</div>`;
   const ls = $('#lgsel', root); if (ls) ls.onchange = e => { setLeague(e.target.value); viewPlayers(root, r); };
   searchBox($('#sb', root), { value: q, onSubmit: t => { location.hash = `#/players?q=${encodeURIComponent(t)}`; }, autofocus: false });
 }
@@ -654,12 +657,12 @@ const TEAM = [['goals', 'Goals'], ['htgoals', 'First-half goals'], ['shots', 'Sh
 const OPP = [['goals', 'Goals conceded'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['yellows', 'Yellow cards'], ['reds', 'Red cards']];
 const MATCH = [['goals', 'Total match goals'], ['htgoals', 'First-half match goals'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['fouls', 'Fouls'], ['yellows', 'Yellow cards'], ['reds', 'Red cards']];
 const TEAM_MARKETS = [
-  ...TEAM.map(([k, l]) => ({ key: 't.' + k, label: l, short: l, group: 'Team total', get: r => clean(r[k]) })),
-  { key: 't.fdrawn', label: 'Fouls drawn', short: 'Fouls drawn', group: 'Team total', get: r => clean(r.foulsA), note: "the opponent's fouls committed in the match" },
-  ...OPP.map(([k, l]) => ({ key: 'o.' + k, label: l, short: l, group: 'Opponent total (against this team)', get: r => clean(r[k + 'A']) })),
-  ...MATCH.slice(0, 2).map(([k, l]) => ({ key: 'm.' + k, label: l, short: l, group: 'Match total (both teams)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
-  { key: 'm.btts', label: 'Both teams to score: Yes', short: 'BTTS', group: 'Match total (both teams)', binary: true, get: r => clean(r.btts) },
-  ...MATCH.slice(2).map(([k, l]) => ({ key: 'm.' + k, label: 'Match ' + l.toLowerCase(), short: l, group: 'Match total (both teams)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
+  ...TEAM.map(([k, l]) => ({ key: 't.' + k, label: l, short: l, group: 'Team (selected team only)', get: r => clean(r[k]) })),
+  { key: 't.fdrawn', label: 'Fouls drawn', short: 'Fouls drawn', group: 'Team (selected team only)', get: r => clean(r.foulsA), note: "the opponent's fouls committed in the match" },
+  ...OPP.map(([k, l]) => ({ key: 'o.' + k, label: l, short: l, group: 'Opponent (against the selected team)', get: r => clean(r[k + 'A']) })),
+  ...MATCH.slice(0, 2).map(([k, l]) => ({ key: 'm.' + k, label: l, short: l, group: 'Match (both teams combined)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
+  { key: 'm.btts', label: 'Both teams to score: Yes', short: 'BTTS', group: 'Match (both teams combined)', binary: true, get: r => clean(r.btts) },
+  ...MATCH.slice(2).map(([k, l]) => ({ key: 'm.' + k, label: 'Match ' + l.toLowerCase(), short: l, group: 'Match (both teams combined)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
 ];
 const marketValue = (m, row) => { if (m.positions && !m.positions.includes(row.position)) return null; const v = m.get(row); return v === undefined ? null : v; };
 const marketRows = (rows, m, exposureKey) => rows.map(r => ({ ...r, value: marketValue(m, r), exposure: exposureKey ? r[exposureKey] : 1 }));
@@ -684,7 +687,7 @@ const MD = {
   'm.shots': ['Match Shots', 'Shots taken by both teams added together.'],
   'm.sot': ['Match Shots on Target', 'Shots on target by both teams added together.'],
   'm.corners': ['Match Corners', 'Combined number of corners taken by both teams in the match.'],
-  'm.fouls': ['Match Fouls', 'Fouls committed by both teams added together.'],
+  'm.fouls': ['Match Fouls', 'Fouls committed by both teams added together. Fouls committed, not free kicks awarded.'],
   'm.yellows': ['Match Yellow Cards', 'Yellow cards shown to both teams added together. Red cards are not included.'],
   'm.reds': ['Match Red Cards', 'Red cards shown to both teams added together.'],
   't.goals': ['Team Goals', 'Goals scored by the selected team only. Over 1.5 means the team scores at least 2.'],
@@ -692,16 +695,16 @@ const MD = {
   't.shots': ['Team Shots', "Number of shots taken by the selected team, excluding its opponent's shots."],
   't.sot': ['Team Shots on Target', 'Shots on target by the selected team only.'],
   't.corners': ['Team Corners', 'Corners taken by the selected team only.'],
-  't.fouls': ['Team Fouls', 'Fouls committed by the selected team.'],
-  't.fdrawn': ['Team Fouls Drawn', 'Fouls committed against the selected team (its opponent\'s fouls).'],
+  't.fouls': ['Team Fouls Committed', 'Fouls committed by the selected team only. This is not the number of free kicks the team was awarded.'],
+  't.fdrawn': ['Team Fouls Drawn', 'Fouls committed against the selected team (its opponent\'s fouls committed). Not free kicks awarded: free kicks also come from offsides and other infringements.'],
   't.yellows': ['Team Yellow Cards', 'Yellow cards shown to the selected team only.'],
   't.reds': ['Team Red Cards', 'Red cards shown to the selected team only.'],
-  'o.goals': ['Goals Conceded', 'How often the selected team concedes the chosen number of goals. Over 1.5 means conceding at least 2 goals in a match.'],
-  'o.shots': ['Shots Conceded', "Shots taken by the selected team's opponents."],
-  'o.sot': ['Shots on Target Conceded', "Shots on target by the selected team's opponents."],
-  'o.corners': ['Corners Conceded', "Corners taken by the selected team's opponents."],
-  'o.yellows': ['Opponent Yellow Cards', "Yellow cards shown to the selected team's opponents."],
-  'o.reds': ['Opponent Red Cards', "Red cards shown to the selected team's opponents."],
+  'o.goals': ['Goals Conceded', 'Goals scored by the selected team\'s opponent, i.e. goals the selected team concedes. Over 1.5 means conceding at least 2 goals in a match.'],
+  'o.shots': ['Opponent Shots', "Shots taken by the selected team's opponent in each match (shots the team conceded)."],
+  'o.sot': ['Opponent Shots on Target', "Shots on target by the selected team's opponent in each match."],
+  'o.corners': ['Opponent Corners', "Corners taken by the selected team's opponent in each match."],
+  'o.yellows': ['Opponent Yellow Cards', "Yellow cards shown to the selected team's opponent in each match."],
+  'o.reds': ['Opponent Red Cards', "Red cards shown to the selected team's opponent in each match."],
   shots: ['Player Shots', 'Number of shots recorded by the selected player.'],
   shots_on_target: ['Player Shots on Target', 'Number of shots on target recorded by the selected player.'],
   goals: ['Player Goals', 'Goals scored by the selected player (own goals are not counted).'],
@@ -716,7 +719,12 @@ const MD = {
 const marketName = (key, fallback = '') => MD[key]?.[0] || fallback;
 const marketDesc = key => MD[key]?.[1] || '';
 
-return { PLAYER_MARKETS, TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, stepLine, marketName, marketDesc };
+// Every market object carries the same short name everywhere (cards, graphs, Finder, profiles, Value).
+for (const m of [...TEAM_MARKETS, ...PLAYER_MARKETS]) if (MD[m.key]) m.label = MD[m.key][0];
+/** Whose numbers a market counts: 'team' (selected team only), 'opp' (its opponent), 'match' (both teams), 'player'. */
+const marketScope = key => (key.startsWith('t.') ? 'team' : key.startsWith('o.') ? 'opp' : key.startsWith('m.') ? 'match' : 'player');
+
+return { PLAYER_MARKETS, TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, stepLine, marketName, marketDesc, marketScope };
 })();
 __m['analytics'] = (() => {
 // Pure maths. No network, no storage, no DOM. Everything here is unit-tested.
@@ -998,15 +1006,15 @@ function researchPanel(root, cfg) {
     out.innerHTML = `<div class="hitsum"><b class="${hitCls}">${hr.hitPct === null ? 'n/a' : hr.hitPct + '%'}</b> <span>${hr.n ? hitsLine(hr) : 'no matches'} · ${esc(sampleLabel(st.last, st.venue, hr.n))}${cfg.hasMinutes && st.minMin ? ` · ${st.minMin}+ minutes` : ''}</span></div>
       ${hr.n ? '<canvas role="img" aria-label="Bar chart of each match against the line. Tap a bar for the match details."></canvas><p class="xs muted barinfo" data-barinfo>Tap a bar to see the match.</p>' : '<div class="banner">No matches with published data for these filters. Nothing is estimated or filled in.</div>'}
       <div class="tiles">${tile('Matches', hr.n)}${tile('Hits', hr.hits)}${tile('Hit rate', hr.hitPct === null ? 'n/a' : hr.hitPct + '%', hitCls)}${tile(binary ? 'Both scored' : 'Average', binary ? (hr.n ? hr.hits + '/' + hr.n : 'n/a') : fmt(hr.avg))}${tile('Median', binary ? '–' : fmt(hr.median))}${tile('High / low', hr.n && !binary ? `${hr.max} / ${hr.min}` : binary ? '–' : 'n/a')}</div>
-      <p class="small muted">${binary ? 'Both teams to score (Yes): a hit when both teams scored at least once.' : `${word} ${st.line} ${esc(market.label.toLowerCase())}${market.note ? ' (' + esc(market.note) + ')' : ''}: a hit when the recorded figure is ${st.side === 'under' ? 'below' : 'above'} ${st.line}.`} A hit rate describes the past. It is not the chance it happens next time, and it says nothing about whether a bookmaker's price is good value.</p>
+      <p class="small muted">${binary ? 'Both teams to score (Yes): a hit when both teams scored at least once.' : `${word} ${st.line} ${esc(market.label)}${market.note ? ' (' + esc(market.note) + ')' : ''}: a hit when the recorded figure is ${st.side === 'under' ? 'below' : 'above'} ${st.line}.`} A hit rate describes the past. It is not the chance it happens next time, and it says nothing about whether a bookmaker's price is good value.</p>
       ${hr.n && hr.n < 8 ? `<div class="banner"><b>Small sample.</b> Only ${hr.n} match${hr.n > 1 ? 'es' : ''} with data. Treat this as a rough guide.</div>` : ''}
       ${Number.isInteger(st.line) ? '<div class="banner">Whole-number line: bookmakers usually refund a result exactly on the line. This hit rate counts it as a miss.</div>' : ''}
       ${missing ? `<p class="xs muted">${missing} match${missing > 1 ? 'es have' : ' has'} no published figure for this statistic and ${missing > 1 ? 'are' : 'is'} left out.</p>` : ''}
       ${hr.n ? `<h3>Same line, other slices</h3><div class="scroll"><table><tr><th>Slice</th><th>Matches</th><th>Hits</th><th>Hit %</th>${binary ? '' : '<th>Avg</th>'}</tr>${splits.filter(s => s.n).map(s => `<tr><td>${esc(s.label)}</td><td class="n">${s.n}</td><td class="n">${s.hits}</td><td class="n">${s.hitPct}%</td>${binary ? '' : `<td class="n">${fmt(s.avg)}</td>`}</tr>`).join('')}</table></div>
-      <h3>Match by match <span class="xs muted">(newest first)</span></h3><div class="scroll"><table><tr><th>Date</th>${showClub ? '<th>For</th>' : ''}<th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.short || market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(fmtShort(r.date))}</td>${showClub ? `<td>${esc(r.club || '')}</td>` : ''}<td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${esc(fmtV(r.value))}</b></td></tr>`; }).join('')}</table></div>` : ''}
+      <h3>Match by match <span class="xs muted">(newest first)</span></h3><div class="scroll"><table><tr><th>Date</th>${showClub ? '<th>For</th>' : ''}<th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(fmtShort(r.date))}</td>${showClub ? `<td>${esc(r.club || '')}</td>` : ''}<td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${esc(fmtV(r.value))}</b></td></tr>`; }).join('')}</table></div>` : ''}
       ${binary ? '' : `<div><a class="go" style="display:inline-flex;align-items:center" href="#/value?s=${cfg.subject}:${encodeURIComponent(cfg.subjectId)}&m=${encodeURIComponent(st.market)}&side=${st.side}&line=${st.line}">Compare with a price</a></div>`}`;
     const asc = [...filtered].reverse();
-    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.short || market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>` : 'Tap a bar to see the match.'; };
+    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>` : 'Tap a bar to see the match.'; };
     const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { geo = drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => fmtShort(r.date)), line: st.line, side: st.side, fmtValue: fmtV, selected: st.sel, showLine: !binary }); cv.onclick = e => { const i = barAt(cv, geo, e.clientX); st.sel = i === st.sel ? -1 : i; draw(); info(); }; } };
     if (st.sel >= asc.length) st.sel = -1;
     draw(); info(); panelRedraw = draw;
@@ -1083,7 +1091,7 @@ async function viewPlayer(root, r) {
     html += `<div id="panel"></div>${miss.length ? `<p class="xs muted">Not available for this player from the published source: ${esc(miss.join(', '))}. These are left out rather than estimated.</p>` : ''}`; }
   else if (p.league === 'epl') html += `<div class="banner info"><b>Match statistics are not available for ${esc(p.name)}.</b> No free source licenses Premier League player match statistics for public display, so this profile shows directory information only. Nothing is estimated in their place. What is available: club, position, team news, fixtures, the team page and team trends.</div>`;
   else html += `<div class="banner info"><b>Match statistics are not available yet for ${esc(p.name)}.</b> This profile shows directory information only. Shots, goals, assists and hit rates appear here once verified match-by-match logs are published; nothing is estimated in their place.${p.hasLogs ? '' : ' What is available: club, position, team news, fixtures and the team page.'}</div>`;
-  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : ' · Referee not yet confirmed'}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${pr.shotsA != null ? `${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA ?? 'n/a'} fouls and ${pr.yellowsA ?? 'n/a'} yellow cards conceded per match` : `${esc(opp)} concede ${pr.goalsA ?? 'n/a'} goals per match`} (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${pr.shotsA != null ? `${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA ?? 'n/a'} fouls and ${pr.yellowsA ?? 'n/a'} yellow cards conceded per match` : `${esc(opp)} concede ${pr.goalsA ?? 'n/a'} goals per match`} (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     <section class="sec"><h2>Source</h2><div class="card small muted">${p.inDirectory ? `<b>Directory:</b> name, club and position from <a href="${esc(p.dirSource)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0), squad list ${p.as_of ? 'as of ' + esc(fmtLong(p.as_of)) : 'date not stated by the source'}; directory published ${esc(fmtLong(store.directoryMeta?.updated || ''))}. Squad lists can lag recent transfers. ` : ''}${rows.length ? `Match logs: ${[...new Set(rows.map(x => x.source).filter(Boolean))].map(esc).join('; ') || 'see Data & sources'}. ` : ''}${store.manifest?.player_index ? `Player index updated ${esc(fmtLong(store.manifest.player_index.updated))}. ` : ''}<a href="#/about">Data &amp; sources</a></div></section>`;
   body.innerHTML = html;
   if (rows.length && markets.length) {
@@ -1120,12 +1128,12 @@ async function viewTeam(root, r) {
   const cell = (a, b, c) => `<tr><td>${a}</td><td class="n">${pr[b] ?? 'n/a'}</td><td class="n">${pr[b + 'A'] ?? 'n/a'}</td><td class="n">${pr['lg_' + b] ?? 'n/a'}</td></tr>`;
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Search</a>
     <div class="prof"><div class="avatar">${esc(t.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${esc(leagueName(t.league))}${pr.n ? ` · ${pr.n} matches this season ` : ''}${pr.form.length ? `<span class="form" aria-label="Recent form">${pr.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</div></div></div>
-    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : ' · Referee not yet confirmed'}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     ${news.length ? `<section class="sec"><h2>Team news</h2><div class="card"><div class="list">${news.map(newsItem).join('')}</div></div></section>` : ''}
-    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table><tr><th></th><th>${esc(t.name.split(' ')[0])}</th><th>Against</th><th>League</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Team totals from ${pr.n} published matches. "Against" is what opponents recorded against ${esc(t.name)}. "League" is the average per team per match. n/a = not published for this league.</p></div></section>
+    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table><tr><th></th><th>${esc(t.name.split(' ')[0])}</th><th>Against</th><th>League</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls committed', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Team totals from ${pr.n} published matches. "Against" is what opponents recorded against ${esc(t.name)}. "League" is the average per team per match. n/a = not published for this league.</p></div></section>
     <section class="sec"><h2>Research a market</h2><div id="panel"></div></section>` : `<div class="banner info" style="margin-top:14px"><b>No match statistics are published for ${esc(t.name)} yet.</b> Fixtures and news above are all that is available.</div>`}
     ${squadSection(t)}
-    <section class="sec"><h2>Source</h2><div class="card small muted">${t.league === 'mls' ? 'MLS results, team shots and shots on target come from American Soccer Analysis (shots on target are the sum of its player rows). Corners, fouls, cards and half-time scores are not available for MLS.' : 'Team statistics, half-time scores and referees come from football-data.co.uk; older results were cross-checked with openfootball.'} <a href="#/about">Data &amp; sources</a></div></section>`;
+    <section class="sec"><h2>Source</h2><div class="card small muted">${t.league === 'laliga' ? 'La Liga results, half-time scores and team statistics (shots, shots on target, corners, fouls committed, cards) come from football-data.co.uk; its La Liga files have no referee column. La Liga player statistics are not available.' : t.league === 'mls' ? 'MLS results, team shots and shots on target come from American Soccer Analysis (shots on target are the sum of its player rows). Corners, fouls, cards and half-time scores are not available for MLS.' : 'Team statistics, half-time scores and referees come from football-data.co.uk; older results were cross-checked with openfootball.'} <a href="#/about">Data &amp; sources</a></div></section>`;
   if (pr.n && markets.length) { const panel = researchPanel($('#panel', root), { key: 'team:' + t.slug, markets, rows, exposureKey: null, hasMinutes: false, subject: 'team', subjectId: t.slug }); hooks.redraw = panel.redraw; }
 }
 
@@ -1243,9 +1251,10 @@ function resultDetail(m) {
   const gl = Array.isArray(m.goals) && m.goals.length ? `<h4 style="margin:0 0 4px">Goals</h4><ul class="goals">${[...m.goals].sort((a, b) => parseInt(a.min) - parseInt(b.min)).map(g => `<li><span class="gm">${esc(g.min)}'</span><span><b>${esc(g.player)}</b>${g.type === 'pen' ? ' (pen)' : g.type === 'og' ? ' (og)' : ''} <span class="gt">— ${esc(g.team === 'home' ? m.home : m.away)}</span></span></li>`).join('')}</ul>`
     : (m.hg + m.ag === 0 ? '<p class="small muted" style="margin:0 0 8px">No goals.</p>' : '<p class="small muted" style="margin:0 0 8px">Goalscorers and goal minutes: unavailable for this match (no permitted source publishes them for PropLab yet).</p>');
   const none = ['hs', 'hst', 'hc', 'hf', 'hy', 'hr'].every(k => m[k] == null);
-  const stats = none ? `<p class="small muted" style="margin:0">Team statistics: unavailable${m.league === 'epl' && m.season >= 2026 ? ' so far. football-data.co.uk usually adds a weekend\'s statistics within a few days' : m.league === 'mls' ? ' for MLS from the free sources used' : ''}.</p>`
-    : `<div class="scroll"><table><tr><th></th><th>${esc(m.home.split(' ')[0])}</th><th>${esc(m.away.split(' ')[0])}</th></tr>
-        ${[['Shots', 'hs', 'as'], ['On target', 'hst', 'ast'], ['Corners', 'hc', 'ac'], ['Fouls', 'hf', 'af'], ['Yellow cards', 'hy', 'ay'], ['Red cards', 'hr', 'ar']].map(([l, a, b]) => `<tr><td>${l}</td><td class="n">${m[a] ?? NA}</td><td class="n">${m[b] ?? NA}</td></tr>`).join('')}</table></div>`;
+  const stats = none ? `<p class="small muted" style="margin:0">Team statistics: unavailable${(m.league === 'epl' || m.league === 'laliga') && m.season >= 2026 ? ' so far. football-data.co.uk usually adds a weekend\'s statistics within a few days' : m.league === 'mls' ? ' for MLS from the free sources used' : ''}.</p>`
+    : `<div class="scroll"><table class="fxstats"><tr><th></th><th>${esc(m.home.split(' ')[0])}</th><th>${esc(m.away.split(' ')[0])}</th><th>Match</th></tr>
+        ${[['Shots', 'hs', 'as'], ['Shots on target', 'hst', 'ast'], ['Corners', 'hc', 'ac'], ['Fouls committed', 'hf', 'af'], ['Yellow cards', 'hy', 'ay'], ['Red cards', 'hr', 'ar']].map(([l, a, b]) => `<tr><td>${l}</td><td class="n">${m[a] ?? NA}</td><td class="n">${m[b] ?? NA}</td><td class="n">${m[a] != null && m[b] != null ? m[a] + m[b] : NA}</td></tr>`).join('')}</table></div>
+        <p class="xs muted" style="margin:6px 0 0">Team columns count that team only; Match = both teams combined. Free kicks awarded, tackles and offsides are not available from the sources used.</p>`;
   return ht + gl + stats + (m.goals_source ? `<p class="xs muted" style="margin:6px 0 0">Goals: ${esc(m.goals_source)}.</p>` : '');
 }
 const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n = newsForTeam(name);
@@ -1269,7 +1278,7 @@ async function viewFixtures(root, r) {
       const byDay = new Map(); for (const f of list) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
       html = list.length ? [...byDay.entries()].map(([k, fs]) => `<div class="dayh">${esc(fmtDay(k))} (UK date) · ${esc(leagueName(fs[0].league))}</div><div class="card">${fs.map(f => {
         const rp = f.referee ? refereeProfile(f.referee) : null;
-        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span>${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : 'Kick-off ' + esc(koUK(f).hm) + ' UK')}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
+        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span>${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koUK(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koUK(f).hm) + ' UK')}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
         <div class="more"><a class="btn" href="#/plays?game=${encodeURIComponent(fixtureId(f))}"><b>View Match Plays (hit rates) →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}</div>`).join('')
         : '<div class="banner info"><b>No upcoming fixtures match.</b> Only fixtures that have been published appear here.</div>';
       if (list.length) html = '<p class="xs muted" style="margin:0 0 8px">LIVE and Awaiting result are estimated from the scheduled kick-off. PropLab has no live scores or events; the final score appears under Results once verified.</p>' + html;
@@ -1318,6 +1327,7 @@ const TEAM_PLAY_MARKETS = [
   { key: 'm.corners', label: 'Match corners' }, { key: 't.corners', label: 'Team corners' },
   { key: 'm.fouls', label: 'Match fouls' }, { key: 't.fouls', label: 'Team fouls committed' }, { key: 't.fdrawn', label: 'Team fouls drawn' },
   { key: 'm.yellows', label: 'Match yellow cards' }, { key: 't.yellows', label: 'Team yellow cards' }, { key: 'm.reds', label: 'Match red cards' }, { key: 't.reds', label: 'Team red cards' },
+  { key: 'o.goals', label: 'Goals conceded' }, { key: 'o.shots', label: 'Opponent shots' }, { key: 'o.sot', label: 'Opponent shots on target' }, { key: 'o.corners', label: 'Opponent corners' }, { key: 'o.yellows', label: 'Opponent yellow cards' }, { key: 'o.reds', label: 'Opponent red cards' },
 ];
 // labels come from the shared names in markets.js
 const PLAYER_PLAY_MARKETS = [
@@ -1396,7 +1406,7 @@ return { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, linesFor, dotsFor, bestLine, re
 __m['v-plays'] = (() => {
 // Hit Rate Finder (the "Plays" tab). Historical hit rates only: no odds, no predictions.
 const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
-const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc } = __m['markets'];
+const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
 const { applyFilters } = __m['research'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
@@ -1410,8 +1420,9 @@ const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
 const fixtureHref = f => `#/plays?game=${encodeURIComponent(fixtureId(f))}`;
 const sideWord = s => (s === 'under' ? 'Under' : 'Over');
-const mLabel = def => def.label.replace(/^(Team|Player) /, '').replace(/^Total match/, 'total match').replace(/^Match /, 'match ').replace(/^First-half match/, 'first-half match').toLowerCase();
-const playText = (def, side, line) => (def.binary ? '<b>Both teams to score: Yes</b>' : `<b>${sideWord(side)} ${line}</b> ${esc(mLabel(def))}`);
+const mLabel = def => def.label; // the market's full name (Team / Opponent / Match / Player ...), never shortened
+const SCOPE = { team: n => `${n} only`, opp: n => `against ${n}`, match: () => 'both teams combined', player: () => 'this player' };
+const playText = (def, side, line) => (def.binary ? '<b>Both Teams to Score: Yes</b>' : `<b>${sideWord(side)} ${line}</b> ${esc(mLabel(def))}`);
 
 function cardHtml(r, ctx = {}) {
   const rel = reliability(r.hr.n), s = r.subject, short = r.requested && r.nUsed < r.requested, bin = !!r.def.binary;
@@ -1421,7 +1432,7 @@ function cardHtml(r, ctx = {}) {
     return `<tr><td>${esc(fd(x.date))}</td><td>${s.type === 'team' ? `${x.home ? 'v' : 'at'} ${esc(x.opp)}` : `${x.home ? 'v' : 'at'} ${esc(x.opp || '')}`}</td><td class="n">${x.goals != null && x.goalsA != null ? `${x.goals}–${x.goalsA}` : ''}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('');
   const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'this season\'s'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} available)` : ''}`;
   return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
-    <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)}${r.def.key.startsWith('m.') && s.type === 'team' && !ctx.h2h ? ' (both teams, in ' + esc(s.name) + ' matches)' : ''}</div>
+    <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)} <span class="xs muted">· ${esc(ctx.h2h ? 'both teams combined' : SCOPE[marketScope(r.def.key)](s.name))}</span></div>
     <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span></div>
     <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
     <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · <span class="rel ${rel.k}">${rel.t}</span></div>
@@ -1451,7 +1462,7 @@ async function viewPlays(root, r) {
   const allMarkets = () => [...teamMarkets(), ...playerMarkets()];
   // The Market list follows Show: Teams = team and match markets, Players = player markets, All = both.
   const kindMarkets = () => (ui.kind === 'team' ? teamMarkets() : ui.kind === 'player' ? playerMarkets() : allMarkets());
-  const fixMarkets = () => { const mk = kindMarkets(); if (ui.market && !mk.some(m => m.key === ui.market)) ui.market = ''; if (!mk.some(m => m.key === ui.exKey)) { ui.exKey = (mk.find(m => m.key === 'm.goals') || mk.find(m => m.key === 'shots') || mk[0] || {}).key || ''; ui.exLine = null; } };
+  const fixMarkets = () => { const mk = kindMarkets(); if (ui.market && !mk.some(m => m.key === ui.market)) ui.market = ''; if (!mk.some(m => m.key === ui.exKey)) { const back = ui.exStash && mk.some(m => m.key === ui.exStash) ? ui.exStash : null; ui.exStash = ui.exKey; /* remembered so Players -> All brings the team market back */ ui.exKey = back || (mk.find(m => m.key === 'm.goals') || mk.find(m => m.key === 'shots') || mk[0] || {}).key || ''; ui.exLine = null; } };
   const isPlayerKey = k => PLAYER_PLAY_MARKETS.some(m => m.key === k);
   const curFixture = () => selFixtures()[0] || null;
   // Several fixtures can be ticked; each is researched separately (never one pooled sample across teams).
@@ -1518,9 +1529,9 @@ async function viewPlays(root, r) {
   const what = () => { if (ui.lineMode !== 'exact') return 'any market'; const d = allMarkets().find(m => m.key === ui.exKey) || { label: '' }; return d.binary ? 'both teams to score: Yes' : `${sideWord(ui.exSide)} ${ui.exLine} ${mLabel(d)}`; };
   const defsFor = () => ({ team: teamMarkets(), player: playerMarkets() });
   const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => p.league === league()).map(p => ({ id: p.id, type: 'player', name: p.name, club: p.team, clubSlug: teamSlugOf(p.team), href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
-  const noPlayersNote = () => league() === 'epl' ? `<div class="banner info"><b>Premier League player statistics are not available.</b> No free source licenses Premier League player match statistics for public display, so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`
+  const noPlayersNote = () => league() !== 'mls' ? `<div class="banner info"><b>${esc(leagueName(league()))} player statistics are not available.</b> No free source licenses ${esc(leagueName(league()))} player match statistics for public display, so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`
     : `<div class="banner info"><b>Player trends are waiting for data.</b> No verified ${esc(leagueName(league()))} player match logs are published yet, so no player results are shown. Nothing is estimated.</div>`;
-  const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Yellow and red cards are separate markets; no bookmaker card-points rules are assumed. First-half corners and offsides are not offered: no permitted source used by PropLab publishes them (see Data &amp; sources).</p>';
+  const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Yellow and red cards are separate markets; no bookmaker card-points rules are assumed. Free kicks awarded, tackles, offsides and first-half corners are not offered: no source PropLab uses publishes them, and they are never worked out from fouls or other figures (see Data &amp; sources).</p>';
 
   const drawBrowse = async () => {
     const set = selSet(), tms = leagueTeams();
@@ -1542,7 +1553,7 @@ async function viewPlays(root, r) {
     let all = fsel.length > 1 ? `<p class="xs muted" style="margin:0 0 8px">${fsel.length} games selected. Each game is shown separately: home team, away team, then head to head. No team's matches are mixed with another team's.</p>` : '';
     for (const f of fsel) all += `<div class="gameblock">${await oneGame(f)}</div>`;
     if (ui.kind === 'player' && !hasPlayers()) all = noPlayersNote() + all;
-    else if (ui.kind === 'all' && !hasPlayers()) all += `<p class="xs muted">Player markets: ${league() === 'epl' ? 'Premier League player statistics are not available, so only team markets are shown.' : 'no player match logs are published for this league yet.'}</p>`;
+    else if (ui.kind === 'all' && !hasPlayers()) all += `<p class="xs muted">Player markets: ${league() !== 'mls' ? `${esc(leagueName(league()))} player statistics are not available, so only team markets are shown.` : 'no player match logs are published for this league yet.'}</p>`;
     out.innerHTML = all + foot;
   };
   const oneGame = async f => {
@@ -1683,7 +1694,7 @@ async function viewMatch(root, r) {
   const block = (title, used, line, side, note, bin) => {
     const vals = used.map(x => x.value); const hr = hitRate(vals, line, side); const fv = v => (bin ? (v ? 'Yes' : 'No') : v);
     if (!used.length) return `<section class="sec"><h2>${esc(title)}</h2><div class="banner info">No published matches with this statistic for this selection${note ? '. ' + esc(note) : ''}.</div></section>`;
-    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${bin ? 'Both teams to score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line}`}</b><span>${hitsLine(hr)}${bin ? '' : ` · average ${hr.avg}`}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
+    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${bin ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line}`}</b><span>${hitsLine(hr)}${bin ? '' : ` · average ${hr.avg}`}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
       ${dotsHtml(dotsFor(vals, line, side))}<div class="scroll" style="margin-top:8px"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${used.map(x => { const hit = side === 'under' ? x.value < line : x.value > line; return `<tr><td>${esc(x.date.slice(0, 4) === used[0].date.slice(0, 4) ? fmtShort(x.date) : fmtLong(x.date))}</td><td>${x.home ? 'v' : 'at'} ${esc(x.opp)}</td><td class="n">${x.goals ?? '–'}–${x.goalsA ?? '–'}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('')}</table></div>
       ${note ? `<p class="xs muted" style="margin:8px 0 0">${esc(note)}</p>` : ''}</div></section>`;
   };
@@ -1754,7 +1765,7 @@ async function viewFinder(root) {
   const curMarket = () => { const ms = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const k = ui.mode === 'teams' ? ui.market : ui.pmarket; return ms.find(m => m.key === k) || ms[0]; };
   const drawCtl = () => {
     const markets = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const key = ui.mode === 'teams' ? 'market' : 'pmarket'; const m = curMarket();
-    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p><p class="xs muted" style="margin:2px 0 0">First-half corners and offsides are not available: no permitted source publishes them.</p></div>
+    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p><p class="xs muted" style="margin:2px 0 0">Free kicks awarded, tackles, offsides and first-half corners are not available: no source PropLab uses publishes them.</p></div>
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Matches</label><div class="seg" id="lt">${[[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div></div>
@@ -1767,7 +1778,7 @@ async function viewFinder(root) {
     return { m, items: [...players.values()].filter(p => p.league === getLeague()).map(p => ({ id: p.id, name: p.name, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes') })) };
   };
   const draw = async () => {
-    if (ui.mode === 'players' && !lgHasPlayers()) { out.innerHTML = getLeague() === 'epl' ? '<div class="banner info"><b>No Premier League player match logs are published.</b> No free source licenses Premier League player match statistics for public display. Switch to Teams to scan team totals, or choose MLS for player trends.</div>' : `<div class="banner info"><b>No ${esc(leagueName(getLeague()))} player match logs are published yet.</b> Player trends will appear here once verified match-by-match data is published. Switch to Teams to scan team totals now.</div>`; return; }
+    if (ui.mode === 'players' && !lgHasPlayers()) { out.innerHTML = getLeague() !== 'mls' ? `<div class="banner info"><b>No ${esc(leagueName(getLeague()))} player match logs are published.</b> No free source licenses ${esc(leagueName(getLeague()))} player match statistics for public display. Switch to Teams to scan team totals, or choose MLS for player trends.</div>` : `<div class="banner info"><b>No ${esc(leagueName(getLeague()))} player match logs are published yet.</b> Player trends will appear here once verified match-by-match data is published. Switch to Teams to scan team totals now.</div>`; return; }
     const { items, m } = await sample();
     if (!items.length || !m) { out.innerHTML = '<div class="banner info">No data available for this market.</div>'; return; }
     const season = ui.last === 'season' ? currentSeason(getLeague()) : null;
@@ -1780,7 +1791,7 @@ async function viewFinder(root) {
     const res = filt.map(({ it, f }) => { const hr = hitRate(f.map(r => r.value), line, side); return { it, hr, trend: dotsFor(f.slice(0, 5).map(r => r.value), line, side).map(h => (h ? '●' : '○')).join('') }; })
       .filter(x => x.hr.n >= 1).sort((a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n);
     out.innerHTML = res.length ? `<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th><th>Hit rate</th><th>Hits / matches</th><th>${m.binary ? 'Both scored' : 'Avg'}</th><th>Last 5 (old → new)</th></tr>${res.slice(0, 100).map(x => `<tr><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a>${x.it.sub ? `<br><span class="xs muted">${esc(x.it.sub)}</span>` : ''}</td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${typeof ui.last === 'number' && x.hr.n < ui.last ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td class="n" aria-label="Last five, oldest to newest">${esc(x.trend)}</td></tr>`).join('')}</table></div></div>
-      <p class="xs muted">${m.binary ? 'Both teams to score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label.toLowerCase())}`}, ${ui.last === 'season' ? "this season's" : 'last ' + ui.last} ${venueWord(ui.venue)}matches${ui.venue ? ' (Home/Away Form ON, applied before the sample)' : ''}. "Hits / matches" is the real number of matches with data: ${esc(hitsLine(res[0].hr))} for the top row. Filled circles show hits, oldest to newest. A high hit rate over a small sample often fades. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
+      <p class="xs muted">${m.binary ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label)}`}, ${ui.last === 'season' ? "this season's" : 'last ' + ui.last} ${venueWord(ui.venue)}matches${ui.venue ? ' (Home/Away Form ON, applied before the sample)' : ''}. "Hits / matches" is the real number of matches with data: ${esc(hitsLine(res[0].hr))} for the top row. Filled circles show hits, oldest to newest. A high hit rate over a small sample often fades. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
       : `<div class="banner info"><b>No ${ui.mode} have matches with data</b> for this market and filter. Choose another market or venue.</div>`;
   };
   drawCtl(); draw();
@@ -1869,7 +1880,7 @@ async function viewValue(root, r) {
     if (!markets.some(m => m.key === ui.market)) { ui.market = markets[0].key; ui.line = null; }
     if (ui.line === null) ui.line = typicalLine(marketRows(rows, markets.find(m => m.key === ui.market), exposureKey).slice(0, 10).map(x => x.value));
     el.innerHTML = `<p style="margin:0"><b>${esc(name)}</b> <span class="muted small">${type === 'team' ? 'team' : 'player'}</span></p>
-      <div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${esc(m.key)}" ${m.key === ui.market ? 'selected' : ''}>${esc((m.group ? m.group.split(' (')[0] + ': ' : '') + m.label)}</option>`).join('')}</select></div>
+      <div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${esc(m.key)}" ${m.key === ui.market ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>
         <div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>
         <div class="field"><label>Line</label><div class="stepper"><button data-step="-1" aria-label="Lower">−</button><input id="ln" type="text" inputmode="decimal" value="${ui.line}" aria-label="Line"><button data-step="1" aria-label="Raise">+</button></div></div>
         <div class="field"><label>Data used</label><div class="seg" id="lt">${[10, 20, 0].map(n => `<button data-v="${n}" class="${ui.last === n ? 'on' : ''}">${n ? 'Last ' + n : 'All'}</button>`).join('')}</div></div>
@@ -1886,7 +1897,7 @@ async function viewValue(root, r) {
     const odds = parseOdds(ui.odds), other = parseOdds(ui.other);
     const word = ui.side === 'under' ? 'Under' : 'Over';
     let h = `<div class="card stack" style="margin-top:12px"><h2>Trend: what happened</h2>`;
-    h += hr.n ? `<p style="margin:0"><b class="stat" style="font-size:24px">${hr.hits} of ${hr.n}</b> <span class="muted">(${hr.hitPct}%) went ${word.toLowerCase()} ${ui.line} ${esc(market.label.toLowerCase())}</span></p>${hr.n < 8 ? `<div class="banner"><b>Small sample (${hr.n}).</b> Too few matches to draw a conclusion.</div>` : ''}` : '<div class="banner">No matches with data for this market.</div>';
+    h += hr.n ? `<p style="margin:0"><b class="stat" style="font-size:24px">${hr.hits} of ${hr.n}</b> <span class="muted">(${hr.hitPct}%) went ${word.toLowerCase()} ${ui.line} ${esc(market.label)}</span></p>${hr.n < 8 ? `<div class="banner"><b>Small sample (${hr.n}).</b> Too few matches to draw a conclusion.</div>` : ''}` : '<div class="banner">No matches with data for this market.</div>';
     if (odds && hr.n) { const be = 100 / odds; h += `<p style="margin:0">At <b>${odds}</b> you need to win more than <b>${be.toFixed(1)}%</b> of the time to break even. The past frequency was ${hr.hitPct}%, ${hr.hitPct > be ? 'above' : 'below'} that. This compares a past count with a price. It is <b>not</b> a probability estimate and does not mean the bet has value.</p>`; }
     h += '</div>';
     h += '<div class="card stack" style="margin-top:12px"><h2>Estimate: what a model thinks</h2>';
@@ -1945,11 +1956,14 @@ async function viewAbout(root) {
     <li><b>Premier League player match statistics</b>: not available. No free source licenses them for public display, so Premier League player pages show directory information only.</li>
     <li><b>MLS player fouls, tackles, cards, offsides and saves</b>: not provided by American Soccer Analysis, so those MLS player markets are left out rather than shown as 0.</li>
     <li><b>MLS team corners, fouls, cards and half-time (first-half) scores</b>: not published by a free source we can use. MLS team research covers goals, both teams to score, shots and shots on target.</li>
-    <li><b>First-half corners</b> (match, team, opponent): not available for either league. football-data.co.uk records full-time corners only, and first-half corners are never estimated from full-time totals.</li>
-    <li><b>Offsides</b> (team, opponent, match): not available for either league. Neither football-data.co.uk (Premier League) nor American Soccer Analysis (MLS) publishes offsides.</li>
+    <li><b>First-half corners</b> (match, team, opponent): not available for any league. football-data.co.uk records full-time corners only, and first-half corners are never estimated from full-time totals.</li>
+    <li><b>Offsides</b> (team, opponent, match): not available for any league. Neither football-data.co.uk (Premier League, La Liga) nor American Soccer Analysis (MLS) publishes offsides.</li>
+    <li><b>Free kicks awarded</b> (team, opponent, match): not available for any league. No source used records free kicks awarded. Fouls committed are a different statistic (free kicks also follow offsides and other infringements), so they are never relabelled as free kicks.</li>
+    <li><b>Tackles</b> (team, match): not available for any league. None of the sources used records tackles.</li>
+    <li><b>La Liga</b>: team statistics only. La Liga player match statistics, referees and lineups are not available from a source PropLab can use.</li>
     <li><b>Goalscorers and goal minutes</b>: Premier League matches from 17 Oct 2026 onwards only; not available for older matches or for MLS.</li>
     <li><b>Player photos</b>: only checked, freely licensed Wikimedia Commons photos; every other player shows a silhouette.</li>
-    <li><b>Other leagues:</b> only the Premier League and MLS are published.</li>
+    <li><b>Other leagues:</b> only the Premier League, La Liga and MLS are published.</li>
     <li><b>Bookmaker odds:</b> not included. Value Research uses odds you type in.</li>
     <li><b>Referees for upcoming matches</b> appear only once confirmed in a source.</li></ul></div></section>
   <section class="sec"><h2>How to read the numbers</h2><div class="card small stack"><p style="margin:0"><b>Hit rate</b> is the share of published matches where a statistic beat the line. It describes the past only. <b>Estimates</b> and <b>EV</b> appear in Value Research only when there are at least 8 matches with data, and they ignore line-ups, injuries, opponents and tactics. Missing figures are never counted as zero.</p></div></section>`;
