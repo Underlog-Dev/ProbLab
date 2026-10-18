@@ -115,6 +115,18 @@ a:focus-visible,button:focus-visible,.in:focus-visible{outline:2px solid var(--a
 .teamsel{background:var(--s2);border:1px solid var(--line);border-radius:11px;padding:12px 14px}.teamsel summary{cursor:pointer;list-style:none;font-size:15px}.teamsel summary::-webkit-details-marker{display:none}.teamsel summary::before{content:'▸ ';color:var(--muted)}.teamsel[open] summary::before{content:'▾ '}
 .tlist{max-height:300px;overflow-y:auto;display:grid;gap:2px;-webkit-overflow-scrolling:touch}.tcheck{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:15px}.tcheck input{width:20px;height:20px;accent-color:var(--accent)}
 details.mx{margin-top:6px}details.mx summary{cursor:pointer;color:var(--accent)}
+.pph{position:relative;flex:none;overflow:hidden;background:var(--s2);border:1px solid var(--line);color:var(--muted);display:grid;place-items:end center}
+.pph.lg{width:88px;height:88px;border-radius:24px}.pph.sm{width:36px;height:36px;border-radius:11px}
+.pph .sil{width:82%;height:82%;opacity:.55}.pph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%;background:var(--s2)}
+.pph:not(.nophoto) .sil{visibility:hidden}.credit{margin:6px 0 0}
+.row .pph.sm{margin-right:10px}
+/* line arrows directly above the chart, sample summary, tapped-bar details */
+.linebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.linebar .lt{font-size:15px;min-width:0;flex:1 1 160px}
+.lstep{width:180px;flex:0 0 auto}.lstep button{font-size:16px;color:var(--text)}
+.hitsum{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 6px}.hitsum b{font-size:22px}.hitsum span{color:var(--muted);font-size:14px}
+.barinfo{margin:4px 0 10px;min-height:1.4em}
+canvas{cursor:pointer}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -137,7 +149,7 @@ const GROUPS = [
   ['arsenal'], ['aston villa', 'villa'], ['bournemouth'], ['brentford'], ['brighton', 'brighton and hove albion', 'brighton & hove albion'], ['burnley'], ['chelsea'],
   ['crystal palace', 'palace'], ['everton'], ['fulham'], ['leeds', 'leeds united'], ['leicester', 'leicester city'], ['liverpool'], ['manchester city', 'man city'],
   ['manchester united', 'man united', 'man utd', 'manchester utd'], ['newcastle', 'newcastle united'], ['nottingham forest', 'nottm forest', 'forest'], ['southampton'], ['sunderland'],
-  ['tottenham', 'tottenham hotspur', 'spurs'], ['west ham', 'west ham united'], ['wolves', 'wolverhampton wanderers', 'wolverhampton'], ['ipswich', 'ipswich town'], ['hull city', 'hull'], ['coventry city', 'coventry'], ['norwich city', 'norwich'], ['middlesbrough', 'boro'], ['sheffield wednesday', 'sheff wed'], ['sheffield united', 'sheffield utd'],
+  ['tottenham', 'tottenham hotspur', 'spurs'], ['west ham', 'west ham united'], ['wolves', 'wolverhampton wanderers', 'wolverhampton'], ['ipswich', 'ipswich town'], ['hull city', 'hull'], ['coventry city', 'coventry'], ['norwich city', 'norwich'], ['middlesbrough', 'boro'], ['sheffield wednesday', 'sheff wed'], ['sheffield united', 'sheffield utd'], ['luton', 'luton town'], ['watford'], ['west brom', 'west bromwich albion', 'west bromwich'],
   // Spain
   ['athletic club', 'ath bilbao', 'athletic bilbao'], ['atletico madrid', 'ath madrid', 'atletico de madrid', 'atletico'], ['barcelona', 'fc barcelona', 'barca'], ['real betis', 'betis'],
   ['celta vigo', 'celta', 'celta de vigo'], ['espanyol', 'espanol', 'rcd espanyol'], ['getafe'], ['girona'], ['levante'], ['mallorca', 'rcd mallorca'], ['osasuna', 'ca osasuna'],
@@ -176,7 +188,7 @@ const sameTeam = (a, b) => !!a && !!b && normTeam(a) === normTeam(b);
 // Friendly names for display (the canonical key is lower-case). Unlisted teams are shown title-cased.
 const DISPLAY = { 'leeds': 'Leeds United', 'newcastle': 'Newcastle United', 'brighton': 'Brighton', 'tottenham': 'Tottenham Hotspur', 'wolves': 'Wolverhampton Wanderers', 'west ham': 'West Ham United',
   'manchester city': 'Manchester City', 'manchester united': 'Manchester United', 'nottingham forest': 'Nottingham Forest', 'hull city': 'Hull City', 'coventry city': 'Coventry City', 'ipswich': 'Ipswich Town',
-  'leicester': 'Leicester City', 'bournemouth': 'AFC Bournemouth', 'sunderland': 'Sunderland', 'sheffield united': 'Sheffield United', 'psg': 'Paris Saint-Germain', 'paris saint germain': 'Paris Saint-Germain',
+  'leicester': 'Leicester City', 'bournemouth': 'AFC Bournemouth', 'sunderland': 'Sunderland', 'sheffield united': 'Sheffield United', 'luton': 'Luton Town', 'west brom': 'West Bromwich Albion', 'psg': 'Paris Saint-Germain', 'paris saint germain': 'Paris Saint-Germain',
   'atlanta united': 'Atlanta United', 'montreal': 'CF Montréal', 'charlotte': 'Charlotte FC', 'chicago fire': 'Chicago Fire', 'columbus crew': 'Columbus Crew', 'dc united': 'D.C. United', 'cincinnati': 'FC Cincinnati',
   'inter miami': 'Inter Miami', 'new england revolution': 'New England Revolution', 'new york city': 'New York City FC', 'new york red bulls': 'New York Red Bulls', 'nashville': 'Nashville SC', 'orlando city': 'Orlando City',
   'philadelphia union': 'Philadelphia Union', 'toronto': 'Toronto FC', 'austin': 'Austin FC', 'colorado rapids': 'Colorado Rapids', 'dallas': 'FC Dallas', 'houston dynamo': 'Houston Dynamo', 'la galaxy': 'LA Galaxy',
@@ -218,7 +230,10 @@ const isUpcoming = (f, now = new Date()) => {
 const fmtKickUK = f => { const k = koUK(f); return `${fmtDay(k.ymd)}${k.hm ? ' · ' + k.hm + ' UK' : ''}`; };
 const fixtureId = f => `${f.league}:${f.date}:${String(f.home).toLowerCase().replace(/[^a-z0-9]+/g, '-')}:${String(f.away).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
-return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, fmtKickUK, fixtureId };
+// MLS seasons run within one calendar year (2026); Premier League seasons span two (2026/27).
+const seasonLabel = (league, s) => (league === 'mls' ? String(s) : `${s}/${String(s + 1).slice(2)}`);
+
+return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, fmtKickUK, fixtureId, seasonLabel };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -230,13 +245,14 @@ const NEWS_STATUS = { out: 'Out', doubtful: 'Doubtful', suspended: 'Suspended', 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const isCount = v => v === null || v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60);
 
-const emptyStore = () => ({ status: 'idle', error: '', manifest: null, fixtures: [], news: [], teamMatches: [], playerIndex: [], directory: [], directoryMeta: null, playerFiles: new Map(), problems: [], teams: new Map(), teamRows: new Map(), refs: new Map(), updated: {} });
+const emptyStore = () => ({ status: 'idle', error: '', manifest: null, fixtures: [], news: [], teamMatches: [], playerIndex: [], directory: [], directoryMeta: null, photos: null, playerFiles: new Map(), problems: [], teams: new Map(), teamRows: new Map(), refs: new Map(), updated: {} });
 const store = emptyStore();
 
 // ---- validation: invalid rows are dropped and counted, never repaired ----
 const validFixture = f => f && LEAGUE_NAMES[f.league] && YMD.test(f.date || '') && f.home && f.away && f.home !== f.away;
 const validNews = n => n && n.team && n.player && NEWS_STATUS[n.status] && YMD.test(n.as_of || '');
-const validTeamMatch = r => r && YMD.test(r.date || '') && r.home && r.away && ['hg', 'ag', 'hs', 'as', 'hst', 'ast', 'hf', 'af', 'hc', 'ac', 'hy', 'ay', 'hr', 'ar'].every(k => isCount(r[k]))
+const validTeamMatch = r => r && YMD.test(r.date || '') && r.home && r.away && ['hg', 'ag', 'hthg', 'htag', 'hs', 'as', 'hst', 'ast', 'hf', 'af', 'hc', 'ac', 'hy', 'ay', 'hr', 'ar'].every(k => isCount(r[k]))
+  && (r.hthg == null || r.hg == null || r.hthg <= r.hg) && (r.htag == null || r.ag == null || r.htag <= r.ag)
   && (r.hst == null || r.hs == null || r.hst <= r.hs) && (r.ast == null || r.as == null || r.ast <= r.as);
 const validDirItem = p => p && p.id && p.name && p.team && LEAGUE_NAMES[p.league] && (p.pos == null || ['GK', 'DF', 'MF', 'FW'].includes(p.pos));
 const validIndexItem = p => p && p.id && p.name && p.team && LEAGUE_NAMES[p.league];
@@ -258,14 +274,15 @@ async function loadCore(getJson, target = store) {
   for (const e of manifest.team_matches || []) jobs.push(tryGet(e.file, `Team stats ${e.league} ${e.season}`).then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { for (const r of keep(d.items, validTeamMatch, 'team match', target.problems)) target.teamMatches.push({ ...r, league: e.league, season: e.season }); target.updated['tm:' + e.league + e.season] = d.updated; } }));
   if (manifest.player_index) jobs.push(tryGet(manifest.player_index.file, 'Player index').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.playerIndex = keep(d.items, validIndexItem, 'player', target.problems); target.updated.players = d.updated; } }));
   if (manifest.directory) jobs.push(tryGet(manifest.directory.file, 'Player directory').then(d => { if (d?.schema === 1 && Array.isArray(d.items)) { target.directory = keep(d.items, validDirItem, 'directory player', target.problems); target.directoryMeta = { updated: d.updated, source: d.source, license: d.license, license_url: d.license_url, note: d.note, clubs: Array.isArray(d.clubs) ? d.clubs : [] }; target.updated.directory = d.updated; } }));
+  if (manifest.photos) jobs.push(tryGet(manifest.photos.file, 'Player photos').then(d => { if (d?.schema === 1 && d.items && typeof d.items === 'object') { const ok = {}; let bad = 0; for (const [k, v] of Object.entries(d.items)) { if (v && /^https:\/\/upload\.wikimedia\.org\//.test(v.thumb || '') && v.license && v.page) ok[k] = v; else bad++; } if (bad) target.problems.push(`${bad} invalid photo row(s) ignored`); target.photos = { ...d, items: ok }; } }));
   await Promise.all(jobs);
   target.getJson = getJson; derive(target); target.status = 'ready';
   return target;
 }
 
 // ---- derived lookups ----
-const STATS = ['goals', 'shots', 'sot', 'corners', 'fouls', 'yellows', 'reds'];
-const FIELD = { goals: ['hg', 'ag'], shots: ['hs', 'as'], sot: ['hst', 'ast'], corners: ['hc', 'ac'], fouls: ['hf', 'af'], yellows: ['hy', 'ay'], reds: ['hr', 'ar'] };
+const STATS = ['goals', 'htgoals', 'shots', 'sot', 'corners', 'fouls', 'yellows', 'reds'];
+const FIELD = { goals: ['hg', 'ag'], htgoals: ['hthg', 'htag'], shots: ['hs', 'as'], sot: ['hst', 'ast'], corners: ['hc', 'ac'], fouls: ['hf', 'af'], yellows: ['hy', 'ay'], reds: ['hr', 'ar'] };
 function derive(s) {
   s.teams = new Map(); s.teamRows = new Map(); s.refs = new Map();
   const addTeam = (name, league) => { const slug = teamSlug(name); if (!s.teams.has(slug)) s.teams.set(slug, { slug, name: displayTeam(name), league }); return slug; };
@@ -278,6 +295,7 @@ function derive(s) {
     for (const [mine, theirs, home] of [[h, a, true], [a, h, false]]) {
       const row = { date: r.date, season: r.season, league: r.league, home, opp: s.teams.get(theirs).name, oppSlug: theirs, referee: r.referee || '', value: null };
       for (const st of STATS) { const [hk, ak] = FIELD[st]; row[st] = home ? r[hk] : r[ak]; row[st + 'A'] = home ? r[ak] : r[hk]; }
+      row.btts = row.goals == null || row.goalsA == null ? null : (row.goals > 0 && row.goalsA > 0 ? 1 : 0); // both teams scored: 1 = yes, 0 = no
       row.cards = row.yellows == null || row.reds == null ? null : row.yellows + row.reds; row.cardsA = row.yellowsA == null || row.redsA == null ? null : row.yellowsA + row.redsA;
       if (!rowsFor.has(mine)) rowsFor.set(mine, []); rowsFor.get(mine).push(row);
     }
@@ -295,7 +313,11 @@ const fxSort = (a, b) => { const x = koUK(a), y = koUK(b); return x.ymd + x.hm <
 const upcomingFixtures = (league = '') => store.fixtures.filter(f => isUpcoming(f) && (!league || f.league === league)).sort(fxSort);
 const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) === normTeam(name) || normTeam(f.away) === normTeam(name));
 const leaguesPresent = () => [...new Set([...store.fixtures.map(f => f.league), ...store.teamMatches.map(m => m.league)])].sort((a, b) => (a === 'epl' ? -1 : b === 'epl' ? 1 : a < b ? -1 : 1));
-const teamsOfLeague = lg => [...store.teams.values()].filter(t => t.league === lg).sort((a, b) => a.name.localeCompare(b.name));
+const currentSeason = lg => { const ss = store.teamMatches.filter(m => m.league === lg).map(m => m.season); return ss.length ? Math.max(...ss) : null; };
+/** Clubs in the league now: in its latest season's matches, its upcoming fixtures or its player directory (relegated clubs from older seasons are left out). */
+const teamsOfLeague = lg => { const cs = currentSeason(lg); const cur = new Set(); for (const m of store.teamMatches) if (m.league === lg && m.season === cs) { cur.add(teamSlug(m.home)); cur.add(teamSlug(m.away)); }
+  for (const f of store.fixtures) if (f.league === lg) { cur.add(teamSlug(f.home)); cur.add(teamSlug(f.away)); } for (const d of store.directory) if (d.league === lg) cur.add(teamSlug(d.team));
+  return [...store.teams.values()].filter(t => t.league === lg && cur.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
 const resultsList = () => [...store.teamMatches].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
 function refereeProfile(name) {
@@ -305,10 +327,10 @@ function refereeProfile(name) {
 }
 /** Per-match averages for a team from published team-match stats. */
 function teamProfile(slug) {
-  const rows = teamRowsFor(slug); const g = k => avg(rows.map(r => r[k]).filter(v => v != null));
-  const tl = store.teams.get(slug)?.league; const league = store.teamMatches.filter(r => !tl || r.league === tl); const lg = k => avg(league.flatMap(r => [r[FIELD[k][0]], r[FIELD[k][1]]]).filter(v => v != null));
+  const tl0 = store.teams.get(slug)?.league, cs = currentSeason(tl0); const rows = teamRowsFor(slug).filter(r => r.season === cs); const g = k => avg(rows.map(r => r[k]).filter(v => v != null));
+  const tl = store.teams.get(slug)?.league; const league = store.teamMatches.filter(r => (!tl || r.league === tl) && r.season === cs); const lg = k => avg(league.flatMap(r => [r[FIELD[k][0]], r[FIELD[k][1]]]).filter(v => v != null));
   const out = { n: rows.length, form: rows.slice(0, 5).map(r => (r.goals > r.goalsA ? 'W' : r.goals < r.goalsA ? 'L' : 'D')) };
-  for (const st of ['goals', 'shots', 'sot', 'corners', 'fouls', 'yellows']) { out[st] = g(st); out[st + 'A'] = g(st + 'A'); out['lg_' + st] = lg(st); }
+  for (const st of ['goals', 'htgoals', 'shots', 'sot', 'corners', 'fouls', 'yellows', 'reds']) { out[st] = g(st); out[st + 'A'] = g(st + 'A'); out['lg_' + st] = lg(st); }
   return out;
 }
 
@@ -330,13 +352,14 @@ const newsForPlayer = (name, team) => store.news.filter(n => normName(n.player) 
 
 /** Loads match files for one player and returns rows newest first (value fields come from the row itself). */
 async function loadPlayerRows(p) {
+  const names = new Set([p.name, ...(p.src_names || [])].map(normName));
   const files = (store.manifest?.player_matches || []).filter(e => e.league === p.league && (!p.seasons?.length || p.seasons.includes(e.season)));
   const rows = [];
   for (const e of files) {
     let d = store.playerFiles.get(e.file);
     if (!d) { try { d = await store.getJson(e.file, { v: store.manifest.generated }); } catch { store.problems.push(`${e.file} could not be loaded`); continue; } if (d?.schema === 1 && Array.isArray(d.matches)) store.playerFiles.set(e.file, d); else continue; }
     for (const m of d.matches) for (const pl of m.players || []) {
-      if (!validPlayerRow(pl) || normName(pl.name) !== normName(p.name)) continue;
+      if (!validPlayerRow(pl) || !names.has(normName(pl.name)) || normTeam(pl.team) !== normTeam(p.team)) continue;
       const home = normTeam(pl.team) === normTeam(m.home); const oppName = home ? m.away : m.home;
       rows.push({ ...pl, date: m.date, season: d.season, league: d.league, home: home ? 1 : 0, opp: oppName, referee: m.referee || '', complete: m.complete === true, source: m.source || d.source || '' });
     }
@@ -354,13 +377,14 @@ const SOURCES = () => store.manifest?.sources || [];
 
 /** Every player's rows from every published match file, grouped by player id. Used by the Prop Finder. */
 async function loadAllPlayerRows() {
-  const byId = new Map();
+  const byId = new Map(); const alias = new Map();
+  for (const ix of store.playerIndex) for (const n of [ix.name, ...(ix.src_names || [])]) alias.set(playerId(n, ix.team), ix);
   for (const e of store.manifest?.player_matches || []) {
     let d = store.playerFiles.get(e.file);
     if (!d) { try { d = await store.getJson(e.file, { v: store.manifest.generated }); } catch { store.problems.push(`${e.file} could not be loaded`); continue; } if (d?.schema === 1 && Array.isArray(d.matches)) store.playerFiles.set(e.file, d); else continue; }
     for (const m of d.matches) for (const pl of m.players || []) {
-      if (!validPlayerRow(pl)) continue; const id = playerId(pl.name, pl.team); const home = normTeam(pl.team) === normTeam(m.home);
-      if (!byId.has(id)) byId.set(id, { id, name: pl.name, team: pl.team, league: d.league, rows: [] });
+      if (!validPlayerRow(pl)) continue; const ix = alias.get(playerId(pl.name, pl.team)); const id = ix ? ix.id : playerId(pl.name, pl.team); const home = normTeam(pl.team) === normTeam(m.home);
+      if (!byId.has(id)) byId.set(id, { id, name: ix ? ix.name : pl.name, team: pl.team, league: d.league, rows: [] });
       byId.get(id).rows.push({ ...pl, date: m.date, season: d.season, league: d.league, home: home ? 1 : 0, opp: home ? m.away : m.home, referee: m.referee || '' });
     }
   }
@@ -368,7 +392,7 @@ async function loadAllPlayerRows() {
   return byId;
 }
 
-return { LEAGUE_NAMES, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamSlugOf, newsForTeam, fxSort, upcomingFixtures, upcomingFor, leaguesPresent, teamsOfLeague, resultsList, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamSlugOf, newsForTeam, fxSort, upcomingFixtures, upcomingFor, leaguesPresent, currentSeason, teamsOfLeague, resultsList, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['shared'] = (() => {
 const { store, freshness, NEWS_STATUS, LEAGUE_NAMES, leaguesPresent } = __m['data'];
@@ -458,7 +482,7 @@ function searchBox(root, opts = {}) {
     const q = input.value.trim(); if (!q) return close();
     items = search(ensure(), q, 6);
     box.innerHTML = items.length ? items.map((it, i) => `<a href="${href(it)}" data-i="${i}"><span class="t">${esc(it.name)}<br><small>${esc(it.sub)}</small></span><span class="badge">${it.type === 'player' ? 'Player' : 'Team'}</span></a>`).join('')
-      : `<div class="empty"><span class="muted">${store.status === 'ready' ? 'No match. Try a surname or club name. Only current Premier League squads are listed.' : 'Loading data…'}</span></div>`;
+      : `<div class="empty"><span class="muted">${store.status === 'ready' ? 'No match. Try a surname or club name. Only current Premier League and MLS squads are listed.' : 'Loading data…'}</span></div>`;
     box.hidden = false;
   };
   input.addEventListener('input', debounce(show, 80));
@@ -485,7 +509,7 @@ return { searchBox, itemHref };
 })();
 __m['v-home'] = (() => {
 const { store, leagueName, freshness, upcomingFixtures } = __m['data'];
-const { $, esc, fmtDay, fmtLong, todayYmd, fmtKickUK } = __m['util'];
+const { $, esc, fmtDay, fmtLong, todayYmd, fmtKickUK, seasonLabel } = __m['util'];
 const { ICON } = __m['icons'];
 const { searchBox } = __m['searchbox'];
 const { dataBanner, problemsBanner } = __m['shared'];
@@ -507,44 +531,45 @@ async function viewHome(root) {
   ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>
   <section class="sec"><h2>What is published <a href="#/about">Data &amp; sources</a></h2><div class="card"><dl class="kv">
     <dt>Last updated</dt><dd>${f.generated ? esc(fmtLong(f.generated)) : 'n/a'}</dd>
-    <dt>Team match stats</dt><dd>${tm.length ? tm.map(e => `${esc(leagueName(e.league))} ${e.season}/${String(e.season + 1).slice(2)}: ${e.count} matches to ${esc(fmtDay(e.through))}`).join('<br>') : 'None yet'}</dd>
-    <dt>Player directory</dt><dd>${store.directory.length ? `${store.directory.length} Premier League players, ${store.directoryMeta?.clubs?.length || 0} clubs · updated ${esc(fmtLong(store.directoryMeta?.updated))}` : 'Not published yet'}</dd>
+    <dt>Team match stats</dt><dd>${tm.length ? tm.map(e => `${esc(leagueName(e.league))} ${seasonLabel(e.league, e.season)}: ${e.count} matches to ${esc(fmtDay(e.through))}`).join('<br>') : 'None yet'}</dd>
+    <dt>Player directory</dt><dd>${store.directory.length ? `${store.directory.length} players (${['epl', 'mls'].map(l => `${leagueName(l)} ${store.directory.filter(d => d.league === l).length}`).join(', ')}), ${store.directoryMeta?.clubs?.length || 0} clubs · updated ${esc(fmtLong(store.directoryMeta?.updated))}` : 'Not published yet'}</dd>
     <dt>Player match logs</dt><dd>${pm.length ? `${pRows.toLocaleString()} player rows` : 'Not published yet'}</dd>
     <dt>Upcoming fixtures</dt><dd>${store.fixtures.length}</dd><dt>Team news items</dt><dd>${store.news.length}</dd></dl>
     ${pm.length ? '' : '<p class="small muted" style="margin:12px 0 0">Every player has a profile with club, position, fixtures and team news. Player match statistics (shots, tackles, fouls, cards) will appear on a profile only once verified match logs are published.</p>'}</div></section>` : ''}`;
-  const sb = searchBox($('#sb', root), { placeholder: 'Search a player or team, e.g. Salah or Arsenal' });
+  const sb = searchBox($('#sb', root), { placeholder: 'Search a player or team, e.g. Bruno or Inter Miami' });
   if (!ready) { const t = setInterval(() => { if (store.status === 'ready' || store.status === 'error') clearInterval(t); }, 300); }
 }
 
 return { viewHome };
 })();
 __m['v-players'] = (() => {
-const { store, knownPlayers, leagueName } = __m['data'];
+const { store, knownPlayers, leagueName, teamsOfLeague } = __m['data'];
 const { buildSearchIndex, search } = __m['search'];
 const { $, esc } = __m['util'];
 const { ICON } = __m['icons'];
 const { searchBox, itemHref } = __m['searchbox'];
-const { dataBanner, problemsBanner } = __m['shared'];
+const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
 
 const rowHtml = it => `<a class="row" href="${itemHref(it)}"><div class="l"><b>${esc(it.name)}</b><span>${esc(it.sub)}</span></div><div class="r"><span class="badge">${it.type === 'player' ? 'Player' : 'Team'}</span></div></a>`;
 
 async function viewPlayers(root, r) {
   const q = (r.q.get('q') || '').trim();
   const ready = store.status === 'ready';
-  const hasLogs = ready && store.playerIndex.length > 0, dirN = ready ? store.directory.length : 0;
+  const lg = getLeague(); const hasLogs = ready && store.playerIndex.some(p => p.league === lg), dirN = ready ? store.directory.filter(d => d.league === lg).length : 0, dirAll = ready ? store.directory.length : 0;
   let body = '';
   if (!ready) body = store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>';
   else if (q) {
     const res = search(buildSearchIndex(), q, 60);
-    body = res.length ? `<div class="card"><div class="list">${res.map(rowHtml).join('')}</div></div>` : `<div class="banner"><b>No player or team found for "${esc(q)}".</b> Try a surname or a club name. The directory covers current Premier League squads only${dirN ? ` (${dirN} players)` : ''}; a player who has just signed, or who plays elsewhere, may not be listed.</div>`;
+    body = res.length ? `<div class="card"><div class="list">${res.map(rowHtml).join('')}</div></div>` : `<div class="banner"><b>No player or team found for "${esc(q)}".</b> Try a surname or a club name. The directory covers current Premier League and MLS squads${dirAll ? ` (${dirAll} players)` : ''}; a player who has just signed, or who plays elsewhere, may not be listed.</div>`;
   } else {
-    const teams = [...store.teams.values()].sort((a, b) => a.name.localeCompare(b.name));
-    const featured = [...knownPlayers().values()].filter(p => p.hasLogs || !p.inDirectory).sort((a, b) => (b.n - a.n) || a.name.localeCompare(b.name));
-    body = `${dirN ? `<div class="banner info"><b>${dirN} Premier League players are searchable.</b> Open a club below to see its squad. Match statistics for individual players are not published yet, so profiles show club, position, fixtures and team news.</div>` : ''}
+    const teams = teamsOfLeague(lg);
+    const featured = [...knownPlayers().values()].filter(p => p.league === lg && (p.hasLogs || !p.inDirectory)).sort((a, b) => (b.n - a.n) || a.name.localeCompare(b.name));
+    body = `${dirN ? `<div class="banner info"><b>${dirN} ${esc(leagueName(lg))} players are searchable.</b> Open a club below to see its squad.${hasLogs ? ' Players with published match logs show full statistics and hit rates.' : ' Individual match statistics are not published for this league yet, so profiles show club, position, fixtures and team news.'}</div>` : ''}
       <section class="sec"><h2>Clubs</h2><div class="card"><div class="list">${teams.map(t => rowHtml({ type: 'team', id: t.slug, name: t.name, sub: leagueName(t.league) + (dirN ? ' · squad and team stats' : '') })).join('')}</div></div></section>
       ${featured.length ? `<section class="sec"><h2>${hasLogs ? 'Players with match logs' : 'Players with team news'}</h2><div class="card"><div class="list">${featured.slice(0, 60).map(p => rowHtml({ type: 'player', id: p.id, name: p.name, sub: `${p.team} · ${leagueName(p.league)}${p.hasLogs ? ` · ${p.n} match${p.n === 1 ? '' : 'es'}` : ''}` })).join('')}</div></div></section>` : ''}`;
   }
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Players</h1><div id="sb"></div><div id="res">${body}</div>`;
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Players</h1>${ready ? leagueSelect() : ''}<div id="sb"></div><div id="res">${body}</div>`;
+  const ls = $('#lgsel', root); if (ls) ls.onchange = e => { setLeague(e.target.value); viewPlayers(root, r); };
   searchBox($('#sb', root), { value: q, onSubmit: t => { location.hash = `#/players?q=${encodeURIComponent(t)}`; }, autofocus: false });
 }
 
@@ -552,34 +577,52 @@ return { viewPlayers };
 })();
 __m['markets'] = (() => {
 // Which statistics can be researched. Player markets read fields of a published player row; team markets read the derived team rows.
-const add = (a, b) => (a == null && b == null ? null : (a || 0) + (b || 0));
+// Only real recorded values are used: a market with no value in the rows is simply not offered (marketsWithData).
 const clean = v => (v === undefined ? null : v);
+const add = (a, b) => (a == null || b == null ? null : a + b); // a sum is only known when both parts are known
 const PLAYER_MARKETS = [
   { key: 'shots', label: 'Shots', short: 'Shots', get: r => clean(r.shots) },
   { key: 'shots_on_target', label: 'Shots on target', short: 'SOT', get: r => clean(r.shots_on_target) },
-  { key: 'tackles', label: 'Tackles', short: 'Tackles', get: r => clean(r.tackles) },
-  { key: 'fouls_committed', label: 'Fouls committed', short: 'Fouls', get: r => clean(r.fouls_committed) },
-  { key: 'fouls_drawn', label: 'Fouls drawn', short: 'Fouls won', get: r => clean(r.fouls_drawn) },
   { key: 'goals', label: 'Goals', short: 'Goals', get: r => clean(r.goals) },
   { key: 'assists', label: 'Assists', short: 'Assists', get: r => clean(r.assists) },
-  { key: 'cards', label: 'Cards', short: 'Cards', get: r => add(r.yellow_cards, r.red_cards) },
-  { key: 'goal_contrib', label: 'Goals + assists', short: 'G+A', get: r => add(r.goals, r.assists) },
+  { key: 'goal_contrib', label: 'Goals + assists', short: 'G+A', get: r => add(clean(r.goals), clean(r.assists)) },
+  { key: 'fouls_committed', label: 'Fouls committed', short: 'Fouls', get: r => clean(r.fouls_committed) },
+  { key: 'fouls_drawn', label: 'Fouls drawn', short: 'Fouls won', get: r => clean(r.fouls_drawn) },
+  { key: 'tackles', label: 'Tackles', short: 'Tackles', get: r => clean(r.tackles) },
+  { key: 'yellow_cards', label: 'Yellow cards', short: 'Yellows', get: r => clean(r.yellow_cards) },
+  { key: 'red_cards', label: 'Red cards', short: 'Reds', get: r => clean(r.red_cards) },
   { key: 'offsides', label: 'Offsides', short: 'Offsides', get: r => clean(r.offsides) },
   { key: 'interceptions', label: 'Interceptions', short: 'Intercepts', get: r => clean(r.interceptions) },
   { key: 'saves', label: 'Goalkeeper saves', short: 'Saves', get: r => clean(r.saves), positions: ['G'] },
 ];
-const T = [['goals', 'Goals'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['fouls', 'Fouls'], ['yellows', 'Yellow cards'], ['cards', 'Cards']];
+// Team rows (data.js) carry each statistic for the team (goals, shots...) and against it (goalsA, shotsA...).
+const TEAM = [['goals', 'Goals'], ['htgoals', 'First-half goals'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['fouls', 'Fouls committed'], ['yellows', 'Yellow cards'], ['reds', 'Red cards']];
+const OPP = [['goals', 'Goals conceded'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['yellows', 'Yellow cards'], ['reds', 'Red cards']];
+const MATCH = [['goals', 'Total match goals'], ['htgoals', 'First-half match goals'], ['shots', 'Shots'], ['sot', 'Shots on target'], ['corners', 'Corners'], ['fouls', 'Fouls'], ['yellows', 'Yellow cards'], ['reds', 'Red cards']];
 const TEAM_MARKETS = [
-  ...T.map(([k, l]) => ({ key: 't.' + k, label: l, group: 'Team total', get: r => clean(r[k]) })),
-  ...T.map(([k, l]) => ({ key: 'o.' + k, label: l, group: 'Opponent total (against this team)', get: r => clean(r[k + 'A']) })),
-  ...T.map(([k, l]) => ({ key: 'm.' + k, label: l, group: 'Match total (both teams)', get: r => (r[k] == null || r[k + 'A'] == null ? null : r[k] + r[k + 'A']) })),
+  ...TEAM.map(([k, l]) => ({ key: 't.' + k, label: l, short: l, group: 'Team total', get: r => clean(r[k]) })),
+  { key: 't.fdrawn', label: 'Fouls drawn', short: 'Fouls drawn', group: 'Team total', get: r => clean(r.foulsA), note: "the opponent's fouls committed in the match" },
+  ...OPP.map(([k, l]) => ({ key: 'o.' + k, label: l, short: l, group: 'Opponent total (against this team)', get: r => clean(r[k + 'A']) })),
+  ...MATCH.slice(0, 2).map(([k, l]) => ({ key: 'm.' + k, label: l, short: l, group: 'Match total (both teams)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
+  { key: 'm.btts', label: 'Both teams to score: Yes', short: 'BTTS', group: 'Match total (both teams)', binary: true, get: r => clean(r.btts) },
+  ...MATCH.slice(2).map(([k, l]) => ({ key: 'm.' + k, label: 'Match ' + l.toLowerCase(), short: l, group: 'Match total (both teams)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
 ];
 const marketValue = (m, row) => { if (m.positions && !m.positions.includes(row.position)) return null; const v = m.get(row); return v === undefined ? null : v; };
 const marketRows = (rows, m, exposureKey) => rows.map(r => ({ ...r, value: marketValue(m, r), exposure: exposureKey ? r[exposureKey] : 1 }));
 /** Markets that have at least one real value in these rows. */
 const marketsWithData = (rows, markets) => markets.filter(m => rows.some(r => marketValue(m, r) !== null));
 
-return { PLAYER_MARKETS, TEAM_MARKETS, marketValue, marketRows, marketsWithData };
+/** Half-integer line at or just under the average of the real values (average 5.8 -> 5.5, 6.0 -> 5.5, 6.5 -> 6.5), never below 0.5. */
+const typicalLine = (values) => { const v = values.filter(x => typeof x === 'number'); if (!v.length) return 0.5; const a = v.reduce((s, x) => s + x, 0) / v.length; return Math.max(0.5, Math.floor(a) + 0.5 > a ? Math.floor(a) - 0.5 : Math.floor(a) + 0.5); };
+// Fixed starting lines for goals markets (they are not derived from averages).
+const FIXED = { 'm.goals': 2.5, 't.goals': 1.5, 'o.goals': 1.5, 'm.htgoals': 0.5, 't.htgoals': 0.5, 'm.btts': 0.5 };
+/** Starting line for a market: fixed for goals markets, otherwise the half-integer just under the average of the real values given. */
+const defaultLine = (key, values) => (FIXED[key] ?? typicalLine(values));
+const isBinary = key => key === 'm.btts';
+/** Next line when an arrow is pressed: steps of 1 (2.5 -> 3.5), never below 0 and no upper cap. */
+const stepLine = (line, dir) => { const n = Math.round(((line ?? 0.5) + dir) * 2) / 2; return n < 0 ? line : n; };
+
+return { PLAYER_MARKETS, TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, stepLine };
 })();
 __m['analytics'] = (() => {
 // Pure maths. No network, no storage, no DOM. Everything here is unit-tested.
@@ -753,7 +796,7 @@ __m['charts'] = (() => {
 function niceMax(v) { if (v <= 4) return 4; if (v <= 10) return Math.ceil(v); const p = 10 ** Math.floor(Math.log10(v)); return Math.ceil(v / (p / 2)) * (p / 2); }
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 /** values/labels are oldest -> newest (left -> right). */
-function drawBars(canvas, { values, labels, line, side = 'over' }) {
+function drawBars(canvas, { values, labels, line, side = 'over', fmtValue = v => String(v), selected = -1, showLine = true }) {
   const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight || 230;
   canvas.width = W * dpr; canvas.height = H * dpr;
   const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
@@ -765,85 +808,107 @@ function drawBars(canvas, { values, labels, line, side = 'over' }) {
   const step = max <= 10 ? 1 : max / 5;
   for (let t = 0; t <= max + 1e-9; t += step) { c.strokeStyle = grid; c.beginPath(); c.moveTo(L, y(t)); c.lineTo(W - R, y(t)); c.stroke(); c.fillStyle = muted; c.fillText(String(Math.round(t * 10) / 10), L - 6, y(t)); }
   const n = values.length, slot = pw / n, bw = Math.min(34, slot * 0.68);
+  const every = Math.max(1, Math.ceil(46 / slot)); // date labels need about 46px each; skip some on narrow screens
   c.textAlign = 'center';
   values.forEach((v, i) => {
     const x = L + slot * i + (slot - bw) / 2; const isHit = side === 'under' ? v < line : v > line;
-    c.fillStyle = isHit ? hit : miss; c.beginPath(); c.roundRect ? c.roundRect(x, y(v), bw, Math.max(2, y(0) - y(v)), 4) : c.rect(x, y(v), bw, Math.max(2, y(0) - y(v))); c.fill();
-    c.fillStyle = text; c.textBaseline = 'bottom'; c.fillText(String(v), x + bw / 2, y(v) - 3);
-    if (n <= 12 || i % Math.ceil(n / 12) === 0) { c.fillStyle = muted; c.textBaseline = 'top'; c.fillText(labels[i] || '', x + bw / 2, H - B + 8); }
+    c.globalAlpha = selected >= 0 && selected !== i ? 0.45 : 1; c.fillStyle = isHit ? hit : miss; c.beginPath(); c.roundRect ? c.roundRect(x, y(v), bw, Math.max(2, y(0) - y(v)), 4) : c.rect(x, y(v), bw, Math.max(2, y(0) - y(v))); c.fill();
+    c.globalAlpha = 1; c.fillStyle = text; c.textBaseline = 'bottom'; c.fillText(fmtValue(v), x + bw / 2, y(v) - 3);
+    if ((n - 1 - i) % every === 0) { c.fillStyle = muted; c.textBaseline = 'top'; c.fillText(labels[i] || '', x + bw / 2, H - B + 8); }
   });
+  if (!showLine) return { L, slot, n };
   c.strokeStyle = amber; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(L, y(line)); c.lineTo(W - R, y(line)); c.stroke(); c.setLineDash([]);
   c.fillStyle = amber; c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(`line ${line}`, W - R, y(line) - 4);
+  return { L, slot, n };
 }
+/** Index of the bar under a tap/click at clientX, or -1. geo is what drawBars returned. */
+const barAt = (canvas, geo, clientX) => { if (!geo) return -1; const x = clientX - canvas.getBoundingClientRect().left - geo.L; const i = Math.floor(x / geo.slot); return i >= 0 && i < geo.n ? i : -1; };
 
-return { niceMax, drawBars };
+return { niceMax, drawBars, barAt };
 })();
 __m['panel'] = (() => {
-// Research panel shared by player and team pages: market, side, line, filters, hit rate, chart, splits, match log.
+// Research panel shared by player and team pages: market, side, sample, venue, then the line arrows directly above the bar chart.
 const { hitRate } = __m['analytics'];
 const { applyFilters, buildSplits } = __m['research'];
-const { drawBars } = __m['charts'];
-const { marketRows } = __m['markets'];
-const { $, $$, esc, fmt, fmtShort } = __m['util'];
+const { drawBars, barAt } = __m['charts'];
+const { marketRows, defaultLine, stepLine, typicalLine: tl } = __m['markets'];
+const { $, $$, esc, fmt, fmtShort, fmtLong } = __m['util'];
 
+const typicalLine = tl;
 const memory = new Map();
-const typicalLine = (values) => { const v = values.filter(x => typeof x === 'number'); if (!v.length) return 0.5; const a = v.reduce((s, x) => s + x, 0) / v.length; return Math.max(0.5, Math.floor(a) + 0.5); };
 const seg = (name, items, cur) => `<div class="seg" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
+/** Up/down line control. The input still accepts a typed line. */
+const stepperHtml = (id, label = 'Line') => `<div class="stepper lstep" role="group" aria-label="${esc(label)}"><button type="button" data-step="-1" aria-label="Lower the line by 1">▼</button><input ${id ? `id="${id}"` : 'data-line'} type="text" inputmode="decimal" aria-label="${esc(label)}"><button type="button" data-step="1" aria-label="Raise the line by 1">▲</button></div>`;
+const venueWord = v => (v === 'home' ? 'home ' : v === 'away' ? 'away ' : '');
+const sampleLabel = (last, venue, n) => `${last ? `Last ${last} ${venueWord(venue)}matches` : `All ${venueWord(venue)}matches`}${last && n < last ? ` (only ${n} available)` : ''}`;
+const hitsLine = hr => `${hr.hits} hit${hr.hits === 1 ? '' : 's'} from ${hr.n} match${hr.n === 1 ? '' : 'es'}`;
 
 /**
- * cfg: { key, markets (already limited to ones with data), rows, exposureKey, hasMinutes, hasStarts, subject: 'player'|'team', subjectId, onChart? }
+ * cfg: { key, markets (already limited to ones with data), rows, exposureKey, hasMinutes, subject: 'player'|'team', subjectId }
  */
 function researchPanel(root, cfg) {
-  const st = memory.get(cfg.key) || { market: cfg.markets[0].key, side: 'over', line: null, last: 10, venue: '', minMin: 0 };
+  const st = memory.get(cfg.key) || { market: cfg.markets[0].key, side: 'over', line: null, last: 10, venue: '', minMin: 0, sel: -1 };
   memory.set(cfg.key, st);
-  if (!cfg.markets.some(m => m.key === st.market)) st.market = cfg.markets[0].key;
+  if (!cfg.markets.some(m => m.key === st.market)) { st.market = cfg.markets[0].key; st.line = null; }
   const rowsFor = key => marketRows(cfg.rows, cfg.markets.find(m => m.key === key), cfg.exposureKey);
-  if (st.line === null) st.line = typicalLine(rowsFor(st.market).slice(0, 10).map(r => r.value));
+  const sample = () => applyFilters(rowsFor(st.market), { last: st.last || null, venue: st.venue, minMinutes: cfg.hasMinutes ? st.minMin : 0 });
+  // The starting line follows the selected sample; it is recalculated when the market, sample, venue or minutes filter changes, never after a manual change.
+  const resetLine = () => { st.line = defaultLine(st.market, sample().map(r => r.value)); st.sel = -1; };
+  if (st.line === null) resetLine();
 
   const groups = [...new Set(cfg.markets.map(m => m.group || ''))];
   root.innerHTML = `<div class="card stack">
     ${groups.map(g => `${g ? `<div class="lab">${esc(g)}</div>` : ''}<div class="chips" data-chips="${esc(g)}">${cfg.markets.filter(m => (m.group || '') === g).map(m => `<button class="chip" data-m="${esc(m.key)}">${esc(m.label)}</button>`).join('')}</div>`).join('')}
     <div class="ctl">
-      <div class="field"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], st.side)}</div>
-      <div class="field"><label>Line</label><div class="stepper"><button data-step="-1" aria-label="Lower line">−</button><input data-line type="text" inputmode="decimal" aria-label="Line"><button data-step="1" aria-label="Raise line">+</button></div></div>
+      <div class="field" data-sidefield><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], st.side)}</div>
       <div class="field"><label>Matches</label>${seg('last', [[5, 'Last 5'], [10, '10'], [20, '20'], [0, 'All']], st.last)}</div>
       <div class="field"><label>Venue</label>${seg('venue', [['', 'All'], ['home', 'Home'], ['away', 'Away']], st.venue)}</div>
       ${cfg.hasMinutes ? `<div class="field"><label>Minutes played</label>${seg('minMin', [[0, 'Any'], [45, '45+'], [60, '60+']], st.minMin)}</div>` : ''}
     </div>
+    <div class="linebar"><div class="lt" data-title></div><div data-stepwrap>${stepperHtml('', 'Line')}</div></div>
     <div data-out></div></div>`;
-  const out = $('[data-out]', root), lineIn = $('[data-line]', root);
-  let ctx = null;
+  const out = $('[data-out]', root), lineIn = $('[data-line]', root), title = $('[data-title]', root), stepWrap = $('[data-stepwrap]', root), sideField = $('[data-sidefield]', root);
+  let ctx = null, geo = null;
 
   const update = () => {
-    const market = cfg.markets.find(m => m.key === st.market), all = rowsFor(st.market);
+    const market = cfg.markets.find(m => m.key === st.market), binary = !!market.binary, all = rowsFor(st.market);
+    if (binary) { st.side = 'over'; st.line = 0.5; }
     $$('[data-m]', root).forEach(b => b.classList.toggle('on', b.dataset.m === st.market));
     for (const name of ['side', 'last', 'venue', 'minMin']) $$(`[data-seg="${name}"] button`, root).forEach(b => b.classList.toggle('on', b.dataset.v === String(st[name])));
+    stepWrap.hidden = binary; sideField.hidden = binary;
     if (document.activeElement !== lineIn) lineIn.value = st.line;
-    const filtered = applyFilters(all, { last: st.last || null, venue: st.venue, minMinutes: cfg.hasMinutes ? st.minMin : 0 });
+    const filtered = sample();
     const hr = hitRate(filtered.map(r => r.value), st.line, st.side);
     const missing = all.filter(r => r.value === null).length;
     const splits = buildSplits(applyFilters(all, { minMinutes: cfg.hasMinutes ? st.minMin : 0 }), st.line, st.side);
     ctx = { st: { ...st }, market, filtered, hr, all };
     const word = st.side === 'under' ? 'Under' : 'Over';
+    const what = binary ? market.label : `${market.label} — ${word} ${st.line}`;
+    title.innerHTML = `<b>${esc(what)}</b>`;
     const tile = (a, b, cls = '') => `<div class="tile"><b class="${cls}">${b}</b><span>${a}</span></div>`;
     const hitCls = hr.hitPct === null ? '' : hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : '';
-    out.innerHTML = `<div class="tiles">${tile('Matches', hr.n)}${tile('Hits', hr.hits)}${tile('Hit rate', hr.hitPct === null ? 'n/a' : hr.hitPct + '%', hitCls)}${tile('Average', fmt(hr.avg))}${tile('Median', fmt(hr.median))}${tile('High / low', hr.n ? `${hr.max} / ${hr.min}` : 'n/a')}</div>
-      ${hr.n ? '<canvas role="img" aria-label="Bar chart of recent matches against the line"></canvas>' : '<div class="banner">No matches with published data for these filters. Nothing is estimated or filled in.</div>'}
-      <p class="small muted">${word} ${st.line} ${esc(market.label.toLowerCase())}: how often this happened in the matches shown. A hit rate describes the past. It is not the chance it happens next time, and it says nothing about whether a bookmaker's price is good value.</p>
+    const fmtV = v => (binary ? (v ? 'Yes' : 'No') : String(v));
+    out.innerHTML = `<div class="hitsum"><b class="${hitCls}">${hr.hitPct === null ? 'n/a' : hr.hitPct + '%'}</b> <span>${hr.n ? hitsLine(hr) : 'no matches'} · ${esc(sampleLabel(st.last, st.venue, hr.n))}${cfg.hasMinutes && st.minMin ? ` · ${st.minMin}+ minutes` : ''}</span></div>
+      ${hr.n ? '<canvas role="img" aria-label="Bar chart of each match against the line. Tap a bar for the match details."></canvas><p class="xs muted barinfo" data-barinfo>Tap a bar to see the match.</p>' : '<div class="banner">No matches with published data for these filters. Nothing is estimated or filled in.</div>'}
+      <div class="tiles">${tile('Matches', hr.n)}${tile('Hits', hr.hits)}${tile('Hit rate', hr.hitPct === null ? 'n/a' : hr.hitPct + '%', hitCls)}${tile(binary ? 'Both scored' : 'Average', binary ? (hr.n ? hr.hits + '/' + hr.n : 'n/a') : fmt(hr.avg))}${tile('Median', binary ? '–' : fmt(hr.median))}${tile('High / low', hr.n && !binary ? `${hr.max} / ${hr.min}` : binary ? '–' : 'n/a')}</div>
+      <p class="small muted">${binary ? 'Both teams to score (Yes): a hit when both teams scored at least once.' : `${word} ${st.line} ${esc(market.label.toLowerCase())}${market.note ? ' (' + esc(market.note) + ')' : ''}: a hit when the recorded figure is ${st.side === 'under' ? 'below' : 'above'} ${st.line}.`} A hit rate describes the past. It is not the chance it happens next time, and it says nothing about whether a bookmaker's price is good value.</p>
       ${hr.n && hr.n < 8 ? `<div class="banner"><b>Small sample.</b> Only ${hr.n} match${hr.n > 1 ? 'es' : ''} with data. Treat this as a rough guide.</div>` : ''}
       ${Number.isInteger(st.line) ? '<div class="banner">Whole-number line: bookmakers usually refund a result exactly on the line. This hit rate counts it as a miss.</div>' : ''}
-      ${missing ? `<p class="xs muted">${missing} match${missing > 1 ? 'es have' : ' has'} no published figure for this stat and ${missing > 1 ? 'are' : 'is'} left out.</p>` : ''}
-      ${hr.n ? `<h3>Same line, other slices</h3><div class="scroll"><table><tr><th>Slice</th><th>Matches</th><th>Hits</th><th>Hit %</th><th>Avg</th></tr>${splits.filter(s => s.n).map(s => `<tr><td>${esc(s.label)}</td><td class="n">${s.n}</td><td class="n">${s.hits}</td><td class="n">${s.hitPct}%</td><td class="n">${fmt(s.avg)}</td></tr>`).join('')}</table></div>
-      <h3>Match by match</h3><div class="scroll"><table><tr><th>Date</th><th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.short || market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(fmtShort(r.date))}</td><td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${r.value}</b></td></tr>`; }).join('')}</table></div>` : ''}
-      <div><a class="go" style="display:inline-flex;align-items:center" href="#/value?s=${cfg.subject}:${encodeURIComponent(cfg.subjectId)}&m=${encodeURIComponent(st.market)}&side=${st.side}&line=${st.line}">Compare with a price</a></div>`;
-    const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { const asc = [...filtered].reverse(); drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => fmtShort(r.date)), line: st.line, side: st.side }); } };
-    draw(); panelRedraw = draw;
+      ${missing ? `<p class="xs muted">${missing} match${missing > 1 ? 'es have' : ' has'} no published figure for this statistic and ${missing > 1 ? 'are' : 'is'} left out.</p>` : ''}
+      ${hr.n ? `<h3>Same line, other slices</h3><div class="scroll"><table><tr><th>Slice</th><th>Matches</th><th>Hits</th><th>Hit %</th>${binary ? '' : '<th>Avg</th>'}</tr>${splits.filter(s => s.n).map(s => `<tr><td>${esc(s.label)}</td><td class="n">${s.n}</td><td class="n">${s.hits}</td><td class="n">${s.hitPct}%</td>${binary ? '' : `<td class="n">${fmt(s.avg)}</td>`}</tr>`).join('')}</table></div>
+      <h3>Match by match</h3><div class="scroll"><table><tr><th>Date</th><th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.short || market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(fmtShort(r.date))}</td><td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${esc(fmtV(r.value))}</b></td></tr>`; }).join('')}</table></div>` : ''}
+      ${binary ? '' : `<div><a class="go" style="display:inline-flex;align-items:center" href="#/value?s=${cfg.subject}:${encodeURIComponent(cfg.subjectId)}&m=${encodeURIComponent(st.market)}&side=${st.side}&line=${st.line}">Compare with a price</a></div>`}`;
+    const asc = [...filtered].reverse();
+    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.short || market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>` : 'Tap a bar to see the match.'; };
+    const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { geo = drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => fmtShort(r.date)), line: st.line, side: st.side, fmtValue: fmtV, selected: st.sel, showLine: !binary }); cv.onclick = e => { const i = barAt(cv, geo, e.clientX); st.sel = i === st.sel ? -1 : i; draw(); info(); }; } };
+    if (st.sel >= asc.length) st.sel = -1;
+    draw(); info(); panelRedraw = draw;
   };
   let panelRedraw = null;
   root.addEventListener('click', e => {
-    const m = e.target.closest('[data-m]'); if (m) { st.market = m.dataset.m; st.line = typicalLine(rowsFor(st.market).slice(0, st.last || 10).map(r => r.value)); update(); return; }
-    const b = e.target.closest('[data-seg] button'); if (b) { const n = b.parentElement.dataset.seg; st[n] = ['last', 'minMin'].includes(n) ? Number(b.dataset.v) : b.dataset.v; update(); return; }
-    const s = e.target.closest('[data-step]'); if (s) { st.line = Math.max(0, Math.round((st.line + Number(s.dataset.step) * 1) * 2) / 2); update(); }
+    const m = e.target.closest('[data-m]'); if (m) { st.market = m.dataset.m; resetLine(); update(); return; }
+    const b = e.target.closest('[data-seg] button'); if (b) { const n = b.parentElement.dataset.seg; st[n] = ['last', 'minMin'].includes(n) ? Number(b.dataset.v) : b.dataset.v; if (n !== 'side') resetLine(); update(); return; }
+    const s = e.target.closest('[data-step]'); if (s) { st.line = stepLine(st.line, Number(s.dataset.step)); update(); }
   });
   lineIn.addEventListener('input', () => { const v = parseFloat(lineIn.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { st.line = v; update(); } });
   lineIn.addEventListener('blur', () => { lineIn.value = st.line; });
@@ -851,7 +916,94 @@ function researchPanel(root, cfg) {
   return { redraw: () => panelRedraw && panelRedraw(), state: () => ctx };
 }
 
-return { typicalLine, researchPanel };
+return { typicalLine, stepperHtml, venueWord, sampleLabel, hitsLine, researchPanel };
+})();
+__m['photo-lookup'] = (() => {
+// Finds a freely licensed Wikimedia Commons photo for one player, or returns null.
+// Used live in the visitor's browser (Wikidata and Commons allow cross-site requests) and by the owner tool to pre-build data-photos.json.
+// Safety rules (a wrong face is worse than no face):
+//   1. The Wikidata item's English label must match the player's name (accents, order and hyphens ignored).
+//   2. It must be a human (P31=Q5) with occupation association football player (P106=Q937857).
+//   3. One of its clubs (P54) must be the player's current club (club label compared with our club name).
+//   4. Exactly one item may pass 1-3; if two do, no photo is shown.
+//   5. The Commons file must carry a free licence (CC BY, CC BY-SA, CC0 or public domain); author and licence are kept for the credit line.
+const WD = 'https://www.wikidata.org/w/api.php', CM = 'https://commons.wikimedia.org/w/api.php';
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const toks = s => norm(s).split(' ').filter(Boolean).sort().join(' ');
+const clubKey = s => norm(s).split(' ').filter(w => !['fc', 'cf', 'sc', 'afc', 'f', 'c', 'club', 'de', 'foot', 'soccer'].includes(w)).join(' ');
+const FREE = /^(cc[ -]?by(-sa)?( \d(\.\d)?)?|cc0|public domain|pd\b|pd-)/i;
+const strip = h => String(h || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+
+async function api(fetchFn, base, params) {
+  const r = await fetchFn(base + '?' + new URLSearchParams({ format: 'json', origin: '*', ...params }));
+  if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
+}
+const claimIds = (ent, prop) => (ent.claims?.[prop] || []).map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+
+/** player: { name, team }. Returns { qid, file, thumb, thumb_sm, page, artist, license, license_url } or null. */
+async function findPhoto(player, fetchFn = fetch) {
+  const s = await api(fetchFn, WD, { action: 'wbsearchentities', search: player.name, language: 'en', type: 'item', limit: '10' });
+  const ids = (s.search || []).filter(x => toks(x.label) === toks(player.name)).map(x => x.id);
+  if (!ids.length) return null;
+  const e = await api(fetchFn, WD, { action: 'wbgetentities', ids: ids.join('|'), props: 'claims|labels', languages: 'en' });
+  const cands = Object.values(e.entities || {}).filter(x => claimIds(x, 'P31').includes('Q5') && claimIds(x, 'P106').includes('Q937857'));
+  if (!cands.length) return null;
+  const clubIds = [...new Set(cands.flatMap(x => claimIds(x, 'P54')))].slice(0, 50);
+  if (!clubIds.length) return null;
+  const cl = await api(fetchFn, WD, { action: 'wbgetentities', ids: clubIds.join('|'), props: 'labels', languages: 'en' });
+  const want = clubKey(player.team);
+  const clubOk = id => { const l = cl.entities?.[id]?.labels?.en?.value; return !!l && (clubKey(l) === want || clubKey(l).startsWith(want + ' ') || want.startsWith(clubKey(l) + ' ')); };
+  const matches = cands.filter(x => claimIds(x, 'P54').some(clubOk));
+  if (matches.length !== 1) return null;
+  const ent = matches[0]; const file = ent.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+  if (!file) return null;
+  const im = await api(fetchFn, CM, { action: 'query', titles: 'File:' + file, prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '250' });
+  const page = Object.values(im.query?.pages || {})[0]; const ii = page?.imageinfo?.[0]; const md = ii?.extmetadata || {};
+  const license = strip(md.LicenseShortName?.value);
+  if (!ii?.thumburl || !FREE.test(license)) return null;
+  // Commons only serves standard thumbnail widths (e.g. 60, 120, 250); other widths fail. Keep the upload.wikimedia.org address without tracking parameters.
+  const thumb = String(ii.thumburl).split('?')[0].replace(/^https:\/\/thumb\.wikimedia\.org\//, 'https://upload.wikimedia.org/');
+  const thumbSm = /\/thumb\/.+\/\d+px-[^/]+$/.test(thumb) ? thumb.replace(/\/\d+px-([^/]+)$/, '/120px-$1') : thumb;
+  return { qid: ent.id, file, thumb, thumb_sm: thumbSm, page: ii.descriptionurl || `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file)}`,
+    artist: strip(md.Artist?.value).slice(0, 120) || 'unknown author', license, license_url: md.LicenseUrl?.value || '' };
+}
+
+return { findPhoto };
+})();
+__m['photo'] = (() => {
+// Player photo area: a freely licensed Wikimedia Commons photo when one is verified for this exact player, otherwise a neutral silhouette.
+// Order: published data-photos.json (pre-checked) -> live check in the browser (profile pages only, cached on this device) -> silhouette.
+// A photo that fails to load is swapped for the silhouette, so a broken-image icon never shows.
+const { store } = __m['data'];
+const { esc } = __m['util'];
+const { findPhoto } = __m['photo-lookup'];
+
+const SILHOUETTE = `<svg class="sil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="23" r="11" fill="currentColor"/><path d="M10 60c1.5-12 10-19 22-19s20.5 7 22 19z" fill="currentColor"/><path d="M26 41l6 7 6-7" fill="none" stroke="var(--s1)" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
+const CACHE_V = 'proplab.photo.v1.', TTL = 7 * 864e5;
+const okThumb = u => /^https:\/\/upload\.wikimedia\.org\//.test(u || '');
+const cacheGet = id => { try { const v = JSON.parse(localStorage.getItem(CACHE_V + id) || 'null'); return v && Date.now() - v.t < TTL ? v : null; } catch { return null; } };
+const cacheSet = (id, ph) => { try { localStorage.setItem(CACHE_V + id, JSON.stringify({ t: Date.now(), ph })); } catch {} };
+const photoFor = id => { const p = store.photos?.items?.[id]; if (p) return p; const c = cacheGet(id); return c?.ph && okThumb(c.ph.thumb) ? c.ph : null; };
+
+const imgTag = (ph, name, size) => `<img src="${esc(size === 'sm' ? ph.thumb_sm || ph.thumb : ph.thumb)}" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('nophoto');this.remove()">`;
+function photoHtml(p, size = 'lg') {
+  const ph = photoFor(p.id);
+  return `<div class="pph ${size}${ph ? '' : ' nophoto'}" data-photo="${esc(p.id)}" role="img" aria-label="${esc(ph ? 'Photo of ' + p.name : 'No photo available for ' + p.name)}">${SILHOUETTE}${ph ? imgTag(ph, p.name, size) : ''}</div>`;
+}
+const creditHtml = ph => `Photo: ${esc(ph.artist || 'unknown author')}, <a href="${esc(ph.license_url || ph.page)}" target="_blank" rel="noopener">${esc(ph.license)}</a>, via <a href="${esc(ph.page)}" target="_blank" rel="noopener">Wikimedia Commons</a>.`;
+function photoCredit(p) { const ph = photoFor(p.id); return `<p class="xs muted credit" data-credit="${esc(p.id)}">${ph ? creditHtml(ph) : ''}</p>`; }
+
+/** Live check for one player (profile page). Never blocks the page; on any failure the silhouette simply stays. */
+async function hydratePhoto(root, p) {
+  if (photoFor(p.id)) return; if (store.photos?.checked_none?.includes?.(p.id)) return; const c = cacheGet(p.id); if (c && c.ph === null) return;
+  let ph = null; try { ph = await findPhoto({ name: p.name, team: p.team }); } catch { return; }
+  if (ph && !okThumb(ph.thumb)) ph = null; cacheSet(p.id, ph); if (!ph) return;
+  const box = root.querySelector(`[data-photo="${CSS.escape(p.id)}"]`); if (!box) return;
+  box.insertAdjacentHTML('beforeend', imgTag(ph, p.name, box.classList.contains('sm') ? 'sm' : 'lg')); box.classList.remove('nophoto'); box.setAttribute('aria-label', 'Photo of ' + p.name);
+  const cr = root.querySelector(`[data-credit="${CSS.escape(p.id)}"]`); if (cr) cr.innerHTML = creditHtml(ph);
+}
+
+return { SILHOUETTE, photoFor, photoHtml, photoCredit, hydratePhoto };
 })();
 __m['v-player'] = (() => {
 const { store, playerById, loadPlayerRows, newsForPlayer, upcomingFor, teamSlugOf, teamProfile, leagueName } = __m['data'];
@@ -860,6 +1012,7 @@ const { researchPanel } = __m['panel'];
 const { $, esc, fmtDay, fmtLong, todayYmd, avg, fmtKickUK } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
 const { searchBox } = __m['searchbox'];
+const { photoHtml, photoCredit, hydratePhoto } = __m['photo'];
 
 const POSNAME = { GK: 'Goalkeeper', DF: 'Defender', MF: 'Midfielder', FW: 'Forward' };
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -870,16 +1023,20 @@ async function viewPlayer(root, r) {
   if (!p) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/players">← Players</a><h1>Player not found</h1><p class="muted">That player is not in the published data. Search again:</p><div id="sb"></div>`; searchBox($('#sb', root)); return; }
   const today = todayYmd(), slug = teamSlugOf(p.team), news = newsForPlayer(p.name, p.team), up = upcomingFor(p.team, today).slice(0, 2);
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Players</a>
-    <div class="prof"><div class="avatar">${esc(initials(p.name))}</div><div><h1 style="margin:0">${esc(p.name)}</h1><div class="muted"><a href="#/team/${encodeURIComponent(slug)}">${esc(p.team)}</a> · ${esc(leagueName(p.league))}${p.pos ? ' · ' + esc(POSNAME[p.pos] || p.pos) : ''}${p.loan_from ? ' · on loan from ' + esc(p.loan_from) : ''}</div></div></div>
+    <div class="prof">${photoHtml(p, 'lg')}<div><h1 style="margin:0">${esc(p.name)}</h1><div class="muted"><a href="#/team/${encodeURIComponent(slug)}">${esc(p.team)}</a> · ${esc(leagueName(p.league))}${p.pos ? ' · ' + esc(POSNAME[p.pos] || p.pos) : ''}${p.loan_from ? ' · on loan from ' + esc(p.loan_from) : ''}</div></div></div>${photoCredit(p)}
     ${news.length ? `<div style="margin-top:14px" class="card"><h3>Team news</h3><div class="list">${news.map(newsItem).join('')}</div><p class="xs muted" style="margin:8px 0 0">Only as current as the date shown. Check club sources before relying on it.</p></div>` : ''}
     <div id="body" style="margin-top:14px"><div class="skel"></div><div class="skel" style="width:70%"></div></div>`;
+  hydratePhoto(root, p);
   const body = $('#body', root);
   const rows = p.hasLogs ? await loadPlayerRows(p) : [];
   const markets = marketsWithData(rows, PLAYER_MARKETS);
   let html = '';
-  if (rows.length && markets.length) html += '<div id="panel"></div>';
-  else html += `<div class="banner info"><b>Match statistics are not available yet for ${esc(p.name)}.</b> This profile shows directory information only. Shots, tackles, fouls, cards and hit rates appear here once verified match-by-match logs are published; nothing is estimated in their place.${p.hasLogs ? '' : ' What is available: club, position, team news, fixtures and the team page.'}</div>`;
-  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : ' · Referee not yet confirmed'}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA} fouls and ${pr.yellowsA} yellow cards conceded per match (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+  if (rows.length && markets.length) { const CORE = { shots: 'shots', shots_on_target: 'shots on target', fouls_committed: 'fouls committed', fouls_drawn: 'fouls drawn', tackles: 'tackles', yellow_cards: 'yellow cards', red_cards: 'red cards', goals: 'goals', assists: 'assists' };
+    const miss = Object.keys(CORE).filter(k => !markets.some(m => m.key === k)).map(k => CORE[k]);
+    html += `<div id="panel"></div>${miss.length ? `<p class="xs muted">Not available for this player from the published source: ${esc(miss.join(', '))}. These are left out rather than estimated.</p>` : ''}`; }
+  else if (p.league === 'epl') html += `<div class="banner info"><b>Match statistics are not available for ${esc(p.name)}.</b> No free source licenses Premier League player match statistics for public display, so this profile shows directory information only. Nothing is estimated in their place. What is available: club, position, team news, fixtures, the team page and team trends.</div>`;
+  else html += `<div class="banner info"><b>Match statistics are not available yet for ${esc(p.name)}.</b> This profile shows directory information only. Shots, goals, assists and hit rates appear here once verified match-by-match logs are published; nothing is estimated in their place.${p.hasLogs ? '' : ' What is available: club, position, team news, fixtures and the team page.'}</div>`;
+  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : ' · Referee not yet confirmed'}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${pr.shotsA != null ? `${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA ?? 'n/a'} fouls and ${pr.yellowsA ?? 'n/a'} yellow cards conceded per match` : `${esc(opp)} concede ${pr.goalsA ?? 'n/a'} goals per match`} (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     <section class="sec"><h2>Source</h2><div class="card small muted">${p.inDirectory ? `<b>Directory:</b> name, club and position from <a href="${esc(p.dirSource)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0), squad list ${p.as_of ? 'as of ' + esc(fmtLong(p.as_of)) : 'date not stated by the source'}; directory published ${esc(fmtLong(store.directoryMeta?.updated || ''))}. Squad lists can lag recent transfers. ` : ''}${rows.length ? `Match logs: ${[...new Set(rows.map(x => x.source).filter(Boolean))].map(esc).join('; ') || 'see Data & sources'}. ` : ''}${store.manifest?.player_index ? `Player index updated ${esc(fmtLong(store.manifest.player_index.updated))}. ` : ''}<a href="#/about">Data &amp; sources</a></div></section>`;
   body.innerHTML = html;
   if (rows.length && markets.length) {
@@ -898,13 +1055,14 @@ const { researchPanel } = __m['panel'];
 const { $, esc, fmtDay, fmtLong, fmtShort, todayYmd, fmtKickUK } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
 const { searchBox } = __m['searchbox'];
+const { photoHtml } = __m['photo'];
 
 const POSORD = [['GK', 'Goalkeepers'], ['DF', 'Defenders'], ['MF', 'Midfielders'], ['FW', 'Forwards']];
 function squadSection(t) {
   const ps = [...knownPlayers().values()].filter(p => p.inDirectory && teamSlugOf(p.team) === t.slug);
   if (!ps.length) return '';
   const meta = (store.directoryMeta?.clubs || []).find(c => c.slug === t.slug);
-  return `<section class="sec"><h2>Squad (${ps.length})</h2><div class="card">${POSORD.map(([k, lab]) => { const g = ps.filter(p => p.pos === k).sort((a, b) => a.name.localeCompare(b.name)); return g.length ? `<h3 style="margin:10px 0 4px">${lab}</h3><div class="list">${g.map(p => `<a class="row" href="#/player/${encodeURIComponent(p.id)}"><div class="l"><b>${esc(p.name)}</b>${p.loan_from ? `<span>On loan from ${esc(p.loan_from)}</span>` : ''}</div></a>`).join('')}</div>` : ''; }).join('')}<p class="xs muted" style="margin:10px 0 0">Squad list ${meta?.as_of ? 'as of ' + esc(fmtLong(meta.as_of)) : 'date not stated by the source'}, from <a href="${esc(meta?.source || 'https://en.wikipedia.org')}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). May lag recent transfers.</p></div></section>`;
+  return `<section class="sec"><h2>Squad (${ps.length})</h2><div class="card">${POSORD.map(([k, lab]) => { const g = ps.filter(p => p.pos === k).sort((a, b) => a.name.localeCompare(b.name)); return g.length ? `<h3 style="margin:10px 0 4px">${lab}</h3><div class="list">${g.map(p => `<a class="row" style="justify-content:flex-start" href="#/player/${encodeURIComponent(p.id)}">${photoHtml(p, 'sm')}<div class="l"><b>${esc(p.name)}</b>${p.loan_from ? `<span>On loan from ${esc(p.loan_from)}</span>` : ''}</div></a>`).join('')}</div>` : ''; }).join('')}<p class="xs muted" style="margin:10px 0 0">Squad list ${meta?.as_of ? 'as of ' + esc(fmtLong(meta.as_of)) : 'date not stated by the source'}, from <a href="${esc(meta?.source || 'https://en.wikipedia.org')}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). May lag recent transfers.</p></div></section>`;
 }
 async function viewTeam(root, r) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel" style="width:50%"></div><div class="skel"></div>'}`; return; }
@@ -917,10 +1075,10 @@ async function viewTeam(root, r) {
     <div class="prof"><div class="avatar">${esc(t.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${esc(leagueName(t.league))}${pr.n ? ` · ${pr.n} matches this season ` : ''}${pr.form.length ? `<span class="form" aria-label="Recent form">${pr.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</div></div></div>
     <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : ' · Referee not yet confirmed'}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     ${news.length ? `<section class="sec"><h2>Team news</h2><div class="card"><div class="list">${news.map(newsItem).join('')}</div></div></section>` : ''}
-    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table><tr><th></th><th>${esc(t.name.split(' ')[0])}</th><th>Against</th><th>League</th></tr>${cell('Goals', 'goals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls', 'fouls')}${cell('Yellow cards', 'yellows')}</table></div><p class="xs muted" style="margin:8px 0 0">Team totals from ${pr.n} published matches. "Against" is what opponents recorded against ${esc(t.name)}. "League" is the average per team per match.</p></div></section>
+    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table><tr><th></th><th>${esc(t.name.split(' ')[0])}</th><th>Against</th><th>League</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Team totals from ${pr.n} published matches. "Against" is what opponents recorded against ${esc(t.name)}. "League" is the average per team per match. n/a = not published for this league.</p></div></section>
     <section class="sec"><h2>Research a market</h2><div id="panel"></div></section>` : `<div class="banner info" style="margin-top:14px"><b>No match statistics are published for ${esc(t.name)} yet.</b> Fixtures and news above are all that is available.</div>`}
     ${squadSection(t)}
-    <section class="sec"><h2>Source</h2><div class="card small muted">Team statistics come from football-data.co.uk (${esc(store.manifest?.team_matches?.[0]?.through ? 'matches to ' + fmtLong(store.manifest.team_matches[0].through) : 'see Data & sources')}). <a href="#/about">Data &amp; sources</a></div></section>`;
+    <section class="sec"><h2>Source</h2><div class="card small muted">${t.league === 'mls' ? 'MLS results, team shots and shots on target come from American Soccer Analysis (shots on target are the sum of its player rows). Corners, fouls, cards and half-time scores are not available for MLS.' : 'Team statistics, half-time scores and referees come from football-data.co.uk; older results were cross-checked with openfootball.'} <a href="#/about">Data &amp; sources</a></div></section>`;
   if (pr.n && markets.length) { const panel = researchPanel($('#panel', root), { key: 'team:' + t.slug, markets, rows, exposureKey: null, hasMinutes: false, subject: 'team', subjectId: t.slug }); hooks.redraw = panel.redraw; }
 }
 
@@ -936,7 +1094,7 @@ const { fxSort } = __m['data'];
 const ui = { tab: 'upcoming', q: '' };
 const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n = newsForTeam(name);
   return `<div><h3><a href="#/team/${encodeURIComponent(teamSlugOf(name))}">${esc(name)}</a> ${s.form.length ? `<span class="form">${s.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</h3>
-    ${s.n ? `<p class="small muted" style="margin:0 0 6px">Per match over ${s.n} games: ${s.shots} shots (${s.shotsA} against), ${s.fouls} fouls, ${s.yellows} yellows.</p>` : '<p class="small muted" style="margin:0 0 6px">No published match stats yet.</p>'}
+    ${s.n ? `<p class="small muted" style="margin:0 0 6px">Per match over ${s.n} games: ${[s.goals != null ? `${s.goals} goals (${s.goalsA} against)` : '', s.shots != null ? `${s.shots} shots (${s.shotsA} against)` : '', s.fouls != null ? `${s.fouls} fouls` : '', s.yellows != null ? `${s.yellows} yellows` : ''].filter(Boolean).join(', ')}.${s.shots == null ? ' Shots, fouls and cards are not published for this league.' : ''}</p>` : '<p class="small muted" style="margin:0 0 6px">No published match stats yet.</p>'}
     ${n.length ? `<div class="list">${n.map(newsItem).join('')}</div>` : '<p class="small muted" style="margin:0">No team news published.</p>'}</div>`; };
 
 async function viewFixtures(root, r) {
@@ -987,32 +1145,23 @@ const { marketRows } = __m['markets'];
 
 const L = (a, b, step = 1) => { const o = []; for (let x = a; x <= b + 1e-9; x += step) o.push(Math.round(x * 2) / 2); return o; };
 
-/** Supported, sensible lines per market. keys match TEAM_MARKETS / PLAYER_MARKETS. */
+/** Markets scanned by the Hit Rate Finder. keys match TEAM_MARKETS / PLAYER_MARKETS. No fixed line ranges: lines run from 0.5 up to just above the highest real value. */
 const TEAM_PLAY_MARKETS = [
-  { key: 't.shots', label: 'Team shots', lines: L(6.5, 18.5) },
-  { key: 't.sot', label: 'Team shots on target', lines: L(1.5, 8.5) },
-  { key: 't.corners', label: 'Team corners', lines: L(2.5, 9.5) },
-  { key: 't.fouls', label: 'Team fouls', lines: L(7.5, 15.5) },
-  { key: 't.cards', label: 'Team cards', lines: L(0.5, 4.5) },
-  { key: 't.goals', label: 'Team goals', lines: L(0.5, 3.5) },
-  { key: 'm.goals', label: 'Total match goals', lines: L(0.5, 4.5) },
-  { key: 'm.shots', label: 'Match shots', lines: L(14.5, 30.5) },
-  { key: 'm.sot', label: 'Match shots on target', lines: L(4.5, 12.5) },
-  { key: 'm.corners', label: 'Match corners', lines: L(6.5, 13.5) },
-  { key: 'm.fouls', label: 'Match fouls', lines: L(14.5, 28.5) },
-  { key: 'm.cards', label: 'Match cards', lines: L(1.5, 7.5) },
+  { key: 'm.goals', label: 'Total match goals' }, { key: 't.goals', label: 'Team goals' }, { key: 'm.htgoals', label: 'First-half match goals' }, { key: 't.htgoals', label: 'Team first-half goals' },
+  { key: 'm.btts', label: 'Both teams to score: Yes', binary: true },
+  { key: 'm.shots', label: 'Match shots' }, { key: 't.shots', label: 'Team shots' }, { key: 'm.sot', label: 'Match shots on target' }, { key: 't.sot', label: 'Team shots on target' },
+  { key: 'm.corners', label: 'Match corners' }, { key: 't.corners', label: 'Team corners' },
+  { key: 'm.fouls', label: 'Match fouls' }, { key: 't.fouls', label: 'Team fouls committed' }, { key: 't.fdrawn', label: 'Team fouls drawn' },
+  { key: 'm.yellows', label: 'Match yellow cards' }, { key: 't.yellows', label: 'Team yellow cards' }, { key: 'm.reds', label: 'Match red cards' }, { key: 't.reds', label: 'Team red cards' },
 ];
 const PLAYER_PLAY_MARKETS = [
-  { key: 'shots', label: 'Player shots', lines: L(0.5, 4.5) },
-  { key: 'shots_on_target', label: 'Player shots on target', lines: L(0.5, 3.5) },
-  { key: 'fouls_committed', label: 'Player fouls committed', lines: L(0.5, 3.5) },
-  { key: 'fouls_drawn', label: 'Player fouls drawn', lines: L(0.5, 3.5) },
-  { key: 'tackles', label: 'Player tackles', lines: L(0.5, 5.5) },
-  { key: 'cards', label: 'Player cards', lines: [0.5] },
-  { key: 'goals', label: 'Player goals', lines: [0.5] },
-  { key: 'assists', label: 'Player assists', lines: [0.5] },
-  { key: 'goal_contrib', label: 'Player goals + assists', lines: L(0.5, 1.5) },
+  { key: 'shots', label: 'Player shots' }, { key: 'shots_on_target', label: 'Player shots on target' },
+  { key: 'goals', label: 'Player goals' }, { key: 'assists', label: 'Player assists' }, { key: 'goal_contrib', label: 'Player goals + assists' },
+  { key: 'fouls_committed', label: 'Player fouls committed' }, { key: 'fouls_drawn', label: 'Player fouls drawn' }, { key: 'tackles', label: 'Player tackles' },
+  { key: 'yellow_cards', label: 'Player yellow cards' }, { key: 'red_cards', label: 'Player red cards' },
 ];
+/** Lines to test for one sample: the market's own list if it has one, BTTS only 0.5 (Yes), otherwise 0.5 up to just above the highest value seen. */
+const linesFor = (def, values) => (def.lines ? def.lines : def.binary ? [0.5] : L(0.5, Math.max(0, ...values.filter(v => typeof v === 'number')) + 0.5));
 
 /** Hit (true) / miss (false) for each match, oldest first. `values` are newest first and already free of missing values. */
 const dotsFor = (valuesNewestFirst, line, side) => [...valuesNewestFirst].reverse().map(v => (side === 'under' ? v < line : v > line));
@@ -1035,7 +1184,7 @@ const reliability = n => (n < 5 ? { k: 'vsmall', t: 'Very small sample' } : n < 
 
 /**
  * subjects: [{ id, type:'team'|'player', name, club, href, rows (raw rows, newest first) }]
- * opts: { kind:'all'|'team'|'player', sides:['over','under'], minPct, minN, last (0 = all), season (number|null), marketKey ('' = all) }
+ * opts: { kind:'all'|'team'|'player', sides:['over','under'], minPct, minN (internal, default 1), last (0 = all), season (number|null), venue (''|'home'|'away'), marketKey ('' = all), exact }
  */
 function scan(subjects, marketsByType, teamMarkets, playerMarkets, opts) {
   const out = [];
@@ -1046,14 +1195,15 @@ function scan(subjects, marketsByType, teamMarkets, playerMarkets, opts) {
       if (opts.exact && def.key !== opts.exact.key) continue;
       if (!opts.exact && opts.marketKey && def.key !== opts.marketKey) continue;
       const m = full.find(x => x.key === def.key); if (!m) continue;
-      let f = applyFilters(marketRows(s.rows, m, s.type === 'player' ? 'minutes' : null), { season: opts.season || null, last: opts.last || null });
+      // venue (home/away) is applied before the last-N cut inside applyFilters, so "Last 10 + Home" = the last 10 home matches
+      let f = applyFilters(marketRows(s.rows, m, s.type === 'player' ? 'minutes' : null), { season: opts.season || null, last: opts.last || null, venue: opts.venue || '' });
       if (opts.requireN && f.length !== opts.requireN) continue;
       if (f.length < (opts.minN || 1)) continue;
       const values = f.map(r => r.value);
-      const sides = opts.exact ? [opts.exact.side] : opts.sides;
+      const sides = def.binary || m.binary ? ['over'] : opts.exact ? [opts.exact.side] : opts.sides; // BTTS is Yes only
       for (const side of sides) {
-        const b = bestLine(values, opts.exact ? [opts.exact.line] : def.lines, side, opts.minPct); if (!b) continue;
-        out.push({ subject: s, def, side, line: b.line, hr: b.hr, dots: dotsFor(values, b.line, side), rowsUsed: [...f].reverse(), from: f[f.length - 1].date, to: f[0].date, nUsed: f.length, requested: opts.last || 0 });
+        const b = bestLine(values, opts.exact ? [def.binary || m.binary ? 0.5 : opts.exact.line] : linesFor(def, values), side, opts.minPct); if (!b) continue;
+        out.push({ subject: s, def, side, line: b.line, hr: b.hr, dots: dotsFor(values, b.line, side), rowsUsed: [...f].reverse(), from: f[f.length - 1].date, to: f[0].date, nUsed: f.length, requested: opts.last || 0, venue: opts.venue || '' });
       }
     }
   }
@@ -1065,176 +1215,230 @@ const addYears = (ymd, n) => `${Number(ymd.slice(0, 4)) + n}${ymd.slice(4)}`;
  * Strict head-to-head eligibility. rows = one team's rows (newest first, any opponent); oppSlug = the other club; date = fixture date.
  * Rules: only meetings before the fixture and within 5 years of it; the 5 most recent; all 5 required; no gap > 3 years between consecutive meetings.
  */
-function h2hSample(rows, oppSlug, date) {
+function h2hSample(rows, oppSlug, date, { homeOnly = false } = {}) {
+  // homeOnly: only meetings at this fixture's venue (the home team at home). The same strict rules then apply to that smaller set; nothing is topped up.
   const from = addYears(date, -5);
-  const meet = rows.filter(r => r.oppSlug === oppSlug && r.date < date && r.date >= from).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
+  const meet = rows.filter(r => r.oppSlug === oppSlug && r.date < date && r.date >= from && (!homeOnly || r.home)).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
   if (meet.length < 5) return { ok: false, reason: 'few', n: meet.length, rows: meet };
   for (let i = 0; i < 4; i++) if (addYears(meet[i + 1].date, 3) < meet[i].date) return { ok: false, reason: 'gap', n: 5, rows: meet, gap: [meet[i + 1].date, meet[i].date] };
   return { ok: true, n: 5, rows: meet };
 }
 
-return { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, dotsFor, bestLine, reliability, scan, h2hSample };
+return { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, linesFor, dotsFor, bestLine, reliability, scan, h2hSample };
 })();
 __m['v-plays'] = (() => {
 // Hit Rate Finder (the "Plays" tab). Historical hit rates only: no odds, no predictions.
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, teamsOfLeague, leagueName, teamSlugOf, knownPlayers } = __m['data'];
-const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData } = __m['markets'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
+const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
-const { $, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKickUK, fixtureId } = __m['util'];
+const { applyFilters } = __m['research'];
+const { stepperHtml, venueWord, hitsLine } = __m['panel'];
+const { $, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKickUK, fixtureId, avg } = __m['util'];
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
 
-const ui = { mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 5, market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: 2.5, game: '', shown: 40, sel: {}, tq: '' };
+// minN is internal only (no on-screen control): every result shows its real number of matches instead.
+const ui = { mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: '', gvA: '', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' };
 const PCTS = [70, 75, 80, 85, 90, 95, 100];
 const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], [0, 'All']];
+const VENUES = [['', 'All'], ['home', 'Home'], ['away', 'Away']];
 const seg = (name, items, cur) => `<div class="seg wrap" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
 const fixtureHref = f => `#/plays?game=${encodeURIComponent(fixtureId(f))}`;
 const sideWord = s => (s === 'under' ? 'Under' : 'Over');
-const mLabel = def => def.label.replace(/^(Team|Player) /, '').replace(/^Total match/, 'total match').replace(/^Match /, 'match ').toLowerCase();
+const mLabel = def => def.label.replace(/^(Team|Player) /, '').replace(/^Total match/, 'total match').replace(/^Match /, 'match ').replace(/^First-half match/, 'first-half match').toLowerCase();
+const playText = (def, side, line) => (def.binary ? '<b>Both teams to score: Yes</b>' : `<b>${sideWord(side)} ${line}</b> ${esc(mLabel(def))}`);
 
 function cardHtml(r, ctx = {}) {
-  const rel = reliability(r.hr.n), s = r.subject, short = r.requested && r.nUsed < r.requested;
+  const rel = reliability(r.hr.n), s = r.subject, short = r.requested && r.nUsed < r.requested, bin = !!r.def.binary;
+  const fd = d => (d.slice(0, 4) === r.to.slice(0, 4) ? fmtShort(d) : fmtLong(d));
+  const fv = v => (bin ? (v ? 'Yes' : 'No') : v);
   const rows = r.rowsUsed.map(x => { const hit = r.side === 'under' ? x.value < r.line : x.value > r.line;
-    return `<tr><td>${esc(fmtShort(x.date))}</td><td>${s.type === 'team' ? `${x.home ? 'v' : 'at'} ${esc(x.opp)}` : esc(x.opp || '')}</td><td class="n">${x.goals != null && x.goalsA != null ? `${x.goals}–${x.goalsA}` : ''}</td><td class="n ${hit ? 'hit' : 'miss'}">${x.value}</td></tr>`; }).join('');
+    return `<tr><td>${esc(fd(x.date))}</td><td>${s.type === 'team' ? `${x.home ? 'v' : 'at'} ${esc(x.opp)}` : `${x.home ? 'v' : 'at'} ${esc(x.opp || '')}`}</td><td class="n">${x.goals != null && x.goalsA != null ? `${x.goals}–${x.goalsA}` : ''}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('');
+  const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'all'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} with this statistic)` : ''}`;
   return `<div class="card play" style="margin-bottom:10px"><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>
-    <div style="margin:6px 0 2px"><b>${sideWord(r.side)} ${r.line}</b> ${esc(mLabel(r.def))}${r.def.key.startsWith('m.') && s.type === 'team' && !ctx.h2h ? ' (both teams, in ' + esc(s.name) + ' matches)' : ''}</div>
-    <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fmtShort(r.rowsUsed[i].date))}: ${r.rowsUsed[i].value}">${h ? '●' : '○'}</i>`).join('')}</div>
-    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> ${r.hr.hits}/${r.hr.n} matches · ${esc(fmtShort(r.from))} – ${esc(fmtLong(r.to))} · <span class="rel ${rel.k}">${rel.t}</span>${short ? ` · only ${r.nUsed} of the last ${r.requested} have this statistic` : ''}</div>
+    <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)}${r.def.key.startsWith('m.') && s.type === 'team' && !ctx.h2h ? ' (both teams, in ' + esc(s.name) + ' matches)' : ''}</div>
+    <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span></div>
+    <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
+    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · <span class="rel ${rel.k}">${rel.t}</span></div>
     <details class="mx"><summary class="xs">Matches (oldest first)</summary><div class="scroll"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${rows}</table></div></details>
     ${ctx.links === false ? '' : `<div class="xs" style="margin-top:6px"><a href="${s.href}">${s.type === 'player' ? 'Player' : 'Team'} research</a>${s.nextFx ? ` · <a href="${fixtureHref(s.nextFx)}">Next: ${esc(s.nextFx.home)} v ${esc(s.nextFx.away)}, ${esc(fmtKickUK(s.nextFx))}</a>` : ''}</div>`}</div>`;
 }
 
 async function viewPlays(root, r) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Hit Rate Finder</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
-  const g = r.q.get('game'); if (g) { ui.mode = 'game'; ui.game = g; const lg = g.split(':')[0]; if (lg) setLeague(lg); }
-  let playerAll = null;
+  const g = r.q.get('game'); if (g) { ui.mode = 'game'; ui.game = g; const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.exLine = null; }
+  let playerAll = null, defNote = '';
   root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Hit Rate Finder</h1>
     <p class="muted">Explore historical football trends across teams, players and fixtures. Every figure is a <b>historical hit rate</b> from completed matches: it is not the chance of it happening next time, it ignores bookmaker odds, and it is not a tip.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root);
 
   const league = () => getLeague();
-  const leagueTeams = () => teamsOfLeague(league()).filter(t => teamRowsFor(t.slug).length || upcomingFixtures(league()).some(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug));
+  const leagueTeams = () => teamsOfLeague(league());
   const selSet = () => { const lg = league(); if (!ui.sel[lg]) ui.sel[lg] = new Set(leagueTeams().map(t => t.slug)); return ui.sel[lg]; };
   const teamMarkets = () => { const rows = leagueTeams().flatMap(t => teamRowsFor(t.slug)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)); };
   const hasPlayers = () => store.playerIndex.some(p => p.league === league());
-  const allMarkets = () => [...teamMarkets(), ...(hasPlayers() ? PLAYER_PLAY_MARKETS : [])];
+  const playerMarkets = () => (hasPlayers() ? PLAYER_PLAY_MARKETS.filter(m => playerAll ? [...playerAll.values()].some(p => p.league === league() && marketsWithData(p.rows, PLAYER_MARKETS).some(x => x.key === m.key)) : ['shots', 'shots_on_target', 'goals', 'assists', 'goal_contrib'].includes(m.key)) : []);
+  const allMarkets = () => [...teamMarkets(), ...playerMarkets()];
+  const isPlayerKey = k => PLAYER_PLAY_MARKETS.some(m => m.key === k);
+  const curFixture = () => upcomingFixtures(league()).find(x => fixtureId(x) === ui.game) || store.fixtures.find(x => fixtureId(x) === ui.game);
+  const period = () => { const seasons = [...new Set(store.teamMatches.filter(m => m.league === league()).map(m => m.season))].sort(); return ui.period === 'season' ? { last: 0, season: seasons[seasons.length - 1] || null } : { last: Number(ui.period), season: null }; };
+  const periodWord = () => (ui.period === 'season' ? 'this season\'s' : Number(ui.period) ? `last ${ui.period}` : 'all');
+
+  // ---- default exact line: from the real values in the sample being researched (goals markets have fixed defaults) ----
+  const sampleValues = async (rows, key, venue, before) => { const m = (isPlayerKey(key) ? PLAYER_MARKETS : TEAM_MARKETS).find(x => x.key === key); if (!m) return []; const rs = before ? rows.filter(x => x.date < before) : rows; return applyFilters(marketRows(rs, m), { ...period(), last: period().last || null, venue }).map(x => x.value); };
+  const subjectsRows = async (slugs) => { if (isPlayerKey(ui.exKey)) { const ps = await playerSubjects(); return ps.filter(p => slugs.includes(p.clubSlug)).map(p => p.rows); } return slugs.map(s => teamRowsFor(s)); };
+  const computeDefault = async () => {
+    const key = ui.exKey; const def = allMarkets().find(m => m.key === key); if (!def) return;
+    if (def.binary) { ui.exLine = 0.5; defNote = ''; return; }
+    if (ui.mode === 'game') {
+      const f = curFixture(); if (!f) { ui.exLine = defaultLine(key, []); defNote = ''; return; }
+      const hv = [], av = [];
+      for (const rs of await subjectsRows([teamSlugOf(f.home)])) hv.push(...await sampleValues(rs, key, ui.gvH, f.date));
+      for (const rs of await subjectsRows([teamSlugOf(f.away)])) av.push(...await sampleValues(rs, key, ui.gvA, f.date));
+      ui.exLine = defaultLine(key, [...hv, ...av]);
+      const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
+      defNote = fixed ? `Starting line: the standard ${sideWord('over')} ${ui.exLine} for this goals market.` : `Starting line from the observed averages of the two samples below: ${esc(f.home)} ${avg(hv) ?? 'n/a'} (${hv.length} ${venueWord(ui.gvH)}values) and ${esc(f.away)} ${avg(av) ?? 'n/a'} (${av.length} ${venueWord(ui.gvA)}values), pooled = ${avg([...hv, ...av]) ?? 'n/a'}. This is an average of past figures, not a prediction.`;
+      return;
+    }
+    const vals = []; for (const rs of await subjectsRows([...selSet()])) vals.push(...await sampleValues(rs, key, ui.venue));
+    ui.exLine = defaultLine(key, vals);
+    const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
+    defNote = fixed ? `Starting line: the standard ${sideWord('over')} ${ui.exLine} for this goals market.` : `Starting line from the average (${avg(vals) ?? 'n/a'}) of ${vals.length} real values: ${periodWord()} ${venueWord(ui.venue)}matches of the selected ${isPlayerKey(key) ? 'players' : 'teams'}.`;
+  };
 
   const drawCtl = () => {
     const tms = leagueTeams(), set = selSet(), mk = allMarkets(), fx = upcomingFixtures(league());
-    if (!mk.some(m => m.key === ui.exKey)) ui.exKey = mk.find(m => m.key === 'm.goals')?.key || mk[0]?.key || '';
-    const exDef = mk.find(m => m.key === ui.exKey); if (exDef && !exDef.lines.includes(ui.exLine)) ui.exLine = exDef.lines[Math.floor(exDef.lines.length / 2)];
+    if (!mk.some(m => m.key === ui.exKey)) { ui.exKey = mk.find(m => m.key === 'm.goals')?.key || mk[0]?.key || ''; ui.exLine = null; }
+    const exDef = mk.find(m => m.key === ui.exKey);
     if (ui.market && !mk.some(m => m.key === ui.market)) ui.market = '';
     const byDay = new Map(); for (const f of fx) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
+    const f = ui.mode === 'game' ? curFixture() : null;
     ctl.innerHTML = `${leagueSelect()}
       <div class="field"><label>Research mode</label>${seg('mode', [['browse', 'Browse teams'], ['game', 'Select game']], ui.mode)}</div>
       ${ui.mode === 'browse' ? `<details class="teamsel" id="tsel"><summary><b>Teams</b> <span id="tcount">${set.size === tms.length ? `All ${tms.length} teams selected` : `${set.size} team${set.size === 1 ? '' : 's'} selected`}</span></summary>
         <div class="stack" style="margin-top:10px"><input class="in" id="tq" type="search" placeholder="Search clubs" value="${esc(ui.tq)}" aria-label="Search clubs">
         <div class="row" style="border:0;padding:0;gap:8px"><button class="chip" id="tall">Select all</button><button class="chip" id="tnone">Clear all</button></div>
         <div class="tlist">${tms.map(t => `<label class="tcheck" data-name="${esc(t.name.toLowerCase())}"><input type="checkbox" value="${esc(t.slug)}" ${set.has(t.slug) ? 'checked' : ''}> ${esc(t.name)}</label>`).join('')}</div></div></details>
-        <div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>`
-      : `<div class="field"><label for="gsel">Select game (UK times)</label><select class="in" id="gsel"><option value="">Choose an upcoming match…</option>${[...byDay.entries()].map(([d, fs]) => `<optgroup label="${esc(fmtDay(d))}">${fs.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koUK(f).hm)} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select>${fx.length ? '' : '<p class="xs muted">No upcoming fixtures are published for this league.</p>'}</div>`}
+        <div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>
+        <div class="field"><label>Venue (applied before the sample)</label>${seg('venue', VENUES, ui.venue)}</div>`
+      : `<div class="field"><label for="gsel">Select game (UK times)</label><select class="in" id="gsel"><option value="">Choose an upcoming match…</option>${[...byDay.entries()].map(([d, fs]) => `<optgroup label="${esc(fmtDay(d))}">${fs.map(x => `<option value="${esc(fixtureId(x))}" ${fixtureId(x) === ui.game ? 'selected' : ''}>${esc(koUK(x).hm)} ${esc(x.home)} v ${esc(x.away)}</option>`).join('')}</optgroup>`).join('')}</select>${fx.length ? '' : '<p class="xs muted">No upcoming fixtures are published for this league.</p>'}</div>
+        <div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>
+        <div class="ctl"><div class="field"><label>${f ? esc(f.home) : 'Home team'} form: venue</label>${seg('gvH', VENUES, ui.gvH)}</div>
+        <div class="field"><label>${f ? esc(f.away) : 'Away team'} form: venue</label>${seg('gvA', VENUES, ui.gvA)}</div>
+        <div class="field"><label>Head to head</label>${seg('hvenue', [['all', 'All meetings'], ['venue', f ? `At ${f.home}` : 'At this venue']], ui.hvenue)}</div></div>`}
       <div class="field"><label>Line</label>${seg('lineMode', [['best', 'Best qualifying line'], ['exact', 'Exact line']], ui.lineMode)}</div>
       ${ui.lineMode === 'exact' && exDef ? `<div class="ctl"><div class="field"><label for="exk">Market</label><select class="in" id="exk">${mk.map(m => `<option value="${m.key}" ${m.key === ui.exKey ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>
-        <div class="field"><label>Side</label>${seg('exSide', [['over', 'Over'], ['under', 'Under']], ui.exSide)}</div>
-        <div class="field"><label for="exl">Line</label><select class="in" id="exl">${exDef.lines.map(l => `<option value="${l}" ${l === ui.exLine ? 'selected' : ''}>${sideWord(ui.exSide)} ${l}</option>`).join('')}</select></div></div>`
+        ${exDef.binary ? '' : `<div class="field"><label>Side</label>${seg('exSide', [['over', 'Over'], ['under', 'Under']], ui.exSide)}</div>`}</div>
+        ${exDef.binary ? '<p class="small muted" style="margin:0">Both teams to score is Yes only: no line to set.</p>' : `<div class="linebar"><div class="lt"><b id="exlab"></b></div>${stepperHtml('exl', 'Line')}</div><p class="xs muted" id="exnote" style="margin:0"></p>`}`
       : `<div class="ctl"><div class="field"><label>Direction</label>${seg('side', [['both', 'Both'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
         <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="">All markets</option>${mk.map(m => `<option value="${esc(m.key)}" ${ui.market === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div></div>`}
       <div class="field"><label>Minimum historical hit rate</label>${seg('minPct', PCTS.map(p => [p, p + '%']), ui.minPct)}</div>
-      <div class="field"><label>Sample (completed matches)</label>${seg('period', PERIODS, ui.period)}</div>
-      <div class="field"><label>Minimum matches</label>${seg('minN', [3, 5, 8, 10, 15].map(n => [n, n + '+']), ui.minN)}</div>`;
+      <div class="field"><label>Sample (completed matches)</label>${seg('period', PERIODS, ui.period)}</div>`;
   };
+  const showLine = () => { const exDef = allMarkets().find(m => m.key === ui.exKey); const lab = $('#exlab', ctl), inp = $('#exl', ctl), note = $('#exnote', ctl); if (lab && exDef) lab.textContent = `${exDef.label} — ${sideWord(ui.exSide)} ${ui.exLine}`; if (inp && document.activeElement !== inp) inp.value = ui.exLine; if (note) note.innerHTML = defNote; };
 
-  const baseOpts = () => {
-    const seasons = [...new Set(store.teamMatches.filter(m => m.league === league()).map(m => m.season))].sort();
-    const period = ui.period === 'season' ? { last: 0, season: seasons[seasons.length - 1] || null } : { last: Number(ui.period), season: null };
-    return { minPct: ui.minPct, minN: ui.minN, sides: ui.side === 'both' ? ['over', 'under'] : [ui.side], marketKey: ui.market, exact: ui.lineMode === 'exact' ? { key: ui.exKey, side: ui.exSide, line: ui.exLine } : null, ...period };
-  };
-  const what = () => (ui.lineMode === 'exact' ? `${sideWord(ui.exSide)} ${ui.exLine} ${mLabel(allMarkets().find(m => m.key === ui.exKey) || { label: '' })}` : 'any market');
-  const defsFor = () => ({ team: teamMarkets(), player: PLAYER_PLAY_MARKETS });
+  const baseOpts = () => ({ minPct: ui.minPct, minN: ui.minN, sides: ui.side === 'both' ? ['over', 'under'] : [ui.side], marketKey: ui.market, exact: ui.lineMode === 'exact' ? { key: ui.exKey, side: ui.exSide, line: ui.exLine } : null, ...period() });
+  const what = () => { if (ui.lineMode !== 'exact') return 'any market'; const d = allMarkets().find(m => m.key === ui.exKey) || { label: '' }; return d.binary ? 'both teams to score: Yes' : `${sideWord(ui.exSide)} ${ui.exLine} ${mLabel(d)}`; };
+  const defsFor = () => ({ team: teamMarkets(), player: playerMarkets() });
   const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => p.league === league()).map(p => ({ id: p.id, type: 'player', name: p.name, club: p.team, clubSlug: teamSlugOf(p.team), href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
-  const noPlayersNote = () => `<div class="banner info"><b>Player trends are waiting for data.</b> No verified ${esc(leagueName(league()))} player match logs are published yet, so no player results are shown. They appear here automatically once real player logs are added. Nothing is estimated.</div>`;
-  const tooShort = () => (ui.period !== 'season' && Number(ui.period) && Number(ui.period) < ui.minN ? ` Your sample (last ${ui.period}) is smaller than the minimum of ${ui.minN} matches: lower "Minimum matches".` : '');
-  const foot = '<p class="xs muted">A high hit rate over a small sample often fades. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals added together (Over 2.5 needs 3 or more). Cards = yellow plus red cards recorded in the source; no bookmaker settlement rules are assumed.</p>';
+  const noPlayersNote = () => league() === 'epl' ? `<div class="banner info"><b>Premier League player statistics are not available.</b> No free source licenses Premier League player match statistics for public display, so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`
+    : `<div class="banner info"><b>Player trends are waiting for data.</b> No verified ${esc(leagueName(league()))} player match logs are published yet, so no player results are shown. Nothing is estimated.</div>`;
+  const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Yellow and red cards are separate markets; no bookmaker card-points rules are assumed.</p>';
 
   const drawBrowse = async () => {
-    const set = selSet(), tms = leagueTeams(), today = new Date();
+    const set = selSet(), tms = leagueTeams();
     if (!set.size) { out.innerHTML = '<div class="banner"><b>No teams selected.</b> Tick at least one club in Teams, or tap Select all.</div>'; return; }
     const teams = tms.filter(t => set.has(t.slug)).map(t => ({ id: t.slug, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: teamRowsFor(t.slug), nextFx: upcomingFixtures(league()).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null }));
     const players = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => set.has(p.clubSlug));
     let html = '';
     if (ui.kind !== 'team' && !hasPlayers()) html += noPlayersNote();
     if (ui.kind === 'player' && !hasPlayers()) { out.innerHTML = html; return; }
-    const res = scan([...teams, ...players], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...baseOpts(), kind: ui.kind });
-    if (!res.length) html += `<div class="banner info"><b>No qualifying trends.</b> Nothing among the ${set.size} selected team${set.size === 1 ? '' : 's'} reaches ${ui.minPct}% for ${esc(what())} with at least ${ui.minN} matches.${tooShort()}</div>`;
-    else html += `<p class="xs muted" style="margin:0 0 8px">${res.length} qualifying trend${res.length === 1 ? '' : 's'} for ${set.size === tms.length ? 'all teams' : set.size + ' selected team' + (set.size === 1 ? '' : 's')}. ${ui.lineMode === 'exact' ? `Exact line: only ${esc(what())} is tested.` : 'One line per market and direction: the highest qualifying Over line, the lowest qualifying Under line.'} Dots run oldest to newest; filled = hit.</p>${res.slice(0, ui.shown).map(x => cardHtml(x)).join('')}${res.length > ui.shown ? `<button class="btn" id="more">Show more (${res.length - ui.shown} left)</button>` : ''}`;
+    const res = scan([...teams, ...players], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...baseOpts(), venue: ui.venue, kind: ui.kind });
+    if (!res.length) html += `<div class="banner info"><b>No qualifying trends.</b> Nothing among the ${set.size} selected team${set.size === 1 ? '' : 's'} reaches ${ui.minPct}% for ${esc(what())} in their ${periodWord()} ${venueWord(ui.venue)}matches.</div>`;
+    else html += `<p class="xs muted" style="margin:0 0 8px">${res.length} qualifying trend${res.length === 1 ? '' : 's'} for ${set.size === tms.length ? 'all teams' : set.size + ' selected team' + (set.size === 1 ? '' : 's')}, ${periodWord()} ${venueWord(ui.venue) || 'home and away '}matches. ${ui.lineMode === 'exact' ? `Exact line: only ${esc(what())} is tested.` : 'One line per market and direction: the highest qualifying Over line, the lowest qualifying Under line.'} Dots run oldest to newest; filled = hit.</p>${res.slice(0, ui.shown).map(x => cardHtml(x)).join('')}${res.length > ui.shown ? `<button class="btn" id="more">Show more (${res.length - ui.shown} left)</button>` : ''}`;
     out.innerHTML = html + foot; const more = $('#more', out); if (more) more.onclick = () => { ui.shown += 40; draw(); };
   };
 
   const drawGame = async () => {
-    const f = upcomingFixtures(league()).find(x => fixtureId(x) === ui.game) || store.fixtures.find(x => fixtureId(x) === ui.game);
+    const f = curFixture();
     if (!f) { out.innerHTML = `<div class="banner info"><b>Choose a game.</b> Pick an upcoming ${esc(leagueName(league()))} match above to see both teams' recent form and head-to-head trends.</div>`; return; }
     const hs = teamSlugOf(f.home), as = teamSlugOf(f.away), before = rows => rows.filter(x => x.date < f.date);
     const subj = (slug, name) => ({ id: slug, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)) });
     const o = baseOpts(); let html = `<div class="card"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKickUK(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
-    const section = async (slug, name) => {
-      const tRes = ui.kind === 'player' ? [] : scan([subj(slug, name)], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, kind: 'team' });
+    const section = async (slug, name, venue) => {
+      const tRes = ui.kind === 'player' ? [] : scan([subj(slug, name)], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, venue, kind: 'team' });
       const pl = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => p.clubSlug === slug).map(p => ({ ...p, rows: before(p.rows) }));
-      const pRes = pl.length ? scan(pl, defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, kind: 'player' }) : [];
+      const pRes = pl.length ? scan(pl, defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...o, venue, kind: 'player' }) : [];
       const res = [...tRes, ...pRes];
-      return `<section class="sec"><h2>${esc(name)} — recent form</h2>${res.length ? res.map(x => cardHtml(x, { links: x.subject.type === 'player' })).join('') : `<div class="banner info">No qualifying ${esc(name)} trends at ${ui.minPct}% for ${esc(what())}.${tooShort()}</div>`}</section>`;
+      return `<section class="sec"><h2>${esc(name)} — recent form <span class="muted small">(${periodWord()} ${venueWord(venue) || 'home and away '}matches)</span></h2>${res.length ? res.map(x => cardHtml(x, { links: x.subject.type === 'player' })).join('') : `<div class="banner info">No qualifying ${esc(name)} trends at ${ui.minPct}% for ${esc(what())} in ${periodWord()} ${venueWord(venue)}matches.</div>`}</section>`;
     };
-    html += await section(hs, f.home) + await section(as, f.away);
-    const hh = h2hSample(teamRowsFor(hs), as, f.date);
-    html += `<section class="sec"><h2>${esc(f.home)} v ${esc(f.away)} — head to head</h2>`;
-    if (!hh.ok) html += `<div class="banner info"><b>${hh.reason === 'gap' ? 'H2H gap too large.' : 'Not enough recent H2H data.'}</b> ${hh.reason === 'gap' ? `These teams have five meetings in the last five years, but more than three years passed between ${esc(fmtLong(hh.gap[0]))} and ${esc(fmtLong(hh.gap[1]))}, so no H2H trends are shown.` : `These teams haven't played enough verified matches recently to show meaningful head-to-head trends (${hh.n} of the 5 required meetings within five years in the published data).`} Both teams' recent form is still shown above.</div>`;
+    html += await section(hs, f.home, ui.gvH) + await section(as, f.away, ui.gvA);
+    const atVenue = ui.hvenue === 'venue';
+    const hh = h2hSample(teamRowsFor(hs), as, f.date, { homeOnly: atVenue });
+    html += `<section class="sec"><h2>${esc(f.home)} v ${esc(f.away)} — head to head <span class="muted small">(${atVenue ? `only meetings at ${esc(f.home)}` : 'all meetings, either venue'})</span></h2>`;
+    if (!hh.ok) html += `<div class="banner info"><b>${hh.reason === 'gap' ? 'H2H gap too large.' : 'Not enough recent H2H data.'}</b> ${hh.reason === 'gap' ? `These teams have five ${atVenue ? 'meetings at this venue' : 'meetings'} in the last five years, but more than three years passed between ${esc(fmtLong(hh.gap[0]))} and ${esc(fmtLong(hh.gap[1]))}, so no H2H trends are shown.` : `${hh.n} of the 5 required ${atVenue ? `meetings at ${esc(f.home)}` : 'meetings'} within five years are in the published data, so no H2H trends are shown.${atVenue ? ' Switch Head to head to "All meetings" to use either venue.' : ''}`} The sample is never topped up with other matches. Both teams' recent form is still shown above.</div>`;
     else {
       const res = scan([{ id: 'h2h', type: 'team', name: `${f.home} v ${f.away}`, href: `#/team/${encodeURIComponent(hs)}`, rows: hh.rows }], { team: teamMarkets().filter(m => m.key.startsWith('m.')), player: [] }, TEAM_MARKETS, PLAYER_MARKETS, { ...o, last: 0, season: null, minN: 5, requireN: 5, kind: 'team' });
-      html += res.length ? res.map(x => cardHtml(x, { h2h: true, tag: 'Head to head (last 5 meetings)', links: false })).join('') : `<div class="banner info">No head-to-head market reaches ${ui.minPct}% across their last 5 meetings (markets missing data in any of the 5 are left out).</div>`;
+      html += res.length ? res.map(x => cardHtml(x, { h2h: true, h2hVenue: atVenue, tag: `Head to head (last 5 meetings${atVenue ? ' at this venue' : ''})`, links: false })).join('') : `<div class="banner info">No head-to-head market reaches ${ui.minPct}% across their last 5 meetings (markets missing data in any of the 5 are left out).</div>`;
     }
-    html += '<p class="xs muted">H2H rules: only meetings within five years before this fixture, the five most recent, all five required, and no gap longer than three years between consecutive meetings. Regular-season league matches only.</p></section>';
+    html += '<p class="xs muted">H2H rules: only meetings within five years before this fixture, the five most recent, all five required, and no gap longer than three years between consecutive meetings. "At this venue" applies the same rules to meetings at the home team\'s ground only. Regular-season league matches only. The H2H sample ignores the Sample setting above.</p></section>';
     if (ui.kind !== 'team' && !hasPlayers()) html = noPlayersNote() + html;
     out.innerHTML = html + foot;
   };
 
-  const draw = async () => { $$('[data-seg]', ctl).forEach(gp => $$('button', gp).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[gp.dataset.seg])))); return ui.mode === 'game' ? drawGame() : drawBrowse(); };
+  const draw = async () => {
+    $$('[data-seg]', ctl).forEach(gp => $$('button', gp).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[gp.dataset.seg]))));
+    if (ui.lineMode === 'exact' && ui.exLine === null) await computeDefault();
+    showLine();
+    return ui.mode === 'game' ? drawGame() : drawBrowse();
+  };
   const updCount = () => { const n = selSet().size, t = leagueTeams().length; const c = $('#tcount', ctl); if (c) c.textContent = n === t ? `All ${t} teams selected` : `${n} team${n === 1 ? '' : 's'} selected`; };
   const filterList = () => { const q = ui.tq.trim().toLowerCase(); $$('.tcheck', ctl).forEach(l => { l.style.display = !q || l.dataset.name.includes(q) ? '' : 'none'; }); };
+  const redrawCtl = () => { const open = $('#tsel', ctl)?.open; drawCtl(); if (open && $('#tsel', ctl)) $('#tsel', ctl).open = true; filterList(); };
+  // Changing what is researched (market, league, teams, venue, sample, game) recalculates the starting line; the hit-rate threshold, side and Show do not.
+  const RESET = ['mode', 'venue', 'gvH', 'gvA', 'period', 'lineMode'];
 
   ctl.addEventListener('click', e => {
-    if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.slug)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; draw(); return; }
-    if (e.target.id === 'tnone') { e.preventDefault(); selSet().clear(); $$('.tcheck input', ctl).forEach(i => { i.checked = false; }); updCount(); ui.shown = 40; draw(); return; }
+    if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.slug)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
+    if (e.target.id === 'tnone') { e.preventDefault(); selSet().clear(); $$('.tcheck input', ctl).forEach(i => { i.checked = false; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
+    const st = e.target.closest('[data-step]'); if (st) { ui.exLine = stepLine(ui.exLine, Number(st.dataset.step)); draw(); return; }
     const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg;
-    ui[k] = ['minPct', 'minN'].includes(k) ? Number(b.dataset.v) : (k === 'period' && b.dataset.v !== 'season' ? Number(b.dataset.v) : b.dataset.v); ui.shown = 40;
-    if (['mode', 'lineMode', 'exSide'].includes(k)) { const open = $('#tsel', ctl)?.open; drawCtl(); if (open && $('#tsel', ctl)) $('#tsel', ctl).open = true; filterList(); }
+    ui[k] = k === 'minPct' ? Number(b.dataset.v) : (k === 'period' && b.dataset.v !== 'season' ? Number(b.dataset.v) : b.dataset.v); ui.shown = 40;
+    if (RESET.includes(k)) ui.exLine = null;
+    if (['mode', 'lineMode', 'exSide', 'gvH', 'gvA', 'hvenue'].includes(k)) redrawCtl();
     draw();
   });
   ctl.addEventListener('change', e => {
     const t = e.target;
-    if (t.id === 'lgsel') { setLeague(t.value); ui.game = ''; ui.market = ''; drawCtl(); draw(); return; }
-    if (t.matches('.tcheck input')) { t.checked ? selSet().add(t.value) : selSet().delete(t.value); updCount(); ui.shown = 40; draw(); return; }
-    if (t.id === 'gsel') { ui.game = t.value; draw(); return; }
+    if (t.id === 'lgsel') { setLeague(t.value); ui.game = ''; ui.market = ''; ui.exLine = null; drawCtl(); draw(); return; }
+    if (t.matches('.tcheck input')) { t.checked ? selSet().add(t.value) : selSet().delete(t.value); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
+    if (t.id === 'gsel') { ui.game = t.value; ui.exLine = null; redrawCtl(); draw(); return; }
     if (t.id === 'mk') { ui.market = t.value; ui.shown = 40; draw(); return; }
-    if (t.id === 'exk') { ui.exKey = t.value; drawCtl(); draw(); return; }
-    if (t.id === 'exl') { ui.exLine = Number(t.value); draw(); }
+    if (t.id === 'exk') { ui.exKey = t.value; ui.exLine = null; redrawCtl(); draw(); }
   });
-  ctl.addEventListener('input', e => { if (e.target.id === 'tq') { ui.tq = e.target.value; filterList(); } });
+  ctl.addEventListener('input', e => {
+    if (e.target.id === 'tq') { ui.tq = e.target.value; filterList(); }
+    if (e.target.id === 'exl') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.exLine = v; draw(); } }
+  });
   drawCtl(); filterList(); draw();
 }
 
 return { fixtureHref, viewPlays };
 })();
 __m['v-match'] = (() => {
-const { store, teamRowsFor, teamSlugOf, newsForTeam, refereeProfile } = __m['data'];
-const { TEAM_MARKETS, marketRows } = __m['markets'];
-const { TEAM_PLAY_MARKETS, dotsFor } = __m['plays'];
+const { store, teamRowsFor, teamSlugOf, newsForTeam, refereeProfile, teamsOfLeague } = __m['data'];
+const { TEAM_MARKETS, marketRows, marketsWithData, defaultLine, stepLine } = __m['markets'];
+const { TEAM_PLAY_MARKETS, dotsFor, h2hSample } = __m['plays'];
 const { hitRate } = __m['analytics'];
-const { typicalLine } = __m['panel'];
+const { applyFilters } = __m['research'];
+const { stepperHtml, venueWord, hitsLine } = __m['panel'];
 const { $, $$, esc, fmtDay, fmtShort, fmtLong, avg } = __m['util'];
 const { dataBanner, problemsBanner, newsItem } = __m['shared'];
 
-const ui = { mode: 'form', market: 'm.cards', side: 'over', line: null, last: 10 };
-const lineFor = key => TEAM_PLAY_MARKETS.find(m => m.key === key);
+// line: null = recalculate the starting line (market, sample or venue changed). Arrows change it by hand.
+const ui = { mode: 'form', market: 'm.goals', side: 'over', line: null, last: 10, vH: '', vA: '', hv: 'all' };
 const seg = (name, items, cur) => `<div class="seg" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
+const VEN = [['', 'All'], ['home', 'Home'], ['away', 'Away']];
 const dotsHtml = d => `<div class="dots">${d.map(h => `<i class="${h ? 'on' : ''}">${h ? '●' : '○'}</i>`).join('')}</div>`;
 
 async function viewMatch(root, r) {
@@ -1244,8 +1448,12 @@ async function viewMatch(root, r) {
   const fx = store.fixtures.find(f => f.date === date && teamSlugOf(f.home) === hs && teamSlugOf(f.away) === as);
   if (!store.teams.has(hs) || !store.teams.has(as) || hs === as) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a><h1>Match not found</h1><p class="muted">That fixture is not in the published data.</p>`; return; }
   const H = store.teams.get(hs).name, A = store.teams.get(as).name;
-  const rowsH = teamRowsFor(hs), rowsA = teamRowsFor(as);
-  const markets = TEAM_PLAY_MARKETS.map(m => ({ ...m, def: TEAM_MARKETS.find(x => x.key === m.key) }));
+  const before = rows => rows.filter(x => !date || x.date < date);
+  const rowsH = before(teamRowsFor(hs)), rowsA = before(teamRowsFor(as));
+  const lg = store.teams.get(hs).league;
+  const has = new Set(marketsWithData(teamsOfLeague(lg).flatMap(t => teamRowsFor(t.slug)), TEAM_MARKETS).map(m => m.key));
+  const markets = TEAM_PLAY_MARKETS.filter(m => has.has(m.key));
+  if (!markets.some(m => m.key === ui.market)) { ui.market = markets.find(m => m.key === 'm.goals')?.key || markets[0]?.key; ui.line = null; }
   const rp = fx?.referee ? refereeProfile(fx.referee) : null;
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a>
     <h1 style="margin-bottom:4px">${esc(H)} v ${esc(A)}</h1><div class="muted">${esc(fmtDay(date))}${fx?.kickoff ? ' · ' + esc(fx.kickoff) : ''}${fx?.referee ? ' · Referee ' + esc(fx.referee) : ''}</div>
@@ -1253,106 +1461,129 @@ async function viewMatch(root, r) {
     <div class="card stack" id="ctl" style="margin-top:14px">
       <div class="field">${seg('mode', [['form', 'Recent form'], ['h2h', 'Head to head']], ui.mode)}</div>
       <div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${m.key}" ${m.key === ui.market ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>
-      <div class="field"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div>
-      <div class="field"><label>Line</label><div class="stepper"><button data-step="-1" aria-label="Lower line">−</button><input id="ln" type="text" inputmode="decimal" aria-label="Line"><button data-step="1" aria-label="Raise line">+</button></div></div>
-      <div class="field"><label>Matches</label>${seg('last', [[5, 'Last 5'], [10, 'Last 10'], [0, 'All']], ui.last)}</div></div></div>
+      <div class="field" id="sidef"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div>
+      <div class="field" data-form><label>Matches</label>${seg('last', [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], [0, 'All']], ui.last)}</div>
+      <div class="field" data-form><label>${esc(H)}: venue</label>${seg('vH', VEN, ui.vH)}</div>
+      <div class="field" data-form><label>${esc(A)}: venue</label>${seg('vA', VEN, ui.vA)}</div>
+      <div class="field" data-h2h><label>Meetings</label>${seg('hv', [['all', 'All meetings'], ['venue', `At ${H}`]], ui.hv)}</div></div>
+      <div class="linebar" id="lbar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p></div>
     <div id="out" style="margin-top:14px"></div>
     ${rp && rp.ref.n ? `<p class="small muted">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}`;
   const out = $('#out', root), ln = $('#ln', root);
-  const valuesOf = (rows, key) => marketRows(rows, TEAM_MARKETS.find(m => m.key === key));
-  const block = (title, rows, key, line, side, note) => {
-    const all = valuesOf(rows, key).filter(x => x.value !== null); const used = ui.last ? all.slice(0, ui.last) : all; const vals = used.map(x => x.value);
-    const hr = hitRate(vals, line, side);
-    if (!used.length) return `<section class="sec"><h2>${esc(title)}</h2><div class="banner info">No published matches with this statistic${note ? '. ' + esc(note) : ''}.</div></section>`;
-    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${side === 'under' ? 'Under' : 'Over'} ${line}</b><span>Historical hit rate · ${hr.hits}/${hr.n} matches · average ${hr.avg}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
-      ${dotsHtml(dotsFor(vals, line, side))}<div class="scroll" style="margin-top:8px"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${used.map(x => { const hit = side === 'under' ? x.value < line : x.value > line; return `<tr><td>${esc(fmtShort(x.date))}</td><td>${x.home ? 'v' : 'at'} ${esc(x.opp)}</td><td class="n">${x.goals ?? '–'}–${x.goalsA ?? '–'}</td><td class="n ${hit ? 'hit' : 'miss'}">${x.value}</td></tr>`; }).join('')}</table></div>
+  const mdef = key => TEAM_MARKETS.find(m => m.key === key);
+  const sampleOf = (rows, key, venue) => applyFilters(marketRows(rows, mdef(key)), { last: ui.last || null, venue });
+  const block = (title, used, line, side, note, bin) => {
+    const vals = used.map(x => x.value); const hr = hitRate(vals, line, side); const fv = v => (bin ? (v ? 'Yes' : 'No') : v);
+    if (!used.length) return `<section class="sec"><h2>${esc(title)}</h2><div class="banner info">No published matches with this statistic for this selection${note ? '. ' + esc(note) : ''}.</div></section>`;
+    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${bin ? 'Both teams to score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line}`}</b><span>${hitsLine(hr)}${bin ? '' : ` · average ${hr.avg}`}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
+      ${dotsHtml(dotsFor(vals, line, side))}<div class="scroll" style="margin-top:8px"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${used.map(x => { const hit = side === 'under' ? x.value < line : x.value > line; return `<tr><td>${esc(x.date.slice(0, 4) === used[0].date.slice(0, 4) ? fmtShort(x.date) : fmtLong(x.date))}</td><td>${x.home ? 'v' : 'at'} ${esc(x.opp)}</td><td class="n">${x.goals ?? '–'}–${x.goalsA ?? '–'}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('')}</table></div>
       ${note ? `<p class="xs muted" style="margin:8px 0 0">${esc(note)}</p>` : ''}</div></section>`;
   };
   const draw = () => {
     $$('[data-seg]', root).forEach(g => $$('button', g).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[g.dataset.seg]))));
-    const key = ui.market, isMatch = key.startsWith('m.'), label = lineFor(key).label;
-    if (ui.line === null || !Number.isFinite(ui.line)) ui.line = typicalLine(valuesOf([...rowsH, ...rowsA], key).slice(0, 20).map(x => x.value));
-    if (document.activeElement !== ln) ln.value = ui.line;
-    const line = ui.line, side = ui.side; let html = '';
-    if (ui.mode === 'form') html = block(`${H}: recent matches (any opponent)`, rowsH, key, line, side, isMatch ? 'Match totals count both teams in each match.' : '') + block(`${A}: recent matches (any opponent)`, rowsA, key, line, side, isMatch ? 'Match totals count both teams in each match.' : '');
-    else {
-      const meet = rowsH.filter(x => x.oppSlug === as), meetA = rowsA.filter(x => x.oppSlug === hs);
-      if (!meet.length) html = `<div class="banner info"><b>No earlier meetings between ${esc(H)} and ${esc(A)} are in the published data.</b> Only seasons that have been published can be searched (${[...new Set(store.teamMatches.map(m => m.season))].sort().map(s => `${s}/${String(s + 1).slice(2)}`).join(', ') || 'none'}). Head-to-head fills in when earlier seasons are added.</div>`;
-      else html = block(`${H} v ${A}: previous meetings`, meet, key, line, side, isMatch ? 'Match total, both teams.' : `${H}'s own figures in these meetings.`) + (isMatch ? '' : block(`${A} in the same meetings`, meetA, key, line, side, `${A}'s own figures in these meetings.`));
+    $$('[data-form]', root).forEach(x => { x.hidden = ui.mode !== 'form'; }); $$('[data-h2h]', root).forEach(x => { x.hidden = ui.mode !== 'h2h'; });
+    const key = ui.market, def = TEAM_PLAY_MARKETS.find(m => m.key === key), bin = !!def.binary, isMatch = key.startsWith('m.');
+    $('#lbar', root).hidden = bin; $('#sidef', root).hidden = bin; if (bin) { ui.side = 'over'; ui.line = 0.5; }
+    const sH = sampleOf(rowsH, key, ui.vH), sA = sampleOf(rowsA, key, ui.vA);
+    const hh = h2hSample(rowsH, as, date || '9999-12-31', { homeOnly: ui.hv === 'venue' });
+    let note = '';
+    if (ui.line === null) {
+      const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
+      if (ui.mode === 'form') { const v = [...sH, ...sA].map(x => x.value); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the observed averages of the two samples below: ${H} ${avg(sH.map(x => x.value)) ?? 'n/a'} (${sH.length} ${venueWord(ui.vH)}matches), ${A} ${avg(sA.map(x => x.value)) ?? 'n/a'} (${sA.length} ${venueWord(ui.vA)}matches), pooled ${avg(v) ?? 'n/a'}. An average of past figures, not a prediction.`; }
+      else { const v = marketRows(hh.rows, mdef(key)).map(x => x.value).filter(x => x !== null); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(v) ?? 'n/a'}) of the ${v.length} head-to-head meetings shown.`; }
+      ui.note = note;
     }
-    out.innerHTML = html + `<p class="xs muted">${esc(label)}: historical hit rate from published matches only. Missing statistics are left out, never counted as zero. Cards = yellow plus red cards recorded in the source; no bookmaker settlement rules are assumed. This is not a prediction.</p>`;
+    if (document.activeElement !== ln) ln.value = ui.line;
+    $('#lnlab', root).textContent = `${def.label} — ${ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; $('#lnnote', root).textContent = bin ? '' : ui.note || '';
+    const line = ui.line, side = ui.side; let html = '';
+    const sampleTxt = v => `${ui.last ? 'last ' + ui.last : 'all'} ${venueWord(v) || 'home and away '}matches`;
+    if (ui.mode === 'form') html = block(`${H}: ${sampleTxt(ui.vH)}`, sH, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin) + block(`${A}: ${sampleTxt(ui.vA)}`, sA, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin);
+    else {
+      const atV = ui.hv === 'venue';
+      if (!hh.ok) html = `<div class="banner info"><b>${hh.reason === 'gap' ? 'H2H gap too large.' : 'Not enough recent H2H data.'}</b> ${hh.reason === 'gap' ? `More than three years passed between ${esc(fmtLong(hh.gap[0]))} and ${esc(fmtLong(hh.gap[1]))}.` : `${hh.n} of the 5 required ${atV ? `meetings at ${esc(H)}` : 'meetings'} within five years are in the published data.`} H2H needs the five most recent meetings within five years before this fixture, all five with data, no gap over three years. The sample is never topped up.</div>`;
+      else {
+        const used = marketRows(hh.rows, mdef(key)).filter(x => x.value !== null);
+        if (used.length < 5) html = `<div class="banner info">Only ${used.length} of the 5 meetings have this statistic, so no head-to-head figure is shown for it.</div>`;
+        else html = block(`${H} v ${A}: last 5 meetings${atV ? ` at ${H}` : ' (either venue)'}`, used, line, side, isMatch ? 'Match total, both teams.' : `${H}'s own figures in these meetings.`, bin);
+      }
+    }
+    out.innerHTML = html + `<p class="xs muted">${esc(def.label)}: historical hit rate from published matches only. Home/Away is applied before the sample (Last 10 + Home = the last 10 home matches). Missing statistics are left out, never counted as zero. Yellow and red cards are separate markets. This is not a prediction.</p>`;
   };
   $('#ctl', root).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const g = b.parentElement.dataset.seg;
-    if (g) ui[g] = g === 'last' ? Number(b.dataset.v) : b.dataset.v; else if (b.dataset.step) ui.line = Math.max(0, Math.round(((ui.line ?? 0.5) + Number(b.dataset.step)) * 2) / 2); else return; draw(); });
+    if (g) { ui[g] = g === 'last' ? Number(b.dataset.v) : b.dataset.v; if (g !== 'side') ui.line = null; } else if (b.dataset.step) ui.line = stepLine(ui.line, Number(b.dataset.step)); else return; draw(); });
   $('#mk', root).onchange = e => { ui.market = e.target.value; ui.line = null; draw(); };
   ln.addEventListener('input', () => { const v = parseFloat(ln.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } });
-  draw();
+  ui.line = null; draw();
 }
 
 return { viewMatch };
 })();
 __m['v-finder'] = (() => {
-const { store, loadAllPlayerRows, teamRowsFor } = __m['data'];
-const { TEAM_MARKETS, PLAYER_MARKETS, marketRows, marketsWithData } = __m['markets'];
+const { store, loadAllPlayerRows, teamRowsFor, teamsOfLeague, leagueName } = __m['data'];
+const { TEAM_MARKETS, PLAYER_MARKETS, marketRows, marketsWithData, defaultLine, stepLine } = __m['markets'];
 const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { applyFilters } = __m['research'];
-const { typicalLine } = __m['panel'];
-const { $, $$, esc, fmt } = __m['util'];
+const { stepperHtml, venueWord, hitsLine } = __m['panel'];
+const { $, $$, esc, fmt, avg } = __m['util'];
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
 
-const ui = { mode: 'teams', market: 't.shots', side: 'over', line: null, last: 10, minN: 5, pmarket: 'shots', pline: 0.5 };
+// line: null = recalculate the starting line from the current sample (market, league, venue or sample changed); arrows set it by hand.
+const ui = { mode: 'teams', market: 'm.goals', pmarket: 'shots', side: 'over', line: null, last: 10, venue: '' };
 async function viewFinder(root) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Prop Finder</h1>${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
-  const hasPlayers = store.playerIndex.length > 0;
-  if (!hasPlayers) ui.mode = 'teams';
-  let players = null;
-  const lgTeams = () => [...store.teams.values()].filter(t => t.league === getLeague());
+  let players = null, note = '';
+  const lgTeams = () => teamsOfLeague(getLeague());
+  const lgHasPlayers = () => store.playerIndex.some(p => p.league === getLeague());
   let teamMarkets = marketsWithData(lgTeams().flatMap(t => store.teamRows.get(t.slug) || []), TEAM_MARKETS);
+  const playerMarkets = () => (players ? marketsWithData([...players.values()].filter(p => p.league === getLeague()).flatMap(p => p.rows), PLAYER_MARKETS) : PLAYER_MARKETS.slice(0, 5));
   root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Prop Finder</h1><p class="muted">Which teams or players clear a line most often? These are historical frequencies, not predictions and not value.</p>
     <div class="stack">${leagueSelect()}<div class="seg" id="mode"><button data-m="teams" class="${ui.mode === 'teams' ? 'on' : ''}">Teams</button><button data-m="players" class="${ui.mode === 'players' ? 'on' : ''}">Players</button></div>
     <div id="ctl"></div><div id="out"></div></div>`;
   const out = $('#out', root), ctl = $('#ctl', root);
+  const curMarket = () => { const ms = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const k = ui.mode === 'teams' ? ui.market : ui.pmarket; return ms.find(m => m.key === k) || ms[0]; };
   const drawCtl = () => {
-    const markets = ui.mode === 'teams' ? teamMarkets : PLAYER_MARKETS; const key = ui.mode === 'teams' ? 'market' : 'pmarket';
-    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${esc(m.key)}" ${m.key === ui[key] ? 'selected' : ''}>${esc((m.group ? m.group.split(' (')[0] + ': ' : '') + m.label)}</option>`).join('')}</select></div>
-      <div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>
-      <div class="field"><label>Line</label><div class="stepper"><button data-step="-1" aria-label="Lower">−</button><input id="ln" type="text" inputmode="decimal" aria-label="Line"><button data-step="1" aria-label="Raise">+</button></div></div>
+    const markets = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const key = ui.mode === 'teams' ? 'market' : 'pmarket'; const m = curMarket();
+    ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc((x.group ? x.group.split(' (')[0] + ': ' : '') + x.label)}</option>`).join('')}</select></div>
+      ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Last matches</label><div class="seg" id="lt">${[5, 10, 20, 0].map(n => `<button data-v="${n}" class="${ui.last === n ? 'on' : ''}">${n || 'All'}</button>`).join('')}</div></div>
-      <div class="field"><label>Minimum sample</label><div class="seg" id="mn">${[3, 5, 8].map(n => `<button data-v="${n}" class="${ui.minN === n ? 'on' : ''}">${n}+</button>`).join('')}</div></div></div></div>`;
-    $('#ln', ctl).value = ui.mode === 'teams' ? (ui.line ?? '') : ui.pline;
+      <div class="field"><label>Venue (applied before the sample)</label><div class="seg" id="vn">${[['', 'All'], ['home', 'Home'], ['away', 'Away']].map(([v, l]) => `<button data-v="${v}" class="${ui.venue === v ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
+      ${m?.binary ? '<p class="small muted" style="margin:0">Both teams to score is Yes only: no line to set.</p>' : `<div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p>`}</div>`;
   };
   const sample = async () => {
-    if (ui.mode === 'teams') {
-      const m = teamMarkets.find(x => x.key === ui.market) || teamMarkets[0]; if (!m) return { items: [] };
-      if (ui.line === null) ui.line = typicalLine(lgTeams().map(t => store.teamRows.get(t.slug) || []).flatMap(rs => marketRows(rs, m).slice(0, ui.last || 10).map(r => r.value)));
-      $('#ln', ctl).value = ui.line;
-      return { items: lgTeams().map(t => ({ id: t.slug, name: t.name, sub: '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(teamRowsFor(t.slug), m) })), line: ui.line };
-    }
-    if (!players) players = await loadAllPlayerRows(); const m = PLAYER_MARKETS.find(x => x.key === ui.pmarket) || PLAYER_MARKETS[0];
-    return { items: [...players.values()].filter(p => p.league === getLeague()).map(p => ({ id: p.id, name: p.name, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes') })), line: ui.pline };
+    const m = curMarket(); if (!m) return { items: [], m };
+    if (ui.mode === 'teams') return { m, items: lgTeams().map(t => ({ id: t.slug, name: t.name, sub: '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(teamRowsFor(t.slug), m) })) };
+    if (!players) players = await loadAllPlayerRows();
+    return { m, items: [...players.values()].filter(p => p.league === getLeague()).map(p => ({ id: p.id, name: p.name, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes') })) };
   };
   const draw = async () => {
-    if (ui.mode === 'players' && !hasPlayers) { out.innerHTML = '<div class="banner info"><b>No player match logs are published yet.</b> Player trends will appear here once verified match-by-match data is published. Switch to Teams to scan team totals now.</div>'; return; }
-    const { items, line } = await sample();
-    if (!items.length) { out.innerHTML = '<div class="banner info">No data available for this market.</div>'; return; }
-    const res = items.map(it => { const f = applyFilters(it.rows, { last: ui.last || null }); const hr = hitRate(f.map(r => r.value), line, ui.side); return { it, hr, trend: dotsFor(f.slice(0, 5).map(r => r.value), line, ui.side).map(h => (h ? '●' : '○')).join('') }; })
-      .filter(x => x.hr.n >= ui.minN).sort((a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n);
-    out.innerHTML = res.length ? `<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th><th>Matches</th><th>Hit rate</th><th>Avg</th><th>Last 5 (old → new)</th></tr>${res.slice(0, 100).map(x => `<tr><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a>${x.it.sub ? `<br><span class="xs muted">${esc(x.it.sub)}</span>` : ''}</td><td class="n">${x.hr.n}</td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b> <span class="xs muted">${x.hr.hits}/${x.hr.n}</span></td><td class="n">${fmt(x.hr.avg)}</td><td class="n" aria-label="Last five, newest first">${esc(x.trend)}</td></tr>`).join('')}</table></div></div>
-      <p class="xs muted">${ui.side === 'under' ? 'Under' : 'Over'} ${line}, ${ui.last ? 'last ' + ui.last : 'all published'} matches, at least ${ui.minN} matches with data. Filled circles show hits, oldest to newest. A high hit rate over a small sample often fades. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
-      : `<div class="banner info"><b>No ${ui.mode} have ${ui.minN}+ matches with data</b> for this market yet. Lower the minimum sample or choose another market.</div>`;
+    if (ui.mode === 'players' && !lgHasPlayers()) { out.innerHTML = getLeague() === 'epl' ? '<div class="banner info"><b>No Premier League player match logs are published.</b> No free source licenses Premier League player match statistics for public display. Switch to Teams to scan team totals, or choose MLS for player trends.</div>' : `<div class="banner info"><b>No ${esc(leagueName(getLeague()))} player match logs are published yet.</b> Player trends will appear here once verified match-by-match data is published. Switch to Teams to scan team totals now.</div>`; return; }
+    const { items, m } = await sample();
+    if (!items.length || !m) { out.innerHTML = '<div class="banner info">No data available for this market.</div>'; return; }
+    const filt = items.map(it => ({ it, f: applyFilters(it.rows, { last: ui.last || null, venue: ui.venue }) }));
+    const side = m.binary ? 'over' : ui.side;
+    if (m.binary) ui.line = 0.5;
+    else if (ui.line === null) { const vals = filt.flatMap(x => x.f.map(r => r.value)); ui.line = defaultLine(m.key, vals); const fixed = defaultLine(m.key, [999]) === defaultLine(m.key, [0]); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(vals) ?? 'n/a'}) of ${vals.length} real values in the ${ui.last ? 'last ' + ui.last : 'all'} ${venueWord(ui.venue)}matches shown.`; }
+    const lab = $('#lnlab', ctl), inp = $('#ln', ctl), nt = $('#lnnote', ctl); if (lab) lab.textContent = `${m.label} — ${side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line; if (nt) nt.textContent = note;
+    const line = ui.line, fv = v => (m.binary ? (v ? 'Yes' : 'No') : v);
+    const res = filt.map(({ it, f }) => { const hr = hitRate(f.map(r => r.value), line, side); return { it, hr, trend: dotsFor(f.slice(0, 5).map(r => r.value), line, side).map(h => (h ? '●' : '○')).join('') }; })
+      .filter(x => x.hr.n >= 1).sort((a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n);
+    out.innerHTML = res.length ? `<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th><th>Hit rate</th><th>Hits / matches</th><th>${m.binary ? 'Both scored' : 'Avg'}</th><th>Last 5 (old → new)</th></tr>${res.slice(0, 100).map(x => `<tr><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a>${x.it.sub ? `<br><span class="xs muted">${esc(x.it.sub)}</span>` : ''}</td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${ui.last && x.hr.n < ui.last ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td class="n" aria-label="Last five, oldest to newest">${esc(x.trend)}</td></tr>`).join('')}</table></div></div>
+      <p class="xs muted">${m.binary ? 'Both teams to score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label.toLowerCase())}`}, ${ui.last ? 'last ' + ui.last : 'all published'} ${venueWord(ui.venue)}matches (home/away is applied before the sample). "Hits / matches" is the real number of matches with data: ${esc(hitsLine(res[0].hr))} for the top row. Filled circles show hits, oldest to newest. A high hit rate over a small sample often fades. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
+      : `<div class="banner info"><b>No ${ui.mode} have matches with data</b> for this market and filter. Choose another market or venue.</div>`;
   };
   drawCtl(); draw();
-  $('#lgsel', root).onchange = e => { setLeague(e.target.value); teamMarkets = marketsWithData(lgTeams().flatMap(t => store.teamRows.get(t.slug) || []), TEAM_MARKETS); if (!teamMarkets.some(m => m.key === ui.market)) ui.market = teamMarkets[0]?.key; ui.line = null; drawCtl(); draw(); };
-  $('#mode', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.mode = b.dataset.m; $$('#mode button', root).forEach(x => x.classList.toggle('on', x === b)); drawCtl(); draw(); };
-  ctl.addEventListener('change', e => { if (e.target.id === 'mk') { if (ui.mode === 'teams') { ui.market = e.target.value; ui.line = null; } else { ui.pmarket = e.target.value; ui.pline = typicalLine([0.5]); } draw(); } });
+  $('#lgsel', root).onchange = e => { setLeague(e.target.value); teamMarkets = marketsWithData(lgTeams().flatMap(t => store.teamRows.get(t.slug) || []), TEAM_MARKETS); if (!teamMarkets.some(m => m.key === ui.market)) ui.market = teamMarkets.find(m => m.key === 'm.goals')?.key || teamMarkets[0]?.key; ui.line = null; drawCtl(); draw(); };
+  $('#mode', root).onclick = async e => { const b = e.target.closest('button'); if (!b) return; ui.mode = b.dataset.m; ui.line = null; $$('#mode button', root).forEach(x => x.classList.toggle('on', x === b)); if (ui.mode === 'players' && lgHasPlayers() && !players) players = await loadAllPlayerRows(); drawCtl(); draw(); };
+  ctl.addEventListener('change', e => { if (e.target.id === 'mk') { if (ui.mode === 'teams') ui.market = e.target.value; else ui.pmarket = e.target.value; ui.line = null; drawCtl(); draw(); } });
   ctl.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; const seg = b.parentElement.id;
-    if (seg === 'sd') ui.side = b.dataset.v; else if (seg === 'lt') ui.last = Number(b.dataset.v); else if (seg === 'mn') ui.minN = Number(b.dataset.v);
-    else if (b.dataset.step) { const k = ui.mode === 'teams' ? 'line' : 'pline'; ui[k] = Math.max(0, Math.round(((ui[k] ?? 0.5) + Number(b.dataset.step)) * 2) / 2); } else return;
-    drawCtl(); draw();
+    if (seg === 'sd') ui.side = b.dataset.v; else if (seg === 'lt') { ui.last = Number(b.dataset.v); ui.line = null; } else if (seg === 'vn') { ui.venue = b.dataset.v; ui.line = null; }
+    else if (b.dataset.step) ui.line = stepLine(ui.line, Number(b.dataset.step)); else return;
+    $$('.seg button', ctl).forEach(x => { const p = x.parentElement.id; if (p === 'sd') x.classList.toggle('on', x.dataset.v === ui.side); if (p === 'lt') x.classList.toggle('on', Number(x.dataset.v) === ui.last); if (p === 'vn') x.classList.toggle('on', x.dataset.v === ui.venue); });
+    draw();
   });
-  ctl.addEventListener('input', e => { if (e.target.id === 'ln') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui[ui.mode === 'teams' ? 'line' : 'pline'] = v; draw(); } } });
+  ctl.addEventListener('input', e => { if (e.target.id === 'ln') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } } });
 }
 
 return { viewFinder };
@@ -1481,7 +1712,7 @@ return { viewValue };
 })();
 __m['v-about'] = (() => {
 const { store, leagueName, SOURCES, freshness } = __m['data'];
-const { esc, fmtLong, fmtShort } = __m['util'];
+const { esc, fmtLong, fmtShort, seasonLabel } = __m['util'];
 const { dataBanner, problemsBanner } = __m['shared'];
 
 async function viewAbout(root) {
@@ -1492,15 +1723,17 @@ async function viewAbout(root) {
     <dt>Dataset updated</dt><dd>${esc(fmtLong(f.generated))}</dd>
     <dt>Fixtures</dt><dd>${m.fixtures?.count ?? 0} · updated ${esc(fmtLong(m.fixtures?.updated))}</dd>
     <dt>Team news</dt><dd>${m.news?.count ?? 0} · updated ${esc(fmtLong(m.news?.updated))}</dd>
-    ${(m.team_matches || []).map(e => `<dt>Team stats, ${esc(leagueName(e.league))} ${e.season}/${String(e.season + 1).slice(2)}</dt><dd>${e.count} matches to ${esc(fmtShort(e.through))} · updated ${esc(fmtLong(e.updated))}</dd>`).join('')}
+    ${(m.team_matches || []).map(e => `<dt>Team stats, ${esc(leagueName(e.league))} ${seasonLabel(e.league, e.season)}</dt><dd>${e.count} matches to ${esc(fmtShort(e.through))} · updated ${esc(fmtLong(e.updated))}</dd>`).join('')}
     <dt>Player directory</dt><dd>${m.directory ? `${m.directory.count} players, ${m.directory.clubs} clubs · updated ${esc(fmtLong(m.directory.updated))} · ${esc(m.directory.source || '')}, ${esc(m.directory.license || '')}` : 'Not published yet'}</dd>
-    ${(m.player_matches || []).length ? m.player_matches.map(e => `<dt>Player logs, ${esc(leagueName(e.league))} ${e.season}/${String(e.season + 1).slice(2)}</dt><dd>${e.matches} matches, ${e.rows} rows · updated ${esc(fmtLong(e.updated))}</dd>`).join('') : '<dt>Player match logs</dt><dd>Not published yet</dd>'}
+    ${(m.player_matches || []).length ? m.player_matches.map(e => `<dt>Player logs, ${esc(leagueName(e.league))} ${seasonLabel(e.league, e.season)}</dt><dd>${e.matches} matches, ${e.rows} rows · updated ${esc(fmtLong(e.updated))}</dd>`).join('') : '<dt>Player match logs</dt><dd>Not published yet</dd>'}
   </dl></div></section>
   <section class="sec"><h2>Sources</h2><div class="card"><div class="list">${SOURCES().map(s => `<div class="row"><div class="l"><b>${s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>` : esc(s.name)}</b><span>${esc(s.used_for || '')}${s.note ? '<br>' + esc(s.note) : ''}</span></div></div>`).join('') || '<p class="muted">No sources listed.</p>'}</div></div></section>
   <section class="sec"><h2>Not available</h2><div class="card"><ul class="small" style="margin:0;padding-left:18px">
-    <li><b>Player directory</b> (names, clubs, positions only, no statistics): taken from Wikipedia's 2026–27 club season articles, licensed CC BY-SA 4.0, with a link to each club article on every profile. Squad tables can lag real transfers, so each club shows its own as-of date. Some tables only list players who have appeared, so a newly signed or unused player may be missing.</li>
-    <li><b>Player match logs</b> (shots, tackles, fouls, cards per player per match): no free, permitted source could be read reliably in bulk yet. Player pages say so instead of showing made-up numbers.</li>
-    <li><b>Other leagues:</b> only the Premier League is published so far.</li>
+    <li><b>Player directory</b> (names, clubs, positions only): taken from Wikipedia's 2026–27 Premier League club season articles and MLS club articles, licensed CC BY-SA 4.0, with a link on every profile. Squad tables can lag real transfers, so each club shows its own as-of date. Some tables only list players who have appeared, so a newly signed or unused player may be missing.</li>
+    <li><b>Premier League player match statistics</b>: not available. No free source licenses them for public display, so Premier League player pages show directory information only.</li>
+    <li><b>MLS player fouls, tackles, cards, offsides and saves</b>: not provided by American Soccer Analysis, so those MLS player markets are left out rather than shown as 0.</li>
+    <li><b>MLS team corners, fouls, cards and half-time (first-half) scores</b>: not published by a free source we can use. MLS team research covers goals, both teams to score, shots and shots on target.</li>
+    <li><b>Other leagues:</b> only the Premier League and MLS are published.</li>
     <li><b>Bookmaker odds:</b> not included. Value Research uses odds you type in.</li>
     <li><b>Referees for upcoming matches</b> appear only once confirmed in a source.</li></ul></div></section>
   <section class="sec"><h2>How to read the numbers</h2><div class="card small stack"><p style="margin:0"><b>Hit rate</b> is the share of published matches where a statistic beat the line. It describes the past only. <b>Estimates</b> and <b>EV</b> appear in Value Research only when there are at least 8 matches with data, and they ignore line-ups, injuries, opponents and tactics. Missing figures are never counted as zero.</p></div></section>`;
