@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="03edc21c5fa7">
+<meta name="proplab-build" content="cb441336abda">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -308,6 +308,7 @@ button.started{font-family:inherit;cursor:pointer}
 .hnote2{margin:6px 0 0;color:#b9c4d4}.hnoh2h{margin-top:10px}.hfxcount{margin:8px 0 0}
 .updbar{position:fixed;left:12px;right:12px;bottom:calc(var(--navh) + env(safe-area-inset-bottom) + 10px);z-index:60;display:flex;align-items:center;gap:10px;background:#1b2a44;border:1px solid var(--accent);border-radius:14px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:14px}.updbar span{flex:1}.updbar .btn{width:auto;margin:0;padding:8px 14px}.updx{font-size:22px;color:var(--muted);width:32px;height:32px}
 body[data-sport=hub] .updbar{bottom:calc(env(safe-area-inset-bottom) + 12px)}
+.lic.excluded{background:#2a2f3a;color:#c3ccd9}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1345,7 +1346,9 @@ const FB_GROUPS = [
   ['Goals', ['m.goals', 't.goals', 'o.goals', 'm.htgoals', 't.htgoals', 'm.btts']],
   ['Shots / Shots on Target', ['m.shots', 't.shots', 'o.shots', 'm.sot', 't.sot', 'o.sot']],
   // Opponent card markets were removed (19 Oct 2026, owner request): they duplicated the other team's own card figures.
-  ['Cards', ['m.cards', 'm.yellows', 'm.reds', 't.cards', 't.yellows', 't.reds']],
+  // Team Yellow Cards and Team Red Cards were removed from the selector (19 Oct owner request): the Team Cards chart already shows the yellow
+  // and red parts as stacked bars. Their definitions (fbDef 't.yellows' / 't.reds') stay, because other pages and the stacked bars use them.
+  ['Cards', ['m.cards', 'm.yellows', 'm.reds', 't.cards']],
   ['Corners', ['m.corners', 't.corners', 'o.corners']],
   ['Fouls', ['m.fouls', 't.fouls', 't.fdrawn']],
   ['Tackles', ['tackles']], ['Offsides', ['offsides']], ['Goalkeeping', ['saves']],
@@ -2862,9 +2865,9 @@ __m['licensing'] = (() => {
 const LICENSING = [
   { id: 'football-data', name: 'football-data.co.uk', url: 'https://www.football-data.co.uk/data.php', status: 'unclear',
     data: 'Results, half-time scores and team match statistics (shots, shots on target, corners, fouls committed, cards, referees where present) for the Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie and Scottish Premiership, 2021/22 to 2026/27; next-round fixtures (fixtures.csv).',
-    method: 'Owner-run download of the published CSV files (a few files per update), then validated and converted to JSON.',
+    method: 'Automatic download once a day (about 11pm UK) by the GitHub Actions data refresh: 16 season CSV files plus fixtures.csv, then validated and converted to JSON. Before 19 Oct 2026: owner-run downloads.',
     terms: 'The data page says "All FREE!!!" and offers the files "for use with spreadsheet applications". It credits third-party sources (Xscores, Sportinglife, BBC, ESPN, Flashscore). No licence, redistribution terms or attribution rule were found on data.php, the notes file or the disclaimer page. Football DataCo (rights agent of the English and Scottish leagues) says betting and gaming companies need a licence to use "Official Data" from any source.',
-    automated: 'Not stated. Small, infrequent manual downloads only.', storage: 'Not stated.', display: 'Not stated.', repo: 'Not stated: PropLab republishes derived JSON in a public repository.',
+    automated: 'Not stated. PropLab now downloads 17 small files once a day (no crawling of pages).', storage: 'Not stated.', display: 'Not stated.', repo: 'Not stated: PropLab republishes derived JSON in a public repository.',
     reason: 'Free access is not a licence. No terms grant republication of the data, and some of the underlying data is claimed by league rights holders.',
     action: 'Owner review. Options: ask football-data.co.uk for written permission; or keep the site private (e.g. Cloudflare Pages + Access) so the JSON is not publicly redistributed. Do not add more reliance until resolved.',
     links: ['https://www.football-data.co.uk/data.php', 'https://www.football-data.co.uk/disclaimer.php', 'https://football-dataco.com/betting-data-licence-requirements'] },
@@ -2883,7 +2886,7 @@ const LICENSING = [
     links: ['https://nflreadpy.nflverse.com/', 'https://github.com/nflverse/nflverse-data', 'https://github.com/nflverse/nflverse-data/issues/101'] },
   { id: 'asa', name: 'American Soccer Analysis (ASA) API', url: 'https://www.americansocceranalysis.com/', status: 'unclear',
     data: 'MLS results 2021 to 2026, team shots, and 2026 player match logs (minutes, shots, shots on target, goals, assists).',
-    method: 'Owner-run calls to the free public API (app.americansocceranalysis.com/api/v1), respecting its rate limit.',
+    method: 'Calls to the free public API (app.americansocceranalysis.com/api/v1) once a day by the GitHub Actions data refresh (one season, a handful of requests), respecting its rate limit.',
     terms: 'The API is "free and public - no authentication required". ASA asks for "proper attribution credit" and to "be mindful" of its rate limits. The MIT licence covers only the itscalledsoccer client code, not the data. No redistribution terms were found.',
     automated: 'Implicitly yes (public API, client library provided).', storage: 'Not stated.', display: 'Attribution requested.', repo: 'Not stated.',
     reason: 'Use is encouraged with credit, but no licence grants redistribution of the data.', action: 'Owner review; consider asking ASA to confirm that republishing derived JSON with credit is fine. Credit is shown.',
@@ -2911,11 +2914,17 @@ const LICENSING = [
     data: 'Starting XIs, substitutes and unavailable players for three Premier League games, typed from screenshots the owner supplied (taken in the Sofascore app).', method: 'Manual transcription of names, numbers and formations only (no ratings, photos or artwork).',
     terms: 'Sofascore does not offer its data for reuse. Team sheets are announced publicly by the clubs.', automated: 'No.', storage: '-', display: 'Facts only.', repo: 'Facts only.',
     reason: 'Team sheets are public facts, but this copy came via an app that does not permit reuse of its data.', action: 'Recommended: in future, take team sheets from the clubs\' own announcements, and remove past lineups after matchday.', links: [] },
+  { id: 'bbc', name: 'BBC Sport (proposed, not used)', url: 'https://www.bbc.co.uk/sport/football', status: 'excluded',
+    data: 'None. Considered as a free source of fixtures, results and match statistics.', method: 'Not used. No scraper has been built.',
+    terms: 'BBC Sport is free to read, but that is not a licence to copy its data. BBC\'s terms of use could not be re-read from PropLab\'s build environment on 19 Oct 2026 (access to the page was not available), so they are not quoted here. Football statistics on BBC Sport are supplied under commercial licences: Stats Perform (Opta) is the official data partner of the Premier League, EFL and SPFL through Football DataCo.',
+    automated: 'No.', storage: '-', display: '-', repo: '-',
+    reason: 'Free to read is not permission to scrape or republish, and the underlying statistics are licensed from third parties.', action: 'Do not use without written permission from the BBC (and, for league data, the rights holders).',
+    links: ['https://www.statsperform.com/press/stats-perform-extends-long-term-official-statistics-partnership-for-premier-league-efl-and-spfl', 'https://football-dataco.com/betting-data-licence-requirements'] },
   { id: 'news', name: 'footballdream.in (team news, citing the official FPL list)', url: 'https://www.footballdream.in/', status: 'unclear',
     data: 'Two availability notes (expire after 45 days).', method: 'Manual reading.', terms: 'Not reviewed.', automated: 'No.', storage: '-', display: '-', repo: '-',
     reason: 'No terms reviewed.', action: 'Let them expire; do not add more from this source.', links: [] },
 ];
-const STATUS_LABEL = { permitted: 'Verified Permitted', unclear: 'Permission Unclear', restricted: 'Restricted' };
+const STATUS_LABEL = { permitted: 'Verified Permitted', unclear: 'Permission Unclear', restricted: 'Restricted', excluded: 'Not used: no permission' };
 
 return { LICENSING, STATUS_LABEL };
 })();
@@ -2954,10 +2963,28 @@ async function viewAbout(root) {
     <li><b>Referees for upcoming matches</b> appear only once confirmed in a source.</li></ul></div></section>
   <section class="sec"><h2>NFL</h2><div class="card small">${nfl.status === 'ready' ? `<p style="margin:0 0 6px">Seasons ${nfl.meta.seasons.join(', ')} · ${nfl.players.length.toLocaleString()} players with game logs · ${nfl.games.length.toLocaleString()} games (regular season and postseason kept apart).</p>` : ''}
     <p style="margin:0">Player game logs, play-by-play (longest plays, touchdown scorers), rosters and schedules from <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a>, licensed CC-BY 4.0. A game counts for a player only when he has a recorded stat line in it; games on the active roster without a stat line are listed on his profile and left out, never counted as 0. Kick-off times are converted from US Eastern time to each visitor's own time zone for display. Not available: snap counts, player headshots, first-quarter or half markets, and anything that needs paid tracking data.</p></div></section>
+  <section class="sec" id="refreshsec"><h2>Automatic data refresh</h2><div class="card small" id="refreshbox"><p class="muted" style="margin:0">Checking the last refresh…</p></div></section>
   <section class="sec"><h2>Licensing status</h2><div class="card small"><p style="margin:0 0 8px">PropLab's own assessment of each source, for the owner to review (not legal advice). Free access does not by itself grant the right to republish data.</p>
     <div class="list">${LICENSING.map(l => `<div class="row"><div class="l"><b>${esc(l.name)} <span class="lic ${l.status}">${esc(STATUS_LABEL[l.status])}</span></b><span>${esc(l.reason)}</span></div></div>`).join('')}</div></div></section>
   <section class="sec"><h2>How to read the numbers</h2><div class="card small stack"><p style="margin:0"><b>Hit rate</b> is the share of published matches where a statistic beat the line. It describes the past only. <b>Estimates</b> and <b>EV</b> appear in Value Research only when there are at least 8 matches with data, and they ignore line-ups, injuries, opponents and tactics. Missing figures are never counted as zero.</p></div></section>`;
+  drawRefresh(root.querySelector('#refreshbox'));
 }
+
+// The daily refresh (GitHub Actions, about 11pm UK time) writes data-refresh-status.json. Read it fresh (no cache).
+const ukTime = iso => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso)); } catch { return iso; } };
+async function drawRefresh(box) {
+  if (!box) return;
+  let s = null; try { const r = await fetch(`data-refresh-status.json?t=${Date.now()}`, { cache: 'no-store' }); if (r.ok) s = await r.json(); } catch { /* offline */ }
+  if (!s || s.result === 'not-run-yet') { box.innerHTML = '<p style="margin:0">No automatic refresh has run yet. The data shown was published manually; its dates are listed above.</p>'; return; }
+  const res = { ok: 'Data updated', 'ok-no-changes': 'Checked: no new data', failed: 'Failed: the last valid data was kept' }[s.result] || s.result;
+  const L = s.freshness?.leagues || {};
+  box.innerHTML = `<dl class="kv"><dt>Last successful refresh</dt><dd>${s.last_success ? esc(ukTime(s.last_success)) : 'none yet'}</dd><dt>Last attempt</dt><dd>${esc(ukTime(s.last_run))} · ${esc(res)}</dd>
+    <dt>Schedule</dt><dd>Daily at about 11pm UK time (GitHub may start it a little late)</dd></dl>
+    ${Object.keys(L).length ? `<div class="scroll"><table><tr><th>League</th><th>Latest result</th><th>Upcoming fixtures</th><th>Fixtures until</th></tr>${Object.values(L).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.latest_result ? fmtShort(x.latest_result) : '–')}</td><td class="n">${x.upcoming_fixtures}</td><td>${esc(x.fixtures_until ? fmtShort(x.fixtures_until) : '–')}</td></tr>`).join('')}${s.freshness?.nfl ? `<tr><td>NFL</td><td>${esc(s.freshness.nfl.latest_final ? fmtShort(s.freshness.nfl.latest_final) : '–')}</td><td class="n">${s.freshness.nfl.upcoming_games}</td><td>–</td></tr>` : ''}</table></div>` : ''}
+    ${(s.warnings || []).length ? `<p style="margin:8px 0 4px"><b>Known gaps</b></p><ul style="margin:0;padding-left:18px">${s.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    <details style="margin-top:8px"><summary>Sources checked (${Object.keys(s.sources || {}).length})</summary><ul style="margin:6px 0 0;padding-left:18px">${Object.entries(s.sources || {}).map(([k, v]) => `<li>${v.ok ? '✓' : '✗'} ${esc(k)}${v.last_success ? ` · last OK ${esc(ukTime(v.last_success))}` : ''}${v.ok ? '' : ` · ${esc(v.detail || 'failed')}`}</li>`).join('')}</ul></details>`;
+}
+
 
 return { viewAbout };
 })();

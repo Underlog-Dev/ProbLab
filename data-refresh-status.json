@@ -1,0 +1,7 @@
+{
+ "schema": 1,
+ "result": "not-run-yet",
+ "last_run": null,
+ "last_success": null,
+ "note": "Placeholder until the first automatic data refresh (GitHub Actions) runs. It then replaces this file every night."
+}
