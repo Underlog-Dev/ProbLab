@@ -196,8 +196,8 @@ canvas{cursor:pointer}
 /* sport hub */
 .hub h1{margin:6px 0 6px}.sportcards{display:grid;gap:14px;margin:18px 0}
 @media(min-width:700px){.sportcards{grid-template-columns:1fr 1fr}}
-.sportcard{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 20px;border-radius:18px;background:linear-gradient(160deg,#18233a,#111821);border:1px solid #2a3a58;color:var(--text);min-height:150px}
-.sportcard:hover{text-decoration:none;border-color:var(--accent)}.sportcard .em{font-size:40px;line-height:1}.sportcard b{font-size:24px}.sportcard span{color:var(--muted);font-size:14px}
+.sportcard{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px 20px;border-radius:18px;background:linear-gradient(160deg,#18233a,#111821);border:1px solid #2a3a58;color:var(--text);min-height:160px;justify-content:center}
+.sportcard:hover{text-decoration:none;border-color:var(--accent)}.sportcard .em{font-size:56px;line-height:1}.sportcard b{font-size:28px}.sportcard span{color:var(--muted);font-size:14px}
 .sportcard .lastused{position:absolute;top:14px;right:14px;font-style:normal;font-size:11px;font-weight:700;color:var(--accent);border:1px solid #2a3a58;border-radius:999px;padding:3px 8px}
 /* Hiwi */
 .hiwihead{display:flex;align-items:center;gap:14px;margin:4px 0 12px}.hiwihead .bear-art{flex:none}
@@ -231,6 +231,56 @@ details.pgrp{border:1px solid var(--line);border-radius:12px;padding:8px 10px;ma
 .combo-o{padding:10px 12px;font-size:15px;cursor:pointer;min-height:44px;box-sizing:border-box;display:flex;align-items:center}
 .combo-o.on,.combo-o:hover{background:var(--s1)}
 .combo-none{padding:10px 12px;font-size:14px;color:var(--muted)}
+/* ---- Hiwi's Section: selection ---- */
+.hsel{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--s1)}
+.hsel>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px}
+.hsel>summary::-webkit-details-marker{display:none}.hsel>summary::after{content:"▾";color:var(--muted)}.hsel[open]>summary::after{content:"▴"}
+.hsel[open]>summary{margin-bottom:8px}
+.hlist{max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-top:8px;border-top:1px solid var(--line);padding-top:4px}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.hcheck{display:flex;align-items:center;gap:8px;padding:7px 2px;min-height:40px;font-size:14px;cursor:pointer}
+.hcheck input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent)}
+.hday{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:8px 0 2px}
+.hmkbtn{width:100%;text-align:left}.hmkchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.hmkchips .chip{cursor:default}
+.hscope{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle;border:1px solid var(--line);color:var(--muted)}
+.hscope.s-match{color:#c9a7ff;border-color:#5b3f8f}.hscope.s-team{color:#7fb2ff;border-color:#2d4f86}.hscope.s-opp{color:#ffb38a;border-color:#7a4a2f}.hscope.s-player{color:#6ee7b7;border-color:#22604a}
+.hmkmodal .sheet{max-width:760px}.hmkgrp h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 4px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.hnote{margin:0 0 10px}
+/* ---- Hiwi result cards ---- */
+.hcard{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:12px;min-width:0}
+.hch{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.hct{min-width:0}.hct b{font-size:16px;overflow-wrap:anywhere}
+.hpct{font-size:22px;font-weight:800;white-space:nowrap;text-align:right}.hpct .hpo,.hpct .hpu{display:block;font-size:15px;line-height:1.2}.hpct .hpo{color:var(--hit)}.hpct .hpu{color:#7cb7ff}
+.hcm{font-size:13px;color:var(--muted);margin:2px 0 8px;overflow-wrap:anywhere}.hcm b{color:var(--text)}
+.hctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.hsides button{min-width:58px}
+.hline{display:flex;align-items:center;gap:6px;flex:1 1 220px;min-width:0}
+.hline input[type=range]{flex:1;min-width:60px;accent-color:var(--accent)}
+.hstep{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--s2);color:var(--text);font-size:20px;line-height:1}
+.hnum{width:84px;flex:0 0 84px;padding:6px 8px;text-align:center;font-weight:700}
+.hstat{font-size:14px;margin-top:8px}.hmeta{margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hdetail{margin-top:8px}
+.hbars-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.hbars{--barh:96px;--barbase:34px;position:relative;display:flex;align-items:flex-end;gap:5px;height:calc(var(--barh) + var(--barbase) + 18px);min-width:100%;width:max-content;padding:0 2px}
+.hb{position:relative;width:30px;flex:0 0 30px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.hbcol{width:24px;min-height:2px;border-radius:5px 5px 0 0;background:var(--line);display:flex;flex-direction:column-reverse;overflow:hidden}
+.hbv{font-size:11px;font-weight:700;line-height:1;margin-bottom:3px}
+.hbres{width:24px;height:4px;border-radius:2px;margin-top:2px;background:transparent}
+.hbd,.hbo{font-size:9px;line-height:1.15;color:var(--muted);white-space:nowrap}.hbd{margin-top:3px}
+.hb.hit .hbcol{background:var(--hit)}.hb.miss .hbcol{background:var(--miss)}.hb.ov .hbcol{background:var(--hit)}.hb.un .hbcol{background:#4f8fe8}.hb.pu .hbcol{background:#6b7789}
+.hb.stacked .hbcol{background:transparent}.hb.stacked.hit .hbres,.hb.stacked.ov .hbres{background:var(--hit)}.hb.stacked.miss .hbres{background:var(--miss)}.hb.stacked.un .hbres{background:#4f8fe8}.hb.stacked.pu .hbres{background:#6b7789}
+.hseg{display:flex;align-items:center;justify-content:center;min-height:13px;width:100%}.hseg i{font-style:normal;font-size:10px;font-weight:800;line-height:1}
+.hseg.y{background:#f5c518;color:#1a1400}.hseg.r{background:#7a0f1f;color:#fff}
+.hbline{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--amber);pointer-events:none;z-index:2}
+/* ---- tappable explanation labels ---- */
+.infotag{display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;min-height:24px}
+.infotag .ii{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;border:1px solid currentColor;font-size:9px;font-style:italic;font-family:Georgia,serif}
+.infotag.rel.vsmall,.infotag.warnt{color:var(--amber);border-color:rgba(245,184,61,.45)}.infotag.rel.small{color:#f0c674}.infotag.rel.ok{color:#9ecbff}.infotag.rel.big{color:var(--hit)}
+.infopop{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.infobox{background:var(--s2);border:1px solid var(--line);border-radius:16px;padding:16px;max-width:520px;width:100%}.infobox p{margin:8px 0 12px;font-size:15px;line-height:1.45}
+@media(min-width:700px){.infopop{align-items:center}}
+button.started{font-family:inherit;cursor:pointer}
+.tbcb{font:inherit;font-weight:700;color:var(--muted);background:transparent;border:1px dashed var(--line);border-radius:6px;padding:1px 6px;cursor:pointer}
+#sportsel{max-width:46vw;text-overflow:ellipsis}
+.hblab{height:var(--barbase);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;flex:0 0 auto}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -368,16 +418,19 @@ const viewTz = () => { if (tzCache) return tzCache; const p = memPref || tzPref(
 const fmtCache = new Map();
 const partsIn = (d, tz) => { let f = fmtCache.get(tz); if (!f) { f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); fmtCache.set(tz, f); }
   const o = {}; for (const p of f.formatToParts(d)) o[p.type] = p.value; return { ymd: `${o.year}-${o.month}-${o.day}`, hm: `${o.hour === '24' ? '00' : o.hour}:${o.minute}` }; };
+const abFmt = new Map(); // Intl formatters are slow to create: one per locale, kind and zone
 const ABBR = { 'Europe/Istanbul': 'TRT', UTC: 'UTC', 'Etc/UTC': 'UTC', 'Etc/GMT': 'GMT' };
 /** Short zone name at that moment (BST, GMT, EDT, EST, CDT, PDT, CEST, TRT...), or an offset such as GMT+9 where no common abbreviation exists. */
 const tzAbbr = (d, tz = viewTz()) => {
   if (ABBR[tz]) return ABBR[tz];
-  for (const loc of ['en-GB', 'en-US']) { try { const n = new Intl.DateTimeFormat(loc, { timeZone: tz, timeZoneName: 'short' }).formatToParts(d).find(p => p.type === 'timeZoneName')?.value; if (n && /^[A-Z]{2,5}$/.test(n)) return n; } catch { /* next */ } }
-  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(d).find(p => p.type === 'timeZoneName')?.value || 'UTC'; } catch { return 'UTC'; }
+  const zf = (loc, kind) => { const k = `${loc}|${kind}|${tz}`; if (!abFmt.has(k)) abFmt.set(k, new Intl.DateTimeFormat(loc, { timeZone: tz, timeZoneName: kind })); return abFmt.get(k); };
+  for (const loc of ['en-GB', 'en-US']) { try { const n = zf(loc, 'short').formatToParts(d).find(p => p.type === 'timeZoneName')?.value; if (n && /^[A-Z]{2,5}$/.test(n)) return n; } catch { /* next */ } }
+  try { return zf('en-GB', 'shortOffset').formatToParts(d).find(p => p.type === 'timeZoneName')?.value || 'UTC'; } catch { return 'UTC'; }
 };
 /** Kick-off as the viewer reads it: { ymd, hm, abbr }. A fixture without a confirmed time (TBC) keeps its scheduled date and no time is invented. */
+const klCache = new Map();
 const koLocal = f => {
-  if (f.ko_utc) { const d = new Date(f.ko_utc); return { ...partsIn(d, viewTz()), abbr: tzAbbr(d) }; }
+  if (f.ko_utc) { const tz = viewTz(), k = tz + f.ko_utc; let v = klCache.get(k); if (!v) { const d = new Date(f.ko_utc); v = { ...partsIn(d, tz), abbr: tzAbbr(d) }; klCache.set(k, v); } return { ...v }; }
   return { ymd: f.date, hm: '', abbr: '' };
 };
 /** Today's date in the viewer's time zone. */
@@ -408,10 +461,10 @@ const fxStatus = (f, now = new Date(), liveMs = LIVE_MS) => {
 };
 /** Badge for a status that is not 'pre'. Red LIVE is only used for a confirmed live status. */
 const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live">LIVE</span>'
-  : st === 'started' ? '<span class="started" title="Kick-off time has passed; PropLab has no confirmed live status">Started<small>status unconfirmed</small></span>'
+  : st === 'started' ? '<button type="button" class="started" data-info="unconfirmed" aria-haspopup="dialog">Started<small>status unconfirmed</small></button>'
   : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'postponed' ? '<span class="pp">P-P</span>' : '');
 /** Time cell for lists: local time with the zone name underneath, or TBC. */
-const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : 'TBC'; };
+const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : '<button type="button" class="tbcb" data-info="tbc" aria-haspopup="dialog">TBC</button>'; };
 
 return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, fxStatus, statusBadge, timeHtml };
 })();
@@ -814,18 +867,10 @@ async function viewHome(root) {
   <div class="tiles2">
     <a class="tool" href="#/players">${ICON.players}<b>Players</b><span>Teams in nine leagues, players</span></a>
     <a class="tool" href="#/fixtures">${ICON.fixtures}<b>Fixtures</b><span>Upcoming and results</span></a>
-    <a class="tool" href="#/plays">${ICON.plays}<b>Plays</b><span>Best line for one team, match or player</span></a>
-    <a class="tool" href="#/hiwi">${BEAR_ICON}<b>Hiwi's Section</b><span>Ready-made ideas for upcoming games</span></a>
+    <a class="tool" href="#/hiwi">${BEAR_ICON}<b>Hiwi's Section</b><span>Pick fixtures, teams and markets; adjust the line</span></a>
     <a class="tool" href="#/finder">${ICON.finder}<b>Hit Rate Finder</b><span>Discover trends across a league</span></a>
     <a class="tool" href="#/value">${ICON.value}<b>Value Research</b><span>Compare a price with the data</span></a></div>
-  ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div id="hlg" style="margin-bottom:10px">${leagueSelect()}</div><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>
-  <section class="sec"><h2>What is published <a href="#/about">Data &amp; sources</a></h2><div class="card"><dl class="kv">
-    <dt>Last updated</dt><dd>${f.generated ? esc(fmtLong(f.generated)) : 'n/a'}</dd>
-    <dt>Team match stats</dt><dd>${tm.length ? [...new Set(tm.map(e => e.league))].map(lg => { const es = tm.filter(e => e.league === lg).sort((a, b) => a.season - b.season); return `${esc(leagueName(lg))}: ${seasonLabel(lg, es[0].season)}${es.length > 1 ? '–' + seasonLabel(lg, es[es.length - 1].season) : ''}, ${es.reduce((n, e) => n + e.count, 0).toLocaleString()} matches to ${esc(fmtDay(es[es.length - 1].through))}`; }).join('<br>') : 'None yet'}</dd>
-    <dt>Player directory</dt><dd>${store.directory.length ? `${store.directory.length} players (${[...new Set(store.directory.map(d => d.league))].map(l => `${leagueName(l)} ${store.directory.filter(d => d.league === l).length}`).join(', ')}), ${store.directoryMeta?.clubs?.length || 0} clubs · updated ${esc(fmtLong(store.directoryMeta?.updated))}` : 'Not published yet'}</dd>
-    <dt>Player match logs</dt><dd>${pm.length ? `${pRows.toLocaleString()} player rows` : 'Not published yet'}</dd>
-    <dt>Upcoming fixtures</dt><dd>${store.fixtures.length}</dd><dt>Team news items</dt><dd>${store.news.length}</dd></dl>
-    ${pm.length ? '' : '<p class="small muted" style="margin:12px 0 0">Every player has a profile with club, position, fixtures and team news. Player match statistics (shots, tackles, fouls, cards) will appear on a profile only once verified match logs are published.</p>'}</div></section>` : ''}`;
+  ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div id="hlg" style="margin-bottom:10px">${leagueSelect()}</div><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>` : ''}`;
   const lg = $('#lgsel', root); if (lg) lg.onchange = e => { setLeague(e.target.value); viewHome(root); };
   const sb = searchBox($('#sb', root), { placeholder: 'Search a player or team, e.g. Bruno or Inter Miami' });
   if (!ready) { const t = setInterval(() => { if (store.status === 'ready' || store.status === 'error') clearInterval(t); }, 300); }
@@ -1553,7 +1598,7 @@ async function viewFixtures(root, r) {
       html = list.length ? [...byDay.entries()].map(([k, fs]) => `<div class="dayh">${esc(fmtDay(k))}</div><div class="card">${fs.map(f => {
         const rp = f.referee ? refereeProfile(f.referee) : null;
         return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span><span class="lgtag">${esc(leagueName(f.league))}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koLocal(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koLocal(f).hm + ' ' + koLocal(f).abbr))}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
-        <div class="more"><a class="btn" href="#/plays?game=${encodeURIComponent(fixtureId(f))}"><b>View Match Plays (hit rates) →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}</div>`).join('')
+        <div class="more"><a class="btn" href="#/hiwi?fx=${encodeURIComponent(fixtureId(f))}"><b>Research this match in Hiwi's Section →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}</div>`).join('')
         : '<div class="banner info"><b>No upcoming fixtures match these filters.</b> Only fixtures that have been published appear here.</div>';
       if (list.length) html = `<p class="xs muted" style="margin:0 0 8px">Times are in your time zone (${esc(tzNow())}). PropLab has no live scores: after kick-off a match shows "Started – status unconfirmed", then Awaiting result until the verified final score appears under Results.</p>` + html;
     } else {
@@ -1784,9 +1829,50 @@ const fbSeason = lg => currentSeason(lg);
 
 return { fbTeamMarkets, hasPlayerLogs, fbPlayers, fbPlayerMarkets, fbLines, fbScope, fbSeason };
 })();
+__m['info'] = (() => {
+// Tappable explanation labels ("Small sample", "Research line", "Started – status unconfirmed"...). They work by tap/click, not hover,
+// so they are usable on an iPhone. infoTag() returns the button; wireInfo() (called once by app.js) opens the explanation popup.
+const { esc } = __m['util'];
+
+const TEXT = {
+  vsmall: n => `Very small sample: fewer than 5 completed matches are in this sample (this card uses ${n}). One result changes the percentage a lot, so treat it with care.`,
+  small: n => `Small sample: fewer than 10 completed matches are in this sample (this card uses ${n}). Percentages from few matches can swing a lot.`,
+  ok: n => `Moderate sample: 10 to 19 completed matches are in this sample (this card uses ${n}).`,
+  big: n => `Larger sample: 20 or more completed matches are in this sample (this card uses ${n}). A larger sample is steadier, but past results still do not predict future ones.`,
+  limited: (n, m) => `Limited data: ${m - n} of the ${m} matches in this period have no recorded value for this statistic in the source, so they are left out. They are never counted as 0. This card uses ${n}.`,
+  research: () => 'Research line: a line chosen to explore the historical data (a typical half-point line for this statistic, or one you set). It is not a bookmaker price and has not been checked against any bookmaker.',
+  unconfirmed: () => 'Started – status unconfirmed: the scheduled kick-off time has passed, but PropLab has no live data feed, so it cannot confirm the match is in play. The final score appears once the verified result is published.',
+  tbc: () => 'TBC: the kick-off time has not been confirmed yet. PropLab shows the scheduled date only and never guesses a time.',
+  push: n => `Whole-number line: ${n} match${n === 1 ? '' : 'es'} landed exactly on the line, which counts as neither Over nor Under (a "push"). Half-point lines such as 2.5 avoid this.`,
+  season: () => 'Statistics are based on available completed matches from the current season. As more matches are played the samples get bigger and the figures steadier, but past results never guarantee future ones.',
+  datesfallback: () => 'This league has no official round numbers in PropLab\'s fixture source, so "this gameweek" is the next run of consecutive match days.',
+  cards: () => 'Cards = yellow cards + red cards, each counted once, as recorded by football-data.co.uk. Second-yellow sending-offs: in English and Scottish games the dismissal is recorded as one red card (the first yellow is not counted); in other leagues as one yellow plus one red. The source does not separate second yellows from straight reds, so PropLab cannot either. Booking points are not used.',
+};
+/** A tappable label. key selects the explanation; n / m are numbers shown in it. cls adds colour classes. */
+const infoTag = (key, label, { n = '', m = '', cls = '' } = {}) => `<button type="button" class="infotag ${esc(cls)}" data-info="${esc(key)}" data-n="${esc(n)}" data-m="${esc(m)}" aria-haspopup="dialog">${esc(label)}<span class="ii" aria-hidden="true">i</span></button>`;
+const infoText = (key, n, m) => (TEXT[key] ? TEXT[key](Number(n), Number(m)) : '');
+
+let wired = false;
+function wireInfo() {
+  if (wired) return; wired = true;
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-info]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    document.querySelector('.infopop')?.remove();
+    const pop = document.createElement('div'); pop.className = 'infopop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', b.textContent.replace(/i$/, ''));
+    pop.innerHTML = `<div class="infobox"><b>${esc(b.textContent.replace(/i$/, '').trim())}</b><p>${esc(infoText(b.dataset.info, b.dataset.n, b.dataset.m))}</p><button type="button" class="btn" data-infoclose>OK</button></div>`;
+    document.body.appendChild(pop); pop.querySelector('[data-infoclose]').focus();
+    pop.addEventListener('click', ev => { if (ev.target === pop || ev.target.closest('[data-infoclose]')) pop.remove(); });
+  }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelector('.infopop')?.remove(); });
+}
+
+return { infoTag, infoText, wireInfo };
+})();
 __m['playcard'] = (() => {
 // One play card, shared by Plays (football and NFL) and Hiwi's Section. Every number on a card comes from one sample:
 // hit rate, hits/sample, dots and the match list always agree, and they all move together with the inline line slider.
+const { infoTag } = __m['info'];
 const { reliability } = __m['plays'];
 const { hitRate } = __m['analytics'];
 const { esc, fmtShort, fmtLong } = __m['util'];
@@ -1814,7 +1900,7 @@ function playCard(x, o = {}) {
     <div class="xs warn" data-pl-below hidden></div>
     <div class="dots" data-pl-dots aria-label="hits and misses, oldest to newest"></div>
     ${lines ? `<div class="plslide"><label class="xs muted" for="sl${o.ri}">Line</label><input id="sl${o.ri}" type="range" data-pl-slider min="${lines[0]}" max="${lines[lines.length - 1]}" step="1" value="${cur}" aria-label="Adjust the line"><button type="button" class="chip" data-pl-reset hidden>Reset to best line</button></div>` : ''}
-    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(x.from))} – ${esc(fmtLong(x.to))} · <span class="rel ${rel.k}">${rel.t}</span>${bin ? '' : ' · research line'}</div>
+    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(x.from))} – ${esc(fmtLong(x.to))} · ${infoTag(rel.k, rel.t, { n: x.hr.n, cls: 'rel ' + rel.k })}${bin ? '' : ' · ' + infoTag('research', 'Research line', { cls: 'neutral' })}</div>
     <details class="mx"><summary class="xs">${unit === 'match' ? 'Matches' : 'Games'} (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>${unit === 'match' ? 'Match' : 'Game'}</th><th>Value</th></tr>${rows}</table></div></details>
     ${o.ri != null ? '<button type="button" class="chip opengraph" data-open>More details ›</button>' : ''}</div>`;
 }
@@ -2097,6 +2183,7 @@ return { viewMatch };
 })();
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
+const { infoTag } = __m['info'];
 const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
@@ -2111,7 +2198,7 @@ const ui = { gOpen: true, games: new Set(), mode: 'browse', kind: 'all', side: '
 const PCTS = [70, 75, 80, 85, 90, 95, 100];
 const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']];
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
-const fixtureHref = f => `#/plays?game=${encodeURIComponent(fixtureId(f))}`; // the fixture's targeted scan in Plays
+const fixtureHref = f => `#/hiwi?fx=${encodeURIComponent(fixtureId(f))}`; // the fixture in Hiwi's Section
 const sideWord = s => (s === 'under' ? 'Under' : 'Over');
 const mLabel = def => def.label; // the market's full name (Team / Opponent / Match / Player ...), never shortened
 const SCOPE = { team: n => `${n} only`, opp: n => `against ${n}`, match: () => 'both teams combined', player: () => 'this player' };
@@ -2128,7 +2215,7 @@ function cardHtml(r, ctx = {}) {
     <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)} <span class="xs muted">· ${esc(ctx.h2h ? 'both teams combined' : SCOPE[marketScope(r.def.key)](s.name))}</span></div>
     <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span></div>
     <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
-    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · <span class="rel ${rel.k}">${rel.t}</span></div>
+    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · ${infoTag(rel.k, rel.t, { n: r.hr.n, cls: 'rel ' + rel.k })}</div>
     <details class="mx"><summary class="xs">Matches (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${rows}</table></div></details>
     ${ctx.ri != null ? '<button type="button" class="chip opengraph" data-open>Open graph and adjust line ›</button>' : ''}
     ${ctx.links === false ? '' : `<div class="xs" style="margin-top:6px"><a href="${s.href}">${s.type === 'player' ? 'Player' : 'Team'} research</a>${s.nextFx ? ` · <a href="${fixtureHref(s.nextFx)}">Next: ${esc(s.nextFx.home)} v ${esc(s.nextFx.away)}, ${esc(fmtKick(s.nextFx))}</a>` : ''}</div>`}</div>`;
@@ -2474,7 +2561,7 @@ const MODES = [['trends', 'Trends'], ['table', 'Table']];
 let lastMode = 'trends';
 async function viewFinder(root, r) {
   const m = MODES.some(([k]) => k === r.q.get('m')) ? r.q.get('m') : (r.q.get('tgame') ? 'trends' : lastMode); lastMode = m;
-  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover trends across a whole league or several fixtures. For one team, match or player, use <a href="#/plays">Plays</a>.</p>
+  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover trends across a whole league or several fixtures. For one team, match or player, use <a href="#/hiwi">Hiwi's Section</a>.</p>
     <div class="seg" id="fmode" role="tablist">${MODES.map(([k, l]) => `<a role="tab" href="#/finder?m=${k}" class="${k === m ? 'on' : ''}" aria-selected="${k === m}">${esc(l)}</a>`).join('')}</div><div id="fbody" style="margin-top:12px"></div>`;
   const body = $('#fbody', root);
   return m === 'table' ? viewTable(body, r) : viewTrends(body, r);
@@ -2710,120 +2797,6 @@ async function viewAbout(root) {
 
 return { viewAbout };
 })();
-__m['nfl-markets'] = (() => {
-// NFL player-prop and team markets. Each reads one field of a player's game row (nflverse stat lines, plus play-by-play for
-// longest plays and touchdown scorers). `for` lists the position groups the market is offered for; a market is only shown
-// when the player actually has recorded values for it. `range` = research lines (half-point, typical sportsbook ranges; not a live catalogue).
-const v = k => r => (r[k] === undefined ? null : r[k]);
-const sumOf = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] + r[b]);
-const NFL_MARKETS = [
-  // passing
-  { key: 'pass_yds', label: 'Passing Yards', grp: 'Passing', for: ['qb'], get: v('pass_yds'), range: [124.5, 374.5], desc: 'Passing yards by the quarterback (sack yardage is not deducted, as in the official stat line).' },
-  { key: 'pass_td', label: 'Passing Touchdowns', grp: 'Passing', for: ['qb'], get: v('pass_td'), range: [0.5, 3.5], desc: 'Touchdown passes thrown by the quarterback. These are not touchdowns he scored himself.' },
-  { key: 'att', label: 'Pass Attempts', grp: 'Passing', for: ['qb'], get: v('att'), range: [19.5, 45.5], desc: 'Passes thrown by the quarterback.' },
-  { key: 'cmp', label: 'Pass Completions', grp: 'Passing', for: ['qb'], get: v('cmp'), range: [12.5, 32.5], desc: 'Completed passes thrown by the quarterback.' },
-  { key: 'int', label: 'Interceptions Thrown', grp: 'Passing', for: ['qb'], get: v('int'), range: [0.5, 2.5], desc: 'Interceptions thrown by the quarterback.' },
-  { key: 'lcmp', label: 'Longest Completion', grp: 'Passing', for: ['qb'], get: v('lcmp'), range: [19.5, 59.5], desc: 'Yards of the quarterback\'s longest completed pass in the game (from play-by-play). 0 if he completed no pass.' },
-  { key: 'pass_rush_yds', label: 'Passing + Rushing Yards', grp: 'Passing', for: ['qb'], get: sumOf('pass_yds', 'rush_yds'), range: [149.5, 399.5], desc: 'The quarterback\'s passing yards plus his rushing yards.' },
-  // rushing
-  { key: 'rush_yds', label: 'Rushing Yards', grp: 'Rushing', for: ['qb', 'rb', 'wr'], get: v('rush_yds'), range: [4.5, 149.5], desc: 'Rushing yards by the player (can be negative).' },
-  { key: 'car', label: 'Rushing Attempts', grp: 'Rushing', for: ['qb', 'rb'], get: v('car'), range: [2.5, 27.5], desc: 'Rushing attempts (carries) by the player.' },
-  { key: 'rush_td', label: 'Rushing Touchdowns', grp: 'Rushing', for: ['qb', 'rb'], get: v('rush_td'), range: [0.5, 1.5], desc: 'Rushing touchdowns scored by the player.' },
-  { key: 'lrush', label: 'Longest Rush', grp: 'Rushing', for: ['qb', 'rb'], get: v('lrush'), range: [4.5, 39.5], desc: 'Yards of the player\'s longest run in the game (from play-by-play). 0 if he had no carry.' },
-  // receiving
-  { key: 'rec_yds', label: 'Receiving Yards', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec_yds'), range: [9.5, 149.5], desc: 'Receiving yards by the player.' },
-  { key: 'rec', label: 'Receptions', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec'), range: [1.5, 10.5], desc: 'Catches made by the player.' },
-  { key: 'tgt', label: 'Targets', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('tgt'), range: [2.5, 13.5], desc: 'Passes thrown to the player.' },
-  { key: 'rec_td', label: 'Receiving Touchdowns', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec_td'), range: [0.5, 1.5], desc: 'Receiving touchdowns scored by the player.' },
-  { key: 'lrec', label: 'Longest Reception', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('lrec'), range: [9.5, 49.5], desc: 'Yards of the player\'s longest catch in the game (from play-by-play). 0 if he made no catch.' },
-  { key: 'rush_rec_yds', label: 'Rushing + Receiving Yards', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: sumOf('rush_yds', 'rec_yds'), range: [19.5, 199.5], desc: 'The player\'s rushing yards plus receiving yards.' },
-  // touchdowns (scored by the player, from play-by-play: rushing, receiving, returns and defensive scores; not passing TDs)
-  { key: 'atd', label: 'Anytime Touchdown Scorer', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], binary: true, get: r => (r.tds == null ? null : r.tds >= 1 ? 1 : 0), desc: 'Yes when the player scored at least one touchdown himself (rushing, receiving or a return). Touchdown passes do not count.' },
-  { key: 'tds', label: 'Player Touchdowns', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], get: v('tds'), range: [0.5, 1.5], desc: 'Touchdowns scored by the player himself. Over 1.5 = two or more. Touchdown passes do not count.' },
-  { key: 'ftd', label: 'First Touchdown Scorer', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], binary: true, get: v('ftd'), desc: 'Yes when the player scored the first touchdown of the game (any team, from play-by-play).' },
-  // kicking
-  { key: 'fgm', label: 'Field Goals Made', grp: 'Kicking', for: ['k'], get: v('fgm'), range: [0.5, 3.5], desc: 'Field goals made by the kicker.' },
-  { key: 'xpm', label: 'Extra Points Made', grp: 'Kicking', for: ['k'], get: v('xpm'), range: [0.5, 4.5], desc: 'Extra points (PATs) made by the kicker.' },
-  { key: 'kpts', label: 'Kicking Points', grp: 'Kicking', for: ['k'], get: v('kpts'), range: [3.5, 13.5], desc: 'Field goals x 3 plus extra points made.' },
-  // defence
-  { key: 'tkl', label: 'Solo Tackles', grp: 'Defence', for: ['def'], get: v('tkl'), range: [1.5, 8.5], desc: 'Solo tackles by the player.' },
-  { key: 'ast', label: 'Assisted Tackles', grp: 'Defence', for: ['def'], get: v('ast'), range: [0.5, 4.5], desc: 'Assisted tackles by the player.' },
-  { key: 'tkl_ast', label: 'Tackles + Assists', grp: 'Defence', for: ['def'], get: sumOf('tkl', 'ast'), range: [2.5, 11.5], desc: 'Solo tackles plus assisted tackles (the usual sportsbook "tackles + assists" market).' },
-  { key: 'sacks', label: 'Sacks', grp: 'Defence', for: ['def'], get: v('sacks'), range: [0.5, 1.5], desc: 'Sacks credited to the player (a shared sack counts as 0.5).' },
-  { key: 'dint', label: 'Interceptions', grp: 'Defence', for: ['def'], get: v('dint'), range: [0.5, 0.5], desc: 'Interceptions made by the defensive player.' },
-];
-// team markets from final scores
-const NFL_TEAM_MARKETS = [
-  { key: 'pts', label: 'Team Points', grp: 'Team', get: v('pts'), range: [10.5, 34.5], desc: 'Points scored by the selected team.' },
-  { key: 'ptsA', label: 'Points Allowed', grp: 'Team', get: v('ptsA'), range: [10.5, 34.5], desc: 'Points scored against the selected team.' },
-  { key: 'gpts', label: 'Total Game Points', grp: 'Team', get: sumOf('pts', 'ptsA'), range: [30.5, 59.5], desc: 'Points by both teams added together.' },
-];
-for (const m of [...NFL_MARKETS, ...NFL_TEAM_MARKETS]) m.group = m.grp;
-const R = (a, b) => { const o = []; for (let x = a; x <= b + 1e-9; x += 1) o.push(x); return o; };
-const nflLines = def => (def.binary ? [0.5] : def.range ? R(def.range[0], def.range[1]) : []);
-const marketsForGroup = g => NFL_MARKETS.filter(m => m.for.includes(g));
-const nflMarket = key => [...NFL_MARKETS, ...NFL_TEAM_MARKETS].find(m => m.key === key);
-// Rare-event props: Over (Yes) only.
-for (const m of NFL_MARKETS) if (['rush_td', 'rec_td', 'tds', 'sacks', 'dint'].includes(m.key)) m.overOnly = true;
-
-return { NFL_MARKETS, NFL_TEAM_MARKETS, nflLines, marketsForGroup, nflMarket };
-})();
-__m['nfl-scan'] = (() => {
-// NFL shared helpers: which markets a player really has, scanning a player or team, and opponent (defence vs position) context.
-const { nfl, loadGroup, teamName, latestSeason, teamGameRows } = __m['nfl-data'];
-const { NFL_MARKETS, NFL_TEAM_MARKETS, marketsForGroup, nflLines } = __m['nfl-markets'];
-const { marketRows, marketsWithData } = __m['markets'];
-const { applyFilters } = __m['research'];
-const { hitRate } = __m['analytics'];
-const { scanOne } = __m['scanner'];
-const { esc } = __m['util'];
-
-const TYPES = t => (t === 'RP' ? ['R', 'P'] : ['R']);
-/** Markets offered for a player: his position group's markets that have recorded values in his rows. */
-const playerMarkets = (p, rows) => marketsWithData(rows, marketsForGroup(p.group));
-const scanPlayer = (p, rows, o) => scanOne(rows, playerMarkets(p, rows), { lines: nflLines, ...o });
-const scanTeam = (abbr, o) => scanOne(teamGameRows(abbr), NFL_TEAM_MARKETS, { lines: nflLines, ...o });
-const nflSampleText = (last, venue, types) => `${last === 'season' ? "this season's" : `last ${last}`} ${venue ? venue + ' ' : ''}games${types === 'RP' ? ' (incl. postseason)' : ''}`;
-
-/**
- * Defence vs position: in each game against `def` (latest season, chosen game types), take the best value any opposing player of
- * `group` recorded for market `m` (e.g. the top receiving-yards WR that day). Returns { n, hits, hitPct, avgTop, games } for line/side.
- * Supplements, never replaces, the player's own hit rate. Players with no stat row in a game are not counted (nothing is filled in).
- */
-async function oppContext(def, group, m, line, side, types = ['R']) {
-  const by = await loadGroup(group); const season = latestSeason(); const perGame = new Map();
-  for (const rows of by.values()) for (const r of rows) {
-    if (r.opp !== def || r.season !== season || !types.includes(r.type)) continue;
-    const v = m.get(r); if (v === null || v === undefined) continue;
-    const cur = perGame.get(r.game); if (cur === undefined || v > cur.v) perGame.set(r.game, { v, date: r.date, team: r.team });
-  }
-  const games = [...perGame.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
-  const hr = hitRate(games.map(g => g.v), line, side);
-  return { ...hr, games, season, def };
-}
-const oppContextHtml = (c, groupLabel, m, line, side) => !c || !c.n ? `<p class="xs muted">No ${esc(teamName(c?.def || ''))} games this season with recorded ${esc(groupLabel)} figures for this market yet.</p>`
-  : `<section class="sec"><h3>Opponent context: ${esc(teamName(c.def))} defence</h3><p class="small">In ${c.n} ${c.season} game${c.n === 1 ? '' : 's'} against ${esc(teamName(c.def))}, the top opposing ${esc(groupLabel)} went ${side === 'under' ? 'under' : 'over'} ${line} ${esc(m.label.toLowerCase())} in <b>${c.hits}</b> (${c.hitPct}%). Average top figure: ${c.avg}.</p>
-    <p class="xs muted">"Top opposing ${esc(groupLabel)}" = the opposing player at that position with the highest figure in each game. This describes the defence, not this player; use it alongside the player's own hit rate above.</p></section>`;
-
-/** Defence vs position table for a team (latest season, regular season): average per game allowed to each position group. */
-async function defenceTable(def) {
-  const season = latestSeason(); const spec = [['qb', 'pass_yds', 'QB passing yards'], ['qb', 'pass_td', 'QB passing TDs'], ['rb', 'rush_yds', 'RB rushing yards'], ['rb', 'rec_yds', 'RB receiving yards'], ['wr', 'rec_yds', 'WR receiving yards'], ['wr', 'rec', 'WR receptions'], ['te', 'rec_yds', 'TE receiving yards']];
-  const out = [];
-  for (const [g, key, label] of spec) {
-    const m = NFL_MARKETS.find(x => x.key === key); const by = await loadGroup(g);
-    const per = new Map(); // all 32 defences: game -> sum allowed
-    const sums = new Map();
-    for (const rows of by.values()) for (const r of rows) { if (r.season !== season || r.type !== 'R') continue; const v = m.get(r); if (v == null) continue; const k = r.opp + '|' + r.game; sums.set(k, (sums.get(k) || 0) + v); }
-    for (const [k, v] of sums) { const t = k.split('|')[0]; if (!per.has(t)) per.set(t, []); per.get(t).push(v); }
-    const avgs = [...per.entries()].map(([t, a]) => [t, a.reduce((s, x) => s + x, 0) / a.length, a.length]).sort((a, b) => b[1] - a[1]);
-    const me = avgs.find(x => x[0] === def); if (!me) continue;
-    out.push({ label, avg: Math.round(me[1] * 10) / 10, games: me[2], rank: avgs.findIndex(x => x[0] === def) + 1, of: avgs.length });
-  }
-  return { season, rows: out };
-}
-
-return { TYPES, playerMarkets, scanPlayer, scanTeam, nflSampleText, oppContext, oppContextHtml, defenceTable };
-})();
 __m['gameweek'] = (() => {
 // "This Gameweek" for Hiwi's Section. Membership never depends on the viewer's time zone: it uses official round / week numbers,
 // UTC kick-off instants and fixed reference dates (UK dates for the European round calendars; the league's home time zone for the
@@ -2886,242 +2859,529 @@ function nflWeek(upcoming) {
 
 return { refDate, leagueGameweek, footballGameweeks, nflWeek };
 })();
+__m['nfl-markets'] = (() => {
+// NFL player-prop and team markets. Each reads one field of a player's game row (nflverse stat lines, plus play-by-play for
+// longest plays and touchdown scorers). `for` lists the position groups the market is offered for; a market is only shown
+// when the player actually has recorded values for it. `range` = research lines (half-point, typical sportsbook ranges; not a live catalogue).
+const v = k => r => (r[k] === undefined ? null : r[k]);
+const sumOf = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] + r[b]);
+const NFL_MARKETS = [
+  // passing
+  { key: 'pass_yds', label: 'Passing Yards', grp: 'Passing', for: ['qb'], get: v('pass_yds'), range: [124.5, 374.5], desc: 'Passing yards by the quarterback (sack yardage is not deducted, as in the official stat line).' },
+  { key: 'pass_td', label: 'Passing Touchdowns', grp: 'Passing', for: ['qb'], get: v('pass_td'), range: [0.5, 3.5], desc: 'Touchdown passes thrown by the quarterback. These are not touchdowns he scored himself.' },
+  { key: 'att', label: 'Pass Attempts', grp: 'Passing', for: ['qb'], get: v('att'), range: [19.5, 45.5], desc: 'Passes thrown by the quarterback.' },
+  { key: 'cmp', label: 'Pass Completions', grp: 'Passing', for: ['qb'], get: v('cmp'), range: [12.5, 32.5], desc: 'Completed passes thrown by the quarterback.' },
+  { key: 'int', label: 'Interceptions Thrown', grp: 'Passing', for: ['qb'], get: v('int'), range: [0.5, 2.5], desc: 'Interceptions thrown by the quarterback.' },
+  { key: 'lcmp', label: 'Longest Completion', grp: 'Passing', for: ['qb'], get: v('lcmp'), range: [19.5, 59.5], desc: 'Yards of the quarterback\'s longest completed pass in the game (from play-by-play). 0 if he completed no pass.' },
+  { key: 'pass_rush_yds', label: 'Passing + Rushing Yards', grp: 'Passing', for: ['qb'], get: sumOf('pass_yds', 'rush_yds'), range: [149.5, 399.5], desc: 'The quarterback\'s passing yards plus his rushing yards.' },
+  // rushing
+  { key: 'rush_yds', label: 'Rushing Yards', grp: 'Rushing', for: ['qb', 'rb', 'wr'], get: v('rush_yds'), range: [4.5, 149.5], desc: 'Rushing yards by the player (can be negative).' },
+  { key: 'car', label: 'Rushing Attempts', grp: 'Rushing', for: ['qb', 'rb'], get: v('car'), range: [2.5, 27.5], desc: 'Rushing attempts (carries) by the player.' },
+  { key: 'rush_td', label: 'Rushing Touchdowns', grp: 'Rushing', for: ['qb', 'rb'], get: v('rush_td'), range: [0.5, 1.5], desc: 'Rushing touchdowns scored by the player.' },
+  { key: 'lrush', label: 'Longest Rush', grp: 'Rushing', for: ['qb', 'rb'], get: v('lrush'), range: [4.5, 39.5], desc: 'Yards of the player\'s longest run in the game (from play-by-play). 0 if he had no carry.' },
+  // receiving
+  { key: 'rec_yds', label: 'Receiving Yards', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec_yds'), range: [9.5, 149.5], desc: 'Receiving yards by the player.' },
+  { key: 'rec', label: 'Receptions', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec'), range: [1.5, 10.5], desc: 'Catches made by the player.' },
+  { key: 'tgt', label: 'Targets', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('tgt'), range: [2.5, 13.5], desc: 'Passes thrown to the player.' },
+  { key: 'rec_td', label: 'Receiving Touchdowns', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('rec_td'), range: [0.5, 1.5], desc: 'Receiving touchdowns scored by the player.' },
+  { key: 'lrec', label: 'Longest Reception', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: v('lrec'), range: [9.5, 49.5], desc: 'Yards of the player\'s longest catch in the game (from play-by-play). 0 if he made no catch.' },
+  { key: 'rush_rec_yds', label: 'Rushing + Receiving Yards', grp: 'Receiving', for: ['rb', 'wr', 'te'], get: sumOf('rush_yds', 'rec_yds'), range: [19.5, 199.5], desc: 'The player\'s rushing yards plus receiving yards.' },
+  // touchdowns (scored by the player, from play-by-play: rushing, receiving, returns and defensive scores; not passing TDs)
+  { key: 'atd', label: 'Anytime Touchdown Scorer', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], binary: true, get: r => (r.tds == null ? null : r.tds >= 1 ? 1 : 0), desc: 'Yes when the player scored at least one touchdown himself (rushing, receiving or a return). Touchdown passes do not count.' },
+  { key: 'tds', label: 'Player Touchdowns', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], get: v('tds'), range: [0.5, 1.5], desc: 'Touchdowns scored by the player himself. Over 1.5 = two or more. Touchdown passes do not count.' },
+  { key: 'ftd', label: 'First Touchdown Scorer', grp: 'Touchdowns', for: ['qb', 'rb', 'wr', 'te'], binary: true, get: v('ftd'), desc: 'Yes when the player scored the first touchdown of the game (any team, from play-by-play).' },
+  // kicking
+  { key: 'fgm', label: 'Field Goals Made', grp: 'Kicking', for: ['k'], get: v('fgm'), range: [0.5, 3.5], desc: 'Field goals made by the kicker.' },
+  { key: 'xpm', label: 'Extra Points Made', grp: 'Kicking', for: ['k'], get: v('xpm'), range: [0.5, 4.5], desc: 'Extra points (PATs) made by the kicker.' },
+  { key: 'kpts', label: 'Kicking Points', grp: 'Kicking', for: ['k'], get: v('kpts'), range: [3.5, 13.5], desc: 'Field goals x 3 plus extra points made.' },
+  // defence
+  { key: 'tkl', label: 'Solo Tackles', grp: 'Defence', for: ['def'], get: v('tkl'), range: [1.5, 8.5], desc: 'Solo tackles by the player.' },
+  { key: 'ast', label: 'Assisted Tackles', grp: 'Defence', for: ['def'], get: v('ast'), range: [0.5, 4.5], desc: 'Assisted tackles by the player.' },
+  { key: 'tkl_ast', label: 'Tackles + Assists', grp: 'Defence', for: ['def'], get: sumOf('tkl', 'ast'), range: [2.5, 11.5], desc: 'Solo tackles plus assisted tackles (the usual sportsbook "tackles + assists" market).' },
+  { key: 'sacks', label: 'Sacks', grp: 'Defence', for: ['def'], get: v('sacks'), range: [0.5, 1.5], desc: 'Sacks credited to the player (a shared sack counts as 0.5).' },
+  { key: 'dint', label: 'Interceptions', grp: 'Defence', for: ['def'], get: v('dint'), range: [0.5, 0.5], desc: 'Interceptions made by the defensive player.' },
+];
+// team markets from final scores
+const NFL_TEAM_MARKETS = [
+  { key: 'pts', label: 'Team Points', grp: 'Team', get: v('pts'), range: [10.5, 34.5], desc: 'Points scored by the selected team.' },
+  { key: 'ptsA', label: 'Points Allowed', grp: 'Team', get: v('ptsA'), range: [10.5, 34.5], desc: 'Points scored against the selected team.' },
+  { key: 'gpts', label: 'Total Game Points', grp: 'Team', get: sumOf('pts', 'ptsA'), range: [30.5, 59.5], desc: 'Points by both teams added together.' },
+];
+for (const m of [...NFL_MARKETS, ...NFL_TEAM_MARKETS]) m.group = m.grp;
+const R = (a, b) => { const o = []; for (let x = a; x <= b + 1e-9; x += 1) o.push(x); return o; };
+const nflLines = def => (def.binary ? [0.5] : def.range ? R(def.range[0], def.range[1]) : []);
+const marketsForGroup = g => NFL_MARKETS.filter(m => m.for.includes(g));
+const nflMarket = key => [...NFL_MARKETS, ...NFL_TEAM_MARKETS].find(m => m.key === key);
+// Rare-event props: Over (Yes) only.
+for (const m of NFL_MARKETS) if (['rush_td', 'rec_td', 'tds', 'sacks', 'dint'].includes(m.key)) m.overOnly = true;
+
+return { NFL_MARKETS, NFL_TEAM_MARKETS, nflLines, marketsForGroup, nflMarket };
+})();
+__m['hiwi-markets'] = (() => {
+// Market catalogue for Hiwi's Section: groups, scopes, starting lines, line bounds and bar composition.
+// A market is only offered when the selected league's (or NFL's) own data records it; nothing here creates values.
+const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketName, marketDesc } = __m['markets'];
+const { NFL_MARKETS, NFL_TEAM_MARKETS } = __m['nfl-markets'];
+const { FOOTBALL_RANGES } = __m['lines'];
+
+const clean = v => (v === undefined ? null : v);
+const add = (a, b) => (a == null || b == null ? null : a + b);
+const CARDS_DESC = ' Cards = yellow cards + red cards, each counted once as recorded by the source (a second-yellow dismissal: one red in English and Scottish games, one yellow + one red elsewhere). No booking points.';
+// Total cards (yellow + red). Only known when both parts are recorded.
+const CARD_MARKETS = [
+  { key: 'm.cards', label: 'Match Cards', group: 'Match (both teams combined)', get: r => add(clean(r.cards), clean(r.cardsA)), parts: r => [[add(r.yellows, r.yellowsA), 'y'], [add(r.reds, r.redsA), 'r']], desc: 'Yellow and red cards shown to both teams added together.' + CARDS_DESC },
+  { key: 't.cards', label: 'Team Cards', group: 'Team (selected team only)', get: r => clean(r.cards), parts: r => [[r.yellows, 'y'], [r.reds, 'r']], desc: 'Yellow and red cards shown to the selected team only.' + CARDS_DESC },
+  { key: 'o.cards', label: 'Opponent Cards', group: 'Opponent (against the selected team)', get: r => clean(r.cardsA), parts: r => [[r.yellowsA, 'y'], [r.redsA, 'r']], desc: "Yellow and red cards shown to the selected team's opponent." + CARDS_DESC },
+];
+const PARTS = { 'm.yellows': r => [[add(r.yellows, r.yellowsA), 'y']], 't.yellows': r => [[r.yellows, 'y']], 'o.yellows': r => [[r.yellowsA, 'y']], 'm.reds': r => [[add(r.reds, r.redsA), 'r']], 't.reds': r => [[r.reds, 'r']], 'o.reds': r => [[r.redsA, 'r']] };
+
+// Football groups (popup headings) in display order. Unsupported markets and empty groups are hidden.
+const FB_GROUPS = [
+  ['Goals', ['m.goals', 't.goals', 'o.goals', 'm.htgoals', 't.htgoals', 'm.btts']],
+  ['Shots / Shots on Target', ['m.shots', 't.shots', 'o.shots', 'm.sot', 't.sot', 'o.sot']],
+  ['Cards', ['m.cards', 't.cards', 'o.cards', 'm.yellows', 't.yellows', 'o.yellows', 'm.reds', 't.reds', 'o.reds']],
+  ['Corners', ['m.corners', 't.corners', 'o.corners']],
+  ['Fouls', ['m.fouls', 't.fouls', 't.fdrawn']],
+  ['Tackles', ['tackles']], ['Offsides', ['offsides']], ['Goalkeeping', ['saves']],
+  ['Players', ['shots', 'shots_on_target', 'goals', 'assists', 'goal_contrib', 'yellow_cards', 'red_cards', 'fouls_committed', 'fouls_drawn']],
+];
+const NFL_GROUPS = ['Passing', 'Rushing', 'Receiving', 'Touchdowns', 'Kicking', 'Defence', 'Team'].map(g => [g, [...NFL_MARKETS, ...NFL_TEAM_MARKETS].filter(m => m.grp === g).map(m => m.key)]);
+
+const scopeOf = key => (key.startsWith('m.') ? 'match' : key.startsWith('t.') ? 'team' : key.startsWith('o.') ? 'opp' : 'player');
+const SCOPE_LABEL = { match: 'Match total', team: 'Team', opp: 'Opponent', player: 'Player' };
+/** A football market definition for Hiwi: { key, label, desc, scope, binary, get, parts }. */
+function fbDef(key) {
+  const c = CARD_MARKETS.find(m => m.key === key);
+  if (c) return { ...c, scope: scopeOf(key) };
+  const t = TEAM_MARKETS.find(m => m.key === key), p = PLAYER_MARKETS.find(m => m.key === key), m = t || p; if (!m) return null;
+  return { ...m, label: marketName(key, m.label), desc: marketDesc(key), scope: scopeOf(key), parts: PARTS[key] || null, exposureKey: p ? 'minutes' : null };
+}
+/** Supported football markets for a league: those with at least one recorded value in the league's team rows / player rows. */
+function fbSupported(teamRows, playerRows) {
+  const ok = new Set();
+  for (const [, keys] of FB_GROUPS) for (const k of keys) { const d = fbDef(k); if (!d) continue; const rows = d.scope === 'player' ? playerRows : teamRows; if (rows.length && marketsWithData(rows, [d]).length) ok.add(k); }
+  return ok;
+}
+const NFL_TEAM_SCOPE = { pts: 'team', ptsA: 'opp', gpts: 'match' };
+function nflDef(key) {
+  const m = [...NFL_MARKETS, ...NFL_TEAM_MARKETS].find(x => x.key === key); if (!m) return null;
+  return { ...m, scope: NFL_TEAM_SCOPE[key] || 'player' };
+}
+
+// ---- starting lines (documented in docs/HIWI.md) ----
+const FIXED = { 'm.goals': 2.5, 't.goals': 1.5, 'o.goals': 1.5, 'm.htgoals': 0.5, 't.htgoals': 0.5, 'm.cards': 2.5, 't.cards': 1.5, 'o.cards': 1.5, 'm.corners': 8.5, 't.corners': 3.5, 'o.corners': 3.5,
+  'm.reds': 0.5, 't.reds': 0.5, 'o.reds': 0.5, yellow_cards: 0.5, red_cards: 0.5, goals: 0.5, assists: 0.5, goal_contrib: 0.5, atd: 0.5, ftd: 0.5, 'm.btts': 0.5, rush_td: 0.5, rec_td: 0.5, tds: 0.5, pass_td: 1.5, int: 0.5, dint: 0.5, sacks: 0.5 };
+/** Half-point line at or just under the average of the sample (average 5.8 -> 5.5; 6.0 -> 5.5), not below the lowest sensible line. */
+const avgLine = (values, floor = 0.5) => { const v = values.filter(x => typeof x === 'number'); if (!v.length) return floor; const a = v.reduce((s, x) => s + x, 0) / v.length; let l = Math.floor(a) + 0.5; if (l > a) l -= 1; return Math.max(floor, l); };
+/** Starting line: fixed for goals, cards, corners and rare events; otherwise from this card's own sample average. */
+const lowFloor = v => { const lo = Math.min(0, ...v.filter(x => typeof x === 'number')); return lo < 0 ? Math.floor(lo) - 0.5 : 0.5; };
+const startLine = (key, values) => FIXED[key] ?? avgLine(values, lowFloor(values));
+/** Slider bounds for one card: half-point lines from just below the lowest value (0.5 for counts) to just above the highest, and at least the
+ *  statistic's usual research range, so passing yards, touchdowns and receptions each get their own scale. Typed lines can be any number. */
+function lineBounds(def, values, line) {
+  const v = values.filter(x => typeof x === 'number'); const hi = Math.max(0, ...v);
+  const r = def.range || FOOTBALL_RANGES[def.key] || null;
+  const min = Math.min(lowFloor(v), line);
+  const max = Math.max(Math.ceil(hi) + 0.5, r ? r[1] : 0.5, line);
+  return { min, max, step: 1 };
+}
+
+return { CARD_MARKETS, FB_GROUPS, NFL_GROUPS, SCOPE_LABEL, fbDef, fbSupported, NFL_TEAM_SCOPE, nflDef, avgLine, startLine, lineBounds };
+})();
+__m['hiwicard'] = (() => {
+// One Hiwi result card = one subject (fixture, team or player) x one market. The line, Over/Under/Both and the mini bar chart all live
+// on the card; changing the line recolours the bars and recalculates the hit rate in place (no page reload, no re-scan).
+const { esc, fmtShort } = __m['util'];
+const { infoTag } = __m['info'];
+const { reliability } = __m['plays'];
+const { SCOPE_LABEL, lineBounds } = __m['hiwi-markets'];
+
+const r1 = x => Math.round(x * 10) / 10;
+const half = x => Math.round(x * 2) / 2;
+/** Counts for one line. values are numbers (missing values were removed before). */
+function lineStats(values, line) {
+  let over = 0, under = 0, push = 0; for (const v of values) { if (v > line) over++; else if (v < line) under++; else push++; }
+  const n = values.length, pct = k => (n ? Math.round(1000 * k / n) / 10 : null);
+  return { n, over, under, push, overPct: pct(over), underPct: pct(under), avg: n ? r1(values.reduce((s, x) => s + x, 0) / n) : null };
+}
+
+/**
+ * card: { cid, title, scope, def, context (html-safe text), unit ('match'|'game'), rows: [{ date, opp, value, parts? }] oldest first, period text, m (matches in period incl. missing) }
+ * st: { line, side ('over'|'under'|'both'; binary: 'yes'|'no'|'both') }
+ */
+function cardHtml(card, st) {
+  const d = card.def, bin = !!d.binary, vals = card.rows.map(r => r.value), b = lineBounds(d, vals, st.line);
+  const sMin = Math.floor(b.min - 0.5) + 0.5, sMax = Math.max(sMin + 1, b.max);
+  const sides = bin ? [['yes', 'Yes'], ['no', 'No'], ['both', 'Both']] : [['over', 'Over'], ['under', 'Under'], ['both', 'Both']];
+  const rel = reliability(card.rows.length);
+  return `<article class="hcard" data-cid="${esc(card.cid)}">
+    <header class="hch"><div class="hct"><b>${esc(card.title)}</b><span class="hscope s-${esc(d.scope)}">${esc(SCOPE_LABEL[d.scope])}</span></div><div class="hpct" data-h-pct></div></header>
+    <div class="hcm"><b>${esc(d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
+    <div class="hctl"><div class="seg hsides" role="group" aria-label="${bin ? 'Outcome' : 'Over, Under or Both'}">${sides.map(([v, l]) => `<button type="button" data-h-side="${v}" class="${st.side === v ? 'on' : ''}" aria-pressed="${st.side === v}">${l}</button>`).join('')}</div>
+      ${bin ? '' : `<div class="hline"><button type="button" class="hstep" data-h-step="-1" aria-label="Lower line">−</button><input type="range" data-h-range min="${sMin}" max="${sMax}" step="1" value="${st.line}" aria-label="Line for ${esc(d.label)}"><button type="button" class="hstep" data-h-step="1" aria-label="Raise line">+</button><input type="number" inputmode="decimal" class="in hnum" data-h-num step="0.5" value="${st.line}" aria-label="Type a line"></div>`}</div>
+    <div class="hstat" data-h-stat></div>
+    <div class="hmeta xs muted">${card.rows.length} completed ${card.unit === 'game' ? 'game' : 'match'}${card.rows.length === 1 ? '' : 'es'} · ${esc(card.period)} ${infoTag(rel.k, rel.t, { n: card.rows.length, cls: 'rel ' + rel.k })}${card.m > card.rows.length ? ' ' + infoTag('limited', 'Limited data', { n: card.rows.length, m: card.m, cls: 'warnt' }) : ''}${bin ? '' : ' ' + infoTag('research', 'Research line', { cls: 'neutral' })}${d.key.endsWith('cards') ? ' ' + infoTag('cards', 'How cards count', { cls: 'neutral' }) : ''}<span data-h-push></span></div>
+    <div class="hbars-wrap"><div class="hbars" data-h-bars style="--n:${card.rows.length}">${barsHtml(card)}</div></div>
+    <button type="button" class="chip hdetail" data-h-detail>Detailed analysis ›</button>
+  </article>`;
+}
+function barsHtml(card) {
+  if (!card.rows.length) return '<p class="xs muted">No completed matches with this statistic in the chosen period.</p>';
+  return card.rows.map((r, i) => {
+    const parts = card.def.parts ? card.def.parts(r.raw || {}).filter(([v]) => v > 0) : null;
+    const segs = parts && parts.length ? parts.map(([v, c]) => `<div class="hseg ${c}" style="flex:${v}"><i>${v}</i></div>`).join('') : '';
+    return `<div class="hb${parts ? ' stacked' : ''}" data-i="${i}" title="${esc(r.date)}: ${esc(String(r.value))}"><span class="hbv">${esc(card.def.binary ? (r.value ? 'Yes' : 'No') : String(r.value))}</span><div class="hbcol">${segs}</div><div class="hblab"><span class="hbres"></span><span class="hbd">${esc(fmtShort(r.date))}</span><span class="hbo">${esc(r.opp || '')}</span></div></div>`;
+  }).join('') + '<div class="hbline" data-h-line></div>';
+}
+/** Update everything that depends on the line and side. */
+function paintHCard(el, card, st) {
+  const bin = !!card.def.binary, vals = card.rows.map(r => r.value), line = bin ? 0.5 : st.line, s = lineStats(vals, line), u = n => (card.unit === 'game' ? (n === 1 ? 'game' : 'games') : (n === 1 ? 'match' : 'matches'));
+  const q = x => el.querySelector(x);
+  const lbl = bin ? { over: 'Yes', under: 'No' } : { over: `Over ${line}`, under: `Under ${line}` };
+  const main = st.side === 'both' || st.side === 'both' ? null : (st.side === 'under' || st.side === 'no') ? 'under' : 'over';
+  q('[data-h-pct]').innerHTML = !s.n ? 'n/a' : main ? `${s[main + 'Pct']}%` : `<span class="hpo">${s.overPct}%</span><span class="hpu">${s.underPct}%</span>`;
+  q('[data-h-stat]').innerHTML = !s.n ? 'No data for this period.' : main
+    ? `<b>${esc(lbl[main])}</b>: ${s[main]} of ${s.n} ${u(s.n)}${bin ? '' : ` · average ${s.avg}`}`
+    : `<b>${esc(lbl.over)}</b> ${s.overPct}% (${s.over}/${s.n}) · <b>${esc(lbl.under)}</b> ${s.underPct}% (${s.under}/${s.n})${bin ? '' : ` · average ${s.avg}`}`;
+  q('[data-h-push]').innerHTML = s.push && !bin ? ' ' + infoTag('push', `${s.push} on the line`, { n: s.push, cls: 'neutral' }) : '';
+  const max = Math.max(1, ...vals.map(v => (typeof v === 'number' ? v : 0)), bin ? 1 : line + 0.5);
+  el.querySelectorAll('.hb').forEach(b => {
+    const v = card.rows[Number(b.dataset.i)].value, col = b.querySelector('.hbcol');
+    const res = v > line ? 'ov' : v < line ? 'un' : 'pu';
+    const cls = main ? (res === 'pu' ? 'pu' : (res === 'ov') === (main === 'over') ? 'hit' : 'miss') : res;
+    b.className = `hb ${cls}${card.def.parts ? ' stacked' : ''}`;
+    col.style.height = `calc(var(--barh) * ${Math.min(1, Math.max(0, v) / max)})`;
+  });
+  const ln = q('[data-h-line]'); if (ln) { ln.hidden = bin; ln.style.bottom = `calc(var(--barbase) + var(--barh) * ${Math.min(1, Math.max(0, line / max))})`; }
+  const rg = q('[data-h-range]'), num = q('[data-h-num]');
+  if (rg) { if (line < Number(rg.min)) rg.min = Math.floor(line - 0.5) + 0.5; if (line > Number(rg.max)) rg.max = Math.ceil(line); rg.value = line; }
+  if (num && Number(num.value) !== line && !st._typing) num.value = line;
+  el.querySelectorAll('[data-h-side]').forEach(x => { const on = x.dataset.hSide === st.side; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+}
+/** Delegated controls for every card under root. reg: Map cid -> { card, st }. onDetail(cid). Attached once per container. */
+function wireHCards(root, reg, onDetail) {
+  root._h = { reg, onDetail }; if (root._hWired) return; root._hWired = true;
+  const get = el => { const c = el.closest('.hcard'); return c ? [c, root._h.reg.get(c.dataset.cid)] : [null, null]; };
+  const setLine = (c, e, v) => { if (!Number.isFinite(v)) return; e.st.line = v; e.st.userLine = true; paintHCard(c, e.card, e.st); };
+  root.addEventListener('input', ev => {
+    const t = ev.target; const [c, e] = get(t); if (!e) return;
+    if (t.matches('[data-h-range]')) setLine(c, e, Number(t.value));
+    else if (t.matches('[data-h-num]')) { const v = parseFloat(String(t.value).replace(',', '.')); if (Number.isFinite(v)) { e.st._typing = true; setLine(c, e, v); e.st._typing = false; } }
+  });
+  root.addEventListener('change', ev => { const t = ev.target; if (!t.matches('[data-h-num]')) return; const [c, e] = get(t); if (e) t.value = e.st.line; });
+  root.addEventListener('click', ev => {
+    const t = ev.target; const [c, e] = get(t); if (!e) return;
+    const sd = t.closest('[data-h-side]'); if (sd) { e.st.side = sd.dataset.hSide; paintHCard(c, e.card, e.st); return; }
+    const sp = t.closest('[data-h-step]'); if (sp) { setLine(c, e, half(e.st.line + Number(sp.dataset.hStep))); return; }
+    if (t.closest('[data-h-detail]')) root._h.onDetail(c.dataset.cid);
+  });
+}
+
+return { lineStats, cardHtml, paintHCard, wireHCards };
+})();
 __m['v-hiwi'] = (() => {
-// Hiwi's Section: a ready-made shortlist for someone new to sports research. No team or player needs choosing: PropLab scans the
-// games of the current gameweek (each league's current round / the current NFL week; see gameweek.js), or all upcoming games on request, and shows, per team or player and market, the most ambitious research line that reached the chosen
-// percentage this season. Same engine as Plays (scanner.js). Ordered so that bigger samples beat tiny "perfect" records.
-const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, leaguesPresent, LEAGUE_NAMES } = __m['data'];
-const { marketDesc } = __m['markets'];
-const { scanOne } = __m['scanner'];
-const { fbTeamMarkets, fbPlayers, fbPlayerMarkets, fbLines, fbScope, hasPlayerLogs, fbSeason } = __m['fbscan'];
-const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, teamGameRows } = __m['nfl-data'];
-const { NFL_MARKETS, NFL_TEAM_MARKETS, nflLines } = __m['nfl-markets'];
-const { playerMarkets } = __m['nfl-scan'];
-const { playCard, wireCards } = __m['playcard'];
+// Hiwi's Section: the main research page for football and NFL. Choose fixtures, teams, players and markets; every selected subject x market
+// gets ONE card with its own line (slider + typed number), Over / Under / Both, the hit rate and a mini bar chart of every match in the
+// chosen period (Season / Last 5 / Last 10 / Last 20). Nothing is filtered by hit rate. Only markets recorded by the league's data are offered.
+const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, leaguesPresent, LEAGUE_NAMES, teamsOfLeague, fxSortLocal } = __m['data'];
+const { fbPlayers, hasPlayerLogs, fbSeason } = __m['fbscan'];
+const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, teamGameRows, GROUP_NAMES } = __m['nfl-data'];
 const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
-const { $, $$, esc, koUK, koLocal, fmtDay, fixtureId } = __m['util'];
+const { $, $$, esc, koUK, koLocal, fmtDay, fixtureId, fmtKick, tzNow } = __m['util'];
 const { normName, teamAliases } = __m['teams'];
-const { prefs, savePrefs } = __m['shared'];
+const { getLeague, setLeague } = __m['shared'];
 const { footballGameweeks, nflWeek } = __m['gameweek'];
+const { FB_GROUPS, NFL_GROUPS, fbDef, nflDef, fbSupported, startLine, SCOPE_LABEL } = __m['hiwi-markets'];
+const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
+const { infoTag } = __m['info'];
 
-const ALL = '';
-// side: 'all' | 'over' | 'under' (Yes-only markets such as BTTS or anytime touchdown count as Over)
-// when: 'gw' = This Gameweek (default every time the page opens) | 'all' = All Upcoming
-const fb = { league: ALL, ent: ALL, market: ALL, q: '', side: 'all', when: 'gw' };
-const nf = { ent: ALL, market: ALL, q: '', side: 'all', when: 'gw' };
-const MIN_N = { football: 5, nfl: 4 };
-// Wilson score lower bound (95%): rewards a high hit rate over a bigger sample more than a "perfect" record over very few games.
+// Kept for compatibility with earlier tests and pages: Wilson score lower bound (95%).
 const wilson = (hits, n, z = 1.96) => { if (!n) return 0; const p = hits / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; };
-const kickText = f => { const k = koLocal(f); return `${fmtDay(k.ymd)}, ${k.hm ? `${k.hm} ${k.abbr}` : 'kick-off time TBC'}`; };
+
+const PERIODS = [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20']];
+const mk = () => ({ when: 'gw', fx: new Set(), teams: new Set(), players: new Set(), markets: new Set(), period: 'season', tq: '', pq: '', ppos: '' });
+const S = { football: mk(), nfl: mk() };
+const cardState = new Map(); // `${sport}|${cid}` -> { line, side, userLine } kept while the visitor stays on the site
+const PAGE = 24;
+const short = n => { const w = String(n).replace(/\b(FC|AFC|CF|SC)\b/g, '').trim().split(/\s+/); return (w.length > 1 && w[0].length <= 3 ? w[1] : w[0]).slice(0, 3).toUpperCase(); };
+const match = (q, terms) => { const n = normName(q); if (!n) return true; return terms.some(t => { const x = normName(t); return x.includes(n) || x.split(' ').some(w => w.startsWith(n)); }); };
+const kickTxt = f => { const k = koLocal(f); return `${fmtDay(k.ymd)}, ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
 
 async function viewHiwi(root, r, sport) {
-  const S = sport === 'nfl' ? nf : fb, now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd;
-  S.when = 'gw'; // This Gameweek whenever the page is opened
-  const ready = sport === 'nfl' ? nfl.status === 'ready' : store.status === 'ready';
-  root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Ready-made ideas for this gameweek. Change the percentage if you like: the list updates by itself.</p></div></div>
+  const st = S[sport], nflMode = sport === 'nfl', now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd;
+  st.when = 'gw'; // This Gameweek every time the page opens
+  const ready = nflMode ? nfl.status === 'ready' : store.status === 'ready';
+  root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Choose fixtures, teams${nflMode || hasPlayerLogs(getLeague()) ? ', players' : ''} and markets. Each result card has its own line: move it and the hit rate and bars update.</p></div></div>
     <div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
   if (!ready) return;
   const hf = $('#hf', root), out = $('#hout', root);
-  let reg = [], players = [], items = [], shownN = 30;
 
-  // ---------- what can be chosen ----------
-  const fbLeagues = () => (fb.league ? [fb.league] : leaguesPresent());
-  const fbWeeks = () => footballGameweeks(upcomingFixtures(), store.rounds, todayUK, fbLeagues());
-  const fbFixtures = () => (fb.when === 'all' ? upcomingFixtures().filter(f => !fb.league || f.league === fb.league)
-    : [...fbWeeks().values()].flatMap(w => w.fixtures).sort((a, b) => { const x = koUK(a), y = koUK(b); return (x.ymd + (x.hm || '99:99')).localeCompare(y.ymd + (y.hm || '99:99')); }));
-  const nflWk = () => nflWeek(nflUpcoming(now));
-  const nflGames = () => (nf.when === 'all' ? nflUpcoming(now) : nflWk()?.games || []);
-  const dShort = d => fmtDay(d).replace(/^\w+ /, '');
-  const weekHtml = () => `<div class="xs muted hiwiweek"><b>This Gameweek</b><ul>${weekText().map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
-  const weekText = () => {
-    if (sport === 'nfl') { const w = nflWk(); return [w ? `NFL ${w.season} — ${w.label}` : 'No NFL games left this season']; }
-    return [...fbWeeks().entries()].map(([lg, w]) => {
-      if (w.kind === 'dates' && !w.fixtures.length) return `${LEAGUE_NAMES[lg]} — no upcoming fixtures published yet`;
-      const base = w.kind === 'round' ? `${LEAGUE_NAMES[lg]} — Matchday ${w.round}${w.to ? ` (to ${dShort(w.to)})` : ''}` : `${LEAGUE_NAMES[lg]} — next match days ${w.from === w.to ? dShort(w.from) : `${dShort(w.from)}–${dShort(w.to)}`} (by date: no official round data)`;
-      const left = w.fixtures.length ? '' : ' – no fixtures left';
-      const other = w.otherRounds?.length ? ` · ${w.otherRounds.length} rearranged game${w.otherRounds.length === 1 ? '' : 's'} from another round not included (see All Upcoming)` : '';
-      return base + left + other; });
+  // ---------- football ----------
+  let lg = nflMode ? 'nfl' : getLeague(); if (!nflMode && !leaguesPresent().includes(lg)) lg = leaguesPresent()[0];
+  let players = [];
+  // deep links from Fixtures / team pages: #/hiwi?fx=<fixture id> or ?team=<slug>
+  const qfx = r.q.get('fx'), qteam = r.q.get('team');
+  if (!nflMode && qfx) { const f = store.fixtures.find(x => fixtureId(x) === qfx); if (f) { lg = f.league; setLeague(lg); st.fx = new Set([qfx]); st.when = 'all'; } }
+  if (!nflMode && qteam && store.teams.get(qteam)) { lg = store.teams.get(qteam).league; setLeague(lg); st.teams = new Set([qteam]); }
+  if (nflMode && qfx && nfl.gameById.get(qfx)) { st.fx = new Set([qfx]); st.when = 'all'; }
+const seasonCache = new Map();
+  const season = () => { const k = nflMode ? 'nfl' : lg; if (!seasonCache.has(k)) seasonCache.set(k, nflMode ? latestSeason() : fbSeason(lg)); return seasonCache.get(k); };
+
+  const fxScope = () => {
+    if (nflMode) { const up = nflUpcoming(now); return st.when === 'all' ? { list: up, label: 'All upcoming NFL games' } : (w => ({ list: w ? w.games : [], label: w ? `NFL ${w.season} — ${w.label}` : 'No NFL games left this season' }))(nflWeek(up)); }
+    const up = upcomingFixtures(lg);
+    if (st.when === 'all') return { list: up.slice().sort(fxSortLocal), label: `All upcoming ${leagueName(lg)} fixtures` };
+    const w = footballGameweeks(up, store.rounds, todayUK, [lg]).get(lg);
+    const label = w.kind === 'round' ? `${leagueName(lg)} — Matchday ${w.round}${w.fixtures.length ? '' : ': no fixtures left'}${w.otherRounds?.length ? ` (${w.otherRounds.length} rearranged game${w.otherRounds.length === 1 ? '' : 's'} from another round: see All Upcoming)` : ''}`
+      : w.fixtures.length ? `${leagueName(lg)} — next match days (by date: no official round data)` : `${leagueName(lg)} — no upcoming fixtures published yet`;
+    return { list: w.fixtures.slice().sort(fxSortLocal), label, fallback: w.kind === 'dates' };
+  };
+  const fxId = f => (nflMode ? f.id : fixtureId(f));
+  const fxName = f => (nflMode ? `${teamName(f.away)} at ${teamName(f.home)}` : `${f.home} v ${f.away}`);
+  const fxTeams = f => (nflMode ? [f.away, f.home] : [teamSlugOf(f.home), teamSlugOf(f.away)]);
+  const allTeams = () => (nflMode ? [...nfl.teams.values()].map(t => ({ id: t.abbr, name: t.name, terms: [t.abbr, t.name, t.name.split(' ').pop()] }))
+    : teamsOfLeague(lg).map(t => ({ id: t.slug, name: t.name, terms: [t.name, ...teamAliases(t.name)] }))).sort((a, b) => a.name.localeCompare(b.name));
+  const teamLabel = id => (nflMode ? teamName(id) : store.teams.get(id)?.name || id);
+  const hasPlayers = () => nflMode || hasPlayerLogs(lg);
+  const supported = () => {
+    if (nflMode) return new Set(NFL_GROUPS.flatMap(([, ks]) => ks));
+    const cs = season(); const trows = teamsOfLeague(lg).flatMap(t => teamRowsFor(t.slug).filter(x => x.league === lg && x.season === cs));
+    return fbSupported(trows, players.flatMap(p => p.rows.filter(x => x.season === cs)));
+  };
+  const defOf = k => (nflMode ? nflDef(k) : fbDef(k));
+  const GROUPS = () => (nflMode ? NFL_GROUPS : FB_GROUPS);
+  const playerPool = () => {
+    const sel = new Set([...st.teams, ...[...st.fx].flatMap(id => { const f = fxScope().list.find(x => fxId(x) === id) || (nflMode ? nfl.gameById.get(id) : store.fixtures.find(x => fixtureId(x) === id)); return f ? fxTeams(f) : []; })]);
+    if (nflMode) return nfl.players.filter(p => p.current && p.seasons.includes(season()) && (sel.size ? sel.has(p.team) : true) && (!st.ppos || p.group === st.ppos)).map(p => ({ id: p.id, name: p.name, team: p.team, sub: `${p.pos}, ${p.team}`, p }));
+    return players.filter(p => (sel.size ? sel.has(p.clubSlug) : true)).map(p => ({ id: p.id, name: p.name, team: p.clubSlug, sub: p.team, p }));
   };
 
-  // Suggestions: [value, label, search terms]. Teams carry their common spellings and abbreviations (teams.js aliases; NFL: abbreviation,
-  // nickname and city). Only what can actually be scanned with the chosen market is offered (no players for a team-only market).
-  const entities = () => {
-    if (sport === 'nfl') {
-      const mk = S.market ? [...NFL_MARKETS, ...NFL_TEAM_MARKETS].find(m => m.key === S.market) : null, teamOnly = mk && !mk.for, grp = mk?.for || null;
-      const gs = nflGames(), teams = [...new Set(gs.flatMap(g => [g.away, g.home]))].sort((a, b) => teamName(a).localeCompare(teamName(b)));
-      const tTerms = a => { const n = teamName(a), w = n.split(' '); return [a, n, w[w.length - 1], w.slice(0, -1).join(' ')]; };
-      const ps = teamOnly ? [] : nfl.players.filter(p => p.current && p.seasons.includes(latestSeason()) && teams.includes(p.team) && (!grp || grp.includes(p.group))).sort((a, b) => a.name.localeCompare(b.name));
-      return { games: gs.map(g => ['g:' + g.id, `${teamName(g.away)} at ${teamName(g.home)} · ${kickText(g)}`, [...tTerms(g.away), ...tTerms(g.home)]]), teams: teams.map(t => ['t:' + t, teamName(t), tTerms(t)]),
-        players: ps.map(p => ['p:' + p.id, `${p.name} (${p.pos}, ${p.team})`, [p.name]]) };
-    }
-    const fs = fbFixtures(); const teams = [...new Map(fs.flatMap(f => [[teamSlugOf(f.home), f.home], [teamSlugOf(f.away), f.away]])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
-    const slugs = new Set(teams.map(t => t[0]));
-    const pmk = S.market && fbPlayerMarkets(players).some(m => m.key === S.market), tmk = S.market && !pmk;
-    return { games: fs.map(f => ['m:' + fixtureId(f), `${f.home} v ${f.away} · ${kickText(f)}`, [...teamAliases(f.home), ...teamAliases(f.away)]]), teams: pmk ? [] : teams.map(([s, n]) => ['t:' + s, n, teamAliases(n)]),
-      players: tmk ? [] : players.filter(p => slugs.has(p.clubSlug)).sort((a, b) => a.name.localeCompare(b.name)).map(p => ['p:' + p.id, `${p.name} (${p.team})`, [p.name]]) };
-  };
-  // Live suggestions while typing: whole-word prefix matches first, then anywhere in the name; accents and case ignored.
-  const suggest = q => {
-    const n = normName(q); if (!n) return [];
-    const ent = entities(), out = [];
-    for (const [grp, list] of [['Teams', ent.teams], ['Players', ent.players], [sport === 'nfl' ? 'Games' : 'Matches', ent.games]]) {
-      for (const [v, l, terms] of list) {
-        const ts = [l, ...(terms || [])].map(normName); let sc = 0;
-        for (const t of ts) { if (t === n) sc = Math.max(sc, 3); else if (t.startsWith(n) || t.split(' ').some(w => w.startsWith(n))) sc = Math.max(sc, 2); else if (t.includes(n)) sc = Math.max(sc, 1); }
-        if (sc) out.push({ v, l, grp, sc });
-      }
-    }
-    return out.sort((a, b) => b.sc - a.sc || ['Teams', 'Players', 'Matches', 'Games'].indexOf(a.grp) - ['Teams', 'Players', 'Matches', 'Games'].indexOf(b.grp) || a.l.localeCompare(b.l)).slice(0, 25);
-  };
-  const entLabel = v => { const e = entities(); return [...e.games, ...e.teams, ...e.players].find(x => x[0] === v)?.[1] || ''; };
-  const marketList = () => (sport === 'nfl' ? [...NFL_MARKETS, ...NFL_TEAM_MARKETS].map(m => [m.key, m.label])
-    : (fb.league ? [fb.league] : leaguesPresent()).flatMap(lg => fbTeamMarkets(lg)).concat(players.length ? fbPlayerMarkets(players) : []).reduce((a, m) => (a.some(x => x[0] === m.key) ? a : [...a, [m.key, m.label]]), []));
-
-  const drawFilters = () => {
-    const ent = entities();
-    const ms = marketList(); if (S.market && !ms.some(m => m[0] === S.market)) S.market = ALL;
-    const allEnt = [...ent.games, ...ent.teams, ...ent.players]; if (S.ent && !allEnt.some(e => e[0] === S.ent)) S.ent = ALL;
-    hf.innerHTML = `<div class="field"><label for="hsport">Sport</label><select class="in" id="hsport"><option value="football" ${sport !== 'nfl' ? 'selected' : ''}>Football ⚽</option><option value="nfl" ${sport === 'nfl' ? 'selected' : ''}>American Football 🏈</option></select></div>
-      <div class="field"><label for="hleague">League</label><select class="in" id="hleague">${sport === 'nfl' ? '<option value="nfl" selected>NFL</option>' : `<option value="">All Leagues</option>${leaguesPresent().map(l => `<option value="${l}" ${l === fb.league ? 'selected' : ''}>${esc(LEAGUE_NAMES[l])}</option>`).join('')}`}</select>
-        <div class="seg hside" id="hwhen" role="group" aria-label="Fixture dates" style="margin-top:6px">${[['gw', 'This Gameweek'], ['all', 'All Upcoming']].map(([v, l]) => `<button type="button" data-v="${v}" class="${S.when === v ? 'on' : ''}" aria-pressed="${S.when === v}">${l}</button>`).join('')}</div></div>
-      <div class="field"><label for="hq">Teams/Match/Player</label>
-        <div class="combo" id="hcombo"><input class="in" id="hq" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="hsug" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
-          placeholder="All Teams, Matches &amp; Players – type a name" value="${esc(S.ent ? entLabel(S.ent) : S.q)}" aria-label="Search teams, matches and players">
-          <button type="button" class="combo-x" id="hclear" aria-label="Clear the search" ${S.ent || S.q ? '' : 'hidden'}>×</button><ul class="combo-list" id="hsug" role="listbox" hidden></ul></div>
-        <span class="xs muted" id="hsel">${S.ent ? `Showing only: ${esc(entLabel(S.ent))}` : 'Showing: All Teams, Matches &amp; Players'}</span></div>
-      <div class="field"><label for="hmk">Market</label><select class="in" id="hmk"><option value="">All Markets</option>${ms.map(([k, l]) => `<option value="${esc(k)}" ${k === S.market ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
-        <div class="seg hside" id="hside" role="group" aria-label="Over or Under" style="margin-top:6px">${[['all', 'All'], ['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-v="${v}" class="${S.side === v ? 'on' : ''}" aria-pressed="${S.side === v}">${l}</button>`).join('')}</div></div>
-      <div class="field"><label for="hpct">Percentage <b id="hpctv">${prefs.minPct}%</b></label><input id="hpct" type="range" min="60" max="100" step="5" value="${prefs.minPct}" aria-label="Minimum historical hit rate"><span class="xs muted">The minimum share of this season's games where it happened. Not a prediction.</span></div>`;
+  // ---------- selection area ----------
+  const draw = () => {
+    const sc = fxScope(), ids = new Set(sc.list.map(fxId));
+    const days = new Map(); for (const f of sc.list) { const k = koLocal(f).ymd; if (!days.has(k)) days.set(k, []); days.get(k).push(f); }
+    const tms = allTeams().filter(t => match(st.tq, t.terms));
+    const pool = hasPlayers() ? playerPool() : []; const shownP = pool.filter(p => match(st.pq, [p.name])).sort((a, b) => a.name.localeCompare(b.name));
+    const sup = supported(); for (const k of [...st.markets]) if (!sup.has(k)) st.markets.delete(k);
+    const nSelFx = [...st.fx].filter(id => ids.has(id)).length;
+    hf.innerHTML = `<div class="ctl"><div class="field"><label for="hsport">Sport</label><select class="in" id="hsport"><option value="football" ${nflMode ? '' : 'selected'}>Football ⚽</option><option value="nfl" ${nflMode ? 'selected' : ''}>American Football 🏈</option></select></div>
+      <div class="field"><label for="hleague">League</label><select class="in" id="hleague">${nflMode ? '<option value="nfl" selected>NFL</option>' : leaguesPresent().map(l => `<option value="${l}" ${l === lg ? 'selected' : ''}>${esc(LEAGUE_NAMES[l])}</option>`).join('')}</select></div></div>
+      <details class="hsel" id="hfx" ${st.fxOpen === false ? '' : 'open'}><summary><b>Fixtures</b> <span class="muted small">${nSelFx ? `${nSelFx} selected` : 'none selected'}</span></summary>
+        <div class="seg hside" id="hwhen" role="group" aria-label="Fixture dates">${[['gw', 'This Gameweek'], ['all', 'All Upcoming']].map(([v, l]) => `<button type="button" data-v="${v}" class="${st.when === v ? 'on' : ''}" aria-pressed="${st.when === v}">${l}</button>`).join('')}</div>
+        <p class="xs muted hiwiweek" style="margin:6px 0">${esc(sc.label)}${sc.fallback ? ' ' + infoTag('datesfallback', 'By date', { cls: 'neutral' }) : ''} · times in ${esc(tzNow())}</p>
+        <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="fx">Select all</button><button type="button" class="chip" data-none="fx">Clear all</button></div>
+        <div class="hlist">${[...days.entries()].map(([d, fs]) => `<div class="hday">${esc(fmtDay(d))}</div>${fs.map(f => `<label class="hcheck"><input type="checkbox" data-pick="fx" value="${esc(fxId(f))}" ${st.fx.has(fxId(f)) ? 'checked' : ''}><span><b>${esc(koLocal(f).hm || 'TBC')}</b> ${esc(fxName(f))}</span></label>`).join('')}`).join('') || '<p class="xs muted">No fixtures in this range.</p>'}</div></details>
+      <details class="hsel" id="htm" ${st.tmOpen ? 'open' : ''}><summary><b>Teams</b> <span class="muted small">${st.teams.size ? `${st.teams.size} selected` : 'none selected'}</span></summary>
+        <input class="in" id="htq" type="search" placeholder="Search teams (e.g. spurs, man u${nflMode ? ', KC' : ''})" value="${esc(st.tq)}" aria-label="Search teams" autocomplete="off">
+        <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="teams">Select all${st.tq ? ' shown' : ''}</button><button type="button" class="chip" data-none="teams">Clear all</button></div>
+        <div class="hlist hgrid">${tms.map(t => `<label class="hcheck"><input type="checkbox" data-pick="teams" value="${esc(t.id)}" ${st.teams.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}</span></label>`).join('') || `<p class="xs muted">No team matches "${esc(st.tq)}".</p>`}</div></details>
+      ${hasPlayers() ? `<details class="hsel" id="hpl" ${st.plOpen ? 'open' : ''}><summary><b>Players</b> <span class="muted small">${st.players.size ? `${st.players.size} selected` : 'none selected'}</span></summary>
+        <p class="xs muted" style="margin:4px 0">${st.teams.size || st.fx.size ? 'Players of the selected teams and fixtures.' : 'Select teams or fixtures to narrow the list, or search by name.'}</p>
+        ${nflMode ? `<div class="seg wrap" id="hpos">${[['', 'All'], ['qb', 'QB'], ['rb', 'RB'], ['wr', 'WR'], ['te', 'TE'], ['k', 'K'], ['def', 'Defence']].map(([v, l]) => `<button type="button" data-v="${v}" class="${st.ppos === v ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
+        <input class="in" id="hpq" type="search" placeholder="Search players" value="${esc(st.pq)}" aria-label="Search players" autocomplete="off" style="margin-top:6px">
+        <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="players">Select all shown${shownP.length > 200 ? ' (first 200)' : ''}</button><button type="button" class="chip" data-none="players">Clear all</button></div>
+        <div class="hlist">${shownP.slice(0, 200).map(p => `<label class="hcheck"><input type="checkbox" data-pick="players" value="${esc(p.id)}" ${st.players.has(p.id) ? 'checked' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.sub)}</span></span></label>`).join('') || '<p class="xs muted">No players match.</p>'}${shownP.length > 200 ? `<p class="xs muted">${shownP.length - 200} more: search or choose teams to narrow the list.</p>` : ''}</div></details>` : ''}
+      <div class="field"><label>Markets</label><button type="button" class="btn hmkbtn" id="hmkbtn"><b>Select markets</b> <span class="muted">(${st.markets.size} selected)</span></button>
+        ${st.markets.size ? `<div class="hmkchips">${[...st.markets].map(k => `<span class="chip on">${esc(defOf(k).label)} <span class="xs muted">${esc(SCOPE_LABEL[defOf(k).scope])}</span></span>`).join('')}</div>` : ''}</div>
+      <div class="field"><label>Form period</label><div class="seg" id="hper" role="group" aria-label="Form period">${PERIODS.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(st.period) === String(v) ? 'on' : ''}" aria-pressed="${String(st.period) === String(v)}">${l}</button>`).join('')}</div></div>`;
   };
 
-  // ---------- building the shortlist ----------
-  const build = async () => {
-    items = [];
-    const pct = prefs.minPct, onlyMk = S.market, ent = S.ent, sides = S.side === 'all' ? ['over', 'under'] : [S.side];
-    const want = (kind, id) => !ent || ent === kind + ':' + id;
-    // the same team or player scanned once per build (All Upcoming lists each of them for many games)
-    const mkMemo = new Map(); const tmk = lg => { if (!mkMemo.has(lg)) mkMemo.set(lg, fbTeamMarkets(lg).filter(m => !onlyMk || m.key === onlyMk)); return mkMemo.get(lg); };
-    let pmCache = null; const pmk = () => (pmCache ??= fbPlayerMarkets(players).filter(m => !onlyMk || m.key === onlyMk));
-    const memo = new Map(); const scanM = (key, rows, ms, o) => { if (!memo.has(key)) memo.set(key, scanOne(rows, ms, o).results); return memo.get(key); };
-    if (sport === 'nfl') {
-      const season = latestSeason(); const o = { sides, minPct: pct, last: 0, season, types: ['R'], venue: '' };
-      for (const g of nflGames()) {
-        const matchSel = !ent || ent === 'g:' + g.id;
-        for (const abbr of [g.away, g.home]) {
-          const opp = abbr === g.home ? g.away : g.home;
-          if (matchSel || want('t', abbr)) {
-            const ms = NFL_TEAM_MARKETS.filter(m => !onlyMk || m.key === onlyMk);
-            if (ms.length) for (const x of scanM('t:' + abbr, teamGameRows(abbr), ms, { lines: nflLines, ...o })) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: teamName(abbr), scope: x.def.key === 'gpts' ? 'both teams' : `${teamName(abbr)} only`, subj: { team: abbr } });
-          }
-          for (const p of nfl.players.filter(q => q.current && q.team === abbr && q.seasons.includes(season))) {
-            if (!(matchSel || want('t', abbr) || want('p', p.id))) continue;
-            if (ent && ent.startsWith('p:') && ent !== 'p:' + p.id) continue;
-            const rows = (await loadGroup(p.group)).get(p.id) || []; const ms = playerMarkets(p, rows).filter(m => !onlyMk || m.key === onlyMk); if (!ms.length) continue;
-            for (const x of scanM('p:' + p.id, rows, ms, { lines: nflLines, ...o })) if (x.hr.n >= MIN_N.nfl) items.push({ x, game: g, who: p.name, scope: `${p.pos} · ${p.team}`, subj: { p, opp } });
-          }
+  // ---------- result cards ----------
+  let cards = [], shown = 0, reg = new Map(), notes = [];
+  const periodText = () => (st.period === 'season' ? `${nflMode ? `${season()} regular season` : `${leagueName(lg)} ${season()}${lg === 'mls' ? '' : '/' + String(season() + 1).slice(2)} season`}` : `last ${st.period} ${nflMode ? 'games' : 'matches'} this season`);
+  const cut = rows => (st.period === 'season' ? rows : rows.slice(0, st.period)); // rows newest first, current season only
+  const trCache = new Map(); // per build
+  const teamRowsNow = id => { const k = `${lg}|${id}`; if (!trCache.has(k)) { const cs = season(); trCache.set(k, nflMode ? teamGameRows(id).filter(x => x.season === cs && x.type === 'R') : teamRowsFor(id).filter(x => x.league === lg && x.season === cs)); } return trCache.get(k); };
+  const mkRows = (rows, def, label) => rows.map(x => ({ date: x.date, opp: label(x), value: def.get(x), raw: x })).filter(x => x.value !== null && x.value !== undefined).reverse();
+  async function build() {
+    trCache.clear();
+    const sc = fxScope(), fxObjs = [...st.fx].map(id => sc.list.find(x => fxId(x) === id) || (nflMode ? nfl.gameById.get(id) : store.fixtures.find(x => fixtureId(x) === id))).filter(Boolean);
+    const teamSet = new Set([...st.teams, ...fxObjs.flatMap(fxTeams)]);
+    const nextFx = id => sc.list.find(f => fxTeams(f).includes(id));
+    const out = []; notes = [];
+    for (const [, keys] of GROUPS()) for (const k of keys) {
+      if (!st.markets.has(k)) continue; const def = defOf(k); if (!def) continue;
+      if (def.scope === 'match') {
+        const fset = new Map(fxObjs.map(f => [fxId(f), f]));
+        for (const t of st.teams) { const f = nextFx(t); if (f) fset.set(fxId(f), f); else notes.push(`${teamLabel(t)}: no fixture in ${st.when === 'gw' ? 'this gameweek' : 'the published schedule'}, so no ${def.label} card.`); }
+        for (const f of [...fset.values()].sort((a, b) => (fxSortLocal(a, b)))) {
+          const [h, a] = fxTeams(f); const comb = new Map();
+          for (const id of [h, a]) for (const x of cut(teamRowsNow(id))) { const key = `${x.date}|${[id, nflMode ? x.opp : x.oppSlug].sort().join('|')}`; if (!comb.has(key)) comb.set(key, { ...x, _team: id }); }
+          const rows = [...comb.values()].sort((p, q) => (p.date < q.date ? 1 : -1));
+          out.push({ cid: `m|${fxId(f)}|${k}`, title: fxName(f), def, context: `${kickTxt(f)} · both teams' matches combined`, unit: nflMode ? 'game' : 'match', m: rows.length,
+            rows: mkRows(rows, def, x => `${short(teamLabel(x._team))}·${short(nflMode ? x.opp : x.opp)}`), detail: { rows, subjectId: h } });
         }
-      }
-    } else {
-      for (const f of fbFixtures()) {
-        const matchSel = !ent || ent === 'm:' + fixtureId(f), season = fbSeason(f.league);
-        const o = { lines: fbLines, sides, minPct: pct, last: 0, season, venue: '' };
-        for (const [name, slug] of [[f.home, teamSlugOf(f.home)], [f.away, teamSlugOf(f.away)]]) {
-          if (matchSel || want('t', slug)) {
-            const ms = tmk(f.league);
-            if (ms.length && !(ent && ent.startsWith('p:'))) for (const x of (tr => scanM(`t:${slug}:${tr.length}`, tr, ms, o))(teamRowsFor(slug).filter(r => r.date < f.date))) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: name, scope: fbScope(x.def.key, name), subj: { name, slug, type: 'team' } });
-          }
-          if (hasPlayerLogs(f.league)) {
-            const pm = pmk(); if (!pm.length) continue;
-            for (const p of players.filter(q => q.clubSlug === slug)) {
-              if (!(matchSel || want('t', slug) || want('p', p.id))) continue;
-              if (ent && ent.startsWith('p:') && ent !== 'p:' + p.id) continue;
-              for (const x of (pr => scanM(`p:${p.id}:${pr.length}`, pr, pm, { ...o, exposureKey: 'minutes' }))(p.rows.filter(r => r.date < f.date))) if (x.hr.n >= MIN_N.football) items.push({ x, fx: f, who: p.name, scope: p.team, subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
-            }
-          }
+      } else if (def.scope === 'player') {
+        if (!st.players.size) { notes.push(`${def.label}: choose players to see this market.`); continue; }
+        const pool = new Map(playerPool().concat(nflMode ? [] : players.map(p => ({ id: p.id, name: p.name, team: p.clubSlug, sub: p.team, p }))).map(p => [p.id, p]));
+        for (const id of st.players) {
+          const pl = pool.get(id) || (nflMode ? (x => x && { id, name: x.name, team: x.team, sub: `${x.pos}, ${x.team}`, p: x })(nfl.playerById.get(id)) : null); if (!pl) continue;
+          if (nflMode && def.for && !def.for.includes(pl.p.group)) continue; // e.g. no passing yards card for a receiver
+          const all = nflMode ? ((await loadGroup(pl.p.group)).get(id) || []).filter(x => x.season === season() && x.type === 'R') : pl.p.rows.filter(x => x.league === lg && x.season === season());
+          const rows = cut(all); const f = nextFx(pl.team);
+          out.push({ cid: `p|${id}|${k}`, title: pl.name, def, context: `${pl.sub}${f ? ' · next: ' + kickTxt(f) : ''}`, unit: nflMode ? 'game' : 'match', m: rows.length,
+            rows: mkRows(rows, def, x => `${x.home ? 'v' : '@'}${short(nflMode ? x.opp : x.opp)}`), detail: { rows: all, subjectId: id, player: pl } });
+        }
+      } else {
+        for (const id of [...teamSet].sort((a, b) => teamLabel(a).localeCompare(teamLabel(b)))) {
+          const all = teamRowsNow(id), rows = cut(all), f = nextFx(id);
+          out.push({ cid: `t|${id}|${k}`, title: teamLabel(id), def, context: f ? `next: ${fxName(f)}, ${kickTxt(f)}` : '', unit: nflMode ? 'game' : 'match', m: rows.length,
+            rows: mkRows(rows, def, x => `${x.home ? 'v' : '@'}${short(nflMode ? x.opp : x.opp)}`), detail: { rows: all, subjectId: id } });
         }
       }
     }
-    // ordering: strength of evidence (Wilson lower bound of the hit rate), then the actual hit rate, then kick-off time, then name
-    for (const it of items) { it.w = wilson(it.x.hr.hits, it.x.hr.n); const k = koUK(it.fx || it.game); it.ko = k.ymd + (k.hm || '99:99'); }
-    items.sort((a, b) => b.w - a.w || b.x.hr.hitPct - a.x.hr.hitPct || a.ko.localeCompare(b.ko) || a.who.localeCompare(b.who));
+    for (const c of out) c.period = periodText();
+    return out;
+  }
+  const stateFor = c => {
+    const key = `${sport}|${c.cid}`; let s = cardState.get(key);
+    const fresh = () => startLine(c.def.key, c.rows.map(x => x.value));
+    if (!s) { s = { line: c.def.binary ? 0.5 : fresh(), side: c.def.binary ? 'yes' : 'over', userLine: false }; cardState.set(key, s); }
+    else if (!s.userLine && !c.def.binary) s.line = fresh(); // the starting line follows the period until the visitor sets one
+    return s;
   };
-  const render = () => {
-    reg = [];
-    if (!items.length) {
-      const none = sport === 'nfl' ? !nflGames().length : !fbFixtures().length, gw = S.when === 'gw';
-      const what = sport === 'nfl' ? 'NFL games' : fb.league ? `${LEAGUE_NAMES[fb.league]} fixtures` : 'fixtures';
-      out.innerHTML = `${gw ? weekHtml() : ''}<div class="banner info hiwiempty"><b>${none ? (gw ? `No ${what} left in this gameweek.` : `No upcoming ${what}.`) : `Nothing reached ${prefs.minPct}% this season for this choice.`}</b> ${none ? (gw ? 'Next gameweek is not shown automatically. Choose All Upcoming to see later fixtures.' : 'New fixtures appear here once they are published.') : 'Try a lower percentage, or All Markets.'}</div>`; return; }
-    const unit = sport === 'nfl' ? 'game' : 'match';
-    const cards = items.slice(0, shownN).map(it => { const ev = it.fx || it.game;
-      const rnd = it.fx ? (it.fx.round ? ` · Matchday ${it.fx.round}` : '') : it.game.type === 'P' ? ' · Postseason' : ` · Week ${it.game.week}`;
-      const head = `<div class="hiwifx"><b>${esc(it.fx ? `${it.fx.home} v ${it.fx.away}` : `${teamName(it.game.away)} at ${teamName(it.game.home)}`)}</b><span>${esc((it.fx ? leagueName(it.fx.league) : 'NFL') + rnd)} · ${esc(kickText(ev))}</span></div>`;
-      const o = { head, who: it.who, scope: it.scope, unit, sample: sport === 'nfl' ? "this season's games" : "this season's matches", lines: it.x.def.binary ? null : (sport === 'nfl' ? nflLines(it.x.def) : fbLines(it.x.def)), minPct: prefs.minPct,
-        fmtOpp: sport === 'nfl' ? r => `${r.home ? 'v' : '@'} ${r.opp}` : null };
-      const ri = reg.push({ x: it.x, o, cur: it.x.line, it }) - 1; return playCard(it.x, { ...o, ri }); }).join('');
-    out.innerHTML = `${S.when === 'gw' ? weekHtml() : ''}<p class="small muted">${items.length} idea${items.length === 1 ? '' : 's'} from ${sport === 'nfl' ? 'NFL games' : 'matches'} ${S.when === 'gw' ? 'in this gameweek' : 'in all upcoming fixtures'}, each the hardest line that still happened in at least ${prefs.minPct}% of this season's ${unit === 'game' ? 'games' : 'matches'}. Bigger samples come first.</p>${cards}
-      ${items.length > shownN ? `<button class="btn" id="hmore">Show more (${items.length - shownN} left)</button>` : ''}
-      <p class="xs muted">These are past results only. They do not predict what happens next, and they are not bookmaker prices. Lines are research lines (typical sportsbook ranges), not checked against a live bookmaker. Use the slider on a card to try other lines.</p>`;
-    wireCards(out, reg, openDetails);
-    const more = $('#hmore', out); if (more) more.onclick = () => { shownN += 30; render(); };
+  const renderMore = () => {
+    const box = $('#hcards', out); if (!box) return;
+    const next = cards.slice(shown, shown + PAGE); shown += next.length;
+    box.insertAdjacentHTML('beforeend', next.map(c => { const s = stateFor(c); reg.set(c.cid, { card: c, st: s }); return cardHtml(c, s); }).join(''));
+    for (const c of next) { const el = box.querySelector(`.hcard[data-cid="${CSS.escape(c.cid)}"]`); paintHCard(el, c, reg.get(c.cid).st); }
+    const more = $('#hmore', out); if (more) { more.hidden = shown >= cards.length; more.textContent = `Show more (${cards.length - shown} more card${cards.length - shown === 1 ? '' : 's'})`; }
   };
-  const openDetails = async i => {
-    const e = reg[i]; if (!e) return; const s = e.it.subj, x = e.x;
-    if (sport === 'nfl') {
-      if (s.team) return openGraphModal({ title: teamName(s.team), subtitle: `Team · ${x.def.label}`, desc: x.def.desc, ladder: () => nflLines(x.def), panel: { key: 'hiwi:' + s.team, markets: [x.def], rows: teamGameRows(s.team), subject: 'team', subjectId: s.team, unit: 'game', typesControl: true, noValueLink: true, init: { market: x.def.key, side: x.side, line: e.cur, last: 'season', venue: '', types: 'R' }, lastOptions: [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']] } });
-      const rows = (await loadGroup(s.p.group)).get(s.p.id) || [];
-      return openGraphModal({ title: s.p.name, subtitle: `${s.p.pos} · ${teamName(s.p.team)} · ${x.def.label}`, desc: x.def.desc, ladder: () => nflLines(x.def), panel: { key: 'hiwi:' + s.p.id, markets: [x.def], rows, subject: 'player', subjectId: s.p.id, unit: 'game', typesControl: true, noValueLink: true, init: { market: x.def.key, side: x.side, line: e.cur, last: 'season', venue: '', types: 'R' }, lastOptions: [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']] } });
-    }
-    const isP = s.type === 'player', rows = isP ? players.find(p => p.id === s.id)?.rows || [] : teamRowsFor(s.slug);
-    openGraphModal({ title: s.name, subtitle: `${isP ? s.club + ' · Player' : 'Team'} · ${x.def.label}`, desc: marketDesc(x.def.key), ladder: () => fbLines(x.def),
-      panel: { key: 'hiwi:' + s.name + x.def.key, markets: [x.def], rows, exposureKey: isP ? 'minutes' : null, hasMinutes: isP, subject: isP ? 'player' : 'team', subjectId: isP ? s.id : s.slug, init: { market: x.def.key, side: x.side, line: e.cur, last: 'season', venue: '' }, lastOptions: [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']] } });
+  let io = null;
+  const refresh = async () => {
+    const nothing = !st.markets.size || (!st.fx.size && !st.teams.size && !st.players.size);
+    if (nothing) { out.innerHTML = `${seasonNote()}<div class="banner info"><b>${!st.markets.size ? 'Choose at least one market' : 'Choose fixtures, teams or players'}.</b> ${!st.markets.size ? 'Tap Select markets.' : 'Tick them above.'} Every choice gets one card with its own adjustable line and bar chart.</div>`; return; }
+    out.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>';
+    cards = await build(); shown = 0; reg = new Map();
+    out.innerHTML = `${seasonNote()}<p class="small muted" id="hcount">${cards.length} result card${cards.length === 1 ? '' : 's'}: one per ${[...new Set(cards.map(c => SCOPE_LABEL[c.def.scope].toLowerCase()))].join(' / ')} and market. Bars: green = hit, red = miss for the side you choose.</p>
+      ${notes.length ? `<details class="xs muted"><summary>${notes.length} note${notes.length === 1 ? '' : 's'}</summary><ul>${[...new Set(notes)].map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
+      <div id="hcards"></div><button type="button" class="btn" id="hmore" hidden></button>
+      <p class="xs muted">Past results only: these are not predictions or bookmaker prices.</p>`;
+    wireHCards($('#hcards', out), reg, openDetails);
+    renderMore();
+    $('#hmore', out).onclick = renderMore;
+    if (io) io.disconnect();
+    if ('IntersectionObserver' in window) { io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting) && shown < cards.length) renderMore(); }, { rootMargin: '400px' }); io.observe($('#hmore', out)); }
   };
-  const refresh = async () => { out.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>'; shownN = 30; await build(); render(); };
+  const seasonNote = () => `<p class="xs muted hnote">${nflMode ? `Statistics use completed regular-season games from the ${season()} NFL season.` : 'Statistics are based on available completed matches from the current season.'} As more ${nflMode ? 'games' : 'matches'} are played, sample sizes increase and the figures become more informative, but past results never guarantee future ones. ${infoTag('season', 'About samples', { cls: 'neutral' })}</p>`;
+  const openDetails = cid => {
+    const e = reg.get(cid); if (!e) return; const c = e.card, d = c.def;
+    const isP = d.scope === 'player';
+    const lastMap = e.st && st.period !== 'season' ? st.period : 'season';
+    openGraphModal({ title: c.title, subtitle: `${SCOPE_LABEL[d.scope]} · ${d.label}`, desc: d.desc || '', ladder: null,
+      panel: { key: 'hiwi:' + cid, markets: [d], rows: c.detail.rows, exposureKey: isP && !nflMode ? 'minutes' : null, hasMinutes: isP && !nflMode, subject: isP ? 'player' : 'team', subjectId: c.detail.subjectId,
+        unit: nflMode ? 'game' : 'match', noValueLink: nflMode, ...(nflMode ? { typesControl: true } : {}),
+        init: { market: d.key, side: e.st.side === 'under' || e.st.side === 'no' ? 'under' : 'over', line: e.st.line, last: lastMap, venue: '', ...(nflMode ? { types: 'R' } : {}) },
+        lastOptions: [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20']] } });
+  };
 
+  // ---------- market popup ----------
+  const openMarkets = () => {
+    const sup = supported(); const modal = document.createElement('div'); modal.className = 'modal hmkmodal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'Select markets');
+    const groups = GROUPS().map(([g, ks]) => [g, ks.filter(k => sup.has(k)).map(defOf).filter(Boolean)]).filter(([, ds]) => ds.length);
+    modal.innerHTML = `<div class="sheet"><div class="row" style="border:0;padding:0;align-items:center"><h2 style="margin:0">Select markets</h2><button type="button" class="btn" data-mdone><b>Done</b></button></div>
+      <p class="xs muted">${nflMode ? 'NFL markets with recorded statistics.' : `Markets recorded for ${esc(leagueName(lg))} this season.`} Markets the data does not record are not listed.${!nflMode && !hasPlayerLogs(lg) ? ` No player statistics are published for ${esc(leagueName(lg))}, so there are no player markets.` : ''}</p>
+      <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-mclear>Clear all</button></div>
+      ${groups.map(([g, ds]) => `<section class="hmkgrp"><h3>${esc(g)}</h3><div class="hgrid">${ds.map(d => `<label class="hcheck"><input type="checkbox" value="${esc(d.key)}" ${st.markets.has(d.key) ? 'checked' : ''}><span>${esc(d.label)} <span class="hscope s-${d.scope}">${esc(SCOPE_LABEL[d.scope])}</span></span></label>`).join('')}</div></section>`).join('')}
+      <button type="button" class="btn" data-mdone style="margin-top:12px"><b>Done</b></button></div>`;
+    document.body.appendChild(modal); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    const close = () => { modal.remove(); document.body.style.overflow = prev; draw(); refresh(); };
+    modal.addEventListener('change', ev => { const t = ev.target; if (t.type !== 'checkbox') return; t.checked ? st.markets.add(t.value) : st.markets.delete(t.value); });
+    modal.addEventListener('click', ev => { if (ev.target.closest('[data-mdone]')) close(); else if (ev.target.closest('[data-mclear]')) { st.markets.clear(); modal.querySelectorAll('input').forEach(i => { i.checked = false; }); } });
+  };
+
+  // ---------- events ----------
+  const remember = () => { st.fxOpen = $('#hfx', hf)?.open; st.tmOpen = $('#htm', hf)?.open; st.plOpen = $('#hpl', hf)?.open; };
+  hf.addEventListener('toggle', remember, true);
   hf.addEventListener('change', async e => {
     const t = e.target;
-    if (t.id === 'hsport') { location.hash = t.value === 'nfl' ? '#/nfl/hiwi' : '#/hiwi'; return; } // same page, other sport (header follows)
-    if (t.id === 'hleague') { if (sport !== 'nfl') { fb.league = t.value; fb.ent = ALL; fb.q = ''; } }
-    else if (t.id === 'hmk') { S.market = t.value; if (S.ent && !entLabel(S.ent)) { S.ent = ALL; S.q = ''; } } else if (t.id === 'hpct') { prefs.minPct = Number(t.value); savePrefs(); } else return;
-    drawFilters(); refresh();
+    if (t.id === 'hsport') { location.hash = t.value === 'nfl' ? '#/nfl/hiwi' : '#/hiwi'; return; }
+    if (t.id === 'hleague') { lg = t.value; setLeague(lg); st.fx.clear(); st.teams.clear(); st.players.clear(); st.tq = ''; st.pq = ''; players = await fbPlayers(lg); draw(); refresh(); return; }
+    if (t.dataset.pick) { const set = st[t.dataset.pick]; t.checked ? set.add(t.value) : set.delete(t.value); remember(); draw(); refresh(); }
   });
-  // ---------- autocomplete ----------
-  let sugItems = [], active = -1;
-  const showSug = () => {
-    const ul = $('#hsug', hf), inp = $('#hq', hf); const q = inp.value.trim();
-    if (!q || (S.ent && q === entLabel(S.ent))) { ul.hidden = true; inp.setAttribute('aria-expanded', 'false'); return; }
-    sugItems = suggest(q); active = -1;
-    let html = '', g = '';
-    for (const [i, x] of sugItems.entries()) { if (x.grp !== g) { g = x.grp; html += `<li class="combo-h" role="presentation">${esc(g)}</li>`; } html += `<li role="option" id="hsug${i}" data-i="${i}" class="combo-o">${esc(x.l)}</li>`; }
-    ul.innerHTML = html || `<li class="combo-none" role="presentation">No ${sport === 'nfl' ? 'team, game or player' : 'team, match or player'} matches "${esc(q)}"${S.when === 'gw' ? ' in this gameweek. Try All Upcoming.' : '.'}</li>`;
-    ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
-  };
-  const pick = i => { const x = sugItems[i]; if (!x) return; S.ent = x.v; S.q = ''; const inp = $('#hq', hf); inp.value = x.l; inp.blur(); $('#hsug', hf).hidden = true; inp.setAttribute('aria-expanded', 'false');
-    $('#hclear', hf).hidden = false; $('#hsel', hf).textContent = `Showing only: ${x.l}`; refresh(); };
-  // pointerdown fires before the input loses focus, so a tap works even while the iPhone keyboard is open
-  hf.addEventListener('pointerdown', e => { const o = e.target.closest('#hsug [data-i]'); if (o) { e.preventDefault(); pick(Number(o.dataset.i)); } });
-  hf.addEventListener('keydown', e => {
-    if (e.target.id !== 'hq') return; const opts = $$('#hsug [data-i]', hf);
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!opts.length) return; active = (active + (e.key === 'ArrowDown' ? 1 : opts.length - 1)) % opts.length; opts.forEach((o, k) => o.classList.toggle('on', k === active)); e.target.setAttribute('aria-activedescendant', opts[active].id); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (sugItems.length) pick(active >= 0 ? active : 0); }
-    else if (e.key === 'Escape') { $('#hsug', hf).hidden = true; }
-  });
-  hf.addEventListener('focusin', e => { if (e.target.id !== 'hq') return; showSug(); setTimeout(() => { try { e.target.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch { /* old browsers */ } }, 250); });
-  hf.addEventListener('focusout', e => { if (e.target.id === 'hq') setTimeout(() => { const ul = $('#hsug', hf); if (ul && document.activeElement?.id !== 'hq') ul.hidden = true; }, 150); });
   hf.addEventListener('click', e => {
-    if (e.target.closest('#hclear')) { S.ent = ALL; S.q = ''; const inp = $('#hq', hf); inp.value = ''; e.target.closest('#hclear').hidden = true; $('#hsug', hf).hidden = true; $('#hsel', hf).textContent = 'Showing: All Teams, Matches & Players'; inp.focus(); refresh(); return; }
-    const w = e.target.closest('#hwhen button'); if (w) { if (S.when !== w.dataset.v) { S.when = w.dataset.v; drawFilters(); refresh(); } return; }
-    const b = e.target.closest('#hside button'); if (!b) return; S.side = b.dataset.v; drawFilters(); refresh(); });
-  hf.addEventListener('input', e => {
-    if (e.target.id === 'hpct') { $('#hpctv', hf).textContent = e.target.value + '%'; }
-    if (e.target.id === 'hq') { S.q = e.target.value; $('#hclear', hf).hidden = !S.q && !S.ent; showSug();
-      if (!S.q.trim() && S.ent) { S.ent = ALL; $('#hsel', hf).textContent = 'Showing: All Teams, Matches & Players'; refresh(); } }
+    const t = e.target;
+    if (t.closest('#hmkbtn')) { openMarkets(); return; }
+    const w = t.closest('#hwhen button'); if (w) { st.when = w.dataset.v; draw(); refresh(); return; }
+    const p = t.closest('#hper button'); if (p) { st.period = p.dataset.v === 'season' ? 'season' : Number(p.dataset.v); draw(); refresh(); return; }
+    const pos = t.closest('#hpos button'); if (pos) { st.ppos = pos.dataset.v; draw(); return; }
+    const all = t.closest('[data-all]'), none = t.closest('[data-none]');
+    if (all || none) {
+      remember(); const kind = (all || none).dataset[all ? 'all' : 'none'];
+      if (none) st[kind].clear();
+      else if (kind === 'fx') fxScope().list.forEach(f => st.fx.add(fxId(f)));
+      else if (kind === 'teams') allTeams().filter(x => match(st.tq, x.terms)).forEach(x => st.teams.add(x.id));
+      else playerPool().filter(x => match(st.pq, [x.name])).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 200).forEach(x => st.players.add(x.id));
+      draw(); refresh();
+    }
   });
-  if (sport !== 'nfl' && !players.length) { for (const lg of leaguesPresent()) if (hasPlayerLogs(lg)) players = players.concat(await fbPlayers(lg)); }
-  drawFilters(); await refresh();
+  hf.addEventListener('input', e => {
+    const t = e.target; if (t.id !== 'htq' && t.id !== 'hpq') return;
+    st[t.id === 'htq' ? 'tq' : 'pq'] = t.value; const pos = t.selectionStart; remember(); draw();
+    const n = $('#' + t.id, hf); n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* search inputs on some browsers */ }
+  });
+  if (!nflMode) players = await fbPlayers(lg);
+  draw(); await refresh();
 }
 
 return { wilson, viewHiwi };
+})();
+__m['nfl-scan'] = (() => {
+// NFL shared helpers: which markets a player really has, scanning a player or team, and opponent (defence vs position) context.
+const { nfl, loadGroup, teamName, latestSeason, teamGameRows } = __m['nfl-data'];
+const { NFL_MARKETS, NFL_TEAM_MARKETS, marketsForGroup, nflLines } = __m['nfl-markets'];
+const { marketRows, marketsWithData } = __m['markets'];
+const { applyFilters } = __m['research'];
+const { hitRate } = __m['analytics'];
+const { scanOne } = __m['scanner'];
+const { esc } = __m['util'];
+
+const TYPES = t => (t === 'RP' ? ['R', 'P'] : ['R']);
+/** Markets offered for a player: his position group's markets that have recorded values in his rows. */
+const playerMarkets = (p, rows) => marketsWithData(rows, marketsForGroup(p.group));
+const scanPlayer = (p, rows, o) => scanOne(rows, playerMarkets(p, rows), { lines: nflLines, ...o });
+const scanTeam = (abbr, o) => scanOne(teamGameRows(abbr), NFL_TEAM_MARKETS, { lines: nflLines, ...o });
+const nflSampleText = (last, venue, types) => `${last === 'season' ? "this season's" : `last ${last}`} ${venue ? venue + ' ' : ''}games${types === 'RP' ? ' (incl. postseason)' : ''}`;
+
+/**
+ * Defence vs position: in each game against `def` (latest season, chosen game types), take the best value any opposing player of
+ * `group` recorded for market `m` (e.g. the top receiving-yards WR that day). Returns { n, hits, hitPct, avgTop, games } for line/side.
+ * Supplements, never replaces, the player's own hit rate. Players with no stat row in a game are not counted (nothing is filled in).
+ */
+async function oppContext(def, group, m, line, side, types = ['R']) {
+  const by = await loadGroup(group); const season = latestSeason(); const perGame = new Map();
+  for (const rows of by.values()) for (const r of rows) {
+    if (r.opp !== def || r.season !== season || !types.includes(r.type)) continue;
+    const v = m.get(r); if (v === null || v === undefined) continue;
+    const cur = perGame.get(r.game); if (cur === undefined || v > cur.v) perGame.set(r.game, { v, date: r.date, team: r.team });
+  }
+  const games = [...perGame.values()].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const hr = hitRate(games.map(g => g.v), line, side);
+  return { ...hr, games, season, def };
+}
+const oppContextHtml = (c, groupLabel, m, line, side) => !c || !c.n ? `<p class="xs muted">No ${esc(teamName(c?.def || ''))} games this season with recorded ${esc(groupLabel)} figures for this market yet.</p>`
+  : `<section class="sec"><h3>Opponent context: ${esc(teamName(c.def))} defence</h3><p class="small">In ${c.n} ${c.season} game${c.n === 1 ? '' : 's'} against ${esc(teamName(c.def))}, the top opposing ${esc(groupLabel)} went ${side === 'under' ? 'under' : 'over'} ${line} ${esc(m.label.toLowerCase())} in <b>${c.hits}</b> (${c.hitPct}%). Average top figure: ${c.avg}.</p>
+    <p class="xs muted">"Top opposing ${esc(groupLabel)}" = the opposing player at that position with the highest figure in each game. This describes the defence, not this player; use it alongside the player's own hit rate above.</p></section>`;
+
+/** Defence vs position table for a team (latest season, regular season): average per game allowed to each position group. */
+async function defenceTable(def) {
+  const season = latestSeason(); const spec = [['qb', 'pass_yds', 'QB passing yards'], ['qb', 'pass_td', 'QB passing TDs'], ['rb', 'rush_yds', 'RB rushing yards'], ['rb', 'rec_yds', 'RB receiving yards'], ['wr', 'rec_yds', 'WR receiving yards'], ['wr', 'rec', 'WR receptions'], ['te', 'rec_yds', 'TE receiving yards']];
+  const out = [];
+  for (const [g, key, label] of spec) {
+    const m = NFL_MARKETS.find(x => x.key === key); const by = await loadGroup(g);
+    const per = new Map(); // all 32 defences: game -> sum allowed
+    const sums = new Map();
+    for (const rows of by.values()) for (const r of rows) { if (r.season !== season || r.type !== 'R') continue; const v = m.get(r); if (v == null) continue; const k = r.opp + '|' + r.game; sums.set(k, (sums.get(k) || 0) + v); }
+    for (const [k, v] of sums) { const t = k.split('|')[0]; if (!per.has(t)) per.set(t, []); per.get(t).push(v); }
+    const avgs = [...per.entries()].map(([t, a]) => [t, a.reduce((s, x) => s + x, 0) / a.length, a.length]).sort((a, b) => b[1] - a[1]);
+    const me = avgs.find(x => x[0] === def); if (!me) continue;
+    out.push({ label, avg: Math.round(me[1] * 10) / 10, games: me[2], rank: avgs.findIndex(x => x[0] === def) + 1, of: avgs.length });
+  }
+  return { season, rows: out };
+}
+
+return { TYPES, playerMarkets, scanPlayer, scanTeam, nflSampleText, oppContext, oppContextHtml, defenceTable };
 })();
 __m['v-nfl'] = (() => {
 // NFL pages: Home, Search, Player, Team, Fixtures (games). Player-first: props come from genuine nflverse game logs only.
@@ -3141,19 +3401,15 @@ const teamBadge = a => `<span class="tbadge" aria-hidden="true">${esc(a)}</span>
 const kick = g => fmtKick(g);
 const LIVE_NFL = 4 * 3600e3; // an NFL game usually takes a little over 3 hours
 const statusCell = g => { const st = g.final ? 'final' : fxStatus(g, new Date(), LIVE_NFL); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
-const gameRow = g => `<a class="row" href="#/nfl/plays?game=${encodeURIComponent(g.id)}"><div class="l"><b>${esc(teamName(g.away))} at ${esc(teamName(g.home))}</b><span>${esc(kick(g))} · ${g.type === 'P' ? esc(g.round) + ' (postseason)' : 'Week ' + g.week}${g.neutral ? ' · neutral site' : ''}</span></div><div class="r">${statusCell(g)}</div></a>`;
+const gameRow = g => `<a class="row" href="#/nfl/hiwi?fx=${encodeURIComponent(g.id)}"><div class="l"><b>${esc(teamName(g.away))} at ${esc(teamName(g.home))}</b><span>${esc(kick(g))} · ${g.type === 'P' ? esc(g.round) + ' (postseason)' : 'Week ' + g.week}${g.neutral ? ' · neutral site' : ''}</span></div><div class="r">${statusCell(g)}</div></a>`;
 
 async function viewNflHome(root) {
   if (nflLoading(root)) return;
   const next = nflUpcoming().slice(0, 8), m = nfl.meta, cur = nfl.players.filter(p => p.current);
   root.innerHTML = `<section class="hero"><h1>NFL player props, game by game.</h1><p>Hit rates for passing, rushing, receiving, touchdown, kicking and defensive props from real game logs (${m.seasons[0]}–${m.seasons[m.seasons.length - 1]}). Research only, not tips.</p>
-    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/plays"><b>Plays</b><span>Best line for one player or game</span></a><a class="tool" href="#/nfl/hiwi"><b>Hiwi's Section</b><span>Ready-made shortlist</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
+    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/hiwi"><b>Hiwi's Section</b><span>Ready-made shortlist</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
     <section class="sec"><h2>Next games <a href="#/nfl/fixtures">All games</a></h2><div class="card"><div class="list">${next.length ? next.map(gameRow).join('') : '<p class="muted" style="margin:0">No upcoming games are published.</p>'}</div></div></section>
-    <section class="sec"><h2>What is published <a href="#/about">Data &amp; sources</a></h2><div class="card"><dl class="kv">
-      <dt>Seasons</dt><dd>${m.seasons.map(s => `${s}: ${m.coverage[s].played} games played${m.coverage[s].post ? ` (${m.coverage[s].post} postseason)` : ''}`).join('<br>')}</dd>
-      <dt>Players with game logs</dt><dd>${nfl.players.length.toLocaleString()} (${m.files.map(f => `${GROUP_NAMES[f.group]} ${f.players}`).join(', ')})</dd>
-      <dt>Checks</dt><dd>Touchdowns from play-by-play agree with the stat lines in ${esc(m.checks.touchdowns_agree)} player games; receiving yards in ${esc(m.checks.receiving_yards_agree)}.</dd>
-      <dt>Updated</dt><dd>${esc(fmtLong(m.updated.slice(0, 10)))}</dd></dl></div></section>${credit}`;
+    ${credit}`;
 }
 
 const ui = { q: '', pos: '', team: '' };
@@ -3187,7 +3443,7 @@ async function viewNflPlayer(root, id) {
   root.innerHTML = `<p><a href="#/nfl/search">← NFL search</a></p><div class="prof"><div class="avatar">${esc(p.pos)}</div><div><h1 style="margin:0">${esc(p.name)}</h1>
     <div class="muted">${esc(p.pos)} · <a href="#/nfl/team/${p.team}">${esc(teamName(p.team))}</a>${p.jersey ? ' · #' + esc(p.jersey) : ''}${p.current ? ` · ${esc(ROSTER[p.roster_status] || p.roster_status || '')}` : ' · not on a current roster'}</div>
     ${p.teams.length > 1 ? `<div class="xs muted">Teams in these seasons: ${p.teams.map(t => esc(teamName(t))).join(', ')}</div>` : ''}</div></div>
-    ${ng ? `<div class="card" style="margin-top:10px"><b>Next game:</b> ${esc(teamName(ng.away))} at ${esc(teamName(ng.home))} · ${esc(kick(ng))} <a href="#/nfl/plays?game=${encodeURIComponent(ng.id)}">Scan this game ›</a></div>` : ''}
+    ${ng ? `<div class="card" style="margin-top:10px"><b>Next game:</b> ${esc(teamName(ng.away))} at ${esc(teamName(ng.home))} · ${esc(kick(ng))} <a href="#/nfl/hiwi?fx=${encodeURIComponent(ng.id)}">Scan this game ›</a></div>` : ''}
     ${p.nostat.length ? `<p class="xs muted">${p.nostat.length} game${p.nostat.length === 1 ? '' : 's'} where ${esc(p.name)} was on the active roster but has no recorded stat line ${p.nostat.length === 1 ? 'is' : 'are'} not in the source and ${p.nostat.length === 1 ? 'is' : 'are'} left out of every hit rate (never counted as 0).</p>` : ''}
     <section class="sec"><h2>Research a prop</h2>${markets.length ? '<div id="panel"></div><div id="opp"></div>' : '<div class="banner info">No prop markets with recorded values for this player.</div>'}</section>
     <section class="sec"><h2>Game log <span class="xs muted">(newest first)</span></h2>${seasons.map((s, i) => `<details ${i === 0 ? 'open' : ''}><summary><b>${s}</b> <span class="xs muted">${rows.filter(r => r.season === s).length} games</span></summary>${logTable(p, rows.filter(r => r.season === s))}</details>`).join('')}</section>${credit}`;
@@ -3379,7 +3635,7 @@ const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-se
 
 async function viewNflFinder(root) {
   if (nflLoading(root)) return;
-  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover which players clear a line most often. For one player or game, use <a href="#/nfl/plays">Plays</a>.</p>
+  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover which players clear a line most often. For one player or game, use <a href="#/nfl/hiwi">Hiwi's Section</a>.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root); const season = latestSeason(); let shown = [];
   const market = () => marketsForGroup(ui.group).find(m => m.key === ui.market) || marketsForGroup(ui.group)[0];
@@ -3474,8 +3730,8 @@ function viewSports(root) {
   const last = getSport();
   root.innerHTML = `<section class="hub"><h1>What do you want to research?</h1><p class="muted">Historical hit rates for betting markets, from real match and game records. Research only: not tips, not predictions.</p>
     <div class="sportcards">
-      <a class="sportcard" href="#/football"><span class="em" aria-hidden="true">⚽</span><b>Football</b><span>Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie, Scottish Premiership and MLS. Team markets in all nine leagues; player props in MLS.</span>${last === 'football' ? '<i class="lastused">Last used</i>' : ''}</a>
-      <a class="sportcard" href="#/nfl"><span class="em" aria-hidden="true">🏈</span><b>NFL</b><span>All 32 teams. Player props game by game: passing, rushing, receiving, touchdowns, kicking and defence, plus team points.</span>${last === 'nfl' ? '<i class="lastused">Last used</i>' : ''}</a>
+      <a class="sportcard" href="#/football" aria-label="Football"><span class="em" aria-hidden="true">⚽</span><b>Football</b>${last === 'football' ? '<i class="lastused">Last used</i>' : ''}</a>
+      <a class="sportcard" href="#/nfl" aria-label="American Football (NFL)"><span class="em" aria-hidden="true">🏈</span><b>American Football</b>${last === 'nfl' ? '<i class="lastused">Last used</i>' : ''}</a>
     </div><p class="xs muted">You can switch sport at any time from the menu at the top of every page.</p></section>`;
 }
 
@@ -3504,12 +3760,13 @@ const { viewNflHome, viewNflSearch, viewNflPlayer, viewNflTeam, viewNflFixtures 
 const { viewNflPlays } = __m['v-nfl-plays'];
 const { viewNflFinder, viewNflValue } = __m['v-nfl-finder'];
 const { viewSports } = __m['v-sports'];
+const { wireInfo } = __m['info'];
 
-const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'NFL', emoji: '🏈' } };
+const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'American Football', emoji: '🏈' } };
 // [page id, short label, href, icon]
 const TABS = {
-  football: [['home', 'Home', '#/football', 'home'], ['fixtures', 'Fixtures', '#/fixtures', 'fixtures'], ['plays', 'Plays', '#/plays', 'plays'], ['hiwi', "Hiwi's Section", '#/hiwi', 'bear'], ['finder', 'Finder', '#/finder', 'finder'], ['value', 'Value', '#/value', 'value']],
-  nfl: [['home', 'Home', '#/nfl', 'home'], ['fixtures', 'Fixtures', '#/nfl/fixtures', 'fixtures'], ['plays', 'Plays', '#/nfl/plays', 'plays'], ['hiwi', "Hiwi's Section", '#/nfl/hiwi', 'bear'], ['finder', 'Finder', '#/nfl/finder', 'finder'], ['value', 'Value', '#/nfl/value', 'value']],
+  football: [['home', 'Home', '#/football', 'home'], ['fixtures', 'Fixtures', '#/fixtures', 'fixtures'], ['hiwi', "Hiwi's Section", '#/hiwi', 'bear'], ['finder', 'Finder', '#/finder', 'finder'], ['value', 'Value', '#/value', 'value']],
+  nfl: [['home', 'Home', '#/nfl', 'home'], ['fixtures', 'Fixtures', '#/nfl/fixtures', 'fixtures'], ['hiwi', "Hiwi's Section", '#/nfl/hiwi', 'bear'], ['finder', 'Finder', '#/nfl/finder', 'finder'], ['value', 'Value', '#/nfl/value', 'value']],
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search' };
 // Football page -> its page id (for the tab and for switching sport).
@@ -3589,8 +3846,8 @@ async function render() {
 window.addEventListener('hashchange', render);
 window.addEventListener('resize', () => hooks.redraw && hooks.redraw());
 shell();
-// First visit: the sport hub. A returning visitor who opens the bare address goes straight back to the sport they used last.
-{ const h = location.hash.replace(/^#\/?/, ''); const s = getSport(); if (!h && SPORTS[s]) history.replaceState(null, '', s === 'nfl' ? '#/nfl' : '#/football'); }
+wireInfo();
+// Every visit to the bare address starts on the sport-selection screen (the last sport used is marked there).
 render();
 
 return { where, equivalentHref };
