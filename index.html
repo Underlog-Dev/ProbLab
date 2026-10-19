@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="cb441336abda">
+<meta name="proplab-build" content="c0693bfb1309">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -258,6 +258,7 @@ details.pgrp{border:1px solid var(--line);border-radius:12px;padding:8px 10px;ma
 .hcm{font-size:13px;color:var(--muted);margin:2px 0 8px;overflow-wrap:anywhere}.hcm b{color:var(--text)}
 .hctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.hsides button{min-width:58px}
 .hline{display:flex;align-items:center;gap:6px;flex:1 1 220px;min-width:0}
+.field>.hline{flex:0 0 auto}
 .hline input[type=range]{flex:1;min-width:60px;accent-color:var(--accent)}
 .hstep{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--s2);color:var(--text);font-size:20px;line-height:1}
 .hnum{width:84px;flex:0 0 84px;padding:6px 8px;text-align:center;font-weight:700}
@@ -309,6 +310,17 @@ button.started{font-family:inherit;cursor:pointer}
 .updbar{position:fixed;left:12px;right:12px;bottom:calc(var(--navh) + env(safe-area-inset-bottom) + 10px);z-index:60;display:flex;align-items:center;gap:10px;background:#1b2a44;border:1px solid var(--accent);border-radius:14px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:14px}.updbar span{flex:1}.updbar .btn{width:auto;margin:0;padding:8px 14px}.updx{font-size:22px;color:var(--muted);width:32px;height:32px}
 body[data-sport=hub] .updbar{bottom:calc(env(safe-area-inset-bottom) + 12px)}
 .lic.excluded{background:#2a2f3a;color:#c3ccd9}
+/* NFL model (experimental) */
+.ainotice{border:1px solid #6b5a2e;background:#1f1a0e;border-radius:14px;padding:12px 14px;margin:6px 0 14px}.ainotice h2{font-size:16px;margin:0 0 6px;color:#f5d48a}.ainotice p{margin:0;font-size:14px;line-height:1.5;color:#e6dcc4}
+.aichip{display:inline-block;vertical-align:middle;margin-left:6px}.infotag.ai{color:#f5d48a;border-color:#6b5a2e;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.mpick{margin-bottom:12px}.mph{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.mpline{margin:8px 0 4px;font-size:16px}.mptiles{margin:8px 0}.mptiles .tile span{font-size:11px}
+.mpwhy{margin:6px 0;padding-left:18px}.mpwhy li{margin:2px 0}.mpcmp{margin-top:10px}
+.infotag.conf{font-size:12px}.infotag.c-veryhigh,.infotag.c-high{color:var(--hit);border-color:#2f7d4f}.infotag.c-medium{color:#9ecbff;border-color:#2d4f86}.infotag.c-low,.infotag.c-verylow{color:var(--amber);border-color:#6b5a2e}.infotag.c-insufficientdata{color:var(--muted)}
+.evverdict{border-radius:12px;padding:10px 12px;border:1px solid var(--line)}.evverdict.ev-pos{border-color:#2f7d4f;background:#10261b}.evverdict.ev-neg{border-color:#7d2f2f;background:#2a1212}.evverdict.ev-unc{border-color:#2d4f86;background:#111c2e}
+b.ev-pos{color:var(--hit)}b.ev-neg{color:var(--miss)}b.ev-unc{color:#9ecbff}
+.calgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.calgrid figure{margin:0}.calgrid figcaption{font-size:12px;font-weight:700;margin-bottom:2px}
+svg.calib{width:100%;height:auto}.calib .cbox{fill:none;stroke:var(--line)}.calib .cdiag{stroke:#5b6b85;stroke-dasharray:4 3}.calib .cpt{fill:var(--accent);opacity:.85}.calib .clab,.calib .ctick{fill:var(--muted);font-size:10px}
+.modelentry{display:flex;flex-direction:column;gap:4px;margin:4px 0 12px;color:var(--text);border-color:#6b5a2e}.modelentry:hover{text-decoration:none}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -2013,6 +2025,14 @@ const TEXT = {
   push: n => `Whole-number line: ${n} match${n === 1 ? '' : 'es'} landed exactly on the line, which counts as neither Over nor Under (a "push"). Half-point lines such as 2.5 avoid this.`,
   season: () => 'Statistics are based on available completed matches from the current season. As more matches are played the samples get bigger and the figures steadier, but past results never guarantee future ones.',
   datesfallback: () => 'This league has no official round numbers in PropLab\'s fixture source, so "this gameweek" is the next run of consecutive match days.',
+  mprob: () => 'Model probability: the experimental model\'s estimated chance that this side wins at this exact line. It comes from a full predictive distribution (not from how often the line was beaten), so it changes when you change the line. It is an estimate, not a guarantee.',
+  mconf: () => 'Confidence is separate from the probability. It says how reliable probabilities like this one were when the model was tested on past seasons it had not seen (same market, similar number of earlier games, similar distance from 50%): Very High, High, Medium, Low, Very Low, or Insufficient Data when there were too few cases or the market failed its tests.',
+  fair: () => 'Fair odds = 1 ÷ model probability. They are the decimal odds at which a bet would break even if the model probability were exactly right. Offered odds above the fair odds suggest value, but only if the model is right.',
+  evx: () => 'Expected value (EV) = (model probability × decimal odds − 1) × 100. It is the average return per £1 staked if the probability were correct. Because the probability is uncertain, PropLab also works out EV at the low and high end of its margin: only an edge that survives that margin is called Positive Estimated EV.',
+  smallsample: n => `Small sample: the model has only ${n} earlier games for this player in its window, so its estimate leans more on position averages and is less certain.`,
+  experimental: () => 'Experimental AI: these predictions come from a statistical model that is still being tested. Its past-season test results and its live record are on the Model Performance page. Do not rely on it as the sole basis for any bet.',
+  refline: () => 'Reference line: the middle (median) of the player\'s own games this season, rounded down to the nearest half point, so about half of their games went over it. Touchdowns and interceptions use 0.5. It is NOT a bookmaker line: bookmakers set their own lines, so tap Compare Price and enter the line and odds you can actually see.',
+  typical: () => 'Projection is the average outcome. Typical outcome is the middle one (half the time more, half the time less). For yards they differ because a few big games pull the average up.',
   cards: () => 'Cards = yellow cards + red cards, each counted once, as recorded by football-data.co.uk. Second-yellow sending-offs: in English and Scottish games the dismissal is recorded as one red card (the first yellow is not counted); in other leagues as one yellow plus one red. The source does not separate second yellows from straight reds, so PropLab cannot either. Booking points are not used.',
 };
 /** A tappable label. key selects the explanation; n / m are numbers shown in it. cls adds colour classes. */
@@ -2736,48 +2756,336 @@ async function viewFinder(root, r) {
 
 return { viewFinder };
 })();
-__m['value'] = (() => {
-// Turns a real stored sample plus a bookmaker price you typed in into an estimate of value. Pure and tested.
-const { hitRate, rateModel, evPct, fairOdds, kelly, removeVig } = __m['analytics'];
+__m['nfl-model'] = (() => {
+// Experimental NFL model data in the browser. The model itself is trained offline (owner-tools/nfl_model.py); the site only reads its
+// published output (data-nfl-model.json) and turns each prediction's distribution into a probability for ANY line the visitor sets.
+// A historical hit rate is never used as a model probability. Markets that failed the out-of-sample test are marked inactive.
+const model = { status: 'idle', data: null, backtest: null, log: null, byKey: new Map() };
+const RQ = Array.from({ length: 81 }, (_, i) => i / 80);
+const getFresh = async f => { const r = await fetch(`${f}?t=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); };
+async function loadModel(getJson = getFresh) {
+  if (model.status === 'ready' || model.status === 'loading') return model;
+  model.status = 'loading';
+  try {
+    model.data = await getJson('data-nfl-model.json', { fresh: true });
+    model.byKey = new Map(model.data.predictions.map(p => [`${p.player_id}|${p.market}`, p]));
+    model.status = 'ready';
+  } catch { model.status = 'missing'; }
+  return model;
+}
+async function loadBacktest(getJson = getFresh) { if (!model.backtest) { try { model.backtest = await getJson('data-nfl-model-backtest.json', { fresh: true }); } catch { model.backtest = null; } } return model.backtest; }
+async function loadForward(getJson = getFresh) { if (!model.log) { try { model.log = await getJson('data-nfl-model-forward.json', { fresh: true }); } catch { model.log = null; } } return model.log; }
 
-/**
- * rows: [{value, exposure}] newest first (value null = no data).
- * side: 'over' | 'under'. odds: decimal odds for YOUR side. otherOdds: optional decimal odds for the other side of the same line.
- */
-function evaluate({ rows, side, line, odds, otherOdds = null, expectedExposure, minExposure = 0, dist = 'count', sampleN = 20 }) {
-  const sample = rows.filter(r => r.value !== null && r.value !== undefined && (r.exposure ?? 1) >= minExposure).slice(0, sampleN);
-  const model = rateModel(sample, line, expectedExposure, { minSample: 8, dist });
-  const hit = hitRate(sample.map(r => r.value), line, side);
-  const out = { model, hit, sampleSize: sample.length, flags: [], odds, side, line };
-  if (Number.isInteger(line)) out.flags.push('Whole-number line: a result exactly on the line is usually a refund. This estimate does not model refunds, so use a .5 line for a clean estimate.');
-  if (!model.ok) return out;
-  const p = side === 'over' ? model.probOver : 1 - model.probOver;
-  out.prob = Math.round(p * 10000) / 10000;
-  out.fair = fairOdds(p);
-  out.ev = evPct(p, odds);
-  out.kellyQuarter = Math.round(kelly(p, odds) * 25 * 100) / 100; // quarter Kelly as % of bankroll
-  out.confidence = sample.length < 12 ? 'low' : sample.length < 25 ? 'medium' : 'higher';
-  if (otherOdds) { const v = removeVig(odds, otherOdds); out.market = { probSide: v.a, marginPct: v.marginPct, diffPts: Math.round((p - v.a) * 1000) / 10 }; }
-  if (hit.hitPct !== null && Math.abs(hit.hitPct / 100 - p) > 0.15) out.flags.push(`The estimate (${(p * 100).toFixed(0)}%) and the recent hit rate (${hit.hitPct}%) disagree by more than 15 points. Look at why before trusting either.`);
-  if (sample.length < 12) out.flags.push('Small sample. Treat this as a rough guide only.');
-  if (odds >= 6) out.flags.push('Long odds: estimates are least reliable at the tails.');
-  if (out.ev > 25) out.flags.push('A very high EV usually means something is missing from the estimate (line-up, role, minutes, injury). Check before assuming it is real.');
-  if (out.ev > 0) out.verdict = 'The estimate puts this above break-even. That is a reason to look closer, not proof of value.';
-  else out.verdict = 'The estimate puts this below break-even at this price.';
-  return out;
+// ---- distributions (same maths as owner-tools/nfl_model.py) ----
+function lgamma(x) { // Lanczos
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function nbPmf(k, mu, alpha) {
+  if (k < 0) return 0;
+  if (alpha < 1e-6) return Math.exp(k * Math.log(mu) - mu - lgamma(k + 1));
+  const r = 1 / alpha, p = r / (r + mu);
+  return Math.exp(lgamma(k + r) - lgamma(r) - lgamma(k + 1) + r * Math.log(p) + k * Math.log(1 - p));
+}
+const nbCdf = (k, mu, a) => { let s = 0; for (let i = 0; i <= k; i++) s += nbPmf(i, mu, a); return Math.min(1, s); };
+// Same rule as numpy.interp (ties in the quantiles, e.g. many zero-yard games, resolve to the last equal point).
+const interp = (t, xs, ys) => {
+  const n = xs.length; if (t < xs[0]) return ys[0]; if (t >= xs[n - 1]) return ys[n - 1];
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
+  const x0 = xs[lo], x1 = xs[hi]; return x1 === x0 ? ys[lo] : ys[lo] + (ys[hi] - ys[lo]) * (t - x0) / (x1 - x0);
+};
+/** P(Y <= y) for a continuous-approximated whole-number outcome described by quantiles of actual/projection (ratio) or actual-projection (shift). */
+function cdfAt(y, mu, mk, pos) {
+  if (mk.dist === 'ratio') { const tab = (mk.ratio_by_pos && mk.ratio_by_pos[pos]) || mk.ratio; const b = tab.find(x => x.mu_max === null || mu <= x.mu_max); return interp(y / Math.max(mu, 1e-3), b.q, RQ); }
+  return interp(y - mu, mk.q, RQ); // 'shift' (team points)
+}
+/** Calibration map learned from earlier out-of-sample seasons: p' = sigmoid(a logit p + b). */
+function calibrate(p, cal) { if (!cal) return p; const q = Math.min(0.995, Math.max(0.005, p)); return 1 / (1 + Math.exp(-(cal.a * Math.log(q / (1 - q)) + cal.b))); }
+/** Raw (uncalibrated) P(Y > L). */
+function rawOver(L, mu, mk, pos) {
+  if (mk.dist === 'nb') return 1 - nbCdf(Math.floor(L), mu, mk.alpha || 0);
+  return 1 - cdfAt(Math.floor(L) + 0.5, mu, mk, pos);
+}
+/** Probabilities for a line: { over, under, push } (push only for whole-number lines). */
+function lineProbs(pred, line, mk) {
+  const mu = pred.proj, L = Number(line);
+  if (!Number.isFinite(L) || !mk || !(mu >= 0)) return null;
+  const whole = Math.abs(L - Math.round(L)) < 1e-9, cal = mk.calibration, pos = pred.position;
+  const over = calibrate(rawOver(L, mu, mk, pos), cal);
+  if (!whole) return { over: clamp(over), under: clamp(1 - over), push: 0 };
+  // whole-number line: Under = not (Y >= L) = 1 - P(Y > L - 0.5); the rest is the push
+  const under = 1 - calibrate(rawOver(L - 0.5, mu, mk, pos), cal);
+  return { over: clamp(over), under: clamp(under), push: clamp(1 - over - under) };
+}
+const clamp = p => Math.max(0, Math.min(1, p));
+const marketInfo = key => model.data?.markets?.[key] || null;
+const predictionFor = (playerId, market) => model.byKey.get(`${playerId}|${market}`) || null;
+
+// ---- uncertainty and EV classification ----
+/** Margin of error for the probability, from what the backtest measured for this kind of prediction (calibration gap and the 95% interval
+ *  of the observed rate). Wider when the cell had few cases. */
+function probMargin(pred) {
+  const c = pred?.cell; if (!c || !c.n) return 0.12;
+  const [lo, hi] = c.observed_ci95 || [null, null];
+  const half = lo != null && hi != null ? (hi - lo) / 2 : 0.1;
+  return Math.min(0.2, Math.max(0.02, Math.abs(c.observed_side_rate - c.predicted_side_prob) + half / 2));
+}
+/** EV % = (p x decimal odds - 1) x 100. Classified with the probability's margin: an edge only counts when it survives the margin. */
+function evVerdict(p, odds, pred) {
+  if (!(odds > 1) || p == null) return null;
+  if (!pred || pred.confidence === 'Insufficient Data' || !pred.active_market) return { label: 'Insufficient Data', cls: 'insufficient' };
+  const m = probMargin(pred), ev = (p * odds - 1) * 100, lo = ((p - m) * odds - 1) * 100, hi = ((p + m) * odds - 1) * 100;
+  const label = lo > 0 ? 'Positive Estimated EV' : hi < 0 ? 'Negative Estimated EV' : 'Uncertain – No Clear Edge';
+  return { ev: Math.round(ev * 10) / 10, lo: Math.round(lo * 10) / 10, hi: Math.round(hi * 10) / 10, margin: m, label, cls: lo > 0 ? 'pos' : hi < 0 ? 'neg' : 'unc' };
+}
+/** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
+function parseAnyOdds(t) {
+  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
+  if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, kind: 'fractional' };
+  // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
+  if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
+    const a = Number(s);
+    if (a >= 100) return { dec: Math.round((1 + a / 100) * 1000) / 1000, kind: 'American' };
+    if (a <= -100) return { dec: Math.round((1 + 100 / -a) * 1000) / 1000, kind: 'American' };
+    return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
+  }
+  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a > 0 && b > 0 ? { dec: Math.round((a / b + 1) * 1000) / 1000, kind: 'fractional' } : { dec: null, error: 'Fractional odds look like 6/4' }; }
+  const d = Number(s); return d > 1 ? { dec: d, kind: 'decimal' } : { dec: null, error: 'Decimal odds are above 1.0 (e.g. 1.91)' };
 }
 
-return { evaluate };
+// ---- plain-English reasons, built only from the model's own inputs ----
+const LBL = { usage: { pass_yds: 'pass attempts', att: 'pass attempts', cmp: 'pass attempts', pass_td: 'pass attempts', int: 'pass attempts', rush_yds: 'carries', car: 'carries', rec_yds: 'targets', rec: 'targets', tgt: 'targets', rec_td: 'targets' } };
+function explain(pred, side, line) {
+  const f = pred.factors || {}, out = [];
+  if (pred.market === 'pts') { out.push(`The betting market's point spread and total imply about ${f.implied_team_points} points for ${pred.team}. The model starts from that number, so it adds little beyond the market.`); return out; }
+  if (f.season_avg != null) out.push(`${pred.player} has averaged ${f.season_avg} ${pred.label.toLowerCase()} this season${f.last5_avg != null ? ` (${f.last5_avg} over the last five games)` : ''}.`);
+  if (f.usage != null && LBL.usage[pred.market]) out.push(`Recent workload: about ${f.usage} ${LBL.usage[pred.market]} per game, weighted towards the latest games.`);
+  if (f.opp_factor != null) { const pc = Math.round((f.opp_factor - 1) * 100); out.push(Math.abs(pc) < 4 ? `${pred.opp}'s defence has allowed about a league-average amount to this position.` : `${pred.opp}'s defence has allowed ${Math.abs(pc)}% ${pc > 0 ? 'more' : 'less'} than average to this position in its recent games (shrunk towards average).`); }
+  if (f.implied_team_points != null) out.push(`The betting market implies about ${f.implied_team_points} points for ${pred.team}${pred.home ? ' at home' : ' away'}.`);
+  out.push(`Projection: ${pred.proj}. For ${side === 'under' ? 'Under' : 'Over'} ${line}, the model's distribution gives the probability shown.`);
+  if (pred.injury_status) out.push(`Injury report: ${pred.injury_status}.`);
+  return out;
+}
+const CONF_TEXT = {
+  'Very High': 'In testing on past seasons, predictions like this (same market, similar sample and edge) came true at about the predicted rate, with many cases.',
+  High: 'Predictions like this were reliable in testing, with a good number of cases.', Medium: 'Predictions like this were roughly right in testing, but with fewer cases or a slightly wider error.',
+  Low: 'Predictions like this were only loosely right in testing.', 'Very Low': 'Predictions like this were poorly calibrated in testing.',
+  'Insufficient Data': 'Not enough earlier games, or this market did not pass the model\'s tests, so no reliable probability can be given.',
+};
+
+return { model, loadModel, loadBacktest, loadForward, nbPmf, calibrate, lineProbs, marketInfo, predictionFor, probMargin, evVerdict, parseAnyOdds, explain, CONF_TEXT };
+})();
+__m['v-nfl-model'] = (() => {
+// NFL Model Picks, Model Performance and the model-based EV (Value) page. Experimental: every probability here comes from the
+// published model output (data-nfl-model.json), recomputed in the browser for the exact line chosen. Historical hit rates are shown only
+// as history, never as a probability, and never used for EV.
+const { nfl, teamName } = __m['nfl-data'];
+const { model, loadModel, loadBacktest, loadForward, lineProbs, marketInfo, parseAnyOdds, explain, CONF_TEXT, probMargin } = __m['nfl-model'];
+const { $, esc, fmtKick } = __m['util'];
+const { infoTag } = __m['info'];
+
+const EV_NOTICE = `<section class="ainotice" role="note"><h2>AI Model — Experimental Testing</h2><p>PropLab's AI predictions, confidence ratings and expected value (EV) calculations are currently in testing. Results may be inaccurate and will change as the model is developed and evaluated. These estimates are not guaranteed outcomes and should not be relied upon as the sole basis for betting decisions.</p></section>`;
+const AI = `<span class="aichip">${infoTag('experimental', 'Experimental AI', { cls: 'ai' })}</span>`;
+const pct = p => (p == null ? '–' : `${(p * 100).toFixed(1)}%`);
+const CONF_ORDER = ['Very High', 'High', 'Medium', 'Low', 'Very Low', 'Insufficient Data'];
+const confTag = c => infoTag('mconf', c, { cls: 'conf c-' + c.toLowerCase().replace(/\s+/g, '') });
+const kick = p => fmtKick({ ko_utc: p.kickoff.replace('+00:00', 'Z') });
+const who = p => (p.market === 'pts' ? teamName(p.team) : p.player);
+const fxText = p => `${teamName(p.team)} ${p.home ? 'v' : 'at'} ${teamName(p.opp)}`;
+const valueHref = (p, side, line) => `#/nfl/value?pid=${encodeURIComponent(p.player_id)}&m=${encodeURIComponent(p.market)}&line=${line}&side=${side}`;
+const stamp = () => (model.data ? `Model ${esc(model.data.version)} · trained ${esc(model.data.trained.slice(0, 10))} · predictions updated ${esc(new Date(model.data.generated).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }))}` : '');
+const loading = root => { root.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>'; };
+const missing = (root, title) => { root.innerHTML = `<h1>${title}</h1>${EV_NOTICE}<div class="banner info"><b>Model predictions are not available right now.</b> The model's output file could not be loaded. Historical research is still available in Hiwi's Section.</div>`; };
+
+/** The picks rule (documented on the page): an active market (passed its out-of-sample tests), a measured confidence of Medium or
+ *  better, at least 6 earlier games, a clear but realistic lean at the reference line (the favoured side between 57% and 80%), no
+ *  Out/Doubtful injury report, and a kick-off still ahead. Very lopsided lines (80%+) are left out: no bookmaker offers them at a price
+ *  where they matter. */
+function qualifies(p, now = Date.now()) {
+  if (!p.active_market || p.p_over_ref == null || !['Very High', 'High', 'Medium'].includes(p.confidence)) return false;
+  if (p.injury_status === 'Out' || p.injury_status === 'Doubtful') return false;
+  if (Date.parse(p.kickoff) <= now) return false;
+  if (p.n_prev != null && p.n_prev < 6) return false;
+  const q = Math.max(p.p_over_ref, 1 - p.p_over_ref);
+  return q >= 0.57 && q <= 0.8;
+}
+const side = p => (p.p_over_ref >= 0.5 ? 'over' : 'under');
+
+// ---------------------------------------------------------------- Model Picks
+const pf = { market: '', game: '', conf: 'High', shown: 20 };
+async function viewNflPicks(root) {
+  loading(root); await loadModel(); if (model.status !== 'ready') return missing(root, 'Model Picks');
+  const M = model.data, now = Date.now();
+  const all = M.predictions.filter(p => qualifies(p, now));
+  const markets = [...new Set(all.map(p => p.market))].sort((a, b) => M.markets[a].label.localeCompare(M.markets[b].label));
+  const games = [...new Map(all.map(p => [p.game_id, p])).values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  const draw = () => {
+    const minC = CONF_ORDER.indexOf(pf.conf);
+    const list = all.filter(p => (!pf.market || p.market === pf.market) && (!pf.game || p.game_id === pf.game) && CONF_ORDER.indexOf(p.confidence) <= minC)
+      .sort((a, b) => CONF_ORDER.indexOf(a.confidence) - CONF_ORDER.indexOf(b.confidence) || Math.abs(b.p_over_ref - 0.5) - Math.abs(a.p_over_ref - 0.5) || a.kickoff.localeCompare(b.kickoff));
+    $('#plist', root).innerHTML = list.length ? list.slice(0, pf.shown).map(card).join('') + (list.length > pf.shown ? `<button type="button" class="btn" id="pmore">Show more (${list.length - pf.shown})</button>` : '')
+      : `<div class="card"><h2 style="margin:0 0 6px">No Qualifying Plays</h2><p class="small" style="margin:0">Nothing meets the rules for the filters chosen. PropLab does not force picks: a play appears only when its market passed the model's tests, its measured confidence is at least the level chosen, the player has at least 6 earlier games, and the model favours one side by 57% to 80% at the reference line.</p></div>`;
+    $('#pcount', root).textContent = `${list.length} qualifying of ${M.predictions.length} predictions`;
+  };
+  const card = p => {
+    const s = side(p), prob = s === 'over' ? p.p_over_ref : 1 - p.p_over_ref, mk = M.markets[p.market], why = explain({ ...p, label: mk.label }, s, p.ref_line);
+    return `<article class="card mpick" data-id="${esc(p.id)}">
+      <header class="mph"><div><b>${esc(who(p))}</b> <span class="xs muted">${esc(p.position === 'TEAM' ? 'Team' : p.position + ', ' + p.team)}</span></div>${AI}</header>
+      <div class="small muted">${esc(fxText(p))} · ${esc(kick(p))}</div>
+      <div class="mpline"><b>${esc(mk.label)}: ${s === 'over' ? 'Over' : 'Under'} ${p.ref_line}</b> ${infoTag('refline', 'Reference line', { cls: 'neutral' })}</div>
+      <div class="tiles mptiles"><div class="tile"><b>${pct(prob)}</b><span>${infoTag('mprob', 'Model probability', { cls: 'neutral' })}</span></div><div class="tile"><b>${p.proj}</b><span>Projection${p.median != null ? ` · typical ${p.median}` : ''} ${infoTag('typical', '?', { cls: 'neutral' })}</span></div><div class="tile"><b>${(1 / prob).toFixed(2)}</b><span>${infoTag('fair', 'Fair odds', { cls: 'neutral' })}</span></div></div>
+      <div class="small">Confidence: ${confTag(p.confidence)} <span class="xs muted">${esc(CONF_TEXT[p.confidence] || '')}</span></div>
+      <ul class="small mpwhy">${why.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="xs muted">Sample: ${p.n_prev != null ? `${p.n_prev} earlier games in the model's window (${p.n_season} this season)` : 'betting-market total'}${p.n_prev != null && p.n_prev < 6 ? ' ' + infoTag('smallsample', 'Small sample', { n: p.n_prev, cls: 'warnt' }) : ''}${p.injury_status ? ` · injury report: ${esc(p.injury_status)}` : ''} · missing: weather, depth-chart changes after the data cut, bookmaker line</div>
+      <a class="btn mpcmp" href="${valueHref(p, s, p.ref_line)}"><b>Compare Price</b> <span class="muted">enter your bookmaker's line and odds</span></a>
+    </article>`;
+  };
+  root.innerHTML = `<h1>Model Picks ${AI}</h1>${EV_NOTICE}
+    <p class="muted small">Where the experimental model leans clearly one way at the player's <b>reference line</b> (the middle of their games this season, or 0.5 for touchdowns). These are not bookmaker lines and not betting tips: a high probability is not value unless the bookmaker's price is better than the fair odds. Tap Compare Price to check a real price.</p>
+    <div class="card stack"><div class="ctl"><div class="field"><label>Sport</label><select class="in" disabled><option>American Football (NFL)</option></select><span class="xs muted">No football model yet.</span></div>
+      <div class="field"><label for="pfm">Market</label><select class="in" id="pfm"><option value="">All markets</option>${markets.map(m => `<option value="${m}" ${pf.market === m ? 'selected' : ''}>${esc(M.markets[m].label)}</option>`).join('')}</select></div>
+      <div class="field"><label for="pfg">Game</label><select class="in" id="pfg"><option value="">All games</option>${games.map(g => `<option value="${g.game_id}" ${pf.game === g.game_id ? 'selected' : ''}>${esc(teamName(g.home ? g.opp : g.team))} at ${esc(teamName(g.home ? g.team : g.opp))} · ${esc(kick(g))}</option>`).join('')}</select></div>
+      <div class="field"><label for="pfc">Minimum confidence</label><select class="in" id="pfc">${['Very High', 'High', 'Medium'].map(c => `<option ${pf.conf === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
+      <p class="xs muted" id="pcount" style="margin:0"></p></div>
+    <div id="plist" style="margin-top:12px"></div>
+    <p class="xs muted">${stamp()}. Inactive markets (did not pass the out-of-sample tests): ${Object.entries(M.markets).filter(([, v]) => !v.active).map(([, v]) => esc(v.label)).join(', ') || 'none'}. <a href="#/nfl/performance">Model Performance</a> · <a href="#/nfl/value">EV calculator</a></p>`;
+  root.addEventListener('change', e => { if (e.target.id === 'pfm') pf.market = e.target.value; else if (e.target.id === 'pfg') pf.game = e.target.value; else if (e.target.id === 'pfc') pf.conf = e.target.value; else return; pf.shown = 20; draw(); });
+  root.addEventListener('click', e => { if (e.target.closest('#pmore')) { pf.shown += 20; draw(); } });
+  draw();
+}
+
+// ---------------------------------------------------------------- Model Performance
+const metricRow = (name, r) => `<tr><td>${esc(name)}</td><td class="n">${r.n.toLocaleString()}</td><td class="n">${r.model.brier.toFixed(3)}</td><td class="n">${r.hit_rate.brier.toFixed(3)}</td><td class="n">${r.season_avg_normal.brier.toFixed(3)}</td><td class="n">${r.model.logloss.toFixed(3)}</td><td class="n">${(r.model_accuracy * 100).toFixed(1)}%</td><td class="n">${r.model.ece.toFixed(3)}</td><td class="n">${r.mae.model} / ${r.mae.season_avg}</td></tr>`;
+const calibSvg = rows => {
+  const W = 220, H = 220, pad = 26, x = v => pad + v * (W - 2 * pad), y = v => H - pad - v * (H - 2 * pad);
+  const pts = rows.filter(r => r.n >= 20);
+  return `<svg class="calib" viewBox="0 0 ${W} ${H}" role="img" aria-label="Calibration: predicted against observed"><rect x="${pad}" y="${pad}" width="${W - 2 * pad}" height="${H - 2 * pad}" class="cbox"/><line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" class="cdiag"/>
+    ${pts.map(r => `<circle cx="${x(r.predicted)}" cy="${y(r.observed)}" r="${Math.max(2.5, Math.min(7, Math.sqrt(r.n) / 4))}" class="cpt"><title>predicted ${pct(r.predicted)}, observed ${pct(r.observed)}, ${r.n} cases</title></circle>`).join('')}
+    <text x="${W / 2}" y="${H - 6}" class="clab">predicted</text><text x="8" y="${H / 2}" class="clab" transform="rotate(-90 8 ${H / 2})">observed</text><text x="${x(0)}" y="${H - pad + 12}" class="ctick">0</text><text x="${x(1) - 8}" y="${H - pad + 12}" class="ctick">100%</text></svg>`;
+};
+async function viewNflPerformance(root) {
+  loading(root); const [bt, fw] = await Promise.all([loadBacktest(), loadForward()]); await loadModel();
+  if (!bt) { root.innerHTML = '<h1>Model Performance</h1><div class="banner info">The backtest results could not be loaded.</div>'; return; }
+  const S = bt.summary.deployed_style_2025_2026, A = bt.activation, LBL = model.data?.markets || {};
+  const name = m => LBL[m]?.label || m;
+  root.innerHTML = `<h1>Model Performance ${AI}</h1>
+    <p class="muted small">Two separate records: a <b>backtest</b> on past seasons the model had not seen, and the <b>live forward test</b> of predictions saved before kick-off. They are never mixed.</p>
+    <section class="sec"><h2>Live forward test</h2><div class="card small">${fwHtml(fw, name)}</div></section>
+    <section class="sec"><h2>Backtest (out of sample, walk-forward)</h2><div class="card small stack">
+      <p style="margin:0">Each season was predicted with a model fitted only on earlier seasons, using only information available before each kick-off. The figures below are for 2025 and 2026 to date, the seasons where the full method, including its calibration step learned from earlier seasons, could be applied. 2024 results are listed separately below.</p>
+      <p style="margin:0"><b>Line used:</b> ${esc(bt.line)}. No historical bookmaker lines are available, so these tests do not show whether the model beats bookmakers, and <b>no profit, ROI or drawdown can be calculated</b>.</p>
+      <div class="scroll"><table><tr><th>Market</th><th>Predictions</th><th>Brier (model)</th><th>Brier (hit rate)</th><th>Brier (season avg)</th><th>Log loss</th><th>Right side</th><th>Calibration error</th><th>Average error (model / season avg)</th></tr>
+        ${metricRow('All markets', S.overall)}${Object.entries(S.by_market).map(([m, r]) => metricRow(`${name(m)}${A[m]?.active ? '' : ' (inactive)'}`, r)).join('')}</table></div>
+      <p class="xs muted" style="margin:0">Brier score: lower is better (0.25 = always saying 50%). "Hit rate" is the Hiwi-style historical frequency used as a probability; "season avg" is a normal curve around the season average. Right side: how often the side the model favoured won. Calibration error: average gap between predicted and observed rates (0 is perfect).</p>
+      <h3>Calibration (2025–2026)</h3><div class="calgrid">${Object.entries(bt.summary.calibration || {}).map(([m]) => (S.by_market[m] ? `<figure><figcaption>${esc(name(m))}</figcaption>${calibSvg(calibFor(bt, m))}</figure>` : '')).join('')}</div>
+      <p class="xs muted" style="margin:0">Points on the diagonal mean predictions came true as often as predicted. Point size reflects how many cases each bin has.</p>
+      <h3>By position</h3><div class="scroll"><table><tr><th>Position</th><th>Predictions</th><th>Brier (model)</th><th>Brier (hit rate)</th><th>Brier (season avg)</th><th>Log loss</th><th>Right side</th><th>Calibration error</th><th>Average error</th></tr>${Object.entries(S.by_position).map(([p, r]) => metricRow(p, r)).join('')}</table></div>
+      <h3>By season (2024 has no calibration step)</h3><div class="scroll"><table><tr><th>Season</th><th>Predictions</th><th>Brier (model)</th><th>Brier (hit rate)</th><th>Brier (season avg)</th><th>Log loss</th><th>Right side</th><th>Calibration error</th><th>Average error</th></tr>${Object.entries(bt.summary.by_season).map(([s, r]) => metricRow(s, r)).join('')}</table></div>
+      <h3>Markets switched off</h3><p style="margin:0">${Object.entries(A).filter(([, v]) => !v.active).map(([m, v]) => `${esc(name(m))}: ${esc(v.reason)}`).join('; ') || 'None.'}</p>
+    </div></section>
+    <p class="xs muted">${stamp()} · backtest created ${esc(bt.created.slice(0, 10))}. Method and limitations: <a href="#/about">Data &amp; sources</a>.</p>`;
+}
+function calibFor(bt, m) { const c = bt.summary.deployed_style_2025_2026?.calibration?.[m]; return c || bt.summary.calibration[m] || []; }
+function fwHtml(fw, name) {
+  if (!fw || !fw.logged) return '<p style="margin:0"><b>Not enough data yet.</b> Live predictions are saved before each kick-off and graded after the official final statistics. None have been graded yet, so there is nothing to report.</p>';
+  const o = fw.overall || { n: 0 };
+  const head = `<p style="margin:0">${fw.logged.toLocaleString()} predictions saved before kick-off · ${fw.graded.toLocaleString()} graded · ${fw.pending.toLocaleString()} waiting for results${fw.did_not_play ? ` · ${fw.did_not_play} did not play` : ''}${fw.pushes ? ` · ${fw.pushes} pushes` : ''}.</p>`;
+  if (o.n < 50) return head + `<p style="margin:6px 0 0"><b>Not enough graded predictions yet</b> (${o.n}; at least 50 are needed before any accuracy figure means much).</p><p class="xs muted" style="margin:6px 0 0">${esc(fw.note)}</p>`;
+  const row = (k, r) => (r && r.n ? `<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.correct}–${r.incorrect}</td><td class="n">${(r.accuracy * 100).toFixed(1)}% <span class="xs muted">(${(r.accuracy_ci95[0] * 100).toFixed(0)}–${(r.accuracy_ci95[1] * 100).toFixed(0)}%)</span></td><td class="n">${r.brier.toFixed(3)}</td><td class="n">${r.brier_hit_rate.toFixed(3)}</td><td class="n">${r.mae}</td></tr>` : '');
+  return head + `<div class="scroll"><table><tr><th></th><th>Graded</th><th>Right–wrong</th><th>Right side (95% range)</th><th>Brier (model)</th><th>Brier (hit rate)</th><th>Average error</th></tr>${row('All', o)}${Object.entries(fw.by_confidence).map(([c, r]) => row(`Confidence: ${c}`, r)).join('')}${Object.entries(fw.by_market).map(([m, r]) => row(name(m), r)).join('')}${Object.entries(fw.by_week).map(([w, r]) => row(`Week ${w.slice(5)} (${w.slice(0, 4)})`, r)).join('')}</table></div><p class="xs muted" style="margin:6px 0 0">${esc(fw.note)}</p>`;
+}
+
+// ---------------------------------------------------------------- EV (Value) page, NFL
+const ev = { pid: '', market: '', line: null, side: 'over', odds: '' };
+async function viewNflEv(root, r) {
+  loading(root); await loadModel();
+  const q = r?.q; if (q && q.get('pid')) { ev.pid = q.get('pid'); ev.market = q.get('m') || ''; ev.line = q.get('line') != null ? Number(q.get('line')) : null; ev.side = q.get('side') === 'under' ? 'under' : 'over'; }
+  if (model.status !== 'ready') return missing(root, 'Value Research');
+  const M = model.data, byPlayer = new Map();
+  for (const p of M.predictions) { if (!byPlayer.has(p.player_id)) byPlayer.set(p.player_id, []); byPlayer.get(p.player_id).push(p); }
+  const players = [...byPlayer.values()].map(ps => ps[0]).sort((a, b) => who(a).localeCompare(who(b)));
+  const label = p => `${who(p)} (${p.position === 'TEAM' ? 'team' : p.position + ', ' + p.team})`;
+  root.innerHTML = `<h1>Value Research ${AI}</h1>${EV_NOTICE}
+    <p class="muted small">Pick a player (or tap Compare Price on a Model Pick), set the bookmaker's line and side, then type the odds you can see. The model probability is recalculated for that exact line. PropLab has no odds of its own and saves nothing you type.</p>
+    <div class="card stack"><div class="field"><label for="evp">Player or team</label><input class="in" id="evp" list="evpl" placeholder="Type a name" autocomplete="off" value="${esc(ev.pid && byPlayer.get(ev.pid) ? label(byPlayer.get(ev.pid)[0]) : '')}"><datalist id="evpl">${players.map(p => `<option value="${esc(label(p))}">`).join('')}</datalist></div><div id="evc"></div></div>
+    <div id="evr"></div>
+    <p class="xs muted">${stamp()} · <a href="#/nfl/picks">Model Picks</a> · <a href="#/nfl/performance">Model Performance</a></p>`;
+  const evc = $('#evc', root), evr = $('#evr', root);
+  const draw = () => {
+    const ps = byPlayer.get(ev.pid);
+    if (!ps) { evc.innerHTML = '<p class="small muted" style="margin:0">Choose a player or team to begin. Only players with a model prediction for an upcoming game are listed.</p>'; evr.innerHTML = ''; return; }
+    if (!ps.some(p => p.market === ev.market)) { ev.market = ps[0].market; ev.line = null; }
+    const p = ps.find(x => x.market === ev.market), mk = marketInfo(p.market);
+    if (ev.line == null || !Number.isFinite(ev.line)) ev.line = p.ref_line ?? 0.5;
+    const od = parseAnyOdds(ev.odds);
+    evc.innerHTML = `<div class="small muted">${esc(fxText(p))} · ${esc(kick(p))}</div>
+      <div class="ctl"><div class="field"><label for="evm">Market</label><select class="in" id="evm">${ps.map(x => `<option value="${x.market}" ${x.market === p.market ? 'selected' : ''}>${esc(marketInfo(x.market)?.label || x.market)}${marketInfo(x.market)?.active ? '' : ' (model inactive)'}</option>`).join('')}</select></div>
+        <div class="field"><label>Side</label><div class="seg" id="evs">${[['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ev.side === v ? 'on' : ''}" aria-pressed="${ev.side === v}">${l}</button>`).join('')}</div></div>
+        <div class="field"><label for="evl">Bookmaker's line</label><div class="hline"><button type="button" class="hstep" data-evstep="-1" aria-label="Lower the line by 1">−</button><input id="evl" class="in hnum" type="number" inputmode="decimal" step="0.5" value="${ev.line}" aria-label="Line"><button type="button" class="hstep" data-evstep="1" aria-label="Raise the line by 1">+</button></div><span class="xs muted">Reference line ${p.ref_line ?? '–'} ${infoTag('refline', 'what is this?', { cls: 'neutral' })}</span></div>
+        <div class="field"><label for="evo">Bookmaker's odds for your side</label><input class="in" id="evo" inputmode="text" autocomplete="off" placeholder="1.91, 10/11 or -110" value="${esc(ev.odds)}"><span class="xs muted" id="evok">${od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error ? esc(od.error) : 'Decimal, fractional or American odds'}</span></div></div>`;
+    drawResult(p, mk, od);
+  };
+  const drawResult = (p, mk, od) => {
+    if (!mk || !mk.active || p.confidence === 'Insufficient Data' || p.proj == null) {
+      evr.innerHTML = `<div class="card evcard" style="margin-top:12px"><h2 style="margin:0 0 6px">Insufficient Data</h2><p class="small" style="margin:0">${!mk || !mk.active ? `The ${esc(mk?.label || 'selected')} model did not pass its out-of-sample tests, so it is switched off and no probability or EV is shown.` : p.reason ? `No reliable probability: ${esc(p.reason)}.` : 'Not enough earlier games for a reliable probability.'} PropLab never substitutes a historical hit rate for a model probability.</p></div>`; return;
+    }
+    const lp = lineProbs(p, ev.line, mk); if (!lp) { evr.innerHTML = ''; return; }
+    const pw = ev.side === 'over' ? lp.over : lp.under, push = lp.push || 0, m = probMargin(p);
+    const fair = pw > 0 ? 1 / pw : null, imp = od.dec ? 1 / od.dec : null;
+    // with a whole-number line a push returns the stake: EV = (p_win x odds + p_push x 1 - 1) x 100
+    const evp = od.dec ? Math.round(((pw * od.dec + push) - 1) * 1000) / 10 : null;
+    const lo = od.dec ? Math.round((((pw - m) * od.dec + push) - 1) * 1000) / 10 : null, hi = od.dec ? Math.round((((pw + m) * od.dec + push) - 1) * 1000) / 10 : null;
+    const verdict = !od.dec ? null : lo > 0 ? ['Positive Estimated EV', 'pos'] : hi < 0 ? ['Negative Estimated EV', 'neg'] : ['Uncertain – No Clear Edge', 'unc'];
+    const sideTxt = `${ev.side === 'over' ? 'Over' : 'Under'} ${ev.line} ${mk.label.toLowerCase()}`;
+    evr.innerHTML = `<div class="card evcard stack" style="margin-top:12px">
+      <div class="tiles"><div class="tile"><b>${pct(pw)}</b><span>${infoTag('mprob', 'Model probability', { cls: 'neutral' })} <span class="xs muted">± ${(m * 100).toFixed(0)} pts</span></span></div>
+        <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds</span></div>
+        <div class="tile"><b>${fair ? fair.toFixed(2) : '–'}</b><span>${infoTag('fair', 'Fair odds', { cls: 'neutral' })}</span></div>
+        <div class="tile"><b>${od.dec ? od.dec : '–'}</b><span>Offered odds</span></div>
+        <div class="tile"><b class="${verdict ? 'ev-' + verdict[1] : ''}">${evp != null ? `${evp > 0 ? '+' : ''}${evp}%` : '–'}</b><span>${infoTag('evx', 'Estimated EV', { cls: 'neutral' })}</span></div>
+        <div class="tile"><b>${evp != null ? `${evp >= 0 ? '+' : '−'}£${Math.abs(evp / 100).toFixed(2)}` : '–'}</b><span>Expected return per £1</span></div></div>
+      ${verdict ? `<div class="evverdict ev-${verdict[1]}"><b>${verdict[0]}</b> <span class="small">EV range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the probability's margin.</span></div>` : '<p class="small muted" style="margin:0">Type the bookmaker\'s odds to see the implied chance and EV.</p>'}
+      <p class="small" style="margin:0">${esc(interpret(sideTxt, pw, imp, verdict, push))}</p>
+      <div class="small">Confidence: ${confTag(p.confidence)} <span class="xs muted">${esc(CONF_TEXT[p.confidence] || '')}</span></div>
+      <p class="small" style="margin:0">Projection <b>${p.proj}</b>${p.median != null ? ` · typical outcome ${p.median}` : ''}${push ? ` · chance of landing exactly on ${ev.line} (push): ${pct(push)}` : ''}.</p>
+      <ul class="small mpwhy">${explain({ ...p, label: mk.label }, ev.side, ev.line).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      ${p.p_hit_ref != null && p.market !== 'pts' ? `<p class="xs muted" style="margin:0">History only (not a probability): this season ${esc(p.player)} went over the reference line ${p.ref_line} in ${Math.round(p.p_hit_ref * p.n_hit)} of ${p.n_hit} games.</p>` : ''}
+      <p class="xs muted" style="margin:0">Never guaranteed: EV is an average over many bets if the probability were right. Bookmakers can be right where the model is wrong.</p></div>`;
+  };
+  const interpret = (sideTxt, pw, imp, verdict, push) => {
+    if (!verdict) return `The model gives ${sideTxt} a ${pct(pw)} chance.`;
+    if (verdict[1] === 'pos') return `The model gives ${sideTxt} a ${pct(pw)} chance; the odds imply ${pct(imp)}. Even at the cautious end of its margin the price looks better than fair, so this is an estimated edge (not a sure thing).`;
+    if (verdict[1] === 'neg') return `The model gives ${sideTxt} a ${pct(pw)} chance; the odds imply ${pct(imp)}. Even at the optimistic end of its margin the price is worse than fair: an estimated negative EV.`;
+    return `The model gives ${sideTxt} a ${pct(pw)} chance; the odds imply ${pct(imp)}. The difference is within the model's margin of error, so there is no clear edge either way.`;
+  };
+  root.addEventListener('change', e => {
+    if (e.target.id === 'evp') { const p = players.find(x => label(x) === e.target.value); if (p) { ev.pid = p.player_id; ev.market = ''; ev.line = null; draw(); } }
+    else if (e.target.id === 'evm') { ev.market = e.target.value; ev.line = null; draw(); }
+  });
+  root.addEventListener('click', e => {
+    const s = e.target.closest('#evs button'); if (s) { ev.side = s.dataset.v; draw(); return; }
+    const st = e.target.closest('[data-evstep]'); if (st) { ev.line = Math.round((ev.line + Number(st.dataset.evstep)) * 2) / 2; draw(); }
+  });
+  root.addEventListener('input', e => {
+    if (e.target.id === 'evo') { ev.odds = e.target.value; const od = parseAnyOdds(ev.odds); const k = $('#evok', root); if (k) k.textContent = od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error || 'Decimal, fractional or American odds'; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), od); }
+    if (e.target.id === 'evl') { const v = parseFloat(e.target.value); if (Number.isFinite(v)) { ev.line = v; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), parseAnyOdds(ev.odds)); } }
+  });
+  draw();
+}
+
+return { EV_NOTICE, qualifies, viewNflPicks, viewNflPerformance, viewNflEv };
 })();
 __m['v-value'] = (() => {
 const { store, playerById, loadPlayerRows, teamBySlug, teamRowsFor, leagueName } = __m['data'];
 const { PLAYER_MARKETS, TEAM_MARKETS, marketRows, marketsWithData } = __m['markets'];
 const { hitRate, parseOdds, fairOdds } = __m['analytics'];
-const { evaluate } = __m['value'];
 const { typicalLine } = __m['panel'];
 const { searchBox } = __m['searchbox'];
 const { $, $$, esc, avg } = __m['util'];
 const { dataBanner, problemsBanner } = __m['shared'];
+const { EV_NOTICE } = __m['v-nfl-model'];
 
 const ui = { subject: null, market: null, side: 'over', line: null, last: 20, odds: '', other: '', minutes: '' };
 
@@ -2785,9 +3093,9 @@ async function viewValue(root, r) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Value Research</h1>${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
   const q = r.q;
   if (q.get('s')) { ui.subject = q.get('s'); ui.market = q.get('m'); ui.side = q.get('side') === 'under' ? 'under' : 'over'; ui.line = q.get('line') ? Number(q.get('line')) : null; }
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Value Research</h1>
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Value Research</h1>${EV_NOTICE}
     <p class="muted">Compare a price you can see at a bookmaker with what the published data says. PropLab has no bookmaker odds: you enter them. Nothing you type is saved or shared.</p>
-    <div class="banner info"><b>Two different things.</b> A <b>trend</b> is how often something happened. An <b>estimate</b> is a model's probability, shown only when there is enough data to support one. Only an estimate can indicate positive expected value (EV), and even then it is a reason to look closer, not proof.</div>
+    <div class="banner info"><b>Two different things.</b> A <b>trend</b> is how often something happened in the past. A <b>model probability</b> is a tested forecast. Only a model probability can be compared with a price to estimate expected value (EV), and PropLab has no football model yet, so football shows trends and break-even prices only.</div>
     <div class="card stack" style="margin-top:12px"><div class="field"><label>Player or team</label><div id="sb"></div></div><div id="subj"></div></div><div id="result"></div>
     <div class="card stack" style="margin-top:12px"><h3>Odds converter</h3><div class="ctl"><div class="field"><label>Odds (e.g. 2.5, 6/4, evens)</label><input class="in" id="cv" inputmode="text" placeholder="6/4"></div><div class="field"><label>Implied chance</label><div id="cvo" class="stat" style="font-size:20px;font-weight:700">–</div></div></div><p class="xs muted" style="margin:0">Implied chance is 1 ÷ decimal odds and includes the bookmaker's margin.</p></div>`;
   searchBox($('#sb', root), { placeholder: 'Search a player or team', filter: it => it.type === 'team' || it.hasLogs, onPick: it => { ui.subject = `${it.type}:${it.id}`; ui.market = null; ui.line = null; load(); } });
@@ -2825,22 +3133,8 @@ async function viewValue(root, r) {
     h += hr.n ? `<p style="margin:0"><b class="stat" style="font-size:24px">${hr.hits} of ${hr.n}</b> <span class="muted">(${hr.hitPct}%) went ${word.toLowerCase()} ${ui.line} ${esc(market.label)}</span></p>${hr.n < 8 ? `<div class="banner"><b>Small sample (${hr.n}).</b> Too few matches to draw a conclusion.</div>` : ''}` : '<div class="banner">No matches with data for this market.</div>';
     if (odds && hr.n) { const be = 100 / odds; h += `<p style="margin:0">At <b>${odds}</b> you need to win more than <b>${be.toFixed(1)}%</b> of the time to break even. The past frequency was ${hr.hitPct}%, ${hr.hitPct > be ? 'above' : 'below'} that. This compares a past count with a price. It is <b>not</b> a probability estimate and does not mean the bet has value.</p>`; }
     h += '</div>';
-    h += '<div class="card stack" style="margin-top:12px"><h2>Estimate: what a model thinks</h2>';
-    if (!odds) h += '<p class="muted" style="margin:0">Enter the odds you can see to compute an estimate and EV.</p>';
-    else {
-      const minutes = subj.type === 'player' ? (Number(ui.minutes) || avg(subj.rows.slice(0, 5).map(x => x.minutes).filter(v => typeof v === 'number')) || null) : 1;
-      if (subj.type === 'player' && !minutes) h += '<div class="banner">Enter the minutes you expect this player to play. Without minutes in the published data, no estimate is made.</div>';
-      else {
-        const ev = evaluate({ rows: all, side: ui.side, line: ui.line, odds, otherOdds: other, expectedExposure: minutes, minExposure: subj.type === 'player' ? 1 : 0, dist: 'count', sampleN: ui.last || 1000 });
-        if (!ev.model.ok) h += `<div class="banner"><b>No estimate: not enough data.</b> ${esc(ev.model.reason)} PropLab will not show EV without a defensible estimate, so only the trend above applies.</div>`;
-        else {
-          h += `<div class="tiles"><div class="tile"><b>${(ev.prob * 100).toFixed(1)}%</b><span>Estimated chance</span></div><div class="tile"><b>${ev.fair}</b><span>Fair odds</span></div><div class="tile"><b class="${ev.ev > 0 ? 'ev-pos' : 'ev-neg'}">${ev.ev > 0 ? '+' : ''}${ev.ev}%</b><span>Estimated EV</span></div></div>
-            <p class="small" style="margin:0">${esc(ev.verdict)} Model: ${esc(ev.model.model)} from ${ev.sampleSize} matches. Confidence: <b>${ev.confidence}</b>.${ev.market ? ` With the margin removed the market implies ${(ev.market.probSide * 100).toFixed(1)}% (margin ${ev.market.marginPct}%).` : ''}</p>
-            ${ev.flags.map(f => `<div class="banner">${esc(f)}</div>`).join('')}
-            <p class="xs muted" style="margin:0">The model uses only published past results. It ignores line-ups, injuries, tactics, the opponent and how a bookmaker settles this market. EV is an estimate of long-run return per unit staked under that probability.</p>`;
-        }
-      }
-    }
+    // No validated football model yet: no model probability and therefore no EV (a historical hit rate is never used as a probability).
+    h += '<div class="card stack" style="margin-top:12px"><h2>Model probability and EV</h2><div class="banner info"><b>Not available for football yet.</b> PropLab\'s experimental AI model currently covers NFL player markets only. Without a tested model probability, no expected value is calculated: the past frequency above is history, not a probability. The NFL model and its EV calculator are on the American Football Value tab.</div>';
     h += '</div>'; res.innerHTML = h;
   }
   const subjEl = $('#subj', root);
@@ -2963,6 +3257,11 @@ async function viewAbout(root) {
     <li><b>Referees for upcoming matches</b> appear only once confirmed in a source.</li></ul></div></section>
   <section class="sec"><h2>NFL</h2><div class="card small">${nfl.status === 'ready' ? `<p style="margin:0 0 6px">Seasons ${nfl.meta.seasons.join(', ')} · ${nfl.players.length.toLocaleString()} players with game logs · ${nfl.games.length.toLocaleString()} games (regular season and postseason kept apart).</p>` : ''}
     <p style="margin:0">Player game logs, play-by-play (longest plays, touchdown scorers), rosters and schedules from <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a>, licensed CC-BY 4.0. A game counts for a player only when he has a recorded stat line in it; games on the active roster without a stat line are listed on his profile and left out, never counted as 0. Kick-off times are converted from US Eastern time to each visitor's own time zone for display. Not available: snap counts, player headshots, first-quarter or half markets, and anything that needs paid tracking data.</p></div></section>
+  <section class="sec" id="modelsec"><h2>Experimental NFL model</h2><div class="card small stack">
+    <p style="margin:0"><b>In testing.</b> The model covers NFL player markets (passing, rushing and receiving yards, receptions, targets, carries, passing and receiving touchdowns) and team points. Football has no model yet.</p>
+    <p style="margin:0"><b>How it works:</b> it projects each player's workload (attempts, carries or targets) from recent games, then efficiency (yards per attempt and so on), both pulled towards the position average because single games are noisy. It adjusts for what the opponent's defence has allowed and for the points the betting market expects the team to score. A probability for any line comes from how actual results have spread around projections in past seasons, corrected by a calibration step learned only from earlier seasons.</p>
+    <p style="margin:0"><b>How it was tested:</b> each season from 2024 was predicted using only earlier seasons and only information available before kick-off. A market is switched on only if it beat simple baselines (the historical hit rate and the season average) and its probabilities came true about as often as stated. Pass attempts, completions and interceptions did not pass and are switched off.</p>
+    <p style="margin:0"><b>Limits:</b> PropLab has no bookmaker lines or odds history, so the tests use PropLab's own reference line and cannot show profit or ROI. Weather, late depth-chart changes and news after the daily update are not included. Historical hit rates (Hiwi's Section, Finder) are history, never model probabilities. Results: <a href="#/nfl/performance">Model Performance</a>.</p></div></section>
   <section class="sec" id="refreshsec"><h2>Automatic data refresh</h2><div class="card small" id="refreshbox"><p class="muted" style="margin:0">Checking the last refresh…</p></div></section>
   <section class="sec"><h2>Licensing status</h2><div class="card small"><p style="margin:0 0 8px">PropLab's own assessment of each source, for the owner to review (not legal advice). Free access does not by itself grant the right to republish data.</p>
     <div class="list">${LICENSING.map(l => `<div class="row"><div class="l"><b>${esc(l.name)} <span class="lic ${l.status}">${esc(STATUS_LABEL[l.status])}</span></b><span>${esc(l.reason)}</span></div></div>`).join('')}</div></div></section>
@@ -3720,7 +4019,7 @@ async function viewNflTeam(root, abbr) {
 const fx = { tab: 'upcoming', when: 'all' };
 async function viewNflFixtures(root) {
   if (nflLoading(root)) return;
-  root.innerHTML = `<h1>NFL games</h1><div class="stack"><div class="seg" id="ntabs"><button data-t="upcoming" class="${fx.tab === 'upcoming' ? 'on' : ''}">Upcoming</button><button data-t="results" class="${fx.tab === 'results' ? 'on' : ''}">Results</button></div>
+  root.innerHTML = `<h1>NFL games</h1><a class="card modelentry" href="#/nfl/picks"><b>Model Picks <span class="aichip"><span class="infotag ai">Experimental AI</span></span></b><span class="small muted">Where the NFL model leans clearly one way this week, with its probability, confidence and reasons. Compare any price on the Value tab.</span></a><div class="stack"><div class="seg" id="ntabs"><button data-t="upcoming" class="${fx.tab === 'upcoming' ? 'on' : ''}">Upcoming</button><button data-t="results" class="${fx.tab === 'results' ? 'on' : ''}">Results</button></div>
     <div class="seg wrap" id="nwhen">${[['all', 'All'], ['today', 'Today'], ['7', 'Next 7 days']].map(([v, l]) => `<button data-v="${v}" class="${fx.when === v ? 'on' : ''}">${l}</button>`).join('')}</div></div><div id="nfx" style="margin-top:10px"></div>
     <p class="xs muted">Kick-off times are shown in your time zone (${esc(tzNow())}), converted from the official kick-off times; change it at the bottom of the page. PropLab has no live scores: after kick-off a game shows Started (status unconfirmed), then Awaiting result until the final score is published.</p>${credit}`;
   const draw = () => {
@@ -4054,7 +4353,8 @@ const { viewAbout } = __m['v-about'];
 const { viewHiwi } = __m['v-hiwi'];
 const { viewNflHome, viewNflSearch, viewNflPlayer, viewNflTeam, viewNflFixtures } = __m['v-nfl'];
 const { viewNflPlays } = __m['v-nfl-plays'];
-const { viewNflFinder, viewNflValue } = __m['v-nfl-finder'];
+const { viewNflFinder } = __m['v-nfl-finder'];
+const { viewNflPicks, viewNflPerformance, viewNflEv } = __m['v-nfl-model'];
 const { viewSports } = __m['v-sports'];
 const { wireInfo } = __m['info'];
 const { startUpdateChecks } = __m['update'];
@@ -4070,7 +4370,7 @@ const SEARCH = { football: '#/players', nfl: '#/nfl/search' };
 const FB = { football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', value: 'value', about: 'about' };
 const FB_HREF = { home: '#/fixtures', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', value: '#/value', about: '#/about' };
 const NFL_HREF = { home: '#/nfl/fixtures', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', value: '#/nfl/value', about: '#/about' };
-const TITLES = { home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { picks: 'Model Picks', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
@@ -4113,7 +4413,7 @@ function chrome(w) {
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
     <a class="searchbtn" href="${SEARCH[sp]}" aria-label="Search ${SPORTS[sp].label}">${ICON.search}</a>` : '';
   const tabs = sp ? TABS[sp] : [];
-  const active = sp === 'football' ? FB[w.page] : ({ player: 'search', team: 'search' }[w.page] || w.page);
+  const active = sp === 'football' ? FB[w.page] : ({ player: 'search', team: 'search', picks: 'value', performance: 'value' }[w.page] || w.page);
   $('#nav').hidden = !sp; $('#nav').style.setProperty('--tabs', String(tabs.length || 5)); // one column per tab (no empty slot)
   $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
   document.body.dataset.sport = sp || 'hub';
@@ -4135,7 +4435,7 @@ async function render() {
     if (w.sport === 'nfl' && nfl.status === 'loading') return;
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: x => viewNflPlays(x, w.r), hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: viewNflValue, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: x => viewNflPlays(x, w.r), hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => viewNflEv(x, w.r), picks: viewNflPicks, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       return void await V(body);
     }
     const V = { football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
