@@ -215,6 +215,23 @@ details.pgrp{border:1px solid var(--line);border-radius:12px;padding:8px 10px;ma
 .hside{display:flex}.hside button{flex:1}
 .lic{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:4px;vertical-align:1px}.lic.permitted{background:#123a2a;color:#6ee7b7}.lic.unclear{background:#3a2e12;color:#f5c66b}.lic.restricted{background:#3a1515;color:#fca5a5}
 
+/* time zone display */
+.tzab{display:block;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.02em;line-height:1.1}
+.started{display:inline-block;font-size:11px;font-weight:700;line-height:1.15;color:var(--amber);background:rgba(245,184,61,.12);border:1px solid rgba(245,184,61,.45);border-radius:6px;padding:2px 5px;text-align:center;white-space:normal}
+.started small{display:block;font-weight:500;font-size:9.5px}
+.tzset{display:flex;align-items:center;gap:8px;justify-content:center;margin:8px 0 0;font-size:13px}
+.tzset select{width:auto;min-width:0;padding:4px 8px;font-size:13px}
+.hiwiweek{margin:0 0 10px}.hiwiweek ul{margin:4px 0 0;padding-left:18px}.hiwiweek li{margin:1px 0}
+/* Hiwi search suggestions */
+.combo{position:relative}
+.combo .in{padding-right:40px}
+.combo-x{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;border-radius:8px}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;margin:0;padding:4px 0;list-style:none;background:var(--s2);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.5);max-height:min(45vh,320px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.combo-h{padding:6px 12px 2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.combo-o{padding:10px 12px;font-size:15px;cursor:pointer;min-height:44px;box-sizing:border-box;display:flex;align-items:center}
+.combo-o.on,.combo-o:hover{background:var(--s1)}
+.combo-none{padding:10px 12px;font-size:14px;color:var(--muted)}
+
 </style>
 <title>PropLab – football stats and player-prop research</title>
 </head>
@@ -290,6 +307,8 @@ for (const g of GROUPS) { const canon = base(g[0]); for (const v of g) ALIAS.set
 const normTeam = s => { const b = base(s); return ALIAS.get(b) || b; };
 const teamSlug = s => normTeam(s).replace(/ /g, '-');
 const sameTeam = (a, b) => !!a && !!b && normTeam(a) === normTeam(b);
+/** Every known spelling of a club, normalised (for search suggestions): its own name, its canonical key and the alias group. */
+const teamAliases = s => { const c = normTeam(s); const out = new Set([normName(s), c]); for (const g of GROUPS) if (base(g[0]) === c) for (const v of g) out.add(normName(v)); return [...out]; };
 
 // Friendly names for display (the canonical key is lower-case). Unlisted teams are shown title-cased.
 const DISPLAY = { 'leeds': 'Leeds United', 'newcastle': 'Newcastle United', 'brighton': 'Brighton', 'tottenham': 'Tottenham Hotspur', 'wolves': 'Wolverhampton Wanderers', 'west ham': 'West Ham United',
@@ -305,7 +324,7 @@ const DISPLAY = { 'leeds': 'Leeds United', 'newcastle': 'Newcastle United', 'bri
 const titleCase = s => s.replace(/\b([a-z])/g, c => c.toUpperCase());
 const displayTeam = s => { const k = normTeam(s); return DISPLAY[k] || titleCase(k); };
 
-return { normName, normTeam, teamSlug, sameTeam, displayTeam };
+return { normName, normTeam, teamSlug, sameTeam, teamAliases, displayTeam };
 })();
 __m['util'] = (() => {
 const $ = (s, el = document) => el.querySelector(s);
@@ -324,7 +343,7 @@ const avg = a => (a.length ? Math.round(100 * a.reduce((s, x) => s + x, 0) / a.l
 const pct = (a, b) => (b ? Math.round(1000 * a / b) / 10 : null);
 const encodeId = s => encodeURIComponent(s);
 
-// ---- time: all kickoffs are shown in UK time (Europe/London). Fixtures with ko_utc use it; older fixtures carry a UK date + "HH:MM". ----
+// ---- reference time: logic (upcoming, gameweeks, sorting) uses the UTC instant and the UK date. What the viewer reads uses koLocal below. ----
 const UKF = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 const ukParts = d => { const o = {}; for (const p of UKF.formatToParts(d)) o[p.type] = p.value; return { ymd: `${o.year}-${o.month}-${o.day}`, hm: `${o.hour === '24' ? '00' : o.hour}:${o.minute}` }; };
 const nowUK = (now = new Date()) => ukParts(now);
@@ -335,13 +354,46 @@ const isUpcoming = (f, now = new Date()) => {
   if (f.ko_utc) return Date.parse(f.ko_utc) > now.getTime();
   const n = ukParts(now); if (f.date !== n.ymd) return f.date > n.ymd; return !f.kickoff || f.kickoff > n.hm;
 };
-const fmtKickUK = f => { const k = koUK(f); return `${fmtDay(k.ymd)}${k.hm ? ' · ' + k.hm + ' UK' : ''}`; };
+// ---- viewer time zone: DISPLAY ONLY. Fixture identity, gameweeks, sorting and every calculation keep using the UTC instant
+// (and the UK reference date above); only the date and time a visitor reads are converted to their own time zone. ----
+const TZ_CHOICES = [['auto', 'Automatic'], ['uk', 'UK', 'Europe/London'], ['et', 'US Eastern', 'America/New_York'], ['ct', 'US Central', 'America/Chicago'], ['pt', 'US Pacific', 'America/Los_Angeles'], ['tr', 'Turkey', 'Europe/Istanbul']];
+const validTz = tz => { try { new Intl.DateTimeFormat('en-GB', { timeZone: tz }).format(0); return true; } catch { return false; } };
+/** The browser's time zone, or UTC when it cannot be detected or is not usable. */
+const detectTz = () => { try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; return z && validTz(z) ? z : 'UTC'; } catch { return 'UTC'; } };
+const tzPref = () => { try { const v = localStorage.getItem('proplab.tz'); return TZ_CHOICES.some(c => c[0] === v) ? v : 'auto'; } catch { return 'auto'; } };
+let tzCache = null;
+const setTzPref = v => { try { localStorage.setItem('proplab.tz', v); } catch { /* private mode: applies to this visit only */ } tzCache = null; memPref = v; };
+let memPref = null;
+const viewTz = () => { if (tzCache) return tzCache; const p = memPref || tzPref(); const c = TZ_CHOICES.find(x => x[0] === p); tzCache = c && c[2] && validTz(c[2]) ? c[2] : detectTz(); return tzCache; };
+const fmtCache = new Map();
+const partsIn = (d, tz) => { let f = fmtCache.get(tz); if (!f) { f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); fmtCache.set(tz, f); }
+  const o = {}; for (const p of f.formatToParts(d)) o[p.type] = p.value; return { ymd: `${o.year}-${o.month}-${o.day}`, hm: `${o.hour === '24' ? '00' : o.hour}:${o.minute}` }; };
+const ABBR = { 'Europe/Istanbul': 'TRT', UTC: 'UTC', 'Etc/UTC': 'UTC', 'Etc/GMT': 'GMT' };
+/** Short zone name at that moment (BST, GMT, EDT, EST, CDT, PDT, CEST, TRT...), or an offset such as GMT+9 where no common abbreviation exists. */
+const tzAbbr = (d, tz = viewTz()) => {
+  if (ABBR[tz]) return ABBR[tz];
+  for (const loc of ['en-GB', 'en-US']) { try { const n = new Intl.DateTimeFormat(loc, { timeZone: tz, timeZoneName: 'short' }).formatToParts(d).find(p => p.type === 'timeZoneName')?.value; if (n && /^[A-Z]{2,5}$/.test(n)) return n; } catch { /* next */ } }
+  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(d).find(p => p.type === 'timeZoneName')?.value || 'UTC'; } catch { return 'UTC'; }
+};
+/** Kick-off as the viewer reads it: { ymd, hm, abbr }. A fixture without a confirmed time (TBC) keeps its scheduled date and no time is invented. */
+const koLocal = f => {
+  if (f.ko_utc) { const d = new Date(f.ko_utc); return { ...partsIn(d, viewTz()), abbr: tzAbbr(d) }; }
+  return { ymd: f.date, hm: '', abbr: '' };
+};
+/** Today's date in the viewer's time zone. */
+const todayLocal = (now = new Date()) => partsIn(now, viewTz()).ymd;
+const localDayAfter = (n, now = new Date()) => partsIn(new Date(now.getTime() + n * 864e5), viewTz()).ymd;
+/** "Sun 18 Oct · 15:00 BST" or "Sun 25 Oct · time TBC". */
+const fmtKick = f => { const k = koLocal(f); return `${fmtDay(k.ymd)} · ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
+/** The zone name used now, for notes such as "Times shown in BST". */
+const tzNow = () => tzAbbr(new Date());
+const tzLabel = () => { const p = memPref || tzPref(); const c = TZ_CHOICES.find(x => x[0] === p); return p === 'auto' ? `Automatic (${tzNow()})` : `${c[1]} (${tzNow()})`; };
 const fixtureId = f => `${f.league}:${f.date}:${String(f.home).toLowerCase().replace(/[^a-z0-9]+/g, '-')}:${String(f.away).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
 // MLS seasons run within one calendar year (2026); Premier League seasons span two (2026/27).
 const seasonLabel = (league, s) => (league === 'mls' ? String(s) : `${s}/${String(s + 1).slice(2)}`);
 /**
- * Match status estimated from the scheduled kick-off only (no live data): 'pre' before kick-off, 'live' for the first 2 hours,
+ * Match status from the scheduled kick-off (PropLab has no live feed): 'pre' before kick-off, 'started' (status unconfirmed) for the first hours,
  * then 'awaiting' until a verified result is published (callers drop fixtures that already have one). 'postponed' if the fixture says so.
  * Fixtures without a kick-off time stay 'pre' until their UK date has passed, then 'awaiting'.
  */
@@ -350,15 +402,23 @@ const fxStatus = (f, now = new Date(), liveMs = LIVE_MS) => {
   if (f.status === 'postponed') return 'postponed';
   if (!f.ko_utc) return isUpcoming(f, now) ? 'pre' : 'awaiting';
   const t = now.getTime() - Date.parse(f.ko_utc);
-  return t < 0 ? 'pre' : t < liveMs ? 'live' : t < AWAIT_MAX_MS ? 'awaiting' : 'old';
+  // 'live' only when the data itself says so (an authoritative status). A passed kick-off alone is 'started': not confirmed live.
+  if (t >= 0 && f.status === 'live') return 'live';
+  return t < 0 ? 'pre' : t < liveMs ? 'started' : t < AWAIT_MAX_MS ? 'awaiting' : 'old';
 };
+/** Badge for a status that is not 'pre'. Red LIVE is only used for a confirmed live status. */
+const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live">LIVE</span>'
+  : st === 'started' ? '<span class="started" title="Kick-off time has passed; PropLab has no confirmed live status">Started<small>status unconfirmed</small></span>'
+  : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'postponed' ? '<span class="pp">P-P</span>' : '');
+/** Time cell for lists: local time with the zone name underneath, or TBC. */
+const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : 'TBC'; };
 
-return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, fmtKickUK, fixtureId, seasonLabel, LIVE_MS, fxStatus };
+return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, fxStatus, statusBadge, timeHtml };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
 const { normName, teamSlug, normTeam, displayTeam } = __m['teams'];
-const { avg, isUpcoming, koUK } = __m['util'];
+const { avg, isUpcoming, koUK, koLocal, fxStatus } = __m['util'];
 
 const LEAGUE_NAMES = { epl: 'Premier League', laliga: 'La Liga', bundesliga: 'Bundesliga', seriea: 'Serie A', ligue1: 'Ligue 1', ligaportugal: 'Liga Portugal', scotprem: 'Scottish Premiership', eredivisie: 'Eredivisie', mls: 'MLS' };
 const NEWS_STATUS = { out: 'Out', doubtful: 'Doubtful', suspended: 'Suspended', returning: 'Returning', likely_start: 'Likely to start', rested: 'Rested', other: 'Note' };
@@ -433,6 +493,9 @@ const newsForTeam = name => store.news.filter(n => normTeam(n.team) === normTeam
 // Equal kick-offs keep a stable order: league order, then home team.
 const fxKey = f => { const k = koUK(f); return `${k.ymd} ${k.hm || '99:99'} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}`; };
 const fxSort = (a, b) => { const x = fxKey(a), y = fxKey(b); return x < y ? -1 : x > y ? 1 : 0; };
+/** Display order in the viewer's time zone (same order as fxSort for timed games; TBC games after the timed games of their date). */
+const fxKeyLocal = f => { const k = koLocal(f); return `${k.ymd} ${k.hm || '99:99'} ${f.ko_utc || ''} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}`; };
+const fxSortLocal = (a, b) => { const x = fxKeyLocal(a), y = fxKeyLocal(b); return x < y ? -1 : x > y ? 1 : 0; };
 const upcomingFixtures = (league = '') => store.fixtures.filter(f => isUpcoming(f) && (!league || f.league === league)).sort(fxSort);
 const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) === normTeam(name) || normTeam(f.away) === normTeam(name));
 // Selector order: England, the other big European leagues, then Portugal, Netherlands, Scotland, and MLS.
@@ -446,6 +509,18 @@ const teamsOfLeague = lg => { const cs = currentSeason(lg); const cur = new Set(
   for (const f of store.fixtures) if (f.league === lg) { cur.add(teamSlug(f.home)); cur.add(teamSlug(f.away)); } for (const d of store.directory) if (d.league === lg) cur.add(teamSlug(d.team));
   return [...store.teams.values()].filter(t => t.league === lg && cur.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
 const resultsList = () => [...store.teamMatches].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+/** True when a verified final result for this fixture is published (MLS dates can differ by a day between US and UK dates). */
+function hasFinalResult(f) {
+  const k = `${f.league}|${normTeam(f.home)}|${normTeam(f.away)}`;
+  if (!store._resIdx || store._resIdxN !== store.teamMatches.length) { const m = new Map(); for (const r of store.teamMatches) { const kk = `${r.league}|${normTeam(r.home)}|${normTeam(r.away)}`; if (!m.has(kk)) m.set(kk, []); m.get(kk).push(r.date); } store._resIdx = m; store._resIdxN = store.teamMatches.length; }
+  return (store._resIdx.get(k) || []).some(d => Math.abs(Date.parse(d) - Date.parse(f.date)) <= 864e5);
+}
+/**
+ * Fixtures that can still be researched in Match Selection: upcoming ones plus ones that have kicked off but have no verified final result yet
+ * (status 'started' / 'live' / 'awaiting'). A fixture leaves the list once its final result is published, or after 4 days without one.
+ * Incomplete in-play data is never used: hit rates only use completed, published results.
+ */
+const selectableFixtures = (league = '', now = new Date()) => store.fixtures.filter(f => (!league || f.league === league) && (isUpcoming(f, now) || (fxStatus(f, now) !== 'old' && !hasFinalResult(f)))).sort(fxSort);
 
 function refereeProfile(name) {
   const e = store.refs.get(normName(name)); const all = store.teamMatches.filter(r => r.referee);
@@ -521,12 +596,12 @@ async function loadAllPlayerRows() {
   return byId;
 }
 
-return { LEAGUE_NAMES, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamSlugOf, newsForTeam, fxKey, fxSort, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['nfl-data'] = (() => {
 // NFL data (nflverse, CC-BY 4.0). Loaded only when an NFL page is opened; game logs are loaded per position group on demand.
 // Rows are player games with a recorded stat line; a game with no stat row is never filled in as 0.
-const { koUK } = __m['util'];
+const { koUK, fxStatus } = __m['util'];
 
 const nfl = { status: 'idle', error: '', meta: null, games: [], gameById: new Map(), players: [], playerById: new Map(), teams: new Map(), groups: new Map(), loading: new Map(), getJson: null };
 const GROUP_NAMES = { qb: 'Quarterbacks', rb: 'Running backs', wr: 'Wide receivers', te: 'Tight ends', k: 'Kickers', def: 'Defensive players' };
@@ -571,6 +646,8 @@ const latestSeason = () => Math.max(...(nfl.meta?.seasons || [0]));
 /** Upcoming games (kick-off still in the future), chronological by UK kick-off. */
 const nflUpcoming = (now = new Date()) => nfl.games.filter(g => !g.final && (!g.ko_utc || Date.parse(g.ko_utc) > now.getTime())).sort(nflSort);
 const nflSort = (a, b) => { const x = koUK(a), y = koUK(b); const ka = `${x.ymd} ${x.hm || '99:99'} ${a.id}`, kb = `${y.ymd} ${y.hm || '99:99'} ${b.id}`; return ka < kb ? -1 : ka > kb ? 1 : 0; };
+/** Games that can still be researched: not yet final (nflverse marks a game final once its score is official), kicked off at most 4 days ago. */
+const nflSelectable = (now = new Date()) => nfl.games.filter(g => !g.final && fxStatus(g, now, 4 * 3600e3) !== 'old').sort(nflSort);
 const nextGameOf = abbr => nflUpcoming().find(g => g.home === abbr || g.away === abbr) || null;
 /** Team points rows (from final scores): newest first, one per game, for team markets. */
 function teamGameRows(abbr) {
@@ -579,7 +656,7 @@ function teamGameRows(abbr) {
     .sort((x, y) => (x.date < y.date ? 1 : -1));
 }
 
-return { nfl, GROUP_NAMES, GROUP_OF_POS, loadNfl, loadGroup, playerRows, teamName, latestSeason, nflUpcoming, nflSort, nextGameOf, teamGameRows };
+return { nfl, GROUP_NAMES, GROUP_OF_POS, loadNfl, loadGroup, playerRows, teamName, latestSeason, nflUpcoming, nflSort, nflSelectable, nextGameOf, teamGameRows };
 })();
 __m['shared'] = (() => {
 const { store, freshness, NEWS_STATUS, LEAGUE_NAMES, leaguesPresent } = __m['data'];
@@ -719,7 +796,7 @@ return { searchBox, itemHref };
 })();
 __m['v-home'] = (() => {
 const { store, leagueName, freshness, upcomingFixtures } = __m['data'];
-const { $, esc, fmtDay, fmtLong, todayYmd, fmtKickUK, seasonLabel } = __m['util'];
+const { $, esc, fmtDay, fmtLong, todayYmd, fmtKick, seasonLabel } = __m['util'];
 const { ICON, BEAR_ICON } = __m['icons'];
 const { searchBox } = __m['searchbox'];
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
@@ -741,7 +818,7 @@ async function viewHome(root) {
     <a class="tool" href="#/hiwi">${BEAR_ICON}<b>Hiwi's Section</b><span>Ready-made ideas for upcoming games</span></a>
     <a class="tool" href="#/finder">${ICON.finder}<b>Hit Rate Finder</b><span>Discover trends across a league</span></a>
     <a class="tool" href="#/value">${ICON.value}<b>Value Research</b><span>Compare a price with the data</span></a></div>
-  ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div id="hlg" style="margin-bottom:10px">${leagueSelect()}</div><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>
+  ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div id="hlg" style="margin-bottom:10px">${leagueSelect()}</div><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>
   <section class="sec"><h2>What is published <a href="#/about">Data &amp; sources</a></h2><div class="card"><dl class="kv">
     <dt>Last updated</dt><dd>${f.generated ? esc(fmtLong(f.generated)) : 'n/a'}</dd>
     <dt>Team match stats</dt><dd>${tm.length ? [...new Set(tm.map(e => e.league))].map(lg => { const es = tm.filter(e => e.league === lg).sort((a, b) => a.season - b.season); return `${esc(leagueName(lg))}: ${seasonLabel(lg, es[0].season)}${es.length > 1 ? '–' + seasonLabel(lg, es[es.length - 1].season) : ''}, ${es.reduce((n, e) => n + e.count, 0).toLocaleString()} matches to ${esc(fmtDay(es[es.length - 1].through))}`; }).join('<br>') : 'None yet'}</dd>
@@ -1257,7 +1334,7 @@ __m['v-player'] = (() => {
 const { store, playerById, loadPlayerRows, newsForPlayer, upcomingFor, teamSlugOf, teamProfile, leagueName } = __m['data'];
 const { PLAYER_MARKETS, marketsWithData } = __m['markets'];
 const { researchPanel } = __m['panel'];
-const { $, esc, fmtDay, fmtLong, todayYmd, avg, fmtKickUK } = __m['util'];
+const { $, esc, fmtDay, fmtLong, todayYmd, avg, fmtKick } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
 const { searchBox } = __m['searchbox'];
 const { photoHtml, photoCredit, hydratePhoto } = __m['photo'];
@@ -1284,7 +1361,7 @@ async function viewPlayer(root, r) {
     html += `<div id="panel"></div>`; }
   else if (p.league === 'epl') html += `<div class="banner info"><b>Match statistics are not available for ${esc(p.name)}.</b> No free source licenses Premier League player match statistics for public display, so this profile shows directory information only. Nothing is estimated in their place. What is available: club, position, team news, fixtures, the team page and team trends.</div>`;
   else html += `<div class="banner info"><b>Match statistics are not available yet for ${esc(p.name)}.</b> This profile shows directory information only. Shots, goals, assists and hit rates appear here once verified match-by-match logs are published; nothing is estimated in their place.${p.hasLogs ? '' : ' What is available: club, position, team news, fixtures and the team page.'}</div>`;
-  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${pr.shotsA != null ? `${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA ?? 'n/a'} fouls and ${pr.yellowsA ?? 'n/a'} yellow cards conceded per match` : `${esc(opp)} concede ${pr.goalsA ?? 'n/a'} goals per match`} (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+  html += `<section class="sec"><h2>Upcoming</h2><div class="card">${up.length ? `<div class="list">${up.map(x => { const opp = x.home === p.team ? x.away : x.home; const pr = teamProfile(teamSlugOf(opp)); return `<div class="row"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></div>${pr.n ? `<p class="small muted" style="margin:0 0 8px">${pr.shotsA != null ? `${esc(opp)} average ${pr.shotsA} shots, ${pr.foulsA ?? 'n/a'} fouls and ${pr.yellowsA ?? 'n/a'} yellow cards conceded per match` : `${esc(opp)} concede ${pr.goalsA ?? 'n/a'} goals per match`} (${pr.n} matches this season, team totals).</p>` : ''}`; }).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     <section class="sec"><h2>Source</h2><div class="card small muted">${p.inDirectory ? `<b>Directory:</b> name, club and position from <a href="${esc(p.dirSource)}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0), squad list ${p.as_of ? 'as of ' + esc(fmtLong(p.as_of)) : 'date not stated by the source'}; directory published ${esc(fmtLong(store.directoryMeta?.updated || ''))}. Squad lists can lag recent transfers. ` : ''}${rows.length ? `Match logs: ${[...new Set(rows.map(x => x.source).filter(Boolean))].map(esc).join('; ') || 'see Data & sources'}. ` : ''}${store.manifest?.player_index ? `Player index updated ${esc(fmtLong(store.manifest.player_index.updated))}. ` : ''}<a href="#/about">Data &amp; sources</a></div></section>`;
   body.innerHTML = html;
   if (rows.length && markets.length) {
@@ -1300,7 +1377,7 @@ __m['v-team'] = (() => {
 const { store, teamBySlug, teamRowsFor, teamProfile, newsForTeam, upcomingFor, leagueName, refereeProfile, knownPlayers, teamSlugOf } = __m['data'];
 const { TEAM_MARKETS, marketsWithData } = __m['markets'];
 const { researchPanel } = __m['panel'];
-const { $, esc, fmtDay, fmtLong, fmtShort, todayYmd, fmtKickUK } = __m['util'];
+const { $, esc, fmtDay, fmtLong, fmtShort, todayYmd, fmtKick } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
 const { searchBox } = __m['searchbox'];
 const { photoHtml } = __m['photo'];
@@ -1321,7 +1398,7 @@ async function viewTeam(root, r) {
   const cell = (a, b, c) => pr[b] == null ? '' : `<tr><td>${a}</td><td class="n">${pr[b] ?? 'n/a'}</td><td class="n">${pr[b + 'A'] ?? 'n/a'}</td><td class="n">${pr['lg_' + b] ?? 'n/a'}</td></tr>`;
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Search</a>
     <div class="prof"><div class="avatar">${esc(t.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${esc(leagueName(t.league))}${pr.n ? ` · ${pr.n} matches this season ` : ''}${pr.form.length ? `<span class="form" aria-label="Recent form">${pr.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</div></div></div>
-    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKickUK(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
     ${news.length ? `<section class="sec"><h2>Team news</h2><div class="card"><div class="list">${news.map(newsItem).join('')}</div></div></section>` : ''}
     ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table><tr><th></th><th>${esc(t.name.split(' ')[0])}</th><th>Against</th><th>League</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls committed', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Team totals from ${pr.n} published matches. "Against" is what opponents recorded against ${esc(t.name)}. "League" is the average per team per match.</p></div></section>
     <section class="sec"><h2>Research a market</h2><div id="panel"></div></section>` : `<div class="banner info" style="margin-top:14px"><b>No match statistics are published for ${esc(t.name)} yet.</b> Fixtures and news above are all that is available.</div>`}
@@ -1424,9 +1501,9 @@ function wireLineups(root, fixtures) {
 return { loadPublishedLineups, parseLineup, lineupPanel, wireLineups };
 })();
 __m['v-fixtures'] = (() => {
-const { store, leagueName, newsForTeam, teamProfile, teamSlugOf, refereeProfile, resultsList, teamBySlug, leaguesPresent, LEAGUE_NAMES } = __m['data'];
+const { store, fxSortLocal, leagueName, newsForTeam, teamProfile, teamSlugOf, refereeProfile, resultsList, teamBySlug, leaguesPresent, LEAGUE_NAMES } = __m['data'];
 const { normTeam } = __m['teams'];
-const { $, $$, esc, fmtDay, fmtLong, todayYmd, koUK, fixtureId, fxStatus } = __m['util'];
+const { $, $$, esc, fmtDay, fmtLong, todayYmd, koUK, koLocal, todayLocal, localDayAfter, tzNow, fixtureId, fxStatus, statusBadge, timeHtml } = __m['util'];
 const { dataBanner, problemsBanner, newsItem, leagueSelect, getLeague, setLeague } = __m['shared'];
 const { fxSort } = __m['data'];
 const { lineupPanel, wireLineups } = __m['lineup'];
@@ -1438,7 +1515,7 @@ let ticker = null;
 const resKey = (lg, h, a) => `${lg}|${normTeam(h)}|${normTeam(a)}`;
 const dayDiff = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
 // What goes in the time column: kick-off time, a red LIVE badge, or "Awaiting result" (all estimated from the scheduled kick-off).
-const timeCell = (f, st) => (st === 'live' ? '<span class="live" aria-label="Live, estimated from scheduled kick-off">LIVE</span>' : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'postponed' ? '<span class="pp">P-P</span>' : esc(koUK(f).hm || 'TBC'));
+const timeCell = (f, st) => (st === 'pre' ? timeHtml(f) : statusBadge(st));
 // One finished match: half-time score, goals (scorer, minute, penalty / own goal) above the team statistics. Missing figures say "unavailable", never 0.
 function resultDetail(m) {
   // Only statistics actually recorded for this match are shown: a missing figure is never shown as 0, and a statistic the source does not record is left out.
@@ -1466,19 +1543,19 @@ async function viewFixtures(root, r) {
     const q = ui.q.trim().toLowerCase(); const hit = (a, b) => !q || (a + ' ' + b).toLowerCase().includes(q);
     let html = '';
     if (ui.tab === 'upcoming') {
-      const now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd, tomUK = koUK({ ko_utc: new Date(now.getTime() + 864e5).toISOString() }).ymd, wkUK = koUK({ ko_utc: new Date(now.getTime() + 7 * 864e5).toISOString() }).ymd;
-      const okDay = f => { const d = koUK(f).ymd; return ui.when === 'all' || (ui.when === 'today' ? d === todayUK : ui.when === 'tomorrow' ? d === tomUK : d <= wkUK); };
+      const now = new Date(), todayUK = todayLocal(now), tomUK = localDayAfter(1, now), wkUK = localDayAfter(7, now); // the viewer's own calendar days
+      const okDay = f => { const d = koLocal(f).ymd; return ui.when === 'all' || (ui.when === 'today' ? d === todayUK : ui.when === 'tomorrow' ? d === tomUK : d <= wkUK); };
       // A fixture leaves this list only when its verified result is published (it then appears under Results).
       const done = new Map(); for (const m of resultsList()) { const k = resKey(m.league, m.home, m.away); if (!done.has(k)) done.set(k, []); done.get(k).push(m.date); }
       const hasResult = f => (done.get(resKey(f.league, f.home, f.away)) || []).some(d => dayDiff(d, f.date) <= 1); // MLS dates can differ by a day (US v UK date)
-      const list = store.fixtures.filter(f => inLeagues(f.league) && hit(f.home, f.away) && okDay(f) && !hasResult(f) && fxStatus(f, now) !== 'old').sort(fxSort);
-      const byDay = new Map(); for (const f of list) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
-      html = list.length ? [...byDay.entries()].map(([k, fs]) => `<div class="dayh">${esc(fmtDay(k))} (UK date)</div><div class="card">${fs.map(f => {
+      const list = store.fixtures.filter(f => inLeagues(f.league) && hit(f.home, f.away) && okDay(f) && !hasResult(f) && fxStatus(f, now) !== 'old').sort(fxSortLocal);
+      const byDay = new Map(); for (const f of list) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
+      html = list.length ? [...byDay.entries()].map(([k, fs]) => `<div class="dayh">${esc(fmtDay(k))}</div><div class="card">${fs.map(f => {
         const rp = f.referee ? refereeProfile(f.referee) : null;
-        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span><span class="lgtag">${esc(leagueName(f.league))}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koUK(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koUK(f).hm) + ' UK')}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
+        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span><span class="lgtag">${esc(leagueName(f.league))}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koLocal(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koLocal(f).hm + ' ' + koLocal(f).abbr))}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
         <div class="more"><a class="btn" href="#/plays?game=${encodeURIComponent(fixtureId(f))}"><b>View Match Plays (hit rates) →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}</div>`).join('')
         : '<div class="banner info"><b>No upcoming fixtures match these filters.</b> Only fixtures that have been published appear here.</div>';
-      if (list.length) html = '<p class="xs muted" style="margin:0 0 8px">LIVE and Awaiting result are estimated from the scheduled kick-off. PropLab has no live scores or events; the final score appears under Results once verified.</p>' + html;
+      if (list.length) html = `<p class="xs muted" style="margin:0 0 8px">Times are in your time zone (${esc(tzNow())}). PropLab has no live scores: after kick-off a match shows "Started – status unconfirmed", then Awaiting result until the verified final score appears under Results.</p>` + html;
     } else {
       const list = resultsList().filter(m => inLeagues(m.league) && hit(m.home, m.away)).slice(0, 80);
       const byDay = new Map(); for (const m of list) { if (!byDay.has(m.date)) byDay.set(m.date, []); byDay.get(m.date).push(m); }
@@ -1495,7 +1572,7 @@ async function viewFixtures(root, r) {
       <div class="field" id="whenf"><label>When</label><div class="seg wrap" id="when">${[['all', 'All'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['7', 'Next 7 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ui.when === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <input class="in" id="fq" type="search" placeholder="Filter by team" aria-label="Filter by team" value="${esc(ui.q)}"></div>
     <div id="fxlist"></div>
-    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. All kick-off times are UK time (GMT/BST), worked out from each fixture's exact kick-off instant, so an evening MLS game in the US appears on the next UK day after midnight. A fixture without a confirmed time shows TBC and is listed after the timed games of its day. Times can change. Match status is estimated from the scheduled kick-off: LIVE for about two hours, then Awaiting result until the verified result is published. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
+    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. Kick-off times are shown in your time zone (${esc(tzNow())}; change it at the bottom of the page), converted from each fixture's exact kick-off instant, so a game can fall on a different calendar day for you than in the country where it is played. A fixture without a confirmed time shows TBC on its scheduled date and is listed after the timed games of that day. Times can change. PropLab has no live feed: after kick-off a match shows Started (status unconfirmed), then Awaiting result until the verified result is published. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
   $('#tabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.tab = b.dataset.t; $$('#tabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#whenf', root).hidden = ui.tab !== 'upcoming'; draw(); };
   $('#lgchips', root).onclick = e => { const b = e.target.closest('[data-lg]'); if (!b) return; const l = b.dataset.lg; if (!l) ui.leagues.clear(); else if (ui.leagues.has(l)) ui.leagues.delete(l); else ui.leagues.add(l);
     $$('#lgchips button', root).forEach(x => { const on = x.dataset.lg ? ui.leagues.has(x.dataset.lg) : !ui.leagues.size; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); draw(); };
@@ -1797,7 +1874,7 @@ const { scanOne } = __m['scanner'];
 const { fbTeamMarkets, fbPlayers, fbPlayerMarkets, fbLines, fbScope, hasPlayerLogs, fbSeason } = __m['fbscan'];
 const { playCard, wireCards, missesHtml } = __m['playcard'];
 const { haFormHtml, haFormClick, openGraphModal, venueWord } = __m['panel'];
-const { $, esc, fmtKickUK, fixtureId, koUK, fmtDay } = __m['util'];
+const { $, koLocal, tzNow, esc, fmtKick, fixtureId, koUK, fmtDay } = __m['util'];
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague, prefs, savePrefs } = __m['shared'];
 
 const PCTS = [60, 65, 70, 75, 80, 85, 90, 95, 100];
@@ -1833,10 +1910,10 @@ async function viewPlays(root, r) {
   const drawCtl = () => {
     fixKind(); const lg = league(), ts = teams(), fs = fixtures();
     const kinds = [['team', 'Team'], ['match', 'Match'], ...(hasPlayerLogs(lg) ? [['player', 'Player']] : [])];
-    const byDay = new Map(); for (const f of fs) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
+    const byDay = new Map(); for (const f of fs) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const clubs = [...new Map(players.map(p => [p.clubSlug, p.team])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
     const picker = ui.kind === 'team' ? `<div class="field"><label for="tm">Team</label><select class="in" id="tm">${ts.map(x => `<option value="${esc(x.slug)}" ${x.slug === ui.team ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>`
-      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (UK times)</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koUK(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${esc(leagueName(lg))} fixtures are published right now.</p>`)
+      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koLocal(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${esc(leagueName(lg))} fixtures are published right now.</p>`)
       : `<div class="ctl"><div class="field"><label for="pclub">Club</label><select class="in" id="pclub">${clubs.map(([s, n]) => `<option value="${esc(s)}" ${s === ui.club ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
          <div class="field"><label for="pl">Player</label><select class="in" id="pl">${players.filter(p => p.clubSlug === ui.club).sort((a, b) => a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
     const one = ui.kind === 'match' ? fs.find(f => fixtureId(f) === ui.game) : null;
@@ -1866,7 +1943,7 @@ async function viewPlays(root, r) {
     } else if (ui.kind === 'match') {
       const f = fixtures().find(x => fixtureId(x) === ui.game); if (!f) { out.innerHTML = `<div class="banner info"><b>No upcoming ${esc(leagueName(lg))} match to choose.</b> Pick Team instead, or another league.</div>`; return; }
       const hs = teamSlugOf(f.home), as = teamSlugOf(f.away);
-      html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(leagueName(f.league))} · ${esc(fmtKickUK(f))} · only matches completed before this fixture are used</div></div>`;
+      html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(leagueName(f.league))} · ${esc(fmtKick(f))} · only matches completed before this fixture are used</div></div>`;
       html += block(`${esc(f.home)} <span class="muted small">(${esc(sampleText(ui.gvH))})</span>`, scanTeam(hs, ui.gvH, f.date), { scopeOf: x => fbScope(x.def.key, f.home), sample: sampleText(ui.gvH), subj: { name: f.home, slug: hs, type: 'team' } });
       html += block(`${esc(f.away)} <span class="muted small">(${esc(sampleText(ui.gvA))})</span>`, scanTeam(as, ui.gvA, f.date), { scopeOf: x => fbScope(x.def.key, f.away), sample: sampleText(ui.gvA), subj: { name: f.away, slug: as, type: 'team' } });
       const hh = h2hSample(teamRowsFor(hs), as, f.date);
@@ -1930,7 +2007,7 @@ const { TEAM_PLAY_MARKETS, dotsFor, h2hSample } = __m['plays'];
 const { hitRate } = __m['analytics'];
 const { applyFilters } = __m['research'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick } = __m['panel'];
-const { $, $$, esc, fmtDay, fmtShort, fmtLong, avg } = __m['util'];
+const { $, $$, esc, fmtDay, fmtShort, fmtLong, avg, fmtKick } = __m['util'];
 const { dataBanner, problemsBanner, newsItem } = __m['shared'];
 
 // line: null = set the starting line for a newly chosen market. Sample and Home/Away Form changes keep the line.
@@ -1954,7 +2031,7 @@ async function viewMatch(root, r) {
   const rp = fx?.referee ? refereeProfile(fx.referee) : null;
   const fxKey = `${date}|${hs}|${as}`; if (ui.fx !== fxKey) { ui.fx = fxKey; ui.vH = 'home'; ui.vA = 'away'; ui.line = null; } // a new fixture starts with each team's own home/away form
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a>
-    <h1 style="margin-bottom:4px">${esc(H)} v ${esc(A)}</h1><div class="muted">${esc(fmtDay(date))}${fx?.kickoff ? ' · ' + esc(fx.kickoff) : ''}${fx?.referee ? ' · Referee ' + esc(fx.referee) : ''}</div>
+    <h1 style="margin-bottom:4px">${esc(H)} v ${esc(A)}</h1><div class="muted">${esc(fx ? fmtKick(fx) : fmtDay(date))}${fx?.referee ? ' · Referee ' + esc(fx.referee) : ''}</div>
     ${[H, A].map(t => newsForTeam(t).length ? `<div class="card" style="margin-top:12px"><h3>${esc(t)} team news</h3><div class="list">${newsForTeam(t).map(newsItem).join('')}</div></div>` : '').join('')}
     <div class="card stack" id="ctl" style="margin-top:14px">
       <div class="field">${seg('mode', [['form', 'Recent form'], ['h2h', 'Head to head']], ui.mode)}</div>
@@ -2020,13 +2097,13 @@ return { viewMatch };
 })();
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
 const { applyFilters } = __m['research'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
-const { $, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKickUK, fixtureId, avg } = __m['util'];
+const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg } = __m['util'];
 const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague } = __m['shared'];
 
 // minN is internal only (no on-screen control): every result shows its real number of matches instead.
@@ -2054,7 +2131,7 @@ function cardHtml(r, ctx = {}) {
     <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · <span class="rel ${rel.k}">${rel.t}</span></div>
     <details class="mx"><summary class="xs">Matches (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${rows}</table></div></details>
     ${ctx.ri != null ? '<button type="button" class="chip opengraph" data-open>Open graph and adjust line ›</button>' : ''}
-    ${ctx.links === false ? '' : `<div class="xs" style="margin-top:6px"><a href="${s.href}">${s.type === 'player' ? 'Player' : 'Team'} research</a>${s.nextFx ? ` · <a href="${fixtureHref(s.nextFx)}">Next: ${esc(s.nextFx.home)} v ${esc(s.nextFx.away)}, ${esc(fmtKickUK(s.nextFx))}</a>` : ''}</div>`}</div>`;
+    ${ctx.links === false ? '' : `<div class="xs" style="margin-top:6px"><a href="${s.href}">${s.type === 'player' ? 'Player' : 'Team'} research</a>${s.nextFx ? ` · <a href="${fixtureHref(s.nextFx)}">Next: ${esc(s.nextFx.home)} v ${esc(s.nextFx.away)}, ${esc(fmtKick(s.nextFx))}</a>` : ''}</div>`}</div>`;
 }
 
 async function viewTrends(root, r) {
@@ -2110,9 +2187,9 @@ async function viewTrends(root, r) {
   };
 
   const drawCtl = () => {
-    fixMarkets(); const tms = leagueTeams(), set = selSet(), mk = kindMarkets(), fx = upcomingFixtures(league());
+    fixMarkets(); const tms = leagueTeams(), set = selSet(), mk = kindMarkets(), fx = selectableFixtures(league());
     const exDef = mk.find(m => m.key === ui.exKey);
-    const byDay = new Map(); for (const f of fx) { const k = koUK(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
+    const byDay = new Map(); for (const f of fx) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const f = ui.mode === 'game' ? curFixture() : null;
     ctl.innerHTML = `${leagueSelect()}
       <div class="field"><label>Research mode</label>${seg('mode', [['browse', 'Browse teams'], ['game', 'Select game']], ui.mode)}</div>
@@ -2122,9 +2199,9 @@ async function viewTrends(root, r) {
         <div class="tlist">${tms.map(t => `<label class="tcheck" data-name="${esc(t.name.toLowerCase())}"><input type="checkbox" value="${esc(t.slug)}" ${set.has(t.slug) ? 'checked' : ''}> ${esc(t.name)}</label>`).join('')}</div></div></details>
         ${hasPlayers() ? `<div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>` : ''}
         ${haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })}`
-      : `<details class="teamsel" id="gselbox"${ui.gOpen ? ' open' : ''}><summary><b>Games</b> <span id="gcount">${ui.games.size ? `${selFixtures().length} selected` : 'none selected'}</span> <span class="xs muted">(UK times)</span></summary>
+      : `<details class="teamsel" id="gselbox"${ui.gOpen ? ' open' : ''}><summary><b>Games</b> <span id="gcount">${ui.games.size ? `${selFixtures().length} selected` : 'none selected'}</span> <span class="xs muted">(your time, ${esc(tzNow())})</span></summary>
         <div class="stack" style="margin-top:8px"><div class="row" style="border:0;padding:0;gap:8px"><button class="chip" id="gall">Select all</button><button class="chip" id="gnone">Clear all</button></div>
-        <div class="fxsel">${[...byDay.entries()].map(([d, fs]) => `<div class="fxday"><span>${esc(fmtDay(d))}</span><button class="chip" data-gday="${esc(d)}">Select day</button></div>${fs.map(x => `<label class="fxcheck"><input type="checkbox" data-g value="${esc(fixtureId(x))}" ${ui.games.has(fixtureId(x)) ? 'checked' : ''}><span><b>${esc(koUK(x).hm)}</b> ${esc(x.home)} v ${esc(x.away)}</span></label>`).join('')}`).join('')}</div>
+        <div class="fxsel">${[...byDay.entries()].map(([d, fs]) => `<div class="fxday"><span>${esc(fmtDay(d))}</span><button class="chip" data-gday="${esc(d)}">Select day</button></div>${fs.map(x => `<label class="fxcheck"><input type="checkbox" data-g value="${esc(fixtureId(x))}" ${ui.games.has(fixtureId(x)) ? 'checked' : ''}><span><b>${esc(koLocal(x).hm || 'TBC')}</b> ${esc(x.home)} v ${esc(x.away)}${(st => (st === 'pre' ? '' : ' ' + statusBadge(st)))(fxStatus(x))}</span></label>`).join('')}`).join('')}</div>
         ${fx.length ? '' : '<p class="xs muted">No upcoming fixtures are published for this league.</p>'}</div></details>
         ${hasPlayers() ? `<div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>` : ''}
         <div class="ctl">${(() => { const fsel = selFixtures(), one = fsel.length === 1 ? fsel[0] : null, hN = one ? one.home : 'Home teams', aN = one ? one.away : 'Away teams';
@@ -2168,14 +2245,17 @@ async function viewTrends(root, r) {
     const fsel = selFixtures();
     if (!fsel.length) { out.innerHTML = `<div class="banner info"><b>Choose games.</b> Tick one or more upcoming ${esc(leagueName(league()))} matches above (or Select day) to see each team's recent form and head-to-head trends.</div>`; return; }
     let all = fsel.length > 1 ? `<p class="xs muted" style="margin:0 0 8px">${fsel.length} games selected. Each game is shown separately: home team, away team, then head to head. No team's matches are mixed with another team's.</p>` : '';
-    for (const f of fsel) all += `<div class="gameblock">${await oneGame(f)}</div>`;
+    // Many selected games are built a page at a time (each game scans both teams and head to head): the first 12, then Show more.
+    const lim = Math.min(fsel.length, ui.gShown || 12);
+    for (const f of fsel.slice(0, lim)) all += `<div class="gameblock">${await oneGame(f)}</div>`;
+    if (fsel.length > lim) all += `<button type="button" class="btn" id="gmore">Show the next ${Math.min(12, fsel.length - lim)} games (${fsel.length - lim} more selected)</button>`;
     if (ui.kind === 'player' && !hasPlayers()) all = noPlayersNote() + all;
-    out.innerHTML = all + foot;
+    out.innerHTML = all + foot; const gm = $('#gmore', out); if (gm) gm.onclick = () => { ui.gShown = lim + 12; draw(); };
   };
   const oneGame = async f => {
     const hs = teamSlugOf(f.home), as = teamSlugOf(f.away), before = rows => rows.filter(x => x.date < f.date);
     const subj = (slug, name) => ({ id: slug, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)) });
-    const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKickUK(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
+    const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKick(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
     const section = async (slug, name, venue) => {
       const ex = ui.lineMode === 'exact'; const oo = ex ? { ...o, minPct: 0 } : o; // exact line: always show the real hit rate, flag it if below the minimum
       const tRes = ui.kind === 'player' ? [] : scan([subj(slug, name)], defsFor(), TEAM_MARKETS, PLAYER_MARKETS, { ...oo, venue, kind: 'team' });
@@ -2231,8 +2311,8 @@ async function viewTrends(root, r) {
   ctl.addEventListener('toggle', e => { if (e.target.id === 'gselbox') ui.gOpen = e.target.open; if (e.target.id === 'tsel') ui.tOpen = e.target.open; }, true);
   ctl.addEventListener('click', e => {
     if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.slug)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
-    if (e.target.id === 'gall' || e.target.id === 'gnone' || e.target.dataset.gday) { e.preventDefault(); const fx = upcomingFixtures(league());
-      if (e.target.id === 'gnone') ui.games.clear(); else for (const x of fx) if (e.target.id === 'gall' || koUK(x).ymd === e.target.dataset.gday) ui.games.add(fixtureId(x));
+    if (e.target.id === 'gall' || e.target.id === 'gnone' || e.target.dataset.gday) { e.preventDefault(); const fx = selectableFixtures(league());
+      ui.gShown = 12; if (e.target.id === 'gnone') ui.games.clear(); else for (const x of fx) if (e.target.id === 'gall' || koLocal(x).ymd === e.target.dataset.gday) ui.games.add(fixtureId(x));
       redrawCtl(); draw(); return; }
     if (e.target.id === 'tnone') { e.preventDefault(); selSet().clear(); $$('.tcheck input', ctl).forEach(i => { i.checked = false; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
     const st = e.target.closest('[data-step]'); if (st) { ui.exLine = stepLine(ui.exLine, Number(st.dataset.step)); draw(); return; }
@@ -2247,7 +2327,7 @@ async function viewTrends(root, r) {
     const t = e.target;
     if (t.id === 'lgsel') { setLeague(t.value); ui.game = ''; ui.games.clear(); ui.market = ''; ui.exLine = null; drawCtl(); draw(); return; }
     if (t.matches('.tcheck input')) { t.checked ? selSet().add(t.value) : selSet().delete(t.value); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
-    if (t.matches('[data-g]')) { t.checked ? ui.games.add(t.value) : ui.games.delete(t.value); redrawCtl(); draw(); return; }
+    if (t.matches('[data-g]')) { ui.gShown = 12; t.checked ? ui.games.add(t.value) : ui.games.delete(t.value); redrawCtl(); draw(); return; }
     if (t.id === 'mk') { ui.market = t.value; ui.shown = 40; redrawCtl(); draw(); return; }
     if (t.id === 'exk') { ui.exKey = t.value; ui.exLine = null; redrawCtl(); draw(); }
   });
@@ -2622,7 +2702,7 @@ async function viewAbout(root) {
     <li><b>Bookmaker odds:</b> not included. Value Research uses odds you type in.</li>
     <li><b>Referees for upcoming matches</b> appear only once confirmed in a source.</li></ul></div></section>
   <section class="sec"><h2>NFL</h2><div class="card small">${nfl.status === 'ready' ? `<p style="margin:0 0 6px">Seasons ${nfl.meta.seasons.join(', ')} · ${nfl.players.length.toLocaleString()} players with game logs · ${nfl.games.length.toLocaleString()} games (regular season and postseason kept apart).</p>` : ''}
-    <p style="margin:0">Player game logs, play-by-play (longest plays, touchdown scorers), rosters and schedules from <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a>, licensed CC-BY 4.0. A game counts for a player only when he has a recorded stat line in it; games on the active roster without a stat line are listed on his profile and left out, never counted as 0. Kick-off times are converted from US Eastern to UK time. Not available: snap counts, player headshots, first-quarter or half markets, and anything that needs paid tracking data.</p></div></section>
+    <p style="margin:0">Player game logs, play-by-play (longest plays, touchdown scorers), rosters and schedules from <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a>, licensed CC-BY 4.0. A game counts for a player only when he has a recorded stat line in it; games on the active roster without a stat line are listed on his profile and left out, never counted as 0. Kick-off times are converted from US Eastern time to each visitor's own time zone for display. Not available: snap counts, player headshots, first-quarter or half markets, and anything that needs paid tracking data.</p></div></section>
   <section class="sec"><h2>Licensing status</h2><div class="card small"><p style="margin:0 0 8px">PropLab's own assessment of each source, for the owner to review (not legal advice). Free access does not by itself grant the right to republish data.</p>
     <div class="list">${LICENSING.map(l => `<div class="row"><div class="l"><b>${esc(l.name)} <span class="lic ${l.status}">${esc(STATUS_LABEL[l.status])}</span></b><span>${esc(l.reason)}</span></div></div>`).join('')}</div></div></section>
   <section class="sec"><h2>How to read the numbers</h2><div class="card small stack"><p style="margin:0"><b>Hit rate</b> is the share of published matches where a statistic beat the line. It describes the past only. <b>Estimates</b> and <b>EV</b> appear in Value Research only when there are at least 8 matches with data, and they ignore line-ups, injuries, opponents and tactics. Missing figures are never counted as zero.</p></div></section>`;
@@ -2745,29 +2825,46 @@ async function defenceTable(def) {
 return { TYPES, playerMarkets, scanPlayer, scanTeam, nflSampleText, oppContext, oppContextHtml, defenceTable };
 })();
 __m['gameweek'] = (() => {
-// "This Gameweek" for Hiwi's Section. All dates are UK dates (koUK converts each fixture's UTC kick-off, so GMT/BST is handled).
+// "This Gameweek" for Hiwi's Section. Membership never depends on the viewer's time zone: it uses official round / week numbers,
+// UTC kick-off instants and fixed reference dates (UK dates for the European round calendars; the league's home time zone for the
+// date-based fallback). Only the displayed date and time are converted for the viewer (util.js koLocal).
 //
-// Football, league with a round calendar (openfootball, stored in data-fixtures.json "rounds"):
-//   the current round is the earliest round whose last match day (UK) is today or later. This Gameweek = that league's
-//   upcoming fixtures dated up to that last match day. A rearranged match from another round played before then is included;
-//   a match of the round that was moved well past it is not. Once a round's last day has passed, the next round becomes current.
-// Football, league without round numbers (MLS, Scottish Premiership): the next run of consecutive match days (at most 4 days),
-//   starting with the next upcoming fixture.
-// NFL: the week of the next game to kick off (plus any rearranged game scheduled before that week's last game).
-// Nothing ever rolls over: if the current gameweek has no fixture left, the result is empty and the page says so.
+// Football, league with official rounds (openfootball round calendar; each fixture carries `round`):
+//   active round = the earliest round whose last scheduled match day (UK date) is today or later. This Gameweek contains ONLY the
+//   fixtures assigned to that round (a rearranged game keeps its own round and is not mixed in). When the active round has nothing
+//   left, the result is empty: the page says so and does not show another round.
+// Football without round numbers (MLS, Scottish Premiership): a clearly labelled date-based fallback, never called a matchday:
+//   the next run of consecutive match days (at most 4), dated in the league's home time zone.
+// NFL: the official week (season + week + regular/postseason) of the next game to kick off; only games assigned to that week.
 const { koUK } = __m['util'];
 
 const dayAdd = (ymd, n) => new Date(Date.parse(ymd + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const REF_TZ = { mls: 'America/New_York' };
+const refFmt = new Map();
+/** Reference date of a fixture for the date-based fallback: its calendar date in the league's home time zone (UK for European leagues). */
+const refDate = f => {
+  if (!f.ko_utc) return f.local_date || f.date;
+  const tz = REF_TZ[f.league] || 'Europe/London';
+  if (!refFmt.has(tz)) refFmt.set(tz, new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }));
+  return refFmt.get(tz).format(new Date(f.ko_utc));
+};
 
-/** fixtures: ONE league's upcoming fixtures. rounds: [{ r, from, to }] or undefined. today: UK date 'YYYY-MM-DD'. */
+/**
+ * fixtures: ONE league's upcoming fixtures. rounds: [{ r, from, to }] or undefined. today: UK reference date 'YYYY-MM-DD'.
+ * Returns { kind: 'round'|'dates', round, from, to, fixtures, otherRounds } — otherRounds: upcoming games of other rounds scheduled
+ * before the active round ends (rearranged games), which are NOT in this gameweek and only listed for information.
+ */
 function leagueGameweek(fixtures, rounds, today) {
-  const ymd = f => koUK(f).ymd;
   const cur = (rounds || []).filter(x => x && x.to >= today).sort((a, b) => (a.to < b.to ? -1 : a.to > b.to ? 1 : a.r - b.r))[0];
-  if (cur) return { kind: 'round', round: cur.r, from: cur.from, to: cur.to, fixtures: fixtures.filter(f => ymd(f) <= cur.to) };
-  if (!fixtures.length) return { kind: 'days', round: null, from: null, to: null, fixtures: [] };
-  const days = [...new Set(fixtures.map(ymd))].sort(); let to = days[0];
+  if (cur) {
+    const mine = fixtures.filter(f => f.round === cur.r);
+    const otherRounds = fixtures.filter(f => f.round !== cur.r && koUK(f).ymd <= cur.to);
+    return { kind: 'round', round: cur.r, from: cur.from, to: cur.to, fixtures: mine, otherRounds };
+  }
+  if (!fixtures.length) return { kind: 'dates', round: null, from: null, to: null, fixtures: [], otherRounds: [] };
+  const days = [...new Set(fixtures.map(refDate))].sort(); let to = days[0];
   for (const d of days.slice(1)) { if (d === dayAdd(to, 1) && d <= dayAdd(days[0], 3)) to = d; else break; }
-  return { kind: 'days', round: null, from: days[0], to, fixtures: fixtures.filter(f => ymd(f) <= to) };
+  return { kind: 'dates', round: null, from: days[0], to, fixtures: fixtures.filter(f => refDate(f) <= to), otherRounds: [] };
 }
 
 /** Every league's gameweek. upcoming: upcoming fixtures (any leagues). Returns Map league -> gameweek. */
@@ -2782,14 +2879,12 @@ const NFL_POST = { 19: 'Wild Card round', 20: 'Divisional round', 21: 'Conferenc
 function nflWeek(upcoming) {
   if (!upcoming.length) return null;
   const g0 = upcoming[0];
-  const wk = upcoming.filter(g => g.season === g0.season && g.week === g0.week);
-  const last = wk.reduce((m, g) => { const k = koUK(g); const s = k.ymd + (k.hm || '99:99'); return s > m ? s : m; }, '');
-  const games = upcoming.filter(g => (g.season === g0.season && g.week === g0.week) || (koUK(g).ymd + (koUK(g).hm || '99:99')) <= last);
+  const games = upcoming.filter(g => g.season === g0.season && g.week === g0.week && (g.type || 'R') === (g0.type || 'R'));
   const label = g0.type === 'P' ? (NFL_POST[g0.week] || `Postseason week ${g0.week}`) : `Week ${g0.week}`;
   return { season: g0.season, week: g0.week, type: g0.type, label, games };
 }
 
-return { leagueGameweek, footballGameweeks, nflWeek };
+return { refDate, leagueGameweek, footballGameweeks, nflWeek };
 })();
 __m['v-hiwi'] = (() => {
 // Hiwi's Section: a ready-made shortlist for someone new to sports research. No team or player needs choosing: PropLab scans the
@@ -2805,7 +2900,8 @@ const { playerMarkets } = __m['nfl-scan'];
 const { playCard, wireCards } = __m['playcard'];
 const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
-const { $, esc, koUK, fmtDay, fixtureId } = __m['util'];
+const { $, $$, esc, koUK, koLocal, fmtDay, fixtureId } = __m['util'];
+const { normName, teamAliases } = __m['teams'];
 const { prefs, savePrefs } = __m['shared'];
 const { footballGameweeks, nflWeek } = __m['gameweek'];
 
@@ -2817,7 +2913,7 @@ const nf = { ent: ALL, market: ALL, q: '', side: 'all', when: 'gw' };
 const MIN_N = { football: 5, nfl: 4 };
 // Wilson score lower bound (95%): rewards a high hit rate over a bigger sample more than a "perfect" record over very few games.
 const wilson = (hits, n, z = 1.96) => { if (!n) return 0; const p = hits / n, d = 1 + z * z / n; return (p + z * z / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d; };
-const kickText = f => { const k = koUK(f); return `${fmtDay(k.ymd)}, ${k.hm ? k.hm + ' UK' : 'kick-off time TBC'}`; };
+const kickText = f => { const k = koLocal(f); return `${fmtDay(k.ymd)}, ${k.hm ? `${k.hm} ${k.abbr}` : 'kick-off time TBC'}`; };
 
 async function viewHiwi(root, r, sport) {
   const S = sport === 'nfl' ? nf : fb, now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd;
@@ -2837,34 +2933,63 @@ async function viewHiwi(root, r, sport) {
   const nflWk = () => nflWeek(nflUpcoming(now));
   const nflGames = () => (nf.when === 'all' ? nflUpcoming(now) : nflWk()?.games || []);
   const dShort = d => fmtDay(d).replace(/^\w+ /, '');
+  const weekHtml = () => `<div class="xs muted hiwiweek"><b>This Gameweek</b><ul>${weekText().map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
   const weekText = () => {
-    if (sport === 'nfl') { const w = nflWk(); return w ? `NFL ${w.season} ${w.label}` : 'No NFL games left this season'; }
-    return [...fbWeeks().entries()].filter(([, w]) => w.round || w.fixtures.length).map(([lg, w]) => `${LEAGUE_NAMES[lg]}: ${w.round ? `Matchday ${w.round}` : 'next match days'}${w.to ? ` (to ${dShort(w.to)})` : ''}${w.fixtures.length ? '' : ' – no fixtures left'}`).join(' · ');
+    if (sport === 'nfl') { const w = nflWk(); return [w ? `NFL ${w.season} — ${w.label}` : 'No NFL games left this season']; }
+    return [...fbWeeks().entries()].map(([lg, w]) => {
+      if (w.kind === 'dates' && !w.fixtures.length) return `${LEAGUE_NAMES[lg]} — no upcoming fixtures published yet`;
+      const base = w.kind === 'round' ? `${LEAGUE_NAMES[lg]} — Matchday ${w.round}${w.to ? ` (to ${dShort(w.to)})` : ''}` : `${LEAGUE_NAMES[lg]} — next match days ${w.from === w.to ? dShort(w.from) : `${dShort(w.from)}–${dShort(w.to)}`} (by date: no official round data)`;
+      const left = w.fixtures.length ? '' : ' – no fixtures left';
+      const other = w.otherRounds?.length ? ` · ${w.otherRounds.length} rearranged game${w.otherRounds.length === 1 ? '' : 's'} from another round not included (see All Upcoming)` : '';
+      return base + left + other; });
   };
+
+  // Suggestions: [value, label, search terms]. Teams carry their common spellings and abbreviations (teams.js aliases; NFL: abbreviation,
+  // nickname and city). Only what can actually be scanned with the chosen market is offered (no players for a team-only market).
   const entities = () => {
     if (sport === 'nfl') {
+      const mk = S.market ? [...NFL_MARKETS, ...NFL_TEAM_MARKETS].find(m => m.key === S.market) : null, teamOnly = mk && !mk.for, grp = mk?.for || null;
       const gs = nflGames(), teams = [...new Set(gs.flatMap(g => [g.away, g.home]))].sort((a, b) => teamName(a).localeCompare(teamName(b)));
-      const ps = nfl.players.filter(p => p.current && p.seasons.includes(latestSeason()) && teams.includes(p.team)).sort((a, b) => a.name.localeCompare(b.name));
-      return { games: gs.map(g => ['g:' + g.id, `${teamName(g.away)} at ${teamName(g.home)} · ${kickText(g)}`]), teams: teams.map(t => ['t:' + t, teamName(t)]), players: ps.map(p => ['p:' + p.id, `${p.name} (${p.pos}, ${p.team})`]) };
+      const tTerms = a => { const n = teamName(a), w = n.split(' '); return [a, n, w[w.length - 1], w.slice(0, -1).join(' ')]; };
+      const ps = teamOnly ? [] : nfl.players.filter(p => p.current && p.seasons.includes(latestSeason()) && teams.includes(p.team) && (!grp || grp.includes(p.group))).sort((a, b) => a.name.localeCompare(b.name));
+      return { games: gs.map(g => ['g:' + g.id, `${teamName(g.away)} at ${teamName(g.home)} · ${kickText(g)}`, [...tTerms(g.away), ...tTerms(g.home)]]), teams: teams.map(t => ['t:' + t, teamName(t), tTerms(t)]),
+        players: ps.map(p => ['p:' + p.id, `${p.name} (${p.pos}, ${p.team})`, [p.name]]) };
     }
     const fs = fbFixtures(); const teams = [...new Map(fs.flatMap(f => [[teamSlugOf(f.home), f.home], [teamSlugOf(f.away), f.away]])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
     const slugs = new Set(teams.map(t => t[0]));
-    return { games: fs.map(f => ['m:' + fixtureId(f), `${f.home} v ${f.away} · ${kickText(f)}`]), teams: teams.map(([s, n]) => ['t:' + s, n]),
-      players: players.filter(p => slugs.has(p.clubSlug)).sort((a, b) => a.name.localeCompare(b.name)).map(p => ['p:' + p.id, `${p.name} (${p.team})`]) };
+    const pmk = S.market && fbPlayerMarkets(players).some(m => m.key === S.market), tmk = S.market && !pmk;
+    return { games: fs.map(f => ['m:' + fixtureId(f), `${f.home} v ${f.away} · ${kickText(f)}`, [...teamAliases(f.home), ...teamAliases(f.away)]]), teams: pmk ? [] : teams.map(([s, n]) => ['t:' + s, n, teamAliases(n)]),
+      players: tmk ? [] : players.filter(p => slugs.has(p.clubSlug)).sort((a, b) => a.name.localeCompare(b.name)).map(p => ['p:' + p.id, `${p.name} (${p.team})`, [p.name]]) };
   };
+  // Live suggestions while typing: whole-word prefix matches first, then anywhere in the name; accents and case ignored.
+  const suggest = q => {
+    const n = normName(q); if (!n) return [];
+    const ent = entities(), out = [];
+    for (const [grp, list] of [['Teams', ent.teams], ['Players', ent.players], [sport === 'nfl' ? 'Games' : 'Matches', ent.games]]) {
+      for (const [v, l, terms] of list) {
+        const ts = [l, ...(terms || [])].map(normName); let sc = 0;
+        for (const t of ts) { if (t === n) sc = Math.max(sc, 3); else if (t.startsWith(n) || t.split(' ').some(w => w.startsWith(n))) sc = Math.max(sc, 2); else if (t.includes(n)) sc = Math.max(sc, 1); }
+        if (sc) out.push({ v, l, grp, sc });
+      }
+    }
+    return out.sort((a, b) => b.sc - a.sc || ['Teams', 'Players', 'Matches', 'Games'].indexOf(a.grp) - ['Teams', 'Players', 'Matches', 'Games'].indexOf(b.grp) || a.l.localeCompare(b.l)).slice(0, 25);
+  };
+  const entLabel = v => { const e = entities(); return [...e.games, ...e.teams, ...e.players].find(x => x[0] === v)?.[1] || ''; };
   const marketList = () => (sport === 'nfl' ? [...NFL_MARKETS, ...NFL_TEAM_MARKETS].map(m => [m.key, m.label])
     : (fb.league ? [fb.league] : leaguesPresent()).flatMap(lg => fbTeamMarkets(lg)).concat(players.length ? fbPlayerMarkets(players) : []).reduce((a, m) => (a.some(x => x[0] === m.key) ? a : [...a, [m.key, m.label]]), []));
 
   const drawFilters = () => {
-    const ent = entities(), q = S.q.trim().toLowerCase(), keep = l => !q || l.toLowerCase().includes(q);
+    const ent = entities();
     const ms = marketList(); if (S.market && !ms.some(m => m[0] === S.market)) S.market = ALL;
     const allEnt = [...ent.games, ...ent.teams, ...ent.players]; if (S.ent && !allEnt.some(e => e[0] === S.ent)) S.ent = ALL;
-    const og = (label, list) => { const l = list.filter(([, t]) => keep(t)); return l.length ? `<optgroup label="${esc(label)}">${l.map(([v, t]) => `<option value="${esc(v)}" ${v === S.ent ? 'selected' : ''}>${esc(t)}</option>`).join('')}</optgroup>` : ''; };
     hf.innerHTML = `<div class="field"><label for="hsport">Sport</label><select class="in" id="hsport"><option value="football" ${sport !== 'nfl' ? 'selected' : ''}>Football ⚽</option><option value="nfl" ${sport === 'nfl' ? 'selected' : ''}>American Football 🏈</option></select></div>
       <div class="field"><label for="hleague">League</label><select class="in" id="hleague">${sport === 'nfl' ? '<option value="nfl" selected>NFL</option>' : `<option value="">All Leagues</option>${leaguesPresent().map(l => `<option value="${l}" ${l === fb.league ? 'selected' : ''}>${esc(LEAGUE_NAMES[l])}</option>`).join('')}`}</select>
         <div class="seg hside" id="hwhen" role="group" aria-label="Fixture dates" style="margin-top:6px">${[['gw', 'This Gameweek'], ['all', 'All Upcoming']].map(([v, l]) => `<button type="button" data-v="${v}" class="${S.when === v ? 'on' : ''}" aria-pressed="${S.when === v}">${l}</button>`).join('')}</div></div>
-      <div class="field"><label for="hent">Teams/Match/Player</label><input class="in" id="hq" type="search" placeholder="Search to narrow the list" value="${esc(S.q)}" aria-label="Search teams, matches and players" style="margin-bottom:6px">
-        <select class="in" id="hent"><option value="">All Teams, Matches &amp; Players</option>${og(sport === 'nfl' ? 'Games' : 'Matches', ent.games)}${og('Teams', ent.teams)}${og('Players', ent.players)}</select></div>
+      <div class="field"><label for="hq">Teams/Match/Player</label>
+        <div class="combo" id="hcombo"><input class="in" id="hq" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="hsug" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+          placeholder="All Teams, Matches &amp; Players – type a name" value="${esc(S.ent ? entLabel(S.ent) : S.q)}" aria-label="Search teams, matches and players">
+          <button type="button" class="combo-x" id="hclear" aria-label="Clear the search" ${S.ent || S.q ? '' : 'hidden'}>×</button><ul class="combo-list" id="hsug" role="listbox" hidden></ul></div>
+        <span class="xs muted" id="hsel">${S.ent ? `Showing only: ${esc(entLabel(S.ent))}` : 'Showing: All Teams, Matches &amp; Players'}</span></div>
       <div class="field"><label for="hmk">Market</label><select class="in" id="hmk"><option value="">All Markets</option>${ms.map(([k, l]) => `<option value="${esc(k)}" ${k === S.market ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <div class="seg hside" id="hside" role="group" aria-label="Over or Under" style="margin-top:6px">${[['all', 'All'], ['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-v="${v}" class="${S.side === v ? 'on' : ''}" aria-pressed="${S.side === v}">${l}</button>`).join('')}</div></div>
       <div class="field"><label for="hpct">Percentage <b id="hpctv">${prefs.minPct}%</b></label><input id="hpct" type="range" min="60" max="100" step="5" value="${prefs.minPct}" aria-label="Minimum historical hit rate"><span class="xs muted">The minimum share of this season's games where it happened. Not a prediction.</span></div>`;
@@ -2926,7 +3051,7 @@ async function viewHiwi(root, r, sport) {
     if (!items.length) {
       const none = sport === 'nfl' ? !nflGames().length : !fbFixtures().length, gw = S.when === 'gw';
       const what = sport === 'nfl' ? 'NFL games' : fb.league ? `${LEAGUE_NAMES[fb.league]} fixtures` : 'fixtures';
-      out.innerHTML = `${gw ? `<p class="xs muted hiwiweek">This Gameweek · ${esc(weekText())}</p>` : ''}<div class="banner info hiwiempty"><b>${none ? (gw ? `No ${what} left in this gameweek.` : `No upcoming ${what}.`) : `Nothing reached ${prefs.minPct}% this season for this choice.`}</b> ${none ? (gw ? 'Next gameweek is not shown automatically. Choose All Upcoming to see later fixtures.' : 'New fixtures appear here once they are published.') : 'Try a lower percentage, or All Markets.'}</div>`; return; }
+      out.innerHTML = `${gw ? weekHtml() : ''}<div class="banner info hiwiempty"><b>${none ? (gw ? `No ${what} left in this gameweek.` : `No upcoming ${what}.`) : `Nothing reached ${prefs.minPct}% this season for this choice.`}</b> ${none ? (gw ? 'Next gameweek is not shown automatically. Choose All Upcoming to see later fixtures.' : 'New fixtures appear here once they are published.') : 'Try a lower percentage, or All Markets.'}</div>`; return; }
     const unit = sport === 'nfl' ? 'game' : 'match';
     const cards = items.slice(0, shownN).map(it => { const ev = it.fx || it.game;
       const rnd = it.fx ? (it.fx.round ? ` · Matchday ${it.fx.round}` : '') : it.game.type === 'P' ? ' · Postseason' : ` · Week ${it.game.week}`;
@@ -2934,7 +3059,7 @@ async function viewHiwi(root, r, sport) {
       const o = { head, who: it.who, scope: it.scope, unit, sample: sport === 'nfl' ? "this season's games" : "this season's matches", lines: it.x.def.binary ? null : (sport === 'nfl' ? nflLines(it.x.def) : fbLines(it.x.def)), minPct: prefs.minPct,
         fmtOpp: sport === 'nfl' ? r => `${r.home ? 'v' : '@'} ${r.opp}` : null };
       const ri = reg.push({ x: it.x, o, cur: it.x.line, it }) - 1; return playCard(it.x, { ...o, ri }); }).join('');
-    out.innerHTML = `${S.when === 'gw' ? `<p class="xs muted hiwiweek">This Gameweek · ${esc(weekText())}</p>` : ''}<p class="small muted">${items.length} idea${items.length === 1 ? '' : 's'} from ${sport === 'nfl' ? 'NFL games' : 'matches'} ${S.when === 'gw' ? 'in this gameweek' : 'in all upcoming fixtures'}, each the hardest line that still happened in at least ${prefs.minPct}% of this season's ${unit === 'game' ? 'games' : 'matches'}. Bigger samples come first.</p>${cards}
+    out.innerHTML = `${S.when === 'gw' ? weekHtml() : ''}<p class="small muted">${items.length} idea${items.length === 1 ? '' : 's'} from ${sport === 'nfl' ? 'NFL games' : 'matches'} ${S.when === 'gw' ? 'in this gameweek' : 'in all upcoming fixtures'}, each the hardest line that still happened in at least ${prefs.minPct}% of this season's ${unit === 'game' ? 'games' : 'matches'}. Bigger samples come first.</p>${cards}
       ${items.length > shownN ? `<button class="btn" id="hmore">Show more (${items.length - shownN} left)</button>` : ''}
       <p class="xs muted">These are past results only. They do not predict what happens next, and they are not bookmaker prices. Lines are research lines (typical sportsbook ranges), not checked against a live bookmaker. Use the slider on a card to try other lines.</p>`;
     wireCards(out, reg, openDetails);
@@ -2956,16 +3081,41 @@ async function viewHiwi(root, r, sport) {
   hf.addEventListener('change', async e => {
     const t = e.target;
     if (t.id === 'hsport') { location.hash = t.value === 'nfl' ? '#/nfl/hiwi' : '#/hiwi'; return; } // same page, other sport (header follows)
-    if (t.id === 'hleague') { if (sport !== 'nfl') { fb.league = t.value; fb.ent = ALL; } }
-    else if (t.id === 'hent') S.ent = t.value; else if (t.id === 'hmk') S.market = t.value; else if (t.id === 'hpct') { prefs.minPct = Number(t.value); savePrefs(); } else return;
+    if (t.id === 'hleague') { if (sport !== 'nfl') { fb.league = t.value; fb.ent = ALL; fb.q = ''; } }
+    else if (t.id === 'hmk') { S.market = t.value; if (S.ent && !entLabel(S.ent)) { S.ent = ALL; S.q = ''; } } else if (t.id === 'hpct') { prefs.minPct = Number(t.value); savePrefs(); } else return;
     drawFilters(); refresh();
   });
+  // ---------- autocomplete ----------
+  let sugItems = [], active = -1;
+  const showSug = () => {
+    const ul = $('#hsug', hf), inp = $('#hq', hf); const q = inp.value.trim();
+    if (!q || (S.ent && q === entLabel(S.ent))) { ul.hidden = true; inp.setAttribute('aria-expanded', 'false'); return; }
+    sugItems = suggest(q); active = -1;
+    let html = '', g = '';
+    for (const [i, x] of sugItems.entries()) { if (x.grp !== g) { g = x.grp; html += `<li class="combo-h" role="presentation">${esc(g)}</li>`; } html += `<li role="option" id="hsug${i}" data-i="${i}" class="combo-o">${esc(x.l)}</li>`; }
+    ul.innerHTML = html || `<li class="combo-none" role="presentation">No ${sport === 'nfl' ? 'team, game or player' : 'team, match or player'} matches "${esc(q)}"${S.when === 'gw' ? ' in this gameweek. Try All Upcoming.' : '.'}</li>`;
+    ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
+  };
+  const pick = i => { const x = sugItems[i]; if (!x) return; S.ent = x.v; S.q = ''; const inp = $('#hq', hf); inp.value = x.l; inp.blur(); $('#hsug', hf).hidden = true; inp.setAttribute('aria-expanded', 'false');
+    $('#hclear', hf).hidden = false; $('#hsel', hf).textContent = `Showing only: ${x.l}`; refresh(); };
+  // pointerdown fires before the input loses focus, so a tap works even while the iPhone keyboard is open
+  hf.addEventListener('pointerdown', e => { const o = e.target.closest('#hsug [data-i]'); if (o) { e.preventDefault(); pick(Number(o.dataset.i)); } });
+  hf.addEventListener('keydown', e => {
+    if (e.target.id !== 'hq') return; const opts = $$('#hsug [data-i]', hf);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!opts.length) return; active = (active + (e.key === 'ArrowDown' ? 1 : opts.length - 1)) % opts.length; opts.forEach((o, k) => o.classList.toggle('on', k === active)); e.target.setAttribute('aria-activedescendant', opts[active].id); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (sugItems.length) pick(active >= 0 ? active : 0); }
+    else if (e.key === 'Escape') { $('#hsug', hf).hidden = true; }
+  });
+  hf.addEventListener('focusin', e => { if (e.target.id !== 'hq') return; showSug(); setTimeout(() => { try { e.target.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch { /* old browsers */ } }, 250); });
+  hf.addEventListener('focusout', e => { if (e.target.id === 'hq') setTimeout(() => { const ul = $('#hsug', hf); if (ul && document.activeElement?.id !== 'hq') ul.hidden = true; }, 150); });
   hf.addEventListener('click', e => {
+    if (e.target.closest('#hclear')) { S.ent = ALL; S.q = ''; const inp = $('#hq', hf); inp.value = ''; e.target.closest('#hclear').hidden = true; $('#hsug', hf).hidden = true; $('#hsel', hf).textContent = 'Showing: All Teams, Matches & Players'; inp.focus(); refresh(); return; }
     const w = e.target.closest('#hwhen button'); if (w) { if (S.when !== w.dataset.v) { S.when = w.dataset.v; drawFilters(); refresh(); } return; }
     const b = e.target.closest('#hside button'); if (!b) return; S.side = b.dataset.v; drawFilters(); refresh(); });
   hf.addEventListener('input', e => {
     if (e.target.id === 'hpct') { $('#hpctv', hf).textContent = e.target.value + '%'; }
-    if (e.target.id === 'hq') { S.q = e.target.value; const pos = e.target.selectionStart; drawFilters(); const q = $('#hq', hf); q.focus(); try { q.setSelectionRange(pos, pos); } catch {} }
+    if (e.target.id === 'hq') { S.q = e.target.value; $('#hclear', hf).hidden = !S.q && !S.ent; showSug();
+      if (!S.q.trim() && S.ent) { S.ent = ALL; $('#hsel', hf).textContent = 'Showing: All Teams, Matches & Players'; refresh(); } }
   });
   if (sport !== 'nfl' && !players.length) { for (const lg of leaguesPresent()) if (hasPlayerLogs(lg)) players = players.concat(await fbPlayers(lg)); }
   drawFilters(); await refresh();
@@ -2979,7 +3129,7 @@ const { nfl, loadGroup, playerRows, teamName, latestSeason, nflUpcoming, nflSort
 const { NFL_TEAM_MARKETS, nflLines } = __m['nfl-markets'];
 const { playerMarkets, oppContext, oppContextHtml, defenceTable } = __m['nfl-scan'];
 const { researchPanel } = __m['panel'];
-const { $, $$, esc, fmtDay, fmtLong, fmtShort, koUK, fxStatus, fmtKickUK } = __m['util'];
+const { $, $$, esc, fmtDay, fmtLong, fmtShort, koUK, koLocal, todayLocal, localDayAfter, tzNow, fxStatus, statusBadge, timeHtml, fmtKick } = __m['util'];
 const { hooks } = __m['shared'];
 
 const nflBanner = () => (nfl.status === 'error' ? `<div class="banner bad"><b>NFL data unavailable.</b> ${esc(nfl.error)} <a href="" onclick="location.reload();return false">Try again</a></div>` : '');
@@ -2988,9 +3138,9 @@ const POS_ORDER = ['qb', 'rb', 'wr', 'te', 'k', 'def'];
 const ROSTER = { ACT: 'Active', RES: 'Reserve / injured list', INA: 'Inactive', DEV: 'Practice squad', CUT: 'Released', EXE: 'Exempt', RET: 'Retired' };
 const credit = '<p class="xs muted">NFL data: <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a> (CC-BY 4.0). Regular season and postseason are kept apart unless you choose to include the postseason.</p>';
 const teamBadge = a => `<span class="tbadge" aria-hidden="true">${esc(a)}</span>`;
-const kick = g => { const k = koUK(g); return `${fmtDay(k.ymd)} · ${k.hm ? k.hm + ' UK' : 'TBC'}`; };
+const kick = g => fmtKick(g);
 const LIVE_NFL = 4 * 3600e3; // an NFL game usually takes a little over 3 hours
-const statusCell = g => { const st = g.final ? 'final' : fxStatus(g, new Date(), LIVE_NFL); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'live' ? '<span class="live">LIVE</span>' : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : `<span class="time">${esc(koUK(g).hm || 'TBC')}</span>`; };
+const statusCell = g => { const st = g.final ? 'final' : fxStatus(g, new Date(), LIVE_NFL); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
 const gameRow = g => `<a class="row" href="#/nfl/plays?game=${encodeURIComponent(g.id)}"><div class="l"><b>${esc(teamName(g.away))} at ${esc(teamName(g.home))}</b><span>${esc(kick(g))} · ${g.type === 'P' ? esc(g.round) + ' (postseason)' : 'Week ' + g.week}${g.neutral ? ' · neutral site' : ''}</span></div><div class="r">${statusCell(g)}</div></a>`;
 
 async function viewNflHome(root) {
@@ -3077,13 +3227,13 @@ async function viewNflFixtures(root) {
   if (nflLoading(root)) return;
   root.innerHTML = `<h1>NFL games</h1><div class="stack"><div class="seg" id="ntabs"><button data-t="upcoming" class="${fx.tab === 'upcoming' ? 'on' : ''}">Upcoming</button><button data-t="results" class="${fx.tab === 'results' ? 'on' : ''}">Results</button></div>
     <div class="seg wrap" id="nwhen">${[['all', 'All'], ['today', 'Today'], ['7', 'Next 7 days']].map(([v, l]) => `<button data-v="${v}" class="${fx.when === v ? 'on' : ''}">${l}</button>`).join('')}</div></div><div id="nfx" style="margin-top:10px"></div>
-    <p class="xs muted">All kick-off times are UK time (GMT/BST), converted from the official US Eastern times. LIVE and Awaiting result are estimated from the scheduled kick-off; PropLab has no live scores.</p>${credit}`;
+    <p class="xs muted">Kick-off times are shown in your time zone (${esc(tzNow())}), converted from the official kick-off times; change it at the bottom of the page. PropLab has no live scores: after kick-off a game shows Started (status unconfirmed), then Awaiting result until the final score is published.</p>${credit}`;
   const draw = () => {
-    const now = new Date(); const todayUK = koUK({ ko_utc: now.toISOString() }).ymd; const in7 = koUK({ ko_utc: new Date(now.getTime() + 7 * 864e5).toISOString() }).ymd;
+    const now = new Date(); const todayUK = todayLocal(now); const in7 = localDayAfter(7, now);
     let list = fx.tab === 'upcoming' ? nfl.games.filter(g => !g.final && fxStatus(g, now, LIVE_NFL) !== 'old').sort(nflSort) : nfl.games.filter(g => g.final).sort((a, b) => -nflSort(a, b)).slice(0, 80);
-    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koUK(g).ymd; return fx.when === 'today' ? d === todayUK : d <= in7; });
-    const byDay = new Map(); for (const g of list) { const k = koUK(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
-    $('#nfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} (UK date) · NFL</div><div class="card"><div class="list">${gs.map(gameRow).join('')}</div></div>`).join('') : '<div class="banner info">No NFL games for this filter.</div>';
+    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? d === todayUK : d <= in7; });
+    const byDay = new Map(); for (const g of list) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    $('#nfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} · NFL</div><div class="card"><div class="list">${gs.map(gameRow).join('')}</div></div>`).join('') : '<div class="banner info">No NFL games for this filter.</div>';
   };
   $('#ntabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; fx.tab = b.dataset.t; $$('#ntabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#nwhen', root).hidden = fx.tab !== 'upcoming'; draw(); };
   $('#nwhen', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; fx.when = b.dataset.v; $$('#nwhen button', root).forEach(x => x.classList.toggle('on', x === b)); draw(); };
@@ -3102,7 +3252,7 @@ const { scanPlayer, scanTeam, nflSampleText, TYPES, oppContext, oppContextHtml }
 const { teamGameRows } = __m['nfl-data'];
 const { playCard, wireCards, missesHtml } = __m['playcard'];
 const { haFormHtml, haFormClick, openGraphModal } = __m['panel'];
-const { $, esc, koUK, fmtDay } = __m['util'];
+const { $, koLocal, tzNow, esc, koUK, fmtDay, fmtKick } = __m['util'];
 const { prefs, savePrefs } = __m['shared'];
 const { nflLoading } = __m['v-nfl'];
 
@@ -3111,7 +3261,7 @@ const SAMPLES = [[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [
 const GORDER = ['qb', 'rb', 'wr', 'te', 'k', 'def'];
 const ui = { kind: 'player', team: '', player: '', game: '', tteam: '', last: 10, side: 'both', venue: '', types: 'R', defOn: false };
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
-const kick = g => { const k = koUK(g); return `${fmtDay(k.ymd)} · ${k.hm ? k.hm + ' UK' : 'TBC'}`; };
+const kick = g => fmtKick(g);
 
 async function viewNflPlays(root, r) {
   if (nflLoading(root)) return;
@@ -3135,11 +3285,11 @@ async function viewNflPlays(root, r) {
     if (!nfl.teams.has(ui.tteam)) ui.tteam = teams()[0].abbr;
   };
   const drawCtl = () => {
-    fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = koUK(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     const picker = ui.kind === 'player' ? `<div class="field"><label for="pfind">Find a player</label><input class="in" id="pfind" list="pfindl" placeholder="Type a name" autocomplete="off"><datalist id="pfindl">${nfl.players.filter(p => p.current && p.seasons.includes(season)).map(p => `<option value="${esc(p.name)} (${esc(p.pos)}, ${esc(p.team)})"></option>`).join('')}</datalist></div>
         <div class="ctl"><div class="field"><label for="pteam">Team</label><select class="in" id="pteam">${teams().map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="pl">Player</label><select class="in" id="pl">${GORDER.map(g => { const ps = roster(ui.team).filter(p => p.group === g); return ps.length ? `<optgroup label="${GROUP_NAMES[g]}">${ps.map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)} (${esc(p.pos)})</option>`).join('')}</optgroup>` : ''; }).join('')}</select></div></div>`
-      : ui.kind === 'game' ? (gs.length ? `<div class="field"><label for="gm">Upcoming game (UK times)</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(g => `<option value="${esc(g.id)}" ${g.id === ui.game ? 'selected' : ''}>${esc(koUK(g).hm || 'TBC')} ${esc(teamName(g.away))} at ${esc(teamName(g.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      : ui.kind === 'game' ? (gs.length ? `<div class="field"><label for="gm">Upcoming game (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(g => `<option value="${esc(g.id)}" ${g.id === ui.game ? 'selected' : ''}>${esc(koLocal(g).hm || 'TBC')} ${esc(teamName(g.away))} at ${esc(teamName(g.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
         <label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="defon" ${ui.defOn ? 'checked' : ''}> Include defensive players and kickers</label>` : '<p class="small muted">No upcoming NFL games are published.</p>')
       : `<div class="field"><label for="tt">Team</label><select class="in" id="tt">${teams().map(t => `<option value="${t.abbr}" ${t.abbr === ui.tteam ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>`;
     ctl.innerHTML = `<div class="field"><label>Research</label>${seg('kind', [['player', 'Player'], ['game', 'Game'], ['team', 'Team']], ui.kind)}</div>${picker}
@@ -3210,7 +3360,7 @@ return { viewNflPlays };
 __m['v-nfl-finder'] = (() => {
 // NFL Finder: broad player discovery. One prop market and line across many players, filtered by position, team or upcoming game,
 // with a minimum hit rate filter, three-state sorting on Hit rate and Avg, and form dots that follow the chosen sample.
-const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, GROUP_NAMES } = __m['nfl-data'];
+const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, nflSelectable, GROUP_NAMES } = __m['nfl-data'];
 const { marketsForGroup, nflLines } = __m['nfl-markets'];
 const { TYPES } = __m['nfl-scan'];
 const { marketRows, defaultLine, stepLine } = __m['markets'];
@@ -3219,7 +3369,7 @@ const { hitRate, parseOdds } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
-const { $, esc, fmt, koUK, fmtDay } = __m['util'];
+const { $, koLocal, tzNow, fxStatus, esc, fmt, koUK, fmtDay } = __m['util'];
 const { prefs } = __m['shared'];
 const { nflLoading } = __m['v-nfl'];
 
@@ -3235,10 +3385,10 @@ async function viewNflFinder(root) {
   const market = () => marketsForGroup(ui.group).find(m => m.key === ui.market) || marketsForGroup(ui.group)[0];
   const drawCtl = () => {
     const ms = marketsForGroup(ui.group); if (!ms.some(m => m.key === ui.market)) { ui.market = ms[0].key; ui.line = null; }
-    const m = market(); const gs = nflUpcoming(); const byDay = new Map(); for (const g of gs) { const k = koUK(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    const m = market(); const gs = nflSelectable(); const byDay = new Map(); for (const g of gs) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     ctl.innerHTML = `<div class="field"><label>Position</label>${seg('group', ['qb', 'rb', 'wr', 'te', 'k', 'def'].map(g => [g, { qb: 'QB', rb: 'RB', wr: 'WR', te: 'TE', k: 'K', def: 'Defence' }[g]]), ui.group)}</div>
       <div class="ctl"><div class="field"><label for="tm">Team</label><select class="in" id="tm"><option value="">All teams</option>${[...nfl.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>
-      <div class="field"><label for="gm">Upcoming game</label><select class="in" id="gm"><option value="">Any game</option>${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(g => `<option value="${g.id}" ${g.id === ui.game ? 'selected' : ''}>${esc(koUK(g).hm || 'TBC')} ${g.away} @ ${g.home}</option>`).join('')}</optgroup>`).join('')}</select></div></div>
+      <div class="field"><label for="gm">Game (upcoming or started, no final score yet)</label><select class="in" id="gm"><option value="">Any game</option>${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(g => `<option value="${g.id}" ${g.id === ui.game ? 'selected' : ''}>${esc(koLocal(g).hm || 'TBC')} ${g.away} @ ${g.home}${(st => (st === 'live' ? ' · LIVE' : st === 'started' ? ' · Started (status unconfirmed)' : st === 'awaiting' ? ' · Awaiting result' : ''))(fxStatus(g, new Date(), 4 * 3600e3))}</option>`).join('')}</optgroup>`).join('')}</select></div></div>
       <div class="field"><label for="mk">Market</label><select class="in" id="mk">${ms.map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
       ${m.binary ? '' : `<div class="field"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div><div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div>`}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}</div>
@@ -3336,7 +3486,7 @@ __m['app'] = (() => {
 // per-sport bottom navigation, and data loaded only for the sport in use.
 const { store, loadCore } = __m['data'];
 const { nfl, loadNfl } = __m['nfl-data'];
-const { $, esc } = __m['util'];
+const { $, esc, TZ_CHOICES, tzPref, setTzPref, detectTz, tzAbbr } = __m['util'];
 const { route, hooks, getSport, setSport } = __m['shared'];
 const { ICON, LOGO, BEAR_ICON } = __m['icons'];
 const { viewHome } = __m['v-home'];
@@ -3392,7 +3542,9 @@ let note = '';
 function shell() {
   document.body.insertAdjacentHTML('afterbegin', `<header class="top"><div class="top-in"><a class="brand" href="#/sports" aria-label="PropLab: choose a sport">${LOGO}<span>Prop<b>Lab</b></span></a>
     <div class="topctl" id="topctl"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
-  <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p></footer>`);
+  <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select></p></footer>`);
+  drawTz();
+  $('#tzsel').addEventListener('change', e => { setTzPref(e.target.value); drawTz(); render(); });
   $('#topctl').addEventListener('change', e => {
     if (e.target.id !== 'sportsel') return; const w = where(); const to = e.target.value; if (to === w.sport) return;
     const eq = equivalentHref(w, to); setSport(to);
@@ -3400,6 +3552,8 @@ function shell() {
     location.hash = eq.href;
   });
 }
+// Time zone for displayed kick-off times (display only). Automatic = the browser's own zone; the choice is saved on this device.
+function drawTz() { const auto = detectTz(), cur = tzPref(); $('#tzsel').innerHTML = TZ_CHOICES.map(([v, l, z]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${esc(l)}${v === 'auto' ? ` (${esc(auto === 'UTC' ? 'UTC' : tzAbbr(new Date(), auto))})` : ''}</option>`).join(''); }
 function chrome(w) {
   const sp = w.sport;
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
