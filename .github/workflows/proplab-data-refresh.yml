@@ -1,0 +1,48 @@
+# PropLab daily data refresh. Create this file in the repository as:  .github/workflows/proplab-data-refresh.yml
+# It needs _proplab-refresh.zip (the refresh tools) in the top folder of the repository.
+# Runs every day at about 11pm UK time (GitHub's timezone setting handles GMT/BST). GitHub may start scheduled runs late,
+# so 23:02 is the intended start, not a guarantee. A second run at 23:47 only does work if the first did not succeed.
+# Only data-*.json files are ever committed; the site's code is never changed by this workflow.
+name: PropLab daily data refresh
+on:
+  schedule:
+    - cron: '2 23 * * *'
+      timezone: 'Europe/London'
+    - cron: '47 23 * * *'
+      timezone: 'Europe/London'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even if tonight''s refresh already succeeded'
+        type: boolean
+        default: true
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: proplab-data-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unpack the refresh tools
+        run: unzip -q -o _proplab-refresh.zip -d "$RUNNER_TEMP/proplab-tools"
+      - name: Refresh, validate and commit data
+        id: refresh
+        env:
+          FORCE: ${{ inputs.force || 'false' }}
+        run: bash "$RUNNER_TEMP/proplab-tools/owner-tools/ci-refresh.sh" "$RUNNER_TEMP/proplab-tools"
+      - name: Publish the site (GitHub Pages does not rebuild for commits made by workflows)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || echo "::warning::Could not request a GitHub Pages build; the new data appears with the next upload."
