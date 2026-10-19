@@ -1,7 +1,386 @@
 {
  "schema": 1,
- "result": "not-run-yet",
- "last_run": null,
- "last_success": null,
- "note": "Placeholder until the first automatic data refresh (GitHub Actions) runs. It then replaces this file every night."
+ "last_run": "2026-10-19T22:33:20+00:00",
+ "result": "ok",
+ "last_success": "2026-10-19T22:33:20+00:00",
+ "changed_files": [
+  "data-nfl-model-forward.json",
+  "data-nfl-model.json",
+  "data-team-matches-epl-2026.json",
+  "data-team-matches-laliga-2026.json",
+  "data-team-matches-ligaportugal-2026.json",
+  "data-team-matches-seriea-2026.json",
+  "data-manifest.json"
+ ],
+ "validation": {
+  "checks": 41,
+  "failures": []
+ },
+ "errors": [
+  "football-data P1 2627: download failed (HTTP Error 504: Gateway Time-out); its published data was kept unchanged"
+ ],
+ "notes": [
+  "openfootball sco.1 2026-27: not published yet (Scottish Premiership fixtures come from football-data fixtures.csv, about one week ahead)",
+  "NFL model: 1896 predictions for 2026 week 7"
+ ],
+ "warnings": [],
+ "sources": {
+  "football-data E0 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:24:40+00:00",
+   "last_success": "2026-10-19T22:24:40+00:00",
+   "detail": ""
+  },
+  "football-data SP1 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:24:46+00:00",
+   "last_success": "2026-10-19T22:24:46+00:00",
+   "detail": ""
+  },
+  "football-data I1 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:25:18+00:00",
+   "last_success": "2026-10-19T22:25:18+00:00",
+   "detail": ""
+  },
+  "football-data D1 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:25:20+00:00",
+   "last_success": "2026-10-19T22:25:20+00:00",
+   "detail": ""
+  },
+  "football-data F1 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:25:22+00:00",
+   "last_success": "2026-10-19T22:25:22+00:00",
+   "detail": ""
+  },
+  "football-data P1 2627": {
+   "ok": false,
+   "checked": "2026-10-19T22:28:41+00:00",
+   "last_success": null,
+   "detail": "HTTP Error 504: Gateway Time-out"
+  },
+  "football-data N1 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:28:43+00:00",
+   "last_success": "2026-10-19T22:28:43+00:00",
+   "detail": ""
+  },
+  "football-data SC0 2627": {
+   "ok": true,
+   "checked": "2026-10-19T22:28:44+00:00",
+   "last_success": "2026-10-19T22:28:44+00:00",
+   "detail": ""
+  },
+  "football-data E0 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:28:45+00:00",
+   "last_success": "2026-10-19T22:28:45+00:00",
+   "detail": ""
+  },
+  "football-data SP1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:28:46+00:00",
+   "last_success": "2026-10-19T22:28:46+00:00",
+   "detail": ""
+  },
+  "football-data I1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:28:48+00:00",
+   "last_success": "2026-10-19T22:28:48+00:00",
+   "detail": ""
+  },
+  "football-data D1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:00+00:00",
+   "last_success": "2026-10-19T22:31:00+00:00",
+   "detail": ""
+  },
+  "football-data F1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:22+00:00",
+   "last_success": "2026-10-19T22:31:22+00:00",
+   "detail": ""
+  },
+  "football-data P1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:25+00:00",
+   "last_success": "2026-10-19T22:31:25+00:00",
+   "detail": ""
+  },
+  "football-data N1 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:28+00:00",
+   "last_success": "2026-10-19T22:31:28+00:00",
+   "detail": ""
+  },
+  "football-data SC0 2526": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:37+00:00",
+   "last_success": "2026-10-19T22:31:37+00:00",
+   "detail": ""
+  },
+  "football-data fixtures.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:43+00:00",
+   "last_success": "2026-10-19T22:31:43+00:00",
+   "detail": ""
+  },
+  "openfootball en.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:43+00:00",
+   "last_success": "2026-10-19T22:31:43+00:00",
+   "detail": ""
+  },
+  "openfootball es.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:43+00:00",
+   "last_success": "2026-10-19T22:31:43+00:00",
+   "detail": ""
+  },
+  "openfootball it.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:43+00:00",
+   "last_success": "2026-10-19T22:31:43+00:00",
+   "detail": ""
+  },
+  "openfootball de.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:43+00:00",
+   "last_success": "2026-10-19T22:31:43+00:00",
+   "detail": ""
+  },
+  "openfootball fr.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:44+00:00",
+   "last_success": "2026-10-19T22:31:44+00:00",
+   "detail": ""
+  },
+  "openfootball pt.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:44+00:00",
+   "last_success": "2026-10-19T22:31:44+00:00",
+   "detail": ""
+  },
+  "openfootball nl.1 2026-27": {
+   "ok": true,
+   "checked": "2026-10-19T22:31:44+00:00",
+   "last_success": "2026-10-19T22:31:44+00:00",
+   "detail": ""
+  },
+  "Wikipedia season results tables": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:12+00:00",
+   "last_success": "2026-10-19T22:32:12+00:00",
+   "detail": ""
+  },
+  "American Soccer Analysis MLS 2026": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:22+00:00",
+   "last_success": "2026-10-19T22:32:22+00:00",
+   "detail": ""
+  },
+  "nflverse games.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:22+00:00",
+   "last_success": "2026-10-19T22:32:22+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2021.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:22+00:00",
+   "last_success": "2026-10-19T22:32:22+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2021.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:22+00:00",
+   "last_success": "2026-10-19T22:32:22+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2021.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:23+00:00",
+   "last_success": "2026-10-19T22:32:23+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2022.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:23+00:00",
+   "last_success": "2026-10-19T22:32:23+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2022.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:23+00:00",
+   "last_success": "2026-10-19T22:32:23+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2022.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:23+00:00",
+   "last_success": "2026-10-19T22:32:23+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2023.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:23+00:00",
+   "last_success": "2026-10-19T22:32:23+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2023.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2023.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2024.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2024.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2024.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2025.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:24+00:00",
+   "last_success": "2026-10-19T22:32:24+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2025.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2025.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  },
+  "nflverse stats_player_week_2026.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  },
+  "nflverse play_by_play_2026.csv.gz": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  },
+  "nflverse roster_weekly_2026.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  },
+  "nflverse injuries_2026.csv": {
+   "ok": true,
+   "checked": "2026-10-19T22:32:25+00:00",
+   "last_success": "2026-10-19T22:32:25+00:00",
+   "detail": ""
+  }
+ },
+ "freshness": {
+  "leagues": {
+   "epl": {
+    "name": "Premier League",
+    "latest_result": "2026-10-19",
+    "upcoming_fixtures": 311,
+    "with_kickoff_time": 61,
+    "fixtures_until": "2027-05-30"
+   },
+   "laliga": {
+    "name": "La Liga",
+    "latest_result": "2026-10-19",
+    "upcoming_fixtures": 292,
+    "with_kickoff_time": 2,
+    "fixtures_until": "2027-05-30"
+   },
+   "seriea": {
+    "name": "Serie A",
+    "latest_result": "2026-10-19",
+    "upcoming_fixtures": 312,
+    "with_kickoff_time": 52,
+    "fixtures_until": "2027-05-30"
+   },
+   "bundesliga": {
+    "name": "Bundesliga",
+    "latest_result": "2026-10-18",
+    "upcoming_fixtures": 252,
+    "with_kickoff_time": 45,
+    "fixtures_until": "2027-05-22"
+   },
+   "ligue1": {
+    "name": "Ligue 1",
+    "latest_result": "2026-10-18",
+    "upcoming_fixtures": 243,
+    "with_kickoff_time": 51,
+    "fixtures_until": "2027-05-29"
+   },
+   "ligaportugal": {
+    "name": "Liga Portugal",
+    "latest_result": "2026-10-19",
+    "upcoming_fixtures": 235,
+    "with_kickoff_time": 37,
+    "fixtures_until": "2027-05-16"
+   },
+   "eredivisie": {
+    "name": "Eredivisie",
+    "latest_result": "2026-10-18",
+    "upcoming_fixtures": 225,
+    "with_kickoff_time": 107,
+    "fixtures_until": "2027-05-23"
+   },
+   "scotprem": {
+    "name": "Scottish Premiership",
+    "latest_result": "2026-10-18",
+    "upcoming_fixtures": 143,
+    "with_kickoff_time": 0,
+    "fixtures_until": "2027-04-10"
+   },
+   "mls": {
+    "name": "MLS",
+    "latest_result": "2026-10-18",
+    "upcoming_fixtures": 60,
+    "with_kickoff_time": 60,
+    "fixtures_until": "2026-11-08"
+   }
+  },
+  "nfl": {
+   "latest_final": "2026-10-18",
+   "upcoming_games": 180,
+   "player_log_rows": 92742,
+   "played_not_final": []
+  },
+  "lineups": {
+   "source": "owner-supplied team sheets (no permitted automatic source)",
+   "teams": 3,
+   "latest_date": null
+  },
+  "played_over_4_days_ago_without_result": [],
+  "mls_local_date_mismatches": []
+ },
+ "note": "Written by the daily data refresh. Data files are only replaced when every validation check passes; otherwise the last valid data stays published."
 }
