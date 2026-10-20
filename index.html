@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="23df6f96eec8">
+<meta name="proplab-build" content="de6a586d0a86">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -2786,8 +2786,11 @@ const PAGE = 24;
 // Minimum Games Played (owner request, Milestone 4): hides a player or team card when the subject has fewer games / matches with a
 // recorded value for that market across every season PropLab has. Default 10, remembered on this device; 0 or 1 shows everything.
 const MINKEY = 'proplab.hiwi.minGames.v1';
-const getMinGames = () => { try { const n = parseInt(localStorage.getItem(MINKEY) ?? '10', 10); return Number.isFinite(n) && n >= 0 ? Math.min(n, 200) : 10; } catch { return 10; } };
-const setMinGames = n => { try { localStorage.setItem(MINKEY, String(n)); } catch { /* this visit only */ } };
+// Minimum Games Played (owner correction 20 Oct): 1–20, default 10, counted from the CURRENT SEASON only (games with a recorded figure).
+const MIN_LO = 1, MIN_HI = 20;
+const clampMin = n => Math.max(MIN_LO, Math.min(MIN_HI, n));
+const getMinGames = () => { try { const n = parseInt(localStorage.getItem(MINKEY) ?? '10', 10); return Number.isFinite(n) ? clampMin(n) : 10; } catch { return 10; } };
+const setMinGames = n => { try { localStorage.setItem(MINKEY, String(clampMin(n))); } catch { /* this visit only */ } };
 const short = n => { const w = String(n).replace(/\b(FC|AFC|CF|SC)\b/g, '').trim().split(/\s+/); if (/^Man(chester|\.)?$/i.test(w[0]) && w[1]) return ('M' + w[1].slice(0, 2)).toUpperCase(); return (w.length > 1 && w[0].length <= 3 ? w[1] : w[0]).slice(0, 3).toUpperCase(); }; // Manchester City / United -> MCI / MUN
 const match = (q, terms) => { const n = normName(q); if (!n) return true; return terms.some(t => { const x = normName(t); return x.includes(n) || x.split(' ').some(w => w.startsWith(n)); }); };
 const kickTxt = f => { const k = koLocal(f); return `${fmtDay(k.ymd)}, ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
@@ -2948,8 +2951,8 @@ async function viewHiwi(root, r, sport) {
       <div class="field"><label>Markets</label><p class="hmksum" id="hmksum" style="margin:0"><span>Markets: <b>${ms.size}</b> selected</span> — <button type="button" class="btn hmkbtn" id="hmkbtn"><b>${ms.size ? 'Edit Markets' : 'Select Markets'}</b></button></p></div>
       <div class="field"><label>Form period</label><div class="seg" id="hper" role="group" aria-label="Form period">${PERIODS.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(st.period) === String(v) ? 'on' : ''}" aria-pressed="${String(st.period) === String(v)}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:4px 0 0">Season: this season only. Last 5 / 10 / 20: the latest completed ${nflMode ? 'regular-season games' : 'league matches'}, going back into earlier seasons when needed.</p></div>
-      <div class="field"><label for="hmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="hmin" type="number" inputmode="numeric" min="0" max="200" step="1" value="${getMinGames()}" aria-label="Minimum games played">
-        <span class="xs muted">Players need this many games, teams this many matches, with a recorded figure for the market (all seasons). Below it a card is hidden and listed with its sample size.</span></div></div>
+      <div class="field"><label for="hmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="hmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}" aria-label="Minimum games played">
+        <span class="xs muted">1–20. Players need this many games, teams this many matches, <b>this season</b>, with a recorded figure for the market. Earlier seasons do not count here (they are still used for Last 5 / 10 / 20 and H2H). Below it a card is hidden and listed with its count.</span></div></div>
       <div class="hsortbar"><button type="button" class="chip" id="hsort" aria-haspopup="dialog">⇅ Sort: ${esc(SORTS.find(x => x[0] === st.sort)[1])}</button></div>`;
   };
 
@@ -2990,7 +2993,9 @@ async function viewHiwi(root, r, sport) {
     trCache.clear(); gwCache.clear(); await ensurePlayers();
     const outc = []; notes = []; hidden = []; const mo = marketOrder(); const minG = getMinGames();
     const valid = (rows, def) => rows.reduce((n, x) => { const v = def.get(x); return n + (v !== null && v !== undefined ? 1 : 0); }, 0);
-    const enough = (rows, def, name, unit) => { const n = valid(rows, def); if (n >= minG) return true; hidden.push({ name, market: def.label, n, unit }); return false; };
+    // rows = the subject's CURRENT-SEASON rows only; returns the eligible count, or null when below the minimum (0 games is always excluded)
+    const enough = (rows, def, name, unit) => { const n = valid(rows, def); if (n >= minG && n > 0) return n; hidden.push({ name, market: def.label, n, unit }); return null; };
+    const elig = (n, unit) => `${n} ${unit}${n === 1 ? '' : unit === 'match' ? 'es' : 's'} this season`;
     const fixtures = st.mode === 'matches' ? selFx().map(fxById).filter(Boolean).sort(fxSortLocal) : [];
     for (const [, keys] of GROUPS()) for (const k of keys) {
       if (!mkts().has(k)) continue; const def = defOf(k); if (!def || !MODE_SCOPES[st.mode].includes(def.scope)) continue;
@@ -3003,22 +3008,23 @@ async function viewHiwi(root, r, sport) {
           if (nflMode && def.for && !def.for.includes(pl.p.group)) continue; // e.g. no passing yards card for a receiver
           // all of the player's own games, newest first, whichever team he played for (a transfer keeps his history); missing values are dropped later
           const all = nflMode ? ((await loadGroup(pl.p.group)).get(id) || []).filter(x => x.type === 'R').slice().sort((a, b) => (a.date < b.date ? 1 : -1)) : pl.p.rows.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-          if (!enough(all, def, pl.name, nflMode ? 'game' : 'match')) continue;
           const lg = nflMode ? 'nfl' : (pl.p._lg || lgs[0]), cs = seasonOf(lg);
+          const curAll = nflMode ? ((await loadGroup(pl.p.group)).get(id) || []).filter(x => x.season === cs) : all.filter(x => x.season === cs && (!x.league || x.league === lg));
+          const en = enough(curAll, def, pl.name, nflMode ? 'game' : 'match'); if (en === null) continue;
           const rows = forPeriod(all.filter(x => x.season === cs && (nflMode || !x.league || x.league === lg)), all);
-          outc.push({ cid: `p|${id}|${k}`, ord: [pl.name, mi, 0], title: pl.name, def, context: pl.sub, unit: U, m: rows.length, period: periodText(lg),
+          outc.push({ cid: `p|${id}|${k}`, ord: [pl.name, mi, 0], title: pl.name, def, context: `${pl.sub} · ${elig(en, nflMode ? 'game' : 'match')}`, unit: U, m: rows.length, period: periodText(lg),
             rows: mkRows(rows, def, x => `${x.home ? 'v' : '@'}${short(x.opp)}`), detail: { rows: all, subjectId: id, player: pl } });
         }
       } else if (st.mode === 'teams') {
-        for (const id of [...st.teams]) if (enough(teamRowsAll(id), def, teamLabel(id), nflMode ? 'game' : 'match')) outc.push(teamCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: nflMode ? `NFL` : leagueName(lgOfTeam(id)) }));
+        for (const id of [...st.teams]) { const en = enough(teamRowsNow(id), def, teamLabel(id), nflMode ? 'game' : 'match'); if (en !== null) outc.push(teamCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: `${nflMode ? 'NFL' : leagueName(lgOfTeam(id))} · ${elig(en, nflMode ? 'game' : 'match')}` })); }
       } else {
         // Upcoming Matches: two cards per fixture and market, the home team's and the away team's own history (head-to-head: Detailed analysis)
         for (const f of fixtures) {
           const [h, a] = homeAway(f), fid = fxId(f), base = [fxName(f), mi];
           const ctx = `${fxName(f)} · ${kickTxt(f)}${nflMode ? '' : lgTag(f.league)}`;
           const ko = f.ko_utc || `~${f.date}`; // fixtures without a confirmed time sort after timed ones on the same scheme
-          if (enough(teamRowsAll(h), def, teamLabel(h), nflMode ? 'game' : 'match')) outc.push(teamCard(h, def, { cid: `fh|${fid}|${k}`, ord: [...base, 0], ko, tag: 'Home team history', tagCls: 'home', context: ctx, fixture: fid, opp: a }));
-          if (enough(teamRowsAll(a), def, teamLabel(a), nflMode ? 'game' : 'match')) outc.push(teamCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away team history', tagCls: 'away', context: ctx, fixture: fid, opp: h }));
+          const eh = enough(teamRowsNow(h), def, teamLabel(h), nflMode ? 'game' : 'match'); if (eh !== null) outc.push(teamCard(h, def, { cid: `fh|${fid}|${k}`, ord: [...base, 0], ko, tag: 'Home team history', tagCls: 'home', context: `${ctx} · ${elig(eh, nflMode ? 'game' : 'match')}`, fixture: fid, opp: a }));
+          const ea = enough(teamRowsNow(a), def, teamLabel(a), nflMode ? 'game' : 'match'); if (ea !== null) outc.push(teamCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away team history', tagCls: 'away', context: `${ctx} · ${elig(ea, nflMode ? 'game' : 'match')}`, fixture: fid, opp: h }));
         }
       }
     }
@@ -3072,7 +3078,7 @@ async function viewHiwi(root, r, sport) {
     cards = sortCards(built, st.sort, c => reg.get(c.cid).st, marketOrder()); shown = 0;
     out.innerHTML = `${seasonNote()}<p class="small muted" id="hcount">${cards.length} result card${cards.length === 1 ? '' : 's'}: one per ${[...new Set(cards.map(c => (c.def.scope === 'player' ? 'player' : 'team')))].join(' / ')} and market${multi() ? `, ${lgs.length} leagues together` : ''} · ${sortText()}. Bars: green = hit, red = miss for the side you choose.</p>
       ${st.mode === 'matches' && cards.some(c => c.fixture) ? '<p class="xs muted">Each fixture shows the home team\'s and the away team\'s own history for every market. Tap <b>Detailed analysis</b> on either card to compare both teams with their head-to-head meetings.</p>' : ''}
-      ${hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} card${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${getMinGames()})</b></summary><ul>${hidden.map(h => `<li>${esc(h.name)} · ${esc(h.market)}: ${h.n} ${h.unit}${h.n === 1 ? '' : 'es'.slice(h.unit === 'game' ? 1 : 0)} with a recorded figure</li>`).join('')}</ul><p style="margin:4px 0 0">Lower the minimum above to show them.</p></details>` : ''}
+      ${hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} card${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${getMinGames()})</b></summary><ul>${hidden.map(h => `<li>${esc(h.name)} · ${esc(h.market)}: ${h.n} ${h.unit}${h.n === 1 ? '' : 'es'.slice(h.unit === 'game' ? 1 : 0)} this season with a recorded figure</li>`).join('')}</ul><p style="margin:4px 0 0">Lower the minimum above to show them.</p></details>` : ''}
       ${notes.length ? `<details class="xs muted"><summary>${notes.length} note${notes.length === 1 ? '' : 's'}</summary><ul>${[...new Set(notes)].map(n => `<li>${esc(n)}</li>`).join('')}</ul></details>` : ''}
       <div id="hcards"></div><button type="button" class="btn" id="hmore" hidden></button>
       <p class="xs muted">Past results only: historical hit rates, not model probabilities or bookmaker prices. Check each card's sample size: 100% from 1 match is weak evidence.</p>`;
@@ -3238,7 +3244,7 @@ async function viewHiwi(root, r, sport) {
   });
   hf.addEventListener('input', e => {
     const t = e.target;
-    if (t.id === 'hmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= 0) { setMinGames(Math.min(n, 200)); refresh(); } return; }
+    if (t.id === 'hmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) t.value = MIN_HI; refresh(); } return; }
     if (t.id !== 'htq' && t.id !== 'hpq') return;
     st[t.id === 'htq' ? 'tq' : 'pq'] = t.value; const pos = t.selectionStart; remember(); draw();
     const n = $('#' + t.id, hf); n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* search inputs on some browsers */ }
@@ -3249,12 +3255,12 @@ async function viewHiwi(root, r, sport) {
   draw(); await refresh();
 }
 
-return { wilson, MODE_SCOPES, getMinGames, setMinGames, sortCards, viewHiwi };
+return { wilson, MODE_SCOPES, MIN_LO, clampMin, getMinGames, setMinGames, sortCards, viewHiwi };
 })();
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
 const { infoTag } = __m['info'];
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
 const { applyFilters } = __m['research'];
@@ -3262,7 +3268,7 @@ const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
 const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg } = __m['util'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
-const { getMinGames, setMinGames } = __m['v-hiwi'];
+const { getMinGames, setMinGames, MIN_LO, MIN_HI } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES } = __m['data'];
 
@@ -3287,7 +3293,7 @@ function cardHtml(r, ctx = {}) {
   const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'this season\'s'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} available)` : ''}`;
   return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
     <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)} <span class="xs muted">· ${esc(ctx.h2h ? 'both teams combined' : SCOPE[marketScope(r.def.key)](s.name))}</span></div>
-    <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span>${r.validN != null && !ctx.h2h ? ` <span class="xs muted vn">· ${r.validN} ${s.type === 'player' ? 'games' : 'matches'} with this statistic (all seasons)</span>` : ''}</div>
+    <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span>${r.validN != null && !ctx.h2h ? ` <span class="xs muted vn">· ${r.validN} ${s.type === 'player' ? (r.validN === 1 ? 'game' : 'games') : (r.validN === 1 ? 'match' : 'matches')} this season with this statistic</span>` : ''}</div>
     <div class="dots" aria-label="${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
     <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · ${infoTag(rel.k, rel.t, { n: r.hr.n, cls: 'rel ' + rel.k })}</div>
     <details class="mx"><summary class="xs">Matches (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${rows}</table></div></details>
@@ -3383,16 +3389,17 @@ async function viewTrends(root, r) {
         <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="">All markets</option>${mk.map(m => `<option value="${esc(m.key)}" ${ui.market === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(ui.market ? marketDesc(ui.market) : 'Every market below is scanned; pick one to see what it counts.')}</p></div></div>`}
       <div class="field"><label>Minimum historical hit rate</label>${seg('minPct', PCTS.map(p => [p, p + '%']), ui.minPct, 'grid')}</div>
       <div class="field"><label>Sample (completed matches)</label>${seg('period', PERIODS, ui.period, 'grid')}<span class="xs muted">Season = the current league season only. Last N = the last N matches after Home/Away Form.</span></div>
-      <div class="field"><label for="fmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="fmin" type="number" inputmode="numeric" min="0" max="200" step="1" value="${getMinGames()}"><span class="xs muted">Players: games with a recorded figure for the market. Teams: matches with that statistic. All seasons count. Shared with Hiwi's Section.</span></div></div>
+      <div class="field"><label for="fmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="fmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">1–20, <b>this season only</b>. Players: games with a recorded figure for the market. Teams: league matches with that statistic. Earlier seasons still count for the Sample. Shared with Hiwi's Section.</span></div></div>
       <div class="field"><label for="ford">Sort</label><select class="in" id="ford">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
   };
   const showLine = () => { const exDef = allMarkets().find(m => m.key === ui.exKey); const lab = $('#exlab', ctl), inp = $('#exl', ctl), note = $('#exnote', ctl); if (lab && exDef) lab.textContent = `${exDef.label} — ${sideWord(ui.exSide)} ${ui.exLine}`; if (inp && document.activeElement !== inp) inp.value = ui.exLine; if (note) note.innerHTML = defNote; };
 
   // Minimum Games Played: count every game (all seasons) with a recorded value for the market; results below it are hidden and listed.
-  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); return full ? marketRows(x.subject.allRows || x.subject.rows, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
-  const applyMin = res => { const mg = getMinGames(), keep = [], hid = []; for (const x of res) { x.validN = validN(x); (x.validN >= mg ? keep : hid).push(x); } return { keep, hid }; };
+  const csMemo = new Map(), csOf = lg => { if (!csMemo.has(lg)) csMemo.set(lg, currentSeason(lg)); return csMemo.get(lg); };
+  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); const cs = csOf(x.subject.lg); const rs = (x.subject.allRows || x.subject.rows).filter(r => r.season === cs && (!r.league || r.league === x.subject.lg)); return full ? marketRows(rs, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
+  const applyMin = res => { const mg = getMinGames(), keep = [], hid = []; for (const x of res) { x.validN = validN(x); (x.validN >= mg && x.validN > 0 ? keep : hid).push(x); } return { keep, hid }; };
   const hiddenHtml = hid => { if (!hid.length) return ''; const mg = getMinGames(); const seen = new Map(); for (const x of hid) { const k = x.subject.type + '|' + x.subject.id + '|' + x.def.key; if (!seen.has(k)) seen.set(k, x); } const l = [...seen.values()];
-    return `<details class="xs hhidden"><summary><b>${l.length} result${l.length === 1 ? '' : 's'} hidden by Minimum games played (${mg})</b></summary><ul>${l.slice(0, 60).map(x => `<li>${esc(x.subject.name)}${x.subject.type === 'player' ? ` (${esc(x.subject.club)})` : ''}, ${esc(x.def.label)}: ${x.validN} ${x.subject.type === 'player' ? 'game' : 'match'}${x.validN === 1 ? '' : 'es'.slice(x.subject.type === 'player' ? 1 : 0)} with this statistic</li>`).join('')}${l.length > 60 ? `<li>… and ${l.length - 60} more</li>` : ''}</ul></details>`; };
+    return `<details class="xs hhidden"><summary><b>${l.length} result${l.length === 1 ? '' : 's'} hidden by Minimum games played (${mg})</b></summary><ul>${l.slice(0, 60).map(x => `<li>${esc(x.subject.name)}${x.subject.type === 'player' ? ` (${esc(x.subject.club)})` : ''}, ${esc(x.def.label)}: ${x.validN} ${x.subject.type === 'player' ? 'game' : 'match'}${x.validN === 1 ? '' : 'es'.slice(x.subject.type === 'player' ? 1 : 0)} this season with this statistic</li>`).join('')}${l.length > 60 ? `<li>… and ${l.length - 60} more</li>` : ''}</ul></details>`; };
   const mOrder = () => { const m = new Map(); allMarkets().forEach((d, i) => m.set(d.key, i)); return m; };
   const koOf = f => (f ? (f.ko_utc || '~' + f.date) : '~~');
   const sortRes = res => { const mo = mOrder(), o = ui.order;
@@ -3405,14 +3412,14 @@ async function viewTrends(root, r) {
   const baseOpts = () => ({ lines: (def) => researchLines(FOOTBALL_RANGES, def.key, def.binary), minPct: ui.minPct, minN: ui.minN, sides: ui.side === 'both' ? ['over', 'under'] : [ui.side], marketKey: ui.market, exact: ui.lineMode === 'exact' ? { key: ui.exKey, side: ui.exSide, line: ui.exLine } : null, ...period() });
   const what = () => { if (ui.lineMode !== 'exact') return 'any market'; const d = allMarkets().find(m => m.key === ui.exKey) || { label: '' }; return d.binary ? 'both teams to score: Yes' : `${sideWord(ui.exSide)} ${ui.exLine} ${mLabel(d)}`; };
   const defsFor = () => ({ team: teamMarkets(), player: playerMarkets() });
-  const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => lgs.includes(p.league)).map(p => ({ id: p.id, type: 'player', name: p.name, club: p.team, clubSlug: teamSlugOf(p.team), href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
+  const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => lgs.includes(p.league)).map(p => ({ id: p.id, type: 'player', name: p.name, club: p.team, clubSlug: teamSlugOf(p.team), lg: p.league, href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
   const noPlayersNote = () => `<div class="banner info"><b>Player statistics are not available for ${esc(lgLabel())}.</b> No free source licenses these leagues' player match statistics for public display (PropLab has player logs for MLS only), so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`;
   const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Match cards and Team cards = yellow cards + red cards as recorded (a second yellow counts as recorded by the source); no bookmaker card-points rules are assumed.</p>';
 
   const drawBrowse = async () => {
     const set = selSet(), tms = leagueTeams();
     if (!set.size) { out.innerHTML = '<div class="banner"><b>No teams selected.</b> Tick at least one club in Teams, or tap Select all.</div>'; return; }
-    const teams = tms.filter(t => set.has(t.slug)).map(t => ({ id: t.slug, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: teamRowsFor(t.slug), nextFx: selectableFixtures(t.lg, now).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null })).map(t => ({ ...t, homeSide: t.nextFx ? (teamSlugOf(t.nextFx.home) === t.id ? 0 : 1) : 2 }));
+    const teams = tms.filter(t => set.has(t.slug)).map(t => ({ id: t.slug, lg: t.lg, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: teamRowsFor(t.slug), nextFx: selectableFixtures(t.lg, now).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null })).map(t => ({ ...t, homeSide: t.nextFx ? (teamSlugOf(t.nextFx.home) === t.id ? 0 : 1) : 2 }));
     const players = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => set.has(p.clubSlug));
     let html = '';
     if (ui.kind === 'player' && !hasPlayers()) html += noPlayersNote();
@@ -3437,7 +3444,7 @@ async function viewTrends(root, r) {
   };
   const oneGame = async f => {
     const hs = teamSlugOf(f.home), as = teamSlugOf(f.away), before = rows => rows.filter(x => x.date < f.date);
-    const subj = (slug, name) => ({ id: slug, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)), allRows: before(teamRowsFor(slug)) });
+    const subj = (slug, name) => ({ id: slug, lg: f.league, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)), allRows: before(teamRowsFor(slug)) });
     const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKick(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
     const section = async (slug, name, venue) => {
       const ex = ui.lineMode === 'exact'; const oo = ex ? { ...o, minPct: 0 } : o; // exact line: always show the real hit rate, flag it if below the minimum
@@ -3521,7 +3528,7 @@ async function viewTrends(root, r) {
     if (t.id === 'exk') { ui.exKey = t.value; ui.exLine = null; redrawCtl(); draw(); }
   });
   ctl.addEventListener('input', e => {
-    if (e.target.id === 'fmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= 0) { setMinGames(Math.min(n, 200)); ui.shown = 40; draw(); } return; }
+    if (e.target.id === 'fmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) e.target.value = MIN_HI; ui.shown = 40; draw(); } return; }
     if (e.target.id === 'tq') { ui.tq = e.target.value; filterList(); }
     if (e.target.id === 'exl') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.exLine = v; draw(); } }
   });
@@ -3568,7 +3575,7 @@ const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, openGraphModa
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { $, $$, esc, fmt, avg, koLocal, koUK, fmtDay, fxStatus, statusBadge, fixtureId, tzNow } = __m['util'];
-const { getMinGames, setMinGames } = __m['v-hiwi'];
+const { getMinGames, setMinGames, MIN_LO, MIN_HI } = __m['v-hiwi'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES, selectableFixtures, teamSlugOf } = __m['data'];
@@ -3612,7 +3619,7 @@ async function viewTable(root) {
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Matches</label><div class="seg grid" id="lt">${[[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div>
-      <div class="field"><label for="tmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="tmin" type="number" inputmode="numeric" min="0" max="200" step="1" value="${getMinGames()}"><span class="xs muted">${ui.mode === 'teams' ? 'Team matches' : 'Player games'} with a recorded figure for this market, all seasons. Shared with Hiwi's Section.</span></div></div>
+      <div class="field"><label for="tmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="tmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">${ui.mode === 'teams' ? 'Team matches' : 'Player games'} with a recorded figure for this market, <b>this season only</b> (1–20). Earlier seasons still count for Last N. Shared with Hiwi's Section.</span></div></div>
       <div class="field"><label for="tord">Sort</label><select class="in" id="tord">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
       ${m?.binary ? '<p class="small muted" style="margin:0">Both teams to score is Yes only: no line to set.</p>' : `<div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p>`}</div>`;
   };
@@ -3627,8 +3634,10 @@ async function viewTable(root) {
     if (ui.mode === 'players' && !lgHasPlayers()) { out.innerHTML = `<div class="banner info"><b>No player match logs are published for ${esc(leaguesLabel(lgs))}.</b> No free source licenses these leagues' player match statistics for public display (PropLab has MLS player logs only). Switch to Teams to scan team totals, or include MLS for player trends.</div>`; return; }
     const { items, m } = await sample();
     if (!items.length || !m) { out.innerHTML = `<div class="banner info">${ui.today && !items.length ? `No ${ui.mode} in ${esc(leaguesLabel(lgs))} play today (UK date).` : 'No data available for this market.'}</div>`; return; }
-    const minG = getMinGames(), hidden = []; const valid = it => it.rows.filter(r => r.value !== null && r.value !== undefined).length;
-    const filt = items.filter(it => { it.validN = valid(it); if (it.validN < minG) { if (it.validN > 0) hidden.push(it); return false; } return true; }).map(it => ({ it, f: applyFilters(it.rows, { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(it.lg) : null, venue: ui.venue }) }));
+    const minG = getMinGames(), hidden = []; const csM = new Map(), csOf = lg => { if (!csM.has(lg)) csM.set(lg, currentSeason(lg)); return csM.get(lg); };
+    // current season only (owner correction 20 Oct): previous seasons never count towards the minimum; 0 games is always excluded
+    const valid = it => { const cs = csOf(it.lg); return it.rows.filter(r => r.season === cs && (!r.league || r.league === it.lg) && r.value !== null && r.value !== undefined).length; };
+    const filt = items.filter(it => { it.validN = valid(it); if (it.validN < minG || it.validN === 0) { if (it.validN > 0) hidden.push(it); return false; } return true; }).map(it => ({ it, f: applyFilters(it.rows, { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(it.lg) : null, venue: ui.venue }) }));
     const side = m.binary ? 'over' : ui.side;
     if (m.binary) ui.line = 0.5;
     else if (ui.line === null) { const vals = filt.flatMap(x => x.f.map(r => r.value)); ui.line = defaultLine(m.key, vals); const fixed = defaultLine(m.key, [999]) === defaultLine(m.key, [0]); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(vals) ?? 'n/a'}) of ${vals.length} real values when this market was chosen. Use the arrows to change it; changing the sample or Home/Away Form keeps your line.`; }
@@ -3647,8 +3656,8 @@ async function viewTable(root) {
     const formHead = lastN ? `Last ${lastN} (old → new)` : 'Season (old → new)';
     // one dot per match in the sample (no placeholders), oldest on the left, coloured by the line shown above
     const dotsHtml = x => `<span class="fdots" aria-label="${x.hr.hits} of ${x.hr.n} hit, oldest to newest">${dotsFor(x.f.map(r => r.value), line, side).map((h, i) => `<i class="${h ? 'h' : ''}" title="${esc([...x.f].reverse()[i].date)}">${h ? '●' : '○'}</i>`).join('')}</span>`;
-    const hid = hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} ${ui.mode === 'teams' ? 'team' : 'player'}${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${minG})</b></summary><ul>${hidden.sort((a, b) => b.validN - a.validN || a.name.localeCompare(b.name)).slice(0, 60).map(h => `<li>${esc(h.name)}${h.sub ? ` (${esc(h.sub)})` : ''}: ${h.validN} ${ui.mode === 'teams' ? 'match' : 'game'}${h.validN === 1 ? '' : (ui.mode === 'teams' ? 'es' : 's')} with this statistic</li>`).join('')}${hidden.length > 60 ? `<li>… and ${hidden.length - 60} more</li>` : ''}</ul></details>` : '';
-    out.innerHTML = res.length ? `${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / matches</th>${sortTh(ui.sort, 'avg', m.binary ? 'Both scored' : 'Avg')}<th>${formHead}</th></tr>${res.slice(0, 100).map((x, i) => `<tr data-row="${i}" class="tap"><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a><br><span class="xs muted">${x.it.sub ? esc(x.it.sub) + ' · ' : ''}${x.it.validN} ${ui.mode === 'teams' ? 'matches' : 'games'}${ui.order === 'market' && x.it.fx ? ` · ${esc(x.it.fx.home)} v ${esc(x.it.fx.away)}` : ''}</span><br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td>${dotsHtml(x)}</td></tr>`).join('')}</table></div></div>
+    const hid = hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} ${ui.mode === 'teams' ? 'team' : 'player'}${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${minG})</b></summary><ul>${hidden.sort((a, b) => b.validN - a.validN || a.name.localeCompare(b.name)).slice(0, 60).map(h => `<li>${esc(h.name)}${h.sub ? ` (${esc(h.sub)})` : ''}: ${h.validN} ${ui.mode === 'teams' ? 'match' : 'game'}${h.validN === 1 ? '' : (ui.mode === 'teams' ? 'es' : 's')} this season with this statistic</li>`).join('')}${hidden.length > 60 ? `<li>… and ${hidden.length - 60} more</li>` : ''}</ul></details>` : '';
+    out.innerHTML = res.length ? `${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / matches</th>${sortTh(ui.sort, 'avg', m.binary ? 'Both scored' : 'Avg')}<th>${formHead}</th></tr>${res.slice(0, 100).map((x, i) => `<tr data-row="${i}" class="tap"><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a><br><span class="xs muted">${x.it.sub ? esc(x.it.sub) + ' · ' : ''}${x.it.validN} ${ui.mode === 'teams' ? (x.it.validN === 1 ? 'match' : 'matches') : (x.it.validN === 1 ? 'game' : 'games')} this season${ui.order === 'market' && x.it.fx ? ` · ${esc(x.it.fx.home)} v ${esc(x.it.fx.away)}` : ''}</span><br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td>${dotsHtml(x)}</td></tr>`).join('')}</table></div></div>
       <p class="xs muted">${m.binary ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label)}`}, ${ui.last === 'season' ? "this season's" : 'last ' + ui.last} ${venueWord(ui.venue)}matches${ui.venue ? ' (Home/Away Form ON, applied before the sample)' : ''}. "Hits / matches" is the real number of matches with data; the form dots show exactly those matches, oldest on the left (filled = hit). Tap Hit rate or Avg: ascending, then descending, then back to the default order. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
       : `${hid}<div class="banner info"><b>No ${ui.mode} have matches with data</b> for this market and filter${hidden.length ? ` at Minimum games played ${minG}` : ''}. Choose another market or venue${hidden.length ? ', or lower the minimum' : ''}.</div>`;
   };
@@ -3683,7 +3692,7 @@ async function viewTable(root) {
     $$('.seg button', ctl).forEach(x => { const p = x.parentElement.id; if (p === 'sd') x.classList.toggle('on', x.dataset.v === ui.side); if (p === 'lt') x.classList.toggle('on', String(x.dataset.v) === String(ui.last)); });
     draw();
   });
-  ctl.addEventListener('input', e => { if (e.target.id === 'tmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= 0) { setMinGames(Math.min(n, 200)); draw(); } return; } if (e.target.id === 'ln') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } } });
+  ctl.addEventListener('input', e => { if (e.target.id === 'tmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) e.target.value = MIN_HI; draw(); } return; } if (e.target.id === 'ln') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } } });
 }
 
 return { viewTable };
@@ -4576,7 +4585,7 @@ const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { $, koLocal, tzNow, fxStatus, statusBadge, esc, fmt, koUK, fmtDay } = __m['util'];
-const { getMinGames, setMinGames } = __m['v-hiwi'];
+const { getMinGames, setMinGames, MIN_LO, MIN_HI } = __m['v-hiwi'];
 const { prefs } = __m['shared'];
 const { nflLoading } = __m['v-nfl'];
 
@@ -4619,7 +4628,7 @@ async function viewNflFinder(root) {
       ${m.binary ? '' : `<div class="field"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div><div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div>`}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (2021 onwards).</span></div>
       <div class="field"><label>Season type</label>${seg('types', [['R', 'Regular season'], ['RP', 'Include postseason']], ui.types)}</div>
-      <div class="field"><label for="nmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="nmin" type="number" inputmode="numeric" min="0" max="200" step="1" value="${getMinGames()}"><span class="xs muted">Games with a recorded ${esc(m.label.toLowerCase())} figure, all seasons. Shared with Hiwi's Section.</span></div></div>
+      <div class="field"><label for="nmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="nmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">Games with a recorded ${esc(m.label.toLowerCase())} figure in the <b>${season} season only</b> (1–20). Earlier seasons still count for Last N. Shared with Hiwi's Section.</span></div></div>
       <div class="field"><label>Show players at or above</label>${seg('min', [[0, 'Any'], [60, '60%'], [70, '70%'], [80, '80%'], [90, '90%'], [100, '100%']], ui.min, 'grid')}</div>
       <div class="field"><label for="nord">Sort</label><select class="in" id="nord">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
   };
@@ -4632,10 +4641,10 @@ async function viewNflFinder(root) {
     const minG = getMinGames(); const hidden = [];
     const items = [];
     for (const p of pool) {
-      const all = marketRows(bys.get(p.group).get(p.id) || [], m); const eligible = all.filter(r => r.value !== null && r.value !== undefined).length;
+      const all = marketRows(bys.get(p.group).get(p.id) || [], m); const eligible = all.filter(r => r.season === season && r.value !== null && r.value !== undefined).length; // current season only
       const f = applyFilters(all, { last: ui.last === 'season' ? null : ui.last, season: ui.last === 'season' ? season : null, types: TYPES(ui.types) });
       if (!f.length) continue;
-      if (eligible < minG) { hidden.push({ p, n: eligible }); continue; }
+      if (eligible < minG || eligible === 0) { if (eligible > 0) hidden.push({ p, n: eligible }); continue; }
       items.push({ p, f, eligible, game: games.find(g => g.home === p.team || g.away === p.team) || null });
     }
     if (m.binary) { ui.side = 'over'; ui.line = 0.5; } else if (ui.line === null) ui.line = defaultLine(m.key, items.flatMap(x => x.f.map(r => r.value)));
@@ -4645,12 +4654,12 @@ async function viewNflFinder(root) {
     const base = items.map(x => ({ ...x, hr: hitRate(x.f.map(r => r.value), ui.line, ui.side) })).filter(x => x.hr.n && x.hr.hitPct >= ui.min).sort(cmp[ui.order] || cmp.hi);
     const res = sortRows(base, ui.sort, (x, k) => (k === 'hit' ? x.hr.hitPct : k === 'avg' ? x.hr.avg : null)); shown = res;
     const lastN = typeof ui.last === 'number' ? ui.last : null;
-    const hid = hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} player${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${minG})</b></summary><ul>${hidden.sort((a, b) => b.n - a.n || a.p.name.localeCompare(b.p.name)).slice(0, 60).map(h => `<li>${esc(h.p.name)} (${esc(h.p.pos)}, ${esc(h.p.team)}): ${h.n} game${h.n === 1 ? '' : 's'} with a recorded figure</li>`).join('')}${hidden.length > 60 ? `<li>… and ${hidden.length - 60} more</li>` : ''}</ul></details>` : '';
+    const hid = hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} player${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${minG})</b></summary><ul>${hidden.sort((a, b) => b.n - a.n || a.p.name.localeCompare(b.p.name)).slice(0, 60).map(h => `<li>${esc(h.p.name)} (${esc(h.p.pos)}, ${esc(h.p.team)}): ${h.n} game${h.n === 1 ? '' : 's'} in ${season} with a recorded figure</li>`).join('')}${hidden.length > 60 ? `<li>… and ${hidden.length - 60} more</li>` : ''}</ul></details>` : '';
     out.innerHTML = res.length ? `${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>Player</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / games</th>${sortTh(ui.sort, 'avg', m.binary ? 'Yes' : 'Avg')}<th>${lastN ? `Last ${lastN}` : 'Season'} (old → new)</th></tr>
-      ${res.slice(0, 120).map((x, i) => `<tr><td class="w"><a href="#/nfl/player/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a><br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)} · ${x.eligible} games</span>${ui.order === 'market' && x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td>
+      ${res.slice(0, 120).map((x, i) => `<tr><td class="w"><a href="#/nfl/player/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a><br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)} · ${x.eligible} game${x.eligible === 1 ? '' : 's'} in ${season}</span>${ui.order === 'market' && x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td>
         <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ` <span class="xs muted">(only ${x.hr.n})</span>` : ''}</td><td class="n">${m.binary ? x.hr.hits : fmt(x.hr.avg)}</td>
         <td><span class="fdots">${dotsFor(x.f.map(r => r.value), ui.line, ui.side).map(h => `<i class="${h ? 'h' : ''}">${h ? '●' : '○'}</i>`).join('')}</span></td></tr>`).join('')}</table></div></div>
-      <p class="xs muted">${res.length} player${res.length === 1 ? '' : 's'}${res.length > 120 ? ' (first 120 shown)' : ''} · ${gs.map(g => POS[g]).join(', ')}${games.length ? ` · ${games.length} game${games.length === 1 ? '' : 's'}` : ''}. "N games" = games with a recorded figure for this market across all seasons. Current roster players only; a game counts only when the player has a stat line in it. Dots show exactly the games in the sample, oldest first. Tap Hit rate or Avg to re-sort the table.</p>`
+      <p class="xs muted">${res.length} player${res.length === 1 ? '' : 's'}${res.length > 120 ? ' (first 120 shown)' : ''} · ${gs.map(g => POS[g]).join(', ')}${games.length ? ` · ${games.length} game${games.length === 1 ? '' : 's'}` : ''}. "N games in ${season}" = this season's games with a recorded figure for this market (the Minimum games played count). Current roster players only; a game counts only when the player has a stat line in it. Dots show exactly the games in the sample, oldest first. Tap Hit rate or Avg to re-sort the table.</p>`
       : `${hid}<div class="banner info"><b>No players match these filters.</b> Try other positions, games, a different line, a lower hit-rate minimum or a lower Minimum games played.</div>`;
   };
   out.addEventListener('click', e => {
@@ -4679,7 +4688,7 @@ async function viewNflFinder(root) {
     drawCtl(); draw(); });
   ctl.addEventListener('input', e => {
     if (e.target.id === 'ln') { const v = parseFloat(e.target.value.replace(',', '.')); if (!Number.isNaN(v)) { ui.line = v; draw(); } }
-    if (e.target.id === 'nmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= 0) { setMinGames(Math.min(n, 200)); draw(); } }
+    if (e.target.id === 'nmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) e.target.value = MIN_HI; draw(); } }
   });
   drawCtl(); draw();
 }
