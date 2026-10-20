@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="ebc632d86b03">
+<meta name="proplab-build" content="fd8b752478ed">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -663,7 +663,11 @@ const domMemo = new WeakMap();
 const teamRowsScoped = (slug, scope) => { const all = store.teamRows.get(slug) || [];
   if (scope === 'all') return all;
   if (scope === 'dom') { let d = domMemo.get(all); if (!d) { d = all.filter(x => !CUPS.has(x.league)); domMemo.set(all, d); } return d; }
+  if (scope === 'eu') return all.filter(x => CUPS.has(x.league)); // its matches in any European competition
   return CUPS.has(scope) ? all.filter(x => x.league === scope) : teamRowsFor(slug); };
+/** Has this club any European match in PropLab's records? (Clubs without one keep their league history exactly as before.) */
+const euMemo = new WeakMap();
+const hasEuropean = slug => { const all = store.teamRows.get(slug) || []; let v = euMemo.get(all); if (v === undefined) { v = all.some(x => CUPS.has(x.league)); euMemo.set(all, v); } return v; };
 const teamSlugOf = name => teamSlug(name);
 const newsForTeam = name => store.news.filter(n => normTeam(n.team) === normTeam(name));
 // Chronological by UK kick-off: date, then time; a fixture whose time is not set (TBC) goes after the timed games of its day.
@@ -782,7 +786,7 @@ async function loadAllPlayerRowsNow() {
   return byId;
 }
 
-return { LEAGUE_NAMES, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, hasEuropean, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['nfl-data'] = (() => {
 // NFL data (nflverse, CC-BY 4.0). Loaded only when an NFL page is opened; game logs are loaded per position group on demand.
@@ -1472,12 +1476,13 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 /** values/labels are oldest -> newest (left -> right). */
 // parts (optional): per bar, [[value, kind], ...] bottom to top (Match Goals: scored / conceded; Cards: yellow / red). A split bar is drawn in
 // the parts' colours (same convention as Hiwi's bars) and its hit / miss shows as a strip under the bar; the line test always uses the total.
-function drawBars(canvas, { values, labels, line, side = 'over', fmtValue = v => String(v), selected = -1, showLine = true, parts = null, partColours = {} }) {
+// sublabels (optional): a second line under each date, e.g. the competition (PL, UCL...) when a club's history mixes competitions.
+function drawBars(canvas, { values, labels, line, side = 'over', fmtValue = v => String(v), selected = -1, showLine = true, parts = null, partColours = {}, sublabels = null }) {
   const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight || 230;
   canvas.width = W * dpr; canvas.height = H * dpr;
   const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.clearRect(0, 0, W, H);
   const hit = css('--hit') || '#34d399', miss = css('--miss') || '#f87171', amber = css('--amber') || '#f5b83d', muted = css('--muted') || '#8b98aa', grid = css('--line') || '#232c3a', text = css('--text') || '#eaf0f7';
-  const L = 30, R = 8, T = 22, B = 28, pw = W - L - R, ph = H - T - B;
+  const L = 30, R = 8, T = 22, B = sublabels ? 38 : 28, pw = W - L - R, ph = H - T - B;
   // negative values (e.g. NFL rushing yards) get room below zero; bars grow from the zero line
   const max = niceMax(Math.max(line, ...values, 1) * 1.1), lo = Math.min(0, ...values), min = lo < 0 ? -niceMax(-lo * 1.1) : 0;
   const y = v => T + ph - ((v - min) / (max - min)) * ph;
@@ -1500,7 +1505,7 @@ function drawBars(canvas, { values, labels, line, side = 'over', fmtValue = v =>
     } else if (parts && parts[i]) { c.fillStyle = isHit ? hit : miss; c.fillRect(x, y(0) + 2, bw, 3); } // a 0 total: nothing to stack, the strip still shows hit / miss
     else { c.fillStyle = isHit ? hit : miss; c.beginPath(); c.roundRect ? c.roundRect(x, top, bw, hgt, 4) : c.rect(x, top, bw, hgt); c.fill(); }
     c.globalAlpha = 1; c.fillStyle = text; c.textBaseline = 'bottom'; c.fillText(fmtValue(v), x + bw / 2, top - 3);
-    if ((n - 1 - i) % every === 0) { c.fillStyle = muted; c.textBaseline = 'top'; c.fillText(labels[i] || '', x + bw / 2, H - B + 8); }
+    if ((n - 1 - i) % every === 0) { c.fillStyle = muted; c.textBaseline = 'top'; c.fillText(labels[i] || '', x + bw / 2, H - B + 8); if (sublabels && sublabels[i]) { c.font = 'bold 9px -apple-system, sans-serif'; c.fillText(sublabels[i], x + bw / 2, H - B + 20); c.font = '11px -apple-system, sans-serif'; } }
   });
   if (!showLine) return { L, slot, n };
   c.strokeStyle = amber; c.setLineDash([6, 4]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(L, y(line)); c.lineTo(W - R, y(line)); c.stroke(); c.setLineDash([]);
@@ -1688,6 +1693,7 @@ const { hitRate } = __m['analytics'];
 const { applyFilters, buildSplits } = __m['research'];
 const { drawBars, barAt } = __m['charts'];
 const { marketRows, defaultLine, stepLine, typicalLine: tl, splitParts, splitLegend, SPLIT_LEGEND, SPLIT_COLOURS } = __m['markets'];
+const { COMP_SHORT, leagueName } = __m['data'];
 const { $, $$, esc, fmt, fmtShort, fmtLong } = __m['util'];
 const { lineBounds } = __m['hiwi-markets'];
 
@@ -1777,8 +1783,8 @@ function researchPanel(root, cfg) {
       <h3>${unit === 'game' ? 'Game by game' : 'Match by match'} <span class="xs muted">(newest first)</span></h3><div class="scroll"><table><tr><th>Date</th>${showClub ? '<th>For</th>' : ''}<th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(dl(r.date))}</td>${showClub ? `<td>${esc(r.club || '')}</td>` : ''}<td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${esc(fmtV(r.value))}</b></td></tr>`; }).join('')}</table></div>` : ''}
       ${binary || cfg.noValueLink ? '' : `<div><a class="go" style="display:inline-flex;align-items:center" href="#/value?s=${cfg.subject}:${encodeURIComponent(cfg.subjectId)}&m=${encodeURIComponent(st.market)}&side=${st.side}&line=${st.line}">Compare with a price</a></div>`}`;
     const asc = [...filtered].reverse();
-    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>${(() => { const p = splitParts(st.market, r), l = p && splitLegend(st.market, cfg.splitWho || 'the selected team', cfg.splitOther || null); return p && l ? ` (${p.map(([v], i) => `${v} ${esc(l[i][1])}`).join(', ')})` : ''; })()}${cfg.detail ? cfg.detail(r, st.market) : ''}` : 'Tap a bar to see the match.'; };
-    const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { const sp = SPLIT_LEGEND[st.market] ? asc.map(r => splitParts(st.market, r)) : null; geo = drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => dl(r.date)), line: st.line, side, fmtValue: fmtV, selected: st.sel, showLine: !binary, parts: sp && sp.some(Boolean) ? sp : null, partColours: SPLIT_COLOURS }); cv.onclick = e => { const i = barAt(cv, geo, e.clientX); st.sel = i === st.sel ? -1 : i; draw(); info(); }; } };
+    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.league && new Set(asc.map(x => x.league)).size > 1 ? ` (${esc(leagueName(r.league))})` : ''}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>${(() => { const p = splitParts(st.market, r), l = p && splitLegend(st.market, cfg.splitWho || 'the selected team', cfg.splitOther || null); return p && l ? ` (${p.map(([v], i) => `${v} ${esc(l[i][1])}`).join(', ')})` : ''; })()}${cfg.detail ? cfg.detail(r, st.market) : ''}` : 'Tap a bar to see the match.'; };
+    const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { const sp = SPLIT_LEGEND[st.market] ? asc.map(r => splitParts(st.market, r)) : null; geo = drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => dl(r.date)), line: st.line, side, fmtValue: fmtV, selected: st.sel, showLine: !binary, parts: sp && sp.some(Boolean) ? sp : null, partColours: SPLIT_COLOURS, sublabels: new Set(asc.map(r => r.league).filter(Boolean)).size > 1 ? asc.map(r => COMP_SHORT[r.league] || '') : null }); cv.onclick = e => { const i = barAt(cv, geo, e.clientX); st.sel = i === st.sel ? -1 : i; draw(); info(); }; } };
     if (st.sel >= asc.length) st.sel = -1;
     draw(); info(); panelRedraw = draw;
     if (cfg.onUpdate) cfg.onUpdate(ctx);
@@ -1944,233 +1950,6 @@ function wireInfo() {
 }
 
 return { infoTag, infoText, wireInfo };
-})();
-__m['v-team'] = (() => {
-const { infoTag } = __m['info'];
-const { shortTeam } = __m['aliases'];
-const { store, teamBySlug, teamRowsFor, teamProfile, newsForTeam, upcomingFor, leagueName, refereeProfile, knownPlayers, teamSlugOf } = __m['data'];
-const { TEAM_MARKETS, SELECTABLE_TEAM_MARKETS, marketsWithData } = __m['markets'];
-const { researchPanel } = __m['panel'];
-const { $, esc, fmtDay, fmtLong, fmtShort, todayYmd, fmtKick } = __m['util'];
-const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
-const { searchBox } = __m['searchbox'];
-const { photoHtml } = __m['photo'];
-
-const POSORD = [['GK', 'Goalkeepers'], ['DF', 'Defenders'], ['MF', 'Midfielders'], ['FW', 'Forwards']];
-function squadSection(t) {
-  const ps = [...knownPlayers().values()].filter(p => p.inDirectory && teamSlugOf(p.team) === t.slug);
-  if (!ps.length) return '';
-  const meta = (store.directoryMeta?.clubs || []).find(c => c.slug === t.slug);
-  return `<section class="sec"><h2>Squad (${ps.length})</h2><div class="card">${POSORD.map(([k, lab]) => { const g = ps.filter(p => p.pos === k).sort((a, b) => a.name.localeCompare(b.name)); return g.length ? `<h3 style="margin:10px 0 4px">${lab}</h3><div class="list">${g.map(p => `<a class="row" style="justify-content:flex-start" href="#/player/${encodeURIComponent(p.id)}">${photoHtml(p, 'sm')}<div class="l"><b>${esc(p.name)}</b>${p.loan_from ? `<span>On loan from ${esc(p.loan_from)}</span>` : ''}</div></a>`).join('')}</div>` : ''; }).join('')}<p class="xs muted" style="margin:10px 0 0">Squad list ${meta?.as_of ? 'as of ' + esc(fmtLong(meta.as_of)) : 'date not stated by the source'}, from <a href="${esc(meta?.source || 'https://en.wikipedia.org')}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). May lag recent transfers.</p></div></section>`;
-}
-async function viewTeam(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel" style="width:50%"></div><div class="skel"></div>'}`; return; }
-  const t = teamBySlug(r.arg);
-  if (!t) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/players">← Search</a><h1>Team not found</h1><div id="sb"></div>`; searchBox($('#sb', root)); return; }
-  const rows = teamRowsFor(t.slug), pr = teamProfile(t.slug), today = todayYmd(), up = upcomingFor(t.name, today).slice(0, 3), news = newsForTeam(t.name);
-  const markets = marketsWithData(rows, SELECTABLE_TEAM_MARKETS);
-  const cell = (a, b, c) => pr[b] == null ? '' : `<tr><td>${a}</td><td class="n">${pr[b] ?? 'n/a'}</td><td class="n">${pr[b + 'A'] ?? 'n/a'}</td><td class="n">${pr['lg_' + b] ?? 'n/a'}</td></tr>`;
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Search</a>
-    <div class="prof"><div class="avatar">${esc(t.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${esc(leagueName(t.league))}${pr.n ? ` · ${pr.n} matches this season ` : ''}${pr.form.length ? `<span class="form" aria-label="Recent form">${pr.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</div></div></div>
-    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
-    ${news.length ? `<section class="sec"><h2>Team news</h2><div class="card"><div class="list">${news.map(newsItem).join('')}</div></div></section>` : ''}
-    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table class="avgtab"><tr><th></th><th>${esc(shortTeam(t.name))}</th><th>Opponents</th><th>${esc(leagueName(t.league))} Avg</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls committed', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Per match, from ${pr.n} published matches this season. ${infoTag('avgtable', 'What do the columns mean?', { n: shortTeam(t.name), m: leagueName(t.league), cls: 'neutral' })}</p></div></section>
-    <section class="sec"><h2>Research a market</h2><div id="panel"></div></section>` : `<div class="banner info" style="margin-top:14px"><b>No match statistics are published for ${esc(t.name)} yet.</b> Fixtures and news above are all that is available.</div>`}
-    ${squadSection(t)}
-    <section class="sec"><h2>Source</h2><div class="card small muted">${t.league === 'mls' ? 'MLS results, team shots and shots on target come from American Soccer Analysis (shots on target are the sum of its player rows).' : t.league === 'epl' ? 'Team statistics, half-time scores and referees come from football-data.co.uk; older results were cross-checked with openfootball.' : `${esc(leagueName(t.league))} results, half-time scores and team statistics come from football-data.co.uk.`} <a href="#/about">Data &amp; sources</a></div></section>`;
-  if (pr.n && markets.length) { const panel = researchPanel($('#panel', root), { key: 'team:' + t.slug, markets, rows, exposureKey: null, hasMinutes: false, subject: 'team', subjectId: t.slug }); hooks.redraw = panel.redraw; }
-}
-
-return { viewTeam };
-})();
-__m['lineup'] = (() => {
-// Team lineups on the fixture page. PropLab publishes no lineup it has not verified, so the normal state is "not yet available".
-// The owner can add an official team sheet himself (pasted or typed from the club's own announcement). It is stored only on this
-// device (localStorage) and shown as "Confirmed lineup, entered by you" with the time it was added. Nothing is fetched or scraped.
-const { knownPlayers, teamSlugOf } = __m['data'];
-const { normName } = __m['teams'];
-const { photoHtml } = __m['photo'];
-const { esc, fixtureId } = __m['util'];
-
-const KEY = 'proplab.lineup.v1.';
-// Published team sheets (data-lineups.json): only ones the owner has checked against the announced team sheets. Loaded once.
-let published = null, loading = null;
-function loadPublishedLineups() {
-  if (!loading) loading = fetch('data-lineups.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
-    .then(d => { published = d && d.schema === 1 && d.items && typeof d.items === 'object' ? d.items : {}; return published; });
-  return loading;
-}
-const fmtTime = t => new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-/** "19 B. Mbeumo (c)" -> { num: '19', name: 'B. Mbeumo', cap: true } */
-const splitName = raw => { let t = String(raw).trim(); const cap = /\(c\)/i.test(t); t = t.replace(/\(c\)/ig, '').trim();
-  const m = /^(\d{1,2})\s+(.+)$/.exec(t); return m ? { num: m[1], name: m[2].trim(), cap } : { num: '', name: t, cap }; };
-// The public site is view-only. Older versions let a device save its own team sheet; those copies are deleted so nothing local can override the published data.
-try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(KEY)) localStorage.removeItem(k); } } catch { /* storage blocked: nothing to clear */ }
-
-/**
- * Reads a team sheet such as "4-2-3-1: Lammens; Dalot, Martinez, Maguire, Yoro; Baleba, Santos; Fernandes, Tielemans, Diallo; Mbeumo | Subs: A, B".
- * Lines (one row per line) work too. Returns { formation, rows (goalkeeper first), subs } or { error }.
- */
-function parseLineup(text) {
-  const t = String(text || '').trim(); if (!t) return { error: 'Nothing entered.' };
-  const [main, subsPart = ''] = t.split(/\|\s*subs?\s*:?|\n\s*subs?\s*:?/i);
-  const fm = /^\s*(\d(?:\s*-\s*\d){1,4})\s*[:\-–]?\s*/.exec(main);
-  if (!fm) return { error: 'Start with the formation, e.g. 4-2-3-1: then the goalkeeper; defenders; midfield; attack.' };
-  const formation = fm[1].replace(/\s+/g, ''); const nums = formation.split('-').map(Number);
-  if (nums.reduce((a, b) => a + b, 0) !== 10) return { error: `Formation ${formation} does not add up to 10 outfield players.` };
-  const rows = main.slice(fm[0].length).split(/[;\n]+/).map(r => r.split(',').map(x => x.trim()).filter(Boolean)).filter(r => r.length);
-  if (rows.length !== nums.length + 1) return { error: `Expected ${nums.length + 1} groups separated by ";" (goalkeeper; ${nums.join('; ')}), found ${rows.length}.` };
-  if (rows[0].length !== 1) return { error: 'The first group must be the goalkeeper only.' };
-  for (let i = 0; i < nums.length; i++) if (rows[i + 1].length !== nums[i]) return { error: `Group ${i + 2} should have ${nums[i]} players for ${formation}, found ${rows[i + 1].length}.` };
-  const subs = subsPart.split(/[,;\n]+/).map(x => x.trim()).filter(Boolean);
-  return { formation, rows, subs };
-}
-
-/** Finds a directory player of this club for a name as written on a team sheet (full name, or unique surname). */
-function matchPlayer(name, team) {
-  const n = normName(name), slug = teamSlugOf(team);
-  const club = [...knownPlayers().values()].filter(p => teamSlugOf(p.team) === slug);
-  let hit = club.filter(p => normName(p.name) === n); if (hit.length === 1) return hit[0];
-  const last = n.split(' ').pop(); hit = club.filter(p => normName(p.name).split(' ').includes(last)); if (hit.length === 1) return hit[0];
-  hit = club.filter(p => normName(p.name).includes(n)); return hit.length === 1 ? hit[0] : null;
-}
-const chip = (raw, team) => { const { num, name, cap } = splitName(raw); const p = matchPlayer(name, team);
-  const inner = `${photoHtml(p || { id: '_' + name, name }, 'sm')}<span class="lpn">${num ? `<span class="muted">${esc(num)}</span> ` : ''}${esc(name)}${cap ? ' (c)' : ''}</span>`;
-  return p ? `<a class="lp" href="#/player/${encodeURIComponent(p.id)}">${inner}</a>` : `<span class="lp">${inner}</span>`; };
-
-function pitch(lu, team) {
-  // attack at the top, goalkeeper at the bottom
-  return `<div class="pitch" role="img" aria-label="${esc(team)} lineup, ${esc(lu.formation)}">${[...lu.rows].reverse().map(r => `<div class="prow">${r.map(n => chip(n, team)).join('')}</div>`).join('')}</div>`;
-}
-
-/** HTML for the lineup panel of one fixture. side: 'home' | 'away'. */
-function lineupPanel(f, side = 'home') {
-  const id = fixtureId(f), team = side === 'home' ? f.home : f.away;
-  const pub = published?.[id], pubSide = pub && pub.status === 'confirmed' ? pub[side] : null;
-  const saved = pubSide ? { text: pubSide.text, at: pub.checked } : null;
-  const lu = saved ? parseLineup(saved.text) : null;
-  const when = saved ? fmtTime(saved.at) : '';
-  const by = `${esc(pub?.source || 'official team sheet')} · updated ${esc(when)} UK time`;
-  const out = pubSide?.out?.length ? `<p class="small" style="margin:6px 0 0"><b>Unavailable:</b> ${pubSide.out.map(([n, st, why]) => `${esc(n)} <span class="muted">(${esc(st)}${why ? ', ' + esc(why) : ''})</span>`).join(', ')}</p>` : '';
-  return `<div class="lineup" data-lu="${esc(id)}" data-side="${side}">
-    <div class="seg lutabs"><button type="button" data-lu-side="home" class="${side === 'home' ? 'on' : ''}">${esc(f.home)}</button><button type="button" data-lu-side="away" class="${side === 'away' ? 'on' : ''}">${esc(f.away)}</button></div>
-    ${lu && !lu.error ? `<div class="lustat ok"><b>Confirmed Lineup</b> · ${by} · ${esc(lu.formation)}</div>${pitch(lu, team)}
-      ${lu.subs.length ? `<p class="small" style="margin:8px 0 0"><b>Substitutes:</b> ${lu.subs.map(raw => { const { num, name } = splitName(raw); const p = matchPlayer(name, team); const lbl = (num ? num + ' ' : '') + name; return p ? `<a href="#/player/${encodeURIComponent(p.id)}">${esc(lbl)}</a>` : esc(lbl); }).join(', ')}</p>` : '<p class="xs muted" style="margin:8px 0 0">Substitutes not entered.</p>'}${out}
-      <p class="xs muted" style="margin:6px 0 0">Published lineup. It does not update live; changes after this time are not shown.</p>`
-    : `<div class="lustat"><b>Lineup not yet available</b></div>`}
-    </div>`;
-}
-
-/** Wires clicks inside any lineup panels under root. */
-function wireLineups(root, fixtures) {
-  const fresh = !published; loadPublishedLineups().then(() => { if (!fresh) return; for (const box of root.querySelectorAll('.lineup')) { const f = fixtures().find(x => fixtureId(x) === box.dataset.lu); if (f) box.outerHTML = lineupPanel(f, box.dataset.side); } });
-  root.addEventListener('click', e => {
-    const box = e.target.closest('.lineup'); if (!box) return;
-    const f = fixtures().find(x => fixtureId(x) === box.dataset.lu); if (!f) return;
-    const redraw = side => { box.outerHTML = lineupPanel(f, side); };
-    const tab = e.target.closest('[data-lu-side]'); if (tab) { redraw(tab.dataset.luSide); return; }
-  });
-}
-
-return { loadPublishedLineups, parseLineup, lineupPanel, wireLineups };
-})();
-__m['v-fixtures'] = (() => {
-const { fbSearchTerms, aliasScore } = __m['aliases'];
-const { teamAliases } = __m['teams'];
-const { store, fxSortLocal, leagueName, newsForTeam, teamProfile, teamSlugOf, refereeProfile, resultsList, teamBySlug, leaguesPresent, LEAGUE_NAMES, LEAGUE_ORDER, isCup } = __m['data'];
-const { normTeam } = __m['teams'];
-const { $, $$, esc, fmtDay, fmtLong, todayYmd, koUK, koLocal, todayLocal, localDayAfter, tzNow, fixtureId, fxStatus, statusBadge, timeHtml } = __m['util'];
-const { dataBanner, problemsBanner, newsItem, leagueSelect, getLeague, setLeague } = __m['shared'];
-const { fxSort } = __m['data'];
-const { lineupPanel, wireLineups } = __m['lineup'];
-
-// leagues: empty = All Leagues (one combined list in UK kick-off order); otherwise the ticked leagues, still in kick-off order.
-const ui = { tab: 'upcoming', q: '', leagues: new Set(), when: 'all', more: {} };
-const inLeagues = lg => !ui.leagues.size || ui.leagues.has(lg);
-let ticker = null;
-const resKey = (lg, h, a) => `${lg}|${normTeam(h)}|${normTeam(a)}`;
-const dayDiff = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
-// What goes in the time column: kick-off time, a red LIVE badge, or "Awaiting result" (all estimated from the scheduled kick-off).
-const timeCell = (f, st) => (st === 'pre' ? timeHtml(f) : statusBadge(st));
-// One finished match: half-time score, goals (scorer, minute, penalty / own goal) above the team statistics. Missing figures say "unavailable", never 0.
-function resultDetail(m) {
-  // Only statistics actually recorded for this match are shown: a missing figure is never shown as 0, and a statistic the source does not record is left out.
-  const ht = m.hthg != null && m.htag != null ? `<p class="small" style="margin:0 0 8px"><b>Half-time:</b> ${esc(m.home)} ${m.hthg}–${m.htag} ${esc(m.away)}</p>` : '';
-  const gl = Array.isArray(m.goals) && m.goals.length ? `<h4 style="margin:0 0 4px">Goals</h4><ul class="goals">${[...m.goals].sort((a, b) => parseInt(a.min) - parseInt(b.min)).map(g => `<li><span class="gm">${esc(g.min)}'</span><span><b>${esc(g.player)}</b>${g.type === 'pen' ? ' (pen)' : g.type === 'og' ? ' (og)' : ''} <span class="gt">— ${esc(g.team === 'home' ? m.home : m.away)}</span></span></li>`).join('')}</ul>` : '';
-  const ROWS = [['Shots', 'hs', 'as'], ['Shots on target', 'hst', 'ast'], ['Corners', 'hc', 'ac'], ['Fouls committed', 'hf', 'af'], ['Yellow cards', 'hy', 'ay'], ['Red cards', 'hr', 'ar']].filter(([, a, b]) => m[a] != null || m[b] != null);
-  const cellv = v => (v == null ? '<span class="muted" title="not recorded">–</span>' : v);
-  const stats = !ROWS.length ? (isCup(m.league) ? `<p class="small muted" style="margin:0">Shots, corners, fouls and cards are not available for ${esc(leagueName(m.league))} matches from PropLab's free sources (left out, never 0).</p>` : m.season >= 2026 && m.league !== 'mls' ? '<p class="small muted" style="margin:0">Team statistics for this match are not published yet; football-data.co.uk usually adds them within a few days.</p>' : '')
-    : `<div class="scroll"><table class="fxstats"><tr><th></th><th>${esc(m.home.split(' ')[0])}</th><th>${esc(m.away.split(' ')[0])}</th><th>Match</th></tr>
-        ${ROWS.map(([l, a, b]) => `<tr><td>${l}</td><td class="n">${cellv(m[a])}</td><td class="n">${cellv(m[b])}</td><td class="n">${m[a] != null && m[b] != null ? m[a] + m[b] : cellv(null)}</td></tr>`).join('')}</table></div>
-        <p class="xs muted" style="margin:6px 0 0">Team columns count that team only; Match = both teams combined.</p>`;
-  const src = isCup(m.league) ? `<p class="xs muted" style="margin:6px 0 0">${m.stage ? esc(m.stage) + ' · ' : ''}${esc(leagueName(m.league))} score and goal times from Wikipedia (CC BY-SA 4.0).${m.aet_score ? ` After extra time: ${esc(m.aet_score)}. PropLab uses the 90-minute score shown above.` : ''}</p>` : /Wikipedia/.test(m.source || '') ? '<p class="xs muted" style="margin:6px 0 0">Final score from Wikipedia\'s season results table (verified score only). Statistics are added when football-data.co.uk publishes the match.</p>' : '';
-  return ht + gl + stats + src + (m.goals_source ? `<p class="xs muted" style="margin:6px 0 0">Goals: ${esc(m.goals_source)}.</p>` : '');
-}
-const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n = newsForTeam(name);
-  return `<div><h3><a href="#/team/${encodeURIComponent(teamSlugOf(name))}">${esc(name)}</a> ${s.form.length ? `<span class="form">${s.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</h3>
-    ${s.n ? `<p class="small muted" style="margin:0 0 6px">Per match over ${s.n} games: ${[s.goals != null ? `${s.goals} goals (${s.goalsA} against)` : '', s.shots != null ? `${s.shots} shots (${s.shotsA} against)` : '', s.fouls != null ? `${s.fouls} fouls` : '', s.yellows != null ? `${s.yellows} yellows` : ''].filter(Boolean).join(', ')}.</p>` : '<p class="small muted" style="margin:0 0 6px">No published match stats yet.</p>'}
-    ${n.length ? `<div class="list">${n.map(newsItem).join('')}</div>` : '<p class="small muted" style="margin:0">No team news published.</p>'}</div>`; };
-
-async function viewFixtures(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Fixtures</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
-  const today = todayYmd();
-  if (r.q.get('tab')) ui.tab = r.q.get('tab') === 'results' ? 'results' : 'upcoming';
-  if (r.q.get('lg')) { const l = r.q.get('lg'); ui.leagues = l === 'all' ? new Set() : new Set(l.split(',')); } // e.g. #/fixtures?lg=epl,laliga
-  const draw = () => {
-    const q = ui.q.trim().toLowerCase(); const tcache = new Map(); const terms = n => { if (!tcache.has(n)) tcache.set(n, fbSearchTerms(n, teamAliases(n))); return tcache.get(n); }; const hit = (a, b) => !q || (a + ' ' + b).toLowerCase().includes(q) || aliasScore(q, terms(a)) > 0 || aliasScore(q, terms(b)) > 0; // nicknames: "spurs", "man utd"
-    let html = '';
-    if (ui.tab === 'upcoming') {
-      const now = new Date(), todayUK = todayLocal(now), tomUK = localDayAfter(1, now), wkUK = localDayAfter(7, now); // the viewer's own calendar days
-      const okDay = f => { const d = koLocal(f).ymd; return ui.when === 'all' || (ui.when === 'today' ? d === todayUK : ui.when === 'tomorrow' ? d === tomUK : d <= wkUK); };
-      // A fixture leaves this list only when its verified result is published (it then appears under Results).
-      const done = new Map(); for (const m of resultsList()) { const k = resKey(m.league, m.home, m.away); if (!done.has(k)) done.set(k, []); done.get(k).push(m.date); }
-      const hasResult = f => (done.get(resKey(f.league, f.home, f.away)) || []).some(d => dayDiff(d, f.date) <= 1); // MLS dates can differ by a day (US v UK date)
-      const list = store.fixtures.filter(f => inLeagues(f.league) && hit(f.home, f.away) && okDay(f) && !hasResult(f) && fxStatus(f, now) !== 'old').sort(fxSortLocal);
-      // Milestone 5: one heading per competition; inside it, date then UK kick-off, earliest first (TBC times after the timed games of their day)
-      const byLg = new Map(); for (const lg of LEAGUE_ORDER) byLg.set(lg, []); for (const f of list) { if (!byLg.has(f.league)) byLg.set(f.league, []); byLg.get(f.league).push(f); }
-      const groups = [...byLg.entries()].filter(([, fs]) => fs.length);
-      html = list.length ? groups.map(([lg, fs0]) => { const lim = ui.more['u' + lg] || 30, fs = fs0.slice(0, lim); return `<h2 class="lgh" id="lg-${lg}">${esc(leagueName(lg))} <span class="muted small">${fs0.length} fixture${fs0.length === 1 ? '' : 's'}</span></h2><div class="card">${fs.map(f => {
-        const rp = f.referee ? refereeProfile(f.referee) : null;
-        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span><span class="fxd">${esc(fmtDay(koLocal(f).ymd))}${koLocal(f).hm ? '' : ' · <span class="tbcw">kick-off time unconfirmed</span>'}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koLocal(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koLocal(f).hm + ' ' + koLocal(f).abbr))}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
-        <div class="more"><a class="btn" href="#/hiwi?fx=${encodeURIComponent(fixtureId(f))}"><b>Research this match in Hiwi's Section →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}${fs0.length > lim ? `<button type="button" class="btn" data-fmore="u${lg}">Show ${Math.min(30, fs0.length - lim)} more ${esc(leagueName(lg))} fixtures</button>` : ''}</div>`; }).join('')
-        : '<div class="banner info"><b>No upcoming fixtures match these filters.</b> Only fixtures that have been published appear here.</div>';
-      if (list.length) html = `<p class="xs muted" style="margin:0 0 8px">Times are in your time zone (${esc(tzNow())}). PropLab has no live scores: after kick-off a match shows "Started – status unconfirmed", then Awaiting result until the verified final score appears under Results.</p>` + html;
-    } else {
-      // Milestone 5: one heading per competition, most recent result first (only verified final scores are results)
-      const list = resultsList().filter(m => inLeagues(m.league) && hit(m.home, m.away));
-      const byLg = new Map(); for (const lg of LEAGUE_ORDER) byLg.set(lg, []); for (const m of list) { if (!byLg.has(m.league)) byLg.set(m.league, []); byLg.get(m.league).push(m); }
-      const ko = m => (m.ko_utc ? koLocal(m).hm : '');
-      const c = (a, b) => `${a ?? '–'}–${b ?? '–'}`;
-      const groups = [...byLg.entries()].filter(([, ms]) => ms.length);
-      html = list.length ? groups.map(([lg, ms0]) => { const lim = ui.more['r' + lg] || 20, ms = ms0.slice(0, lim); return `<h2 class="lgh" id="rl-${lg}">${esc(leagueName(lg))} <span class="muted small">latest first</span></h2><div class="card">${ms.map(m => `<details class="fx"><summary><span class="time score">${esc(c(m.hg, m.ag))}</span><span class="teams"><b>${esc(m.home)} v ${esc(m.away)}</b><span><span class="fxd">${esc(fmtDay(m.date))}${ko(m) ? ' · ' + esc(ko(m)) : ''}</span>${m.stage ? ' · ' + esc(m.stage) : ''}${m.referee ? ' · Referee ' + esc(m.referee) : ''}</span></span></summary>
-        <div class="more">${resultDetail(m)}</div></details>`).join('')}${ms0.length > lim ? `<button type="button" class="btn" data-fmore="r${lg}">Show ${Math.min(20, ms0.length - lim)} earlier ${esc(leagueName(lg))} results</button>` : ''}</div>`; }).join('') : '<div class="banner info"><b>No published results match.</b></div>';
-    }
-    $('#fxlist', root).innerHTML = html;
-  };
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Fixtures</h1>
-    <div class="stack"><div class="row" style="border:0;padding:0;gap:10px;flex-wrap:wrap"><div class="seg" id="tabs"><button data-t="upcoming" class="${ui.tab === 'upcoming' ? 'on' : ''}">Upcoming</button><button data-t="results" class="${ui.tab === 'results' ? 'on' : ''}">Results</button></div>
-</div>
-      <div class="field"><label>Leagues</label><div class="seg wrap lgchips" id="lgchips"><button type="button" data-lg="" class="${ui.leagues.size ? '' : 'on'}" aria-pressed="${!ui.leagues.size}">All Leagues</button>${leaguesPresent().map(l => `<button type="button" data-lg="${l}" class="${ui.leagues.has(l) ? 'on' : ''}" aria-pressed="${ui.leagues.has(l)}">${esc(LEAGUE_NAMES[l])}</button>`).join('')}</div><span class="xs muted">Tap several leagues to combine them. The list is always in UK kick-off order.</span></div>
-      <div class="field" id="whenf"><label>When</label><div class="seg wrap" id="when">${[['all', 'All'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['7', 'Next 7 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ui.when === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-      <input class="in" id="fq" type="search" placeholder="Filter by team" aria-label="Filter by team" value="${esc(ui.q)}"></div>
-    <div id="fxlist"></div>
-    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. Kick-off times are shown in your time zone (${esc(tzNow())}; change it at the bottom of the page), converted from each fixture's exact kick-off instant, so a game can fall on a different calendar day for you than in the country where it is played. A fixture without a confirmed time shows TBC on its scheduled date and is listed after the timed games of that day. Times can change. PropLab has no live feed: after kick-off a match shows Started (status unconfirmed), then Awaiting result until the verified result is published. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
-  $('#tabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.tab = b.dataset.t; $$('#tabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#whenf', root).hidden = ui.tab !== 'upcoming'; draw(); };
-  $('#lgchips', root).onclick = e => { const b = e.target.closest('[data-lg]'); if (!b) return; const l = b.dataset.lg; if (!l) ui.leagues.clear(); else if (ui.leagues.has(l)) ui.leagues.delete(l); else ui.leagues.add(l);
-    $$('#lgchips button', root).forEach(x => { const on = x.dataset.lg ? ui.leagues.has(x.dataset.lg) : !ui.leagues.size; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); draw(); };
-  $('#when', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.when = b.dataset.v; $$('#when button', root).forEach(x => x.classList.toggle('on', x === b)); draw(); };
-  $('#whenf', root).hidden = ui.tab !== 'upcoming';
-  $('#fq', root).oninput = e => { ui.q = e.target.value; draw(); };
-  $('#fxlist', root).addEventListener('click', e => { const b = e.target.closest('[data-fmore]'); if (!b) return; const k = b.dataset.fmore; ui.more[k] = (ui.more[k] || (k[0] === 'u' ? 30 : 20)) + (k[0] === 'u' ? 30 : 20); const y = window.scrollY; draw(); window.scrollTo(0, y); });
-  wireLineups($('#fxlist', root), () => store.fixtures);
-  draw();
-  // Refresh only the status badges every 30 s (open match panels are left alone); stops when this page is left.
-  if (ticker) clearInterval(ticker);
-  ticker = setInterval(() => { if (!root.isConnected || !$('#fxlist', root)) { clearInterval(ticker); ticker = null; return; } const now = new Date();
-    for (const el of $$('[data-st]', root)) { const f = store.fixtures.find(x => fixtureId(x) === el.dataset.st); if (!f) continue; const h = timeCell(f, fxStatus(f, now)); if (el.innerHTML !== h) el.innerHTML = h; } }, 30000);
-}
-
-return { viewFixtures };
 })();
 __m['plays'] = (() => {
 // Recommended Plays: one shared calculation used by the Plays page (and the same hitRate used by Prop Finder, profiles and team research).
@@ -2632,7 +2411,7 @@ __m['v-hiwi'] = (() => {
 // the team's next published fixture; without one, only the team's own statistics are shown (no opponent is invented).
 // Football can research several leagues at once (league checkboxes, All Leagues, Today's Games Only = UK date). NFL is never mixed in.
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
-const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT } = __m['data'];
+const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT, hasEuropean } = __m['data'];
 const { fbPlayers, hasPlayerLogs } = __m['fbscan'];
 const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, teamGameRows, nflSelectable, injuryStatus } = __m['nfl-data'];
 const { openGraphModal } = __m['panel'];
@@ -2672,10 +2451,20 @@ const getUclScope = () => { try { const v = localStorage.getItem(SCOPEKEY); retu
 const setUclScope = v => { try { localStorage.setItem(SCOPEKEY, v === 'all' ? 'all' : v === 'dom' ? 'dom' : 'cup'); } catch { /* this visit only */ } };
 /** The rows scope for a fixture of competition lg: 'all', 'dom' or the cup's own code. */
 const scopeFor = lg => { const p = getUclScope(); return !isCup(lg) ? 'all' : p === 'cup' ? lg : p; };
-/** The three choices on a card of competition lg. */
-const scopeOpts = lg => [['all', 'All games'], ['dom', 'Domestic league only'], [lg, `${leagueName(lg)} only`]];
+/** A club seen outside a European fixture (team view, league fixture, Finder league entry...): 'all' | 'dom' | 'eu' (any European competition). */
+const clubScopeFor = () => { const p = getUclScope(); return p === 'cup' ? 'eu' : p; };
+/** Name of a scope's competition: a cup's name, or 'European' for 'eu'. */
+const scopeName = v => (v === 'eu' ? 'European' : leagueName(v));
+const isEuScope = v => v === 'eu' || isCup(v);
+/** The rows a page uses for club slug, seen in competition ctxLg (owner request 20 Oct: a club with European matches uses the remembered
+ *  All games / Domestic league only / European choice everywhere, All games by default; clubs without European matches: league rows as before). */
+const clubRows = (slug, ctxLg) => (isCup(ctxLg) ? teamRowsScoped(slug, scopeFor(ctxLg)) : hasEuropean(slug) ? teamRowsScoped(slug, clubScopeFor()) : teamRowsFor(slug));
+/** The scope a page shows for slug in ctxLg, or null when the club has no European matches (no switch needed). */
+const clubScopeIn = (slug, ctxLg) => (isCup(ctxLg) ? scopeFor(ctxLg) : hasEuropean(slug) ? clubScopeFor() : null);
+/** The three choices on a card of competition lg ('eu' = a club's European matches in any competition). */
+const scopeOpts = lg => [['all', 'All games'], ['dom', 'Domestic league only'], [lg, lg === 'eu' ? 'European matches only' : `${leagueName(lg)} only`]];
 /** Finder (several competitions at once): 'cup' = each club's own European competition only. */
-const finderScopeOpts = cups => [['all', 'All games'], ['dom', 'Domestic league only'], ['cup', cups.length === 1 ? `${leagueName(cups[0])} only` : 'European competition only']];
+const finderScopeOpts = cups => [['all', 'All games'], ['dom', 'Domestic league only'], ['cup', cups.length === 1 && cups[0] !== 'eu' ? `${leagueName(cups[0])} only` : 'European matches only']];
 // Minimum Games Played (owner correction 20 Oct): 1–20, default 10, counted from the CURRENT SEASON only (games with a recorded figure).
 const MIN_LO = 1, MIN_HI = 20;
 const clampMin = n => Math.max(MIN_LO, Math.min(MIN_HI, n));
@@ -2905,7 +2694,7 @@ async function viewHiwi(root, r, sport) {
   let cards = [], shown = 0, reg = new Map(), notes = [];
   const periodText = (lg, sc) => (sc === 'all' ? (st.period === 'season' ? `${seasonOf('ucl')}/${String(seasonOf('ucl') + 1).slice(2)} season, all competitions` : `last ${st.period} matches, all competitions`)
     : sc === 'dom' ? (st.period === 'season' ? (isCup(lg) ? 'domestic league: not covered by PropLab' : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season (domestic league only)`) : `last ${st.period} ${isCup(lg) ? 'domestic' : leagueName(lg)} matches`)
-    : isCup(sc) ? (st.period === 'season' ? `${leagueName(sc)} ${seasonOf(sc)}/${String(seasonOf(sc) + 1).slice(2)}` : `last ${st.period} ${leagueName(sc)} matches`)
+    : isEuScope(sc) ? (st.period === 'season' ? `${scopeName(sc)} ${seasonOf(sc === 'eu' ? 'ucl' : sc)}/${String(seasonOf(sc === 'eu' ? 'ucl' : sc) + 1).slice(2)}${sc === 'eu' ? ' (European matches)' : ''}` : `last ${st.period} ${scopeName(sc)} matches`)
     : st.period === 'season' ? `${lg === 'nfl' ? `${seasonOf('nfl')} regular season` : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season`}` : `last ${st.period} ${nflMode ? 'games' : 'matches'}`);
   const trCache = new Map();
   /** A team's completed rows, newest first: the current season (Season) or every season PropLab has (Last N picks from these). */
@@ -2933,20 +2722,20 @@ async function viewHiwi(root, r, sport) {
   const scopedCard = (id, def, extra, sc, cup) => { const views = {}, opts = scopeOpts(cup);
     for (const [v] of opts) { const c = teamCard(id, def, {}, v), n = teamRowsNow(id, v).reduce((t, x) => { const y = def.get(x); return t + (y !== null && y !== undefined ? 1 : 0); }, 0);
       // a statistic no European source records (corners, shots, fouls, cards): say so on the card instead of an empty chart (never 0)
-      const none = isCup(v) && !teamRowsAll(id, v).some(x => { const y = def.get(x); return y !== null && y !== undefined; }) && teamRowsAll(id, v).length > 0;
+      const none = isEuScope(v) && !teamRowsAll(id, v).some(x => { const y = def.get(x); return y !== null && y !== undefined; }) && teamRowsAll(id, v).length > 0;
       const noDom = v === 'dom' && teamRowsAll(id, 'dom').length === 0; // a club whose domestic league PropLab does not cover
-      views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n === 0, note: noDom ? `PropLab does not cover ${teamLabel(id)}'s domestic league, so there are no domestic matches to show (nothing is filled in). All games and ${leagueName(cup)} only use its European matches (goals, first-half goals and both teams to score only).` : none ? `${def.label} is not recorded for ${leagueName(v)} matches in any free source PropLab uses, so this view has no data (missing, never counted as 0). All games and Domestic league only use the league matches that do record it.` : c.note }; }
-    return { ...teamCard(id, def, extra, sc), ...(views[sc] ? { note: views[sc].note } : {}), scopes: opts, scopeViews: views, eligNote: v => `${views[v].elig} ${views[v].elig === 1 ? 'match' : 'matches'} this season${v === 'all' ? ' (all competitions)' : v === 'dom' ? (isCup(lgOfTeam(id)) ? ' (domestic league not covered)' : ` (${leagueName(lgOfTeam(id))} only)`) : ` (${leagueName(v)})`}` }; };
+      views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n === 0, note: noDom ? `PropLab does not cover ${teamLabel(id)}'s domestic league, so there are no domestic matches to show (nothing is filled in). All games and ${cup === 'eu' ? 'European matches' : leagueName(cup)} only use its European matches (goals, first-half goals and both teams to score only).` : none ? `${def.label} is not recorded for ${scopeName(v)} matches in any free source PropLab uses, so this view has no data (missing, never counted as 0). All games and Domestic league only use the league matches that do record it.` : c.note }; }
+    return { ...teamCard(id, def, extra, sc), ...(views[sc] ? { note: views[sc].note } : {}), scopes: opts, scopeViews: views, eligNote: v => `${views[v].elig} ${views[v].elig === 1 ? 'match' : 'matches'} this season${v === 'all' ? ' (all competitions)' : v === 'dom' ? (isCup(lgOfTeam(id)) ? ' (domestic league not covered)' : ` (${leagueName(lgOfTeam(id))} only)`) : ` (${v === 'eu' ? 'European matches' : leagueName(v)})`}` }; };
   /** The head-to-head card (used in Detailed analysis), from team h's side; Team / Opponent markets can switch to a's side. */
   const h2hCard = (h, a, def, cid, sc) => {
     const lg = sc ? (isCup(sc) ? sc : 'ucl') : lgOfTeam(h), from = sc ? [coverFrom('ucl'), coverFrom('uel'), coverFrom('uecl'), coverFrom(lgOfTeam(h))].filter(Boolean).sort()[0] : coverFrom(lg), mH = meetings(h, a, sc), mA = meetings(a, h, sc), hN = teamLabel(h), aN = teamLabel(a);
     const view = id => (id === h ? mH : mA);
     const rows = id => mkRows(view(id), def, x => `${x.home ? 'v' : '@'}${code(id === h ? a : h)}`);
     const n = rows(h).length, dir = def.scope !== 'match';
-    const cover = `${n === 1 ? `The only meeting in PropLab's records, ${monthYear(mH[0].date)}` : `All ${n} meetings in PropLab's records${n ? `, ${monthYear(mH[mH.length - 1].date)} to ${monthYear(mH[0].date)}` : ''}`}. ${nflMode ? 'Regular-season and playoff games' : sc ? (sc === 'dom' ? 'Domestic league matches only' : isCup(sc) ? `${leagueName(sc)} matches only` : 'League and European matches') : 'League matches only'} since ${from ? monthYear(from) : 'the start of the records'}; older${nflMode || sc ? '' : ' and cup'} meetings are not included.${n && n < 5 ? ` Only ${n} meeting${n === 1 ? '' : 's'}: ${n}/${n} is not a reliable trend.` : ''}`;
+    const cover = `${n === 1 ? `The only meeting in PropLab's records, ${monthYear(mH[0].date)}` : `All ${n} meetings in PropLab's records${n ? `, ${monthYear(mH[mH.length - 1].date)} to ${monthYear(mH[0].date)}` : ''}`}. ${nflMode ? 'Regular-season and playoff games' : sc ? (sc === 'dom' ? 'Domestic league matches only' : isEuScope(sc) ? `${scopeName(sc)} matches only` : 'League and European matches') : 'League matches only'} since ${from ? monthYear(from) : 'the start of the records'}; older${nflMode || sc ? '' : ' and cup'} meetings are not included.${n && n < 5 ? ` Only ${n} meeting${n === 1 ? '' : 's'}: ${n}/${n} is not a reliable trend.` : ''}`;
     return { cid, title: `Head-to-head: ${hN} v ${aN}`, def, tag: 'Head-to-head', tagCls: 'h2h', h2h: true, unit: U, m: n, rows: rows(h), views: dir ? { h: rows(h), a: rows(a) } : null, persp: dir ? [['h', hN], ['a', aN]] : null,
       note: dir ? null : `Each bar: ${def.label}, both teams combined, in one actual meeting between ${hN} and ${aN}.${splitNote(def, hN, aN)}`, noteFor: dir ? { h: dirNote(def, hN, aN), a: dirNote(def, aN, hN) } : null,
-      cover: n ? cover : `${nflMode ? 'Regular-season and playoff games' : sc ? (sc === 'dom' ? 'Domestic league matches only' : isCup(sc) ? `${leagueName(sc)} matches only` : 'League and European matches') : 'League matches'} since ${from ? monthYear(from) : 'the start of the records'} checked; older${nflMode || sc ? '' : ' and cup'} meetings are not included.`,
+      cover: n ? cover : `${nflMode ? 'Regular-season and playoff games' : sc ? (sc === 'dom' ? 'Domestic league matches only' : isEuScope(sc) ? `${scopeName(sc)} matches only` : 'League and European matches') : 'League matches'} since ${from ? monthYear(from) : 'the start of the records'} checked; older${nflMode || sc ? '' : ' and cup'} meetings are not included.`,
       empty: `No meetings between ${hN} and ${aN} in PropLab's records${from ? ` since ${monthYear(from)}` : ''}. Nothing is filled in.`, period: 'head-to-head meetings',
       detail: { rows: mH, subjectId: h, h2h: true, views: dir ? { h: { rows: mH, subjectId: h, name: hN }, a: { rows: mA, subjectId: a, name: aN } } : null } };
   };
@@ -2979,7 +2768,10 @@ async function viewHiwi(root, r, sport) {
             rows: mkRows(rows, def, x => `${x.home ? 'v' : '@'}${short(x.opp)}`), detail: { rows: all, subjectId: id, player: pl }, pteam: pl.team });
         }
       } else if (st.mode === 'teams') {
-        for (const id of [...st.teams]) { const en = enough(teamRowsNow(id), def, teamLabel(id), nflMode ? 'game' : 'match'); if (en !== null) outc.push(teamCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: `${nflMode ? 'NFL' : leagueName(lgOfTeam(id))} · ${elig(en, nflMode ? 'game' : 'match')}` })); }
+        for (const id of [...st.teams]) {
+          // a club with European matches (e.g. Bayern: Bundesliga + Champions League): All games by default, or Domestic / European matches only
+          if (!nflMode && hasEuropean(id)) { const sc = clubScopeFor(); const en = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (en !== null) outc.push(scopedCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: leagueName(lgOfTeam(id)) }, sc, 'eu')); continue; }
+          const en = enough(teamRowsNow(id), def, teamLabel(id), nflMode ? 'game' : 'match'); if (en !== null) outc.push(teamCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: `${nflMode ? 'NFL' : leagueName(lgOfTeam(id))} · ${elig(en, nflMode ? 'game' : 'match')}` })); }
       } else {
         // Upcoming Matches: two cards per fixture and market, the home team's and the away team's own history (head-to-head: Detailed analysis)
         for (const f of fixtures) {
@@ -2992,8 +2784,12 @@ async function viewHiwi(root, r, sport) {
             const ea = enough(teamRowsNow(a, sc), def, teamLabel(a), 'match'); if (ea !== null) outc.push(scopedCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away Team', tagCls: 'away', context: ctx, fixture: fid, opp: h, fxLeague: f.league }, sc, f.league));
             continue;
           }
-          const eh = enough(teamRowsNow(h), def, teamLabel(h), nflMode ? 'game' : 'match'); if (eh !== null) outc.push(teamCard(h, def, { cid: `fh|${fid}|${k}`, ord: [...base, 0], ko, tag: 'Home Team', tagCls: 'home', context: `${ctx} · ${elig(eh, nflMode ? 'game' : 'match')}`, fixture: fid, opp: a }));
-          const ea = enough(teamRowsNow(a), def, teamLabel(a), nflMode ? 'game' : 'match'); if (ea !== null) outc.push(teamCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away Team', tagCls: 'away', context: `${ctx} · ${elig(ea, nflMode ? 'game' : 'match')}`, fixture: fid, opp: h }));
+          // league fixture: a club with European matches gets All games (default) / Domestic league only / European matches only; others as before
+          for (const [id, other, side, tag, cls] of [[h, a, 0, 'Home Team', 'home'], [a, h, 1, 'Away Team', 'away']]) {
+            const extra = { cid: `${side ? 'fa' : 'fh'}|${fid}|${k}`, ord: [...base, side], ko, tag, tagCls: cls, fixture: fid, opp: other };
+            if (!nflMode && hasEuropean(id)) { const sc = clubScopeFor(); const e = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (e !== null) outc.push(scopedCard(id, def, { ...extra, context: ctx }, sc, 'eu')); continue; }
+            const e = enough(teamRowsNow(id), def, teamLabel(id), nflMode ? 'game' : 'match'); if (e !== null) outc.push(teamCard(id, def, { ...extra, context: `${ctx} · ${elig(e, nflMode ? 'game' : 'match')}` }));
+          }
         }
       }
     }
@@ -3134,7 +2930,7 @@ async function viewHiwi(root, r, sport) {
       const secs = [];
       const sc = c.sc || null; // European fixture: the scope shown on the card (All games / competition only)
       const tc = (id, cidp, tag, tagCls) => { const lg = lgOfTeam(id), rows = per === 'season' ? teamRowsNow(id, sc) : teamRowsAll(id, sc).slice(0, per), nm = teamLabel(id);
-        return { cid: cidp, title: nm, def: d, unit: U, m: rows.length, rows: mkRows(rows, d, oppLab), tag, tagCls, showComp: !!sc, sc, period: per === 'season' ? periodText(lg, sc) : sc ? `last ${per} matches${isCup(sc) ? ` (${leagueName(sc)})` : sc === 'dom' ? ' (domestic league only)' : ' (all competitions)'}` : `last ${per} ${nflMode ? 'games' : 'matches'}`, note: `Each bar: ${d.label}, ${meaning(d, nm)}.${splitNote(d, nm)}`, detail: { rows: teamRowsAll(id, sc), subjectId: id }, team: id, detailLabel: 'Full chart and filters ›' }; };
+        return { cid: cidp, title: nm, def: d, unit: U, m: rows.length, rows: mkRows(rows, d, oppLab), tag, tagCls, showComp: !!sc, sc, period: per === 'season' ? periodText(lg, sc) : sc ? `last ${per} matches${isEuScope(sc) ? ` (${scopeName(sc)})` : sc === 'dom' ? ' (domestic league only)' : ' (all competitions)'}` : `last ${per} ${nflMode ? 'games' : 'matches'}`, note: `Each bar: ${d.label}, ${meaning(d, nm)}.${splitNote(d, nm)}`, detail: { rows: teamRowsAll(id, sc), subjectId: id }, team: id, detailLabel: 'Full chart and filters ›' }; };
       secs.push(['Selected team', tc(me, 'cmp|me', 'Selected team', 'home')]);
       if (opp) { secs.push(['Opponent', tc(opp, 'cmp|opp', 'Opponent', 'away')]); const hc = h2hCard(me, opp, d, 'cmp|h2h', sc); hc.showComp = !!sc; hc.detailLabel = 'Full chart and filters ›'; secs.push(['Head-to-head', hc]); }
       return secs;
@@ -3273,7 +3069,237 @@ async function viewHiwi(root, r, sport) {
   draw(); await refresh();
 }
 
-return { wilson, MODE_SCOPES, getUclScope, setUclScope, scopeFor, scopeOpts, finderScopeOpts, MIN_LO, clampMin, getMinGames, setMinGames, sortCards, viewHiwi };
+return { wilson, MODE_SCOPES, getUclScope, setUclScope, scopeFor, clubScopeFor, scopeName, clubRows, clubScopeIn, scopeOpts, finderScopeOpts, MIN_LO, clampMin, getMinGames, setMinGames, sortCards, viewHiwi };
+})();
+__m['v-team'] = (() => {
+const { infoTag } = __m['info'];
+const { shortTeam } = __m['aliases'];
+const { store, teamBySlug, teamRowsFor, teamProfile, newsForTeam, upcomingFor, leagueName, refereeProfile, knownPlayers, teamSlugOf, hasEuropean } = __m['data'];
+const { clubRows, clubScopeIn, scopeOpts, setUclScope } = __m['v-hiwi'];
+const { TEAM_MARKETS, SELECTABLE_TEAM_MARKETS, marketsWithData } = __m['markets'];
+const { researchPanel } = __m['panel'];
+const { $, esc, fmtDay, fmtLong, fmtShort, todayYmd, fmtKick } = __m['util'];
+const { dataBanner, problemsBanner, newsItem, hooks } = __m['shared'];
+const { searchBox } = __m['searchbox'];
+const { photoHtml } = __m['photo'];
+
+const POSORD = [['GK', 'Goalkeepers'], ['DF', 'Defenders'], ['MF', 'Midfielders'], ['FW', 'Forwards']];
+function squadSection(t) {
+  const ps = [...knownPlayers().values()].filter(p => p.inDirectory && teamSlugOf(p.team) === t.slug);
+  if (!ps.length) return '';
+  const meta = (store.directoryMeta?.clubs || []).find(c => c.slug === t.slug);
+  return `<section class="sec"><h2>Squad (${ps.length})</h2><div class="card">${POSORD.map(([k, lab]) => { const g = ps.filter(p => p.pos === k).sort((a, b) => a.name.localeCompare(b.name)); return g.length ? `<h3 style="margin:10px 0 4px">${lab}</h3><div class="list">${g.map(p => `<a class="row" style="justify-content:flex-start" href="#/player/${encodeURIComponent(p.id)}">${photoHtml(p, 'sm')}<div class="l"><b>${esc(p.name)}</b>${p.loan_from ? `<span>On loan from ${esc(p.loan_from)}</span>` : ''}</div></a>`).join('')}</div>` : ''; }).join('')}<p class="xs muted" style="margin:10px 0 0">Squad list ${meta?.as_of ? 'as of ' + esc(fmtLong(meta.as_of)) : 'date not stated by the source'}, from <a href="${esc(meta?.source || 'https://en.wikipedia.org')}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). May lag recent transfers.</p></div></section>`;
+}
+async function viewTeam(root, r) {
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel" style="width:50%"></div><div class="skel"></div>'}`; return; }
+  const t = teamBySlug(r.arg);
+  if (!t) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/players">← Search</a><h1>Team not found</h1><div id="sb"></div>`; searchBox($('#sb', root)); return; }
+  // a club with European matches: research uses the remembered All games / Domestic league only / European matches choice (All games by default)
+  const sc = clubScopeIn(t.slug, t.league), rows = clubRows(t.slug, t.league), pr = teamProfile(t.slug), today = todayYmd(), up = upcomingFor(t.name, today).slice(0, 3), news = newsForTeam(t.name);
+  const markets = marketsWithData(rows, SELECTABLE_TEAM_MARKETS);
+  const cell = (a, b, c) => pr[b] == null ? '' : `<tr><td>${a}</td><td class="n">${pr[b] ?? 'n/a'}</td><td class="n">${pr[b + 'A'] ?? 'n/a'}</td><td class="n">${pr['lg_' + b] ?? 'n/a'}</td></tr>`;
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Search</a>
+    <div class="prof"><div class="avatar">${esc(t.name.split(' ').map(w => w[0]).slice(0, 2).join(''))}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${esc(leagueName(t.league))}${pr.n ? ` · ${pr.n} matches this season ` : ''}${pr.form.length ? `<span class="form" aria-label="Recent form">${pr.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</div></div></div>
+    <section class="sec"><h2>Fixtures</h2><div class="card">${up.length ? `<div class="list">${up.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))}${x.referee ? ' · Referee ' + esc(x.referee) : x.league === 'epl' ? ' · Referee not yet confirmed' : ''}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixture is published for this team.</p>'}</div></section>
+    ${news.length ? `<section class="sec"><h2>Team news</h2><div class="card"><div class="list">${news.map(newsItem).join('')}</div></div></section>` : ''}
+    ${pr.n ? `<section class="sec"><h2>Per-match averages</h2><div class="card"><div class="scroll"><table class="avgtab"><tr><th></th><th>${esc(shortTeam(t.name))}</th><th>Opponents</th><th>${esc(leagueName(t.league))} Avg</th></tr>${cell('Goals', 'goals')}${cell('First-half goals', 'htgoals')}${cell('Shots', 'shots')}${cell('Shots on target', 'sot')}${cell('Corners', 'corners')}${cell('Fouls committed', 'fouls')}${cell('Yellow cards', 'yellows')}${cell('Red cards', 'reds')}</table></div><p class="xs muted" style="margin:8px 0 0">Per match, from ${pr.n} published matches this season. ${infoTag('avgtable', 'What do the columns mean?', { n: shortTeam(t.name), m: leagueName(t.league), cls: 'neutral' })}</p></div></section>
+    <section class="sec"><h2>Research a market</h2>${sc ? `<div class="field"><label>Matches used</label><div class="seg wrap" id="tsc">${scopeOpts('eu').map(([v, l]) => `<button type="button" data-v="${v}" class="${sc === v ? 'on' : ''}">${l}</button>`).join('')}</div><span class="xs muted">All games (default) = ${esc(leagueName(t.league))} and European matches together (competition shown for each match); each market uses only the matches that record it.</span></div>` : ''}<div id="panel"></div></section>` : `<div class="banner info" style="margin-top:14px"><b>No match statistics are published for ${esc(t.name)} yet.</b> Fixtures and news above are all that is available.</div>`}
+    ${squadSection(t)}
+    <section class="sec"><h2>Source</h2><div class="card small muted">${t.league === 'mls' ? 'MLS results, team shots and shots on target come from American Soccer Analysis (shots on target are the sum of its player rows).' : t.league === 'epl' ? 'Team statistics, half-time scores and referees come from football-data.co.uk; older results were cross-checked with openfootball.' : `${esc(leagueName(t.league))} results, half-time scores and team statistics come from football-data.co.uk.`} <a href="#/about">Data &amp; sources</a></div></section>`;
+  if (sc) $('#tsc', root)?.addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; setUclScope(b.dataset.v); viewTeam(root, r); });
+  if (pr.n && markets.length) { const panel = researchPanel($('#panel', root), { key: 'team:' + t.slug, markets, rows, exposureKey: null, hasMinutes: false, subject: 'team', subjectId: t.slug }); hooks.redraw = panel.redraw; }
+}
+
+return { viewTeam };
+})();
+__m['lineup'] = (() => {
+// Team lineups on the fixture page. PropLab publishes no lineup it has not verified, so the normal state is "not yet available".
+// The owner can add an official team sheet himself (pasted or typed from the club's own announcement). It is stored only on this
+// device (localStorage) and shown as "Confirmed lineup, entered by you" with the time it was added. Nothing is fetched or scraped.
+const { knownPlayers, teamSlugOf } = __m['data'];
+const { normName } = __m['teams'];
+const { photoHtml } = __m['photo'];
+const { esc, fixtureId } = __m['util'];
+
+const KEY = 'proplab.lineup.v1.';
+// Published team sheets (data-lineups.json): only ones the owner has checked against the announced team sheets. Loaded once.
+let published = null, loading = null;
+function loadPublishedLineups() {
+  if (!loading) loading = fetch('data-lineups.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
+    .then(d => { published = d && d.schema === 1 && d.items && typeof d.items === 'object' ? d.items : {}; return published; });
+  return loading;
+}
+const fmtTime = t => new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+/** "19 B. Mbeumo (c)" -> { num: '19', name: 'B. Mbeumo', cap: true } */
+const splitName = raw => { let t = String(raw).trim(); const cap = /\(c\)/i.test(t); t = t.replace(/\(c\)/ig, '').trim();
+  const m = /^(\d{1,2})\s+(.+)$/.exec(t); return m ? { num: m[1], name: m[2].trim(), cap } : { num: '', name: t, cap }; };
+// The public site is view-only. Older versions let a device save its own team sheet; those copies are deleted so nothing local can override the published data.
+try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(KEY)) localStorage.removeItem(k); } } catch { /* storage blocked: nothing to clear */ }
+
+/**
+ * Reads a team sheet such as "4-2-3-1: Lammens; Dalot, Martinez, Maguire, Yoro; Baleba, Santos; Fernandes, Tielemans, Diallo; Mbeumo | Subs: A, B".
+ * Lines (one row per line) work too. Returns { formation, rows (goalkeeper first), subs } or { error }.
+ */
+function parseLineup(text) {
+  const t = String(text || '').trim(); if (!t) return { error: 'Nothing entered.' };
+  const [main, subsPart = ''] = t.split(/\|\s*subs?\s*:?|\n\s*subs?\s*:?/i);
+  const fm = /^\s*(\d(?:\s*-\s*\d){1,4})\s*[:\-–]?\s*/.exec(main);
+  if (!fm) return { error: 'Start with the formation, e.g. 4-2-3-1: then the goalkeeper; defenders; midfield; attack.' };
+  const formation = fm[1].replace(/\s+/g, ''); const nums = formation.split('-').map(Number);
+  if (nums.reduce((a, b) => a + b, 0) !== 10) return { error: `Formation ${formation} does not add up to 10 outfield players.` };
+  const rows = main.slice(fm[0].length).split(/[;\n]+/).map(r => r.split(',').map(x => x.trim()).filter(Boolean)).filter(r => r.length);
+  if (rows.length !== nums.length + 1) return { error: `Expected ${nums.length + 1} groups separated by ";" (goalkeeper; ${nums.join('; ')}), found ${rows.length}.` };
+  if (rows[0].length !== 1) return { error: 'The first group must be the goalkeeper only.' };
+  for (let i = 0; i < nums.length; i++) if (rows[i + 1].length !== nums[i]) return { error: `Group ${i + 2} should have ${nums[i]} players for ${formation}, found ${rows[i + 1].length}.` };
+  const subs = subsPart.split(/[,;\n]+/).map(x => x.trim()).filter(Boolean);
+  return { formation, rows, subs };
+}
+
+/** Finds a directory player of this club for a name as written on a team sheet (full name, or unique surname). */
+function matchPlayer(name, team) {
+  const n = normName(name), slug = teamSlugOf(team);
+  const club = [...knownPlayers().values()].filter(p => teamSlugOf(p.team) === slug);
+  let hit = club.filter(p => normName(p.name) === n); if (hit.length === 1) return hit[0];
+  const last = n.split(' ').pop(); hit = club.filter(p => normName(p.name).split(' ').includes(last)); if (hit.length === 1) return hit[0];
+  hit = club.filter(p => normName(p.name).includes(n)); return hit.length === 1 ? hit[0] : null;
+}
+const chip = (raw, team) => { const { num, name, cap } = splitName(raw); const p = matchPlayer(name, team);
+  const inner = `${photoHtml(p || { id: '_' + name, name }, 'sm')}<span class="lpn">${num ? `<span class="muted">${esc(num)}</span> ` : ''}${esc(name)}${cap ? ' (c)' : ''}</span>`;
+  return p ? `<a class="lp" href="#/player/${encodeURIComponent(p.id)}">${inner}</a>` : `<span class="lp">${inner}</span>`; };
+
+function pitch(lu, team) {
+  // attack at the top, goalkeeper at the bottom
+  return `<div class="pitch" role="img" aria-label="${esc(team)} lineup, ${esc(lu.formation)}">${[...lu.rows].reverse().map(r => `<div class="prow">${r.map(n => chip(n, team)).join('')}</div>`).join('')}</div>`;
+}
+
+/** HTML for the lineup panel of one fixture. side: 'home' | 'away'. */
+function lineupPanel(f, side = 'home') {
+  const id = fixtureId(f), team = side === 'home' ? f.home : f.away;
+  const pub = published?.[id], pubSide = pub && pub.status === 'confirmed' ? pub[side] : null;
+  const saved = pubSide ? { text: pubSide.text, at: pub.checked } : null;
+  const lu = saved ? parseLineup(saved.text) : null;
+  const when = saved ? fmtTime(saved.at) : '';
+  const by = `${esc(pub?.source || 'official team sheet')} · updated ${esc(when)} UK time`;
+  const out = pubSide?.out?.length ? `<p class="small" style="margin:6px 0 0"><b>Unavailable:</b> ${pubSide.out.map(([n, st, why]) => `${esc(n)} <span class="muted">(${esc(st)}${why ? ', ' + esc(why) : ''})</span>`).join(', ')}</p>` : '';
+  return `<div class="lineup" data-lu="${esc(id)}" data-side="${side}">
+    <div class="seg lutabs"><button type="button" data-lu-side="home" class="${side === 'home' ? 'on' : ''}">${esc(f.home)}</button><button type="button" data-lu-side="away" class="${side === 'away' ? 'on' : ''}">${esc(f.away)}</button></div>
+    ${lu && !lu.error ? `<div class="lustat ok"><b>Confirmed Lineup</b> · ${by} · ${esc(lu.formation)}</div>${pitch(lu, team)}
+      ${lu.subs.length ? `<p class="small" style="margin:8px 0 0"><b>Substitutes:</b> ${lu.subs.map(raw => { const { num, name } = splitName(raw); const p = matchPlayer(name, team); const lbl = (num ? num + ' ' : '') + name; return p ? `<a href="#/player/${encodeURIComponent(p.id)}">${esc(lbl)}</a>` : esc(lbl); }).join(', ')}</p>` : '<p class="xs muted" style="margin:8px 0 0">Substitutes not entered.</p>'}${out}
+      <p class="xs muted" style="margin:6px 0 0">Published lineup. It does not update live; changes after this time are not shown.</p>`
+    : `<div class="lustat"><b>Lineup not yet available</b></div>`}
+    </div>`;
+}
+
+/** Wires clicks inside any lineup panels under root. */
+function wireLineups(root, fixtures) {
+  const fresh = !published; loadPublishedLineups().then(() => { if (!fresh) return; for (const box of root.querySelectorAll('.lineup')) { const f = fixtures().find(x => fixtureId(x) === box.dataset.lu); if (f) box.outerHTML = lineupPanel(f, box.dataset.side); } });
+  root.addEventListener('click', e => {
+    const box = e.target.closest('.lineup'); if (!box) return;
+    const f = fixtures().find(x => fixtureId(x) === box.dataset.lu); if (!f) return;
+    const redraw = side => { box.outerHTML = lineupPanel(f, side); };
+    const tab = e.target.closest('[data-lu-side]'); if (tab) { redraw(tab.dataset.luSide); return; }
+  });
+}
+
+return { loadPublishedLineups, parseLineup, lineupPanel, wireLineups };
+})();
+__m['v-fixtures'] = (() => {
+const { fbSearchTerms, aliasScore } = __m['aliases'];
+const { teamAliases } = __m['teams'];
+const { store, fxSortLocal, leagueName, newsForTeam, teamProfile, teamSlugOf, refereeProfile, resultsList, teamBySlug, leaguesPresent, LEAGUE_NAMES, LEAGUE_ORDER, isCup } = __m['data'];
+const { normTeam } = __m['teams'];
+const { $, $$, esc, fmtDay, fmtLong, todayYmd, koUK, koLocal, todayLocal, localDayAfter, tzNow, fixtureId, fxStatus, statusBadge, timeHtml } = __m['util'];
+const { dataBanner, problemsBanner, newsItem, leagueSelect, getLeague, setLeague } = __m['shared'];
+const { fxSort } = __m['data'];
+const { lineupPanel, wireLineups } = __m['lineup'];
+
+// leagues: empty = All Leagues (one combined list in UK kick-off order); otherwise the ticked leagues, still in kick-off order.
+const ui = { tab: 'upcoming', q: '', leagues: new Set(), when: 'all', more: {} };
+const inLeagues = lg => !ui.leagues.size || ui.leagues.has(lg);
+let ticker = null;
+const resKey = (lg, h, a) => `${lg}|${normTeam(h)}|${normTeam(a)}`;
+const dayDiff = (a, b) => Math.abs(Date.parse(a) - Date.parse(b)) / 864e5;
+// What goes in the time column: kick-off time, a red LIVE badge, or "Awaiting result" (all estimated from the scheduled kick-off).
+const timeCell = (f, st) => (st === 'pre' ? timeHtml(f) : statusBadge(st));
+// One finished match: half-time score, goals (scorer, minute, penalty / own goal) above the team statistics. Missing figures say "unavailable", never 0.
+function resultDetail(m) {
+  // Only statistics actually recorded for this match are shown: a missing figure is never shown as 0, and a statistic the source does not record is left out.
+  const ht = m.hthg != null && m.htag != null ? `<p class="small" style="margin:0 0 8px"><b>Half-time:</b> ${esc(m.home)} ${m.hthg}–${m.htag} ${esc(m.away)}</p>` : '';
+  const gl = Array.isArray(m.goals) && m.goals.length ? `<h4 style="margin:0 0 4px">Goals</h4><ul class="goals">${[...m.goals].sort((a, b) => parseInt(a.min) - parseInt(b.min)).map(g => `<li><span class="gm">${esc(g.min)}'</span><span><b>${esc(g.player)}</b>${g.type === 'pen' ? ' (pen)' : g.type === 'og' ? ' (og)' : ''} <span class="gt">— ${esc(g.team === 'home' ? m.home : m.away)}</span></span></li>`).join('')}</ul>` : '';
+  const ROWS = [['Shots', 'hs', 'as'], ['Shots on target', 'hst', 'ast'], ['Corners', 'hc', 'ac'], ['Fouls committed', 'hf', 'af'], ['Yellow cards', 'hy', 'ay'], ['Red cards', 'hr', 'ar']].filter(([, a, b]) => m[a] != null || m[b] != null);
+  const cellv = v => (v == null ? '<span class="muted" title="not recorded">–</span>' : v);
+  const stats = !ROWS.length ? (isCup(m.league) ? `<p class="small muted" style="margin:0">Shots, corners, fouls and cards are not available for ${esc(leagueName(m.league))} matches from PropLab's free sources (left out, never 0).</p>` : m.season >= 2026 && m.league !== 'mls' ? '<p class="small muted" style="margin:0">Team statistics for this match are not published yet; football-data.co.uk usually adds them within a few days.</p>' : '')
+    : `<div class="scroll"><table class="fxstats"><tr><th></th><th>${esc(m.home.split(' ')[0])}</th><th>${esc(m.away.split(' ')[0])}</th><th>Match</th></tr>
+        ${ROWS.map(([l, a, b]) => `<tr><td>${l}</td><td class="n">${cellv(m[a])}</td><td class="n">${cellv(m[b])}</td><td class="n">${m[a] != null && m[b] != null ? m[a] + m[b] : cellv(null)}</td></tr>`).join('')}</table></div>
+        <p class="xs muted" style="margin:6px 0 0">Team columns count that team only; Match = both teams combined.</p>`;
+  const src = isCup(m.league) ? `<p class="xs muted" style="margin:6px 0 0">${m.stage ? esc(m.stage) + ' · ' : ''}${esc(leagueName(m.league))} score and goal times from Wikipedia (CC BY-SA 4.0).${m.aet_score ? ` After extra time: ${esc(m.aet_score)}. PropLab uses the 90-minute score shown above.` : ''}</p>` : /Wikipedia/.test(m.source || '') ? '<p class="xs muted" style="margin:6px 0 0">Final score from Wikipedia\'s season results table (verified score only). Statistics are added when football-data.co.uk publishes the match.</p>' : '';
+  return ht + gl + stats + src + (m.goals_source ? `<p class="xs muted" style="margin:6px 0 0">Goals: ${esc(m.goals_source)}.</p>` : '');
+}
+const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n = newsForTeam(name);
+  return `<div><h3><a href="#/team/${encodeURIComponent(teamSlugOf(name))}">${esc(name)}</a> ${s.form.length ? `<span class="form">${s.form.map(x => `<i class="${x}">${x}</i>`).join('')}</span>` : ''}</h3>
+    ${s.n ? `<p class="small muted" style="margin:0 0 6px">Per match over ${s.n} games: ${[s.goals != null ? `${s.goals} goals (${s.goalsA} against)` : '', s.shots != null ? `${s.shots} shots (${s.shotsA} against)` : '', s.fouls != null ? `${s.fouls} fouls` : '', s.yellows != null ? `${s.yellows} yellows` : ''].filter(Boolean).join(', ')}.</p>` : '<p class="small muted" style="margin:0 0 6px">No published match stats yet.</p>'}
+    ${n.length ? `<div class="list">${n.map(newsItem).join('')}</div>` : '<p class="small muted" style="margin:0">No team news published.</p>'}</div>`; };
+
+async function viewFixtures(root, r) {
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Fixtures</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
+  const today = todayYmd();
+  if (r.q.get('tab')) ui.tab = r.q.get('tab') === 'results' ? 'results' : 'upcoming';
+  if (r.q.get('lg')) { const l = r.q.get('lg'); ui.leagues = l === 'all' ? new Set() : new Set(l.split(',')); } // e.g. #/fixtures?lg=epl,laliga
+  const draw = () => {
+    const q = ui.q.trim().toLowerCase(); const tcache = new Map(); const terms = n => { if (!tcache.has(n)) tcache.set(n, fbSearchTerms(n, teamAliases(n))); return tcache.get(n); }; const hit = (a, b) => !q || (a + ' ' + b).toLowerCase().includes(q) || aliasScore(q, terms(a)) > 0 || aliasScore(q, terms(b)) > 0; // nicknames: "spurs", "man utd"
+    let html = '';
+    if (ui.tab === 'upcoming') {
+      const now = new Date(), todayUK = todayLocal(now), tomUK = localDayAfter(1, now), wkUK = localDayAfter(7, now); // the viewer's own calendar days
+      const okDay = f => { const d = koLocal(f).ymd; return ui.when === 'all' || (ui.when === 'today' ? d === todayUK : ui.when === 'tomorrow' ? d === tomUK : d <= wkUK); };
+      // A fixture leaves this list only when its verified result is published (it then appears under Results).
+      const done = new Map(); for (const m of resultsList()) { const k = resKey(m.league, m.home, m.away); if (!done.has(k)) done.set(k, []); done.get(k).push(m.date); }
+      const hasResult = f => (done.get(resKey(f.league, f.home, f.away)) || []).some(d => dayDiff(d, f.date) <= 1); // MLS dates can differ by a day (US v UK date)
+      const list = store.fixtures.filter(f => inLeagues(f.league) && hit(f.home, f.away) && okDay(f) && !hasResult(f) && fxStatus(f, now) !== 'old').sort(fxSortLocal);
+      // Milestone 5: one heading per competition; inside it, date then UK kick-off, earliest first (TBC times after the timed games of their day)
+      const byLg = new Map(); for (const lg of LEAGUE_ORDER) byLg.set(lg, []); for (const f of list) { if (!byLg.has(f.league)) byLg.set(f.league, []); byLg.get(f.league).push(f); }
+      const groups = [...byLg.entries()].filter(([, fs]) => fs.length);
+      html = list.length ? groups.map(([lg, fs0]) => { const lim = ui.more['u' + lg] || 30, fs = fs0.slice(0, lim); return `<h2 class="lgh" id="lg-${lg}">${esc(leagueName(lg))} <span class="muted small">${fs0.length} fixture${fs0.length === 1 ? '' : 's'}</span></h2><div class="card">${fs.map(f => {
+        const rp = f.referee ? refereeProfile(f.referee) : null;
+        return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams"><b>${esc(f.home)} v ${esc(f.away)}</b><span><span class="fxd">${esc(fmtDay(koLocal(f).ymd))}${koLocal(f).hm ? '' : ' · <span class="tbcw">kick-off time unconfirmed</span>'}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koLocal(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koLocal(f).hm + ' ' + koLocal(f).abbr))}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
+        <div class="more"><a class="btn" href="#/hiwi?fx=${encodeURIComponent(fixtureId(f))}"><b>Research this match in Hiwi's Section →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}${fs0.length > lim ? `<button type="button" class="btn" data-fmore="u${lg}">Show ${Math.min(30, fs0.length - lim)} more ${esc(leagueName(lg))} fixtures</button>` : ''}</div>`; }).join('')
+        : '<div class="banner info"><b>No upcoming fixtures match these filters.</b> Only fixtures that have been published appear here.</div>';
+      if (list.length) html = `<p class="xs muted" style="margin:0 0 8px">Times are in your time zone (${esc(tzNow())}). PropLab has no live scores: after kick-off a match shows "Started – status unconfirmed", then Awaiting result until the verified final score appears under Results.</p>` + html;
+    } else {
+      // Milestone 5: one heading per competition, most recent result first (only verified final scores are results)
+      const list = resultsList().filter(m => inLeagues(m.league) && hit(m.home, m.away));
+      const byLg = new Map(); for (const lg of LEAGUE_ORDER) byLg.set(lg, []); for (const m of list) { if (!byLg.has(m.league)) byLg.set(m.league, []); byLg.get(m.league).push(m); }
+      const ko = m => (m.ko_utc ? koLocal(m).hm : '');
+      const c = (a, b) => `${a ?? '–'}–${b ?? '–'}`;
+      const groups = [...byLg.entries()].filter(([, ms]) => ms.length);
+      html = list.length ? groups.map(([lg, ms0]) => { const lim = ui.more['r' + lg] || 20, ms = ms0.slice(0, lim); return `<h2 class="lgh" id="rl-${lg}">${esc(leagueName(lg))} <span class="muted small">latest first</span></h2><div class="card">${ms.map(m => `<details class="fx"><summary><span class="time score">${esc(c(m.hg, m.ag))}</span><span class="teams"><b>${esc(m.home)} v ${esc(m.away)}</b><span><span class="fxd">${esc(fmtDay(m.date))}${ko(m) ? ' · ' + esc(ko(m)) : ''}</span>${m.stage ? ' · ' + esc(m.stage) : ''}${m.referee ? ' · Referee ' + esc(m.referee) : ''}</span></span></summary>
+        <div class="more">${resultDetail(m)}</div></details>`).join('')}${ms0.length > lim ? `<button type="button" class="btn" data-fmore="r${lg}">Show ${Math.min(20, ms0.length - lim)} earlier ${esc(leagueName(lg))} results</button>` : ''}</div>`; }).join('') : '<div class="banner info"><b>No published results match.</b></div>';
+    }
+    $('#fxlist', root).innerHTML = html;
+  };
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Fixtures</h1>
+    <div class="stack"><div class="row" style="border:0;padding:0;gap:10px;flex-wrap:wrap"><div class="seg" id="tabs"><button data-t="upcoming" class="${ui.tab === 'upcoming' ? 'on' : ''}">Upcoming</button><button data-t="results" class="${ui.tab === 'results' ? 'on' : ''}">Results</button></div>
+</div>
+      <div class="field"><label>Leagues</label><div class="seg wrap lgchips" id="lgchips"><button type="button" data-lg="" class="${ui.leagues.size ? '' : 'on'}" aria-pressed="${!ui.leagues.size}">All Leagues</button>${leaguesPresent().map(l => `<button type="button" data-lg="${l}" class="${ui.leagues.has(l) ? 'on' : ''}" aria-pressed="${ui.leagues.has(l)}">${esc(LEAGUE_NAMES[l])}</button>`).join('')}</div><span class="xs muted">Tap several leagues to combine them. The list is always in UK kick-off order.</span></div>
+      <div class="field" id="whenf"><label>When</label><div class="seg wrap" id="when">${[['all', 'All'], ['today', 'Today'], ['tomorrow', 'Tomorrow'], ['7', 'Next 7 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ui.when === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <input class="in" id="fq" type="search" placeholder="Filter by team" aria-label="Filter by team" value="${esc(ui.q)}"></div>
+    <div id="fxlist"></div>
+    <p class="xs muted" style="margin-top:16px">Fixtures updated ${esc(fmtLong(store.updated.fixtures || ''))}. Kick-off times are shown in your time zone (${esc(tzNow())}; change it at the bottom of the page), converted from each fixture's exact kick-off instant, so a game can fall on a different calendar day for you than in the country where it is played. A fixture without a confirmed time shows TBC on its scheduled date and is listed after the timed games of that day. Times can change. PropLab has no live feed: after kick-off a match shows Started (status unconfirmed), then Awaiting result until the verified result is published. Referee details appear only when published. Results and match stats are team totals (not player stats). <a href="#/about">Data &amp; sources</a></p>`;
+  $('#tabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.tab = b.dataset.t; $$('#tabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#whenf', root).hidden = ui.tab !== 'upcoming'; draw(); };
+  $('#lgchips', root).onclick = e => { const b = e.target.closest('[data-lg]'); if (!b) return; const l = b.dataset.lg; if (!l) ui.leagues.clear(); else if (ui.leagues.has(l)) ui.leagues.delete(l); else ui.leagues.add(l);
+    $$('#lgchips button', root).forEach(x => { const on = x.dataset.lg ? ui.leagues.has(x.dataset.lg) : !ui.leagues.size; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); draw(); };
+  $('#when', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; ui.when = b.dataset.v; $$('#when button', root).forEach(x => x.classList.toggle('on', x === b)); draw(); };
+  $('#whenf', root).hidden = ui.tab !== 'upcoming';
+  $('#fq', root).oninput = e => { ui.q = e.target.value; draw(); };
+  $('#fxlist', root).addEventListener('click', e => { const b = e.target.closest('[data-fmore]'); if (!b) return; const k = b.dataset.fmore; ui.more[k] = (ui.more[k] || (k[0] === 'u' ? 30 : 20)) + (k[0] === 'u' ? 30 : 20); const y = window.scrollY; draw(); window.scrollTo(0, y); });
+  wireLineups($('#fxlist', root), () => store.fixtures);
+  draw();
+  // Refresh only the status badges every 30 s (open match panels are left alone); stops when this page is left.
+  if (ticker) clearInterval(ticker);
+  ticker = setInterval(() => { if (!root.isConnected || !$('#fxlist', root)) { clearInterval(ticker); ticker = null; return; } const now = new Date();
+    for (const el of $$('[data-st]', root)) { const f = store.fixtures.find(x => fixtureId(x) === el.dataset.st); if (!f) continue; const h = timeCell(f, fxStatus(f, now)); if (el.innerHTML !== h) el.innerHTML = h; } }, 30000);
+}
+
+return { viewFixtures };
 })();
 __m['scanner'] = (() => {
 // Plays scanner: for ONE subject (a team, a player, or one side of a game) scan every market that has recorded data and,
@@ -3399,8 +3425,8 @@ __m['v-plays'] = (() => {
 // Plays (football): a targeted scanner. Choose ONE team, ONE upcoming match or ONE player, a sample and a minimum hit rate;
 // PropLab scans every market the league really records and shows, per market and direction, the most ambitious research line that
 // still reaches the minimum (see scanner.js). Lowering the minimum moves results to harder lines; it never adds easier duplicates.
-const { store, teamsOfLeague, teamRowsFor: teamRowsDom, upcomingFixtures, leagueName, teamSlugOf, isCup, teamRowsScoped } = __m['data'];
-const { scopeFor, scopeOpts, getUclScope, setUclScope } = __m['v-hiwi'];
+const { store, teamsOfLeague, teamRowsFor: teamRowsDom, upcomingFixtures, leagueName, teamSlugOf, isCup, teamRowsScoped, hasEuropean } = __m['data'];
+const { scopeFor, scopeOpts, getUclScope, setUclScope, clubRows } = __m['v-hiwi'];
 const { marketDesc } = __m['markets'];
 const { h2hSample } = __m['plays'];
 const { scanOne } = __m['scanner'];
@@ -3429,7 +3455,7 @@ async function viewPlays(root, r) {
   let reg = [], players = [];
   const league = () => getLeague();
   // European competitions: All games / competition only (set in Hiwi or Finder); head-to-head: every meeting PropLab holds
-  const teamRowsFor = slug => (isCup(league()) ? teamRowsScoped(slug, scopeFor(league())) : teamRowsDom(slug));
+  const teamRowsFor = slug => clubRows(slug, league()); // clubs with European matches: the remembered matches-used choice (All games by default)
   const teams = () => teamsOfLeague(league()).slice().sort((a, b) => a.name.localeCompare(b.name));
   const fixtures = () => upcomingFixtures(league());
   const minPct = () => prefs.minPct;
@@ -3458,7 +3484,7 @@ async function viewPlays(root, r) {
     const one = ui.kind === 'match' ? fs.find(f => fixtureId(f) === ui.game) : null;
     ctl.innerHTML = `${leagueSelect()}
       <div class="field"><label>Research</label>${seg('kind', kinds, ui.kind)}</div>${picker}
-      ${isCup(lg) && ui.kind !== 'player' ? `<div class="field"><label>Matches used</label>${seg('src', scopeOpts(lg).map(([v, l]) => [v === lg ? 'cup' : v, l]), getUclScope())}<span class="xs muted">All games (default) = league + European matches; Domestic league only = the clubs' league matches; ${esc(leagueName(lg))} only = European matches (goals markets only). Shared with Hiwi and Finder.</span></div>` : ''}
+      ${(isCup(lg) || ts.some(t => hasEuropean(t.slug))) && ui.kind !== 'player' ? `<div class="field"><label>Matches used${isCup(lg) ? '' : ' (clubs with European matches)'}</label>${seg('src', scopeOpts(isCup(lg) ? lg : 'eu').map(([v, l]) => [v === 'all' || v === 'dom' ? v : 'cup', l]), getUclScope())}<span class="xs muted">All games (default) = league + European matches; Domestic league only = league matches; ${isCup(lg) ? esc(leagueName(lg)) + ' only' : 'European matches only'} = European matches (goals markets only). Clubs without European matches always use their league matches. Shared with Hiwi and Finder.</span></div>` : ''}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only.</span></div>
       <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), minPct(), 'grid')}</div>
       <div class="field"><label>Direction</label>${seg('side', [['both', 'Over and Under'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
@@ -3498,7 +3524,7 @@ async function viewPlays(root, r) {
       const resH = scanTeam(hs, ui.gvH, f.date), resA = scanTeam(as, ui.gvA, f.date);
       const oH = { scopeOf: x => fbScope(x.def.key, f.home), sample: sampleText(ui.gvH), subj: { name: f.home, slug: hs, type: 'team' } };
       const oA = { scopeOf: x => fbScope(x.def.key, f.away), sample: sampleText(ui.gvA), subj: { name: f.away, slug: as, type: 'team' } };
-      const hh = h2hSample(isCup(league()) ? teamRowsScoped(hs, scopeFor(league())) : teamRowsDom(hs), as, f.date);
+      const hh = h2hSample(clubRows(hs, league()), as, f.date);
       const resHH = hh.ok ? scanOne(hh.rows, fbTeamMarkets(lg).filter(m => m.key.startsWith('m.')), { lines, sides: sides(), minPct: pct, last: 0 }) : null;
       const labHH = hh.ok ? (hh.n === 1 ? 'the only meeting' : `last ${hh.n} meetings`) : '';
       const oHH = { scope: `both teams, ${labHH}`, sample: labHH, subj: { name: `${f.home} v ${f.away}`, slug: hs, type: 'team', h2h: true } };
@@ -3570,7 +3596,7 @@ return { PCTS, PLAY_ORDERS, viewPlays };
 })();
 __m['v-match'] = (() => {
 const { store, teamRowsFor, teamSlugOf, newsForTeam, refereeProfile, teamsOfLeague, currentSeason, isCup, teamRowsScoped } = __m['data'];
-const { scopeFor } = __m['v-hiwi'];
+const { scopeFor, clubRows } = __m['v-hiwi'];
 const { TEAM_MARKETS, marketRows, marketsWithData, defaultLine, stepLine } = __m['markets'];
 const { TEAM_PLAY_MARKETS, dotsFor, h2hSample } = __m['plays'];
 const { hitRate } = __m['analytics'];
@@ -3593,7 +3619,7 @@ async function viewMatch(root, r) {
   const H = store.teams.get(hs).name, A = store.teams.get(as).name;
   const before = rows => rows.filter(x => !date || x.date < date);
   // a European fixture uses the All games / competition-only choice (head-to-head: every meeting, league or European)
-  const cup = fx && isCup(fx.league), trs = slug => (cup ? teamRowsScoped(slug, scopeFor(fx.league)) : teamRowsFor(slug));
+  const cup = fx && isCup(fx.league), trs = slug => clubRows(slug, fx ? fx.league : store.teams.get(slug)?.league);
   const rowsH = before(trs(hs)), rowsA = before(trs(as));
   const lg = cup ? fx.league : store.teams.get(hs).league;
   const has = new Set(marketsWithData(teamsOfLeague(lg).flatMap(t => teamRowsFor(t.slug)), TEAM_MARKETS).map(m => m.key));
@@ -3632,7 +3658,7 @@ async function viewMatch(root, r) {
     const key = ui.market, def = TEAM_PLAY_MARKETS.find(m => m.key === key), bin = !!def.binary, isMatch = key.startsWith('m.');
     $('#lbar', root).hidden = bin; $('#sidef', root).hidden = bin; if (bin) { ui.side = 'over'; ui.line = 0.5; }
     const sH = sampleOf(rowsH, key, ui.vH), sA = sampleOf(rowsA, key, ui.vA);
-    const hh = h2hSample(cup ? before(teamRowsScoped(hs, scopeFor(fx.league))) : rowsH, as, date || '9999-12-31', { homeOnly: ui.hv === 'venue' });
+    const hh = h2hSample(before(trs(hs)), as, date || '9999-12-31', { homeOnly: ui.hv === 'venue' });
     let note = '';
     if (ui.line === null) {
       const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
@@ -3669,7 +3695,7 @@ return { viewMatch };
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
 const { infoTag } = __m['info'];
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped, COMP_SHORT } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped, COMP_SHORT, hasEuropean } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
 const { applyFilters } = __m['research'];
@@ -3677,7 +3703,7 @@ const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
 const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg } = __m['util'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
-const { getUclScope, setUclScope, scopeFor, finderScopeOpts } = __m['v-hiwi'];
+const { getUclScope, setUclScope, scopeFor, finderScopeOpts, clubRows } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES } = __m['data'];
 
@@ -3731,7 +3757,7 @@ async function viewTrends(root, r) {
   const leagueTeams = () => { const tod = ui.today ? playingToday() : null; const both = lgs.some(x => !isCup(x)) && lgs.some(isCup); // a club in its league and in a European competition is listed once per competition: domestic, and (UCL) / (UEL) / (UECL)
     return lgs.flatMap(l => teamsOfLeague(l).map(t => ({ ...t, lg: l, key: isCup(l) ? `${l}:${t.slug}` : t.slug, name: isCup(l) && (both || lgs.filter(isCup).length > 1) ? `${t.name} (${COMP_SHORT[l]})` : t.name }))).filter(t => !tod || tod.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
   // European entries use All games / own competition only (shared with Hiwi); domestic entries use domestic matches as before
-  const rowsOfT = t => (isCup(t.lg) ? teamRowsScoped(t.slug, scopeFor(t.lg)) : teamRowsFor(t.slug));
+  const rowsOfT = t => clubRows(t.slug, t.lg); // European clubs: All games / Domestic / European choice everywhere (20 Oct)
   const selSet = () => { const k = lgs.join(',') + (ui.today ? '|today' : ''); if (!ui.sel[k]) ui.sel[k] = new Set(leagueTeams().map(t => t.key)); return ui.sel[k]; };
   const lgLabel = () => leaguesLabel(lgs);
   const teamMarkets = () => { const rows = leagueTeams().flatMap(t => rowsOfT(t)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)); };
@@ -3751,7 +3777,7 @@ async function viewTrends(root, r) {
 
   // ---- default exact line: from the real values in the sample being researched (goals markets have fixed defaults) ----
   const sampleValues = async (rows, key, venue, before) => { const m = (isPlayerKey(key) ? PLAYER_MARKETS : TEAM_MARKETS).find(x => x.key === key); if (!m) return []; const rs = before ? rows.filter(x => x.date < before) : rows; return applyFilters(marketRows(rs, m), { ...period(), last: period().last || null, venue }).map(x => x.value); };
-  const subjectsRows = async (slugs) => { if (isPlayerKey(ui.exKey)) { const ps = await playerSubjects(); return ps.filter(p => slugs.includes(p.clubSlug)).map(p => p.rows); } return slugs.map(s => (s.includes(':') ? teamRowsScoped(s.split(':')[1], scopeFor(s.split(':')[0])) : teamRowsFor(s))); };
+  const subjectsRows = async (slugs) => { if (isPlayerKey(ui.exKey)) { const ps = await playerSubjects(); return ps.filter(p => slugs.includes(p.clubSlug)).map(p => p.rows); } return slugs.map(s => (s.includes(':') ? clubRows(s.split(':')[1], s.split(':')[0]) : clubRows(s, ''))); };
   const computeDefault = async () => {
     const key = ui.exKey; const def = allMarkets().find(m => m.key === key); if (!def) return;
     if (def.binary) { ui.exLine = 0.5; defNote = ''; return; }
@@ -3777,7 +3803,7 @@ async function viewTrends(root, r) {
     const byDay = new Map(), tbcFx = fx.filter(f => !f.ko_utc); for (const f of fx.filter(f => f.ko_utc)) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const f = ui.mode === 'game' ? curFixture() : null;
     ctl.innerHTML = `${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'flg' })}
-      ${lgs.some(isCup) ? `<div class="field"><label>European competitions: matches used</label>${seg('uscope', finderScopeOpts(lgs.filter(isCup)), getUclScope())}<span class="xs muted">All games (default) = each club's matches in every competition PropLab holds (league, Champions League, Europa League, Conference League), in date order, competition shown on every match. Domestic league only = its league matches (e.g. Porto: Liga Portugal); clubs whose league PropLab does not cover have none. ${lgs.filter(isCup).length === 1 ? `${leagueName(lgs.find(isCup))} only` : 'European competition only'} = only that competition's matches, across seasons (goals markets only). Each market uses only the matches that record it; missing statistics never count as 0.</span></div>` : ''}
+      ${lgs.some(isCup) || leagueTeams().some(t => hasEuropean(t.slug)) ? `<div class="field"><label>Matches used (clubs with European matches)</label>${seg('uscope', finderScopeOpts(lgs.filter(isCup).length ? lgs.filter(isCup) : ['eu']), getUclScope())}<span class="xs muted">All games (default) = each club's matches in every competition PropLab holds (league, Champions League, Europa League, Conference League), in date order, competition shown on every match. Domestic league only = its league matches (e.g. Porto: Liga Portugal); clubs whose league PropLab does not cover have none. ${lgs.filter(isCup).length === 1 ? `${leagueName(lgs.find(isCup))} only` : 'European competition only'} = only that competition's matches, across seasons (goals markets only). Each market uses only the matches that record it; missing statistics never count as 0.</span></div>` : ''}
       <div class="field"><label>Research mode</label>${seg('mode', [['browse', 'Browse teams'], ['game', 'Select game']], ui.mode)}</div>
       ${ui.mode === 'browse' ? `<details class="teamsel" id="tsel"><summary><b>Teams</b> <span id="tcount">${set.size === tms.length ? `All ${tms.length} teams selected` : `${set.size} team${set.size === 1 ? '' : 's'} selected`}</span></summary>
         <div class="stack" style="margin-top:10px"><input class="in" id="tq" type="search" placeholder="Search clubs" value="${esc(ui.tq)}" aria-label="Search clubs">
@@ -3808,7 +3834,7 @@ async function viewTrends(root, r) {
 
   // This season's games / matches with a recorded value for the market (shown on each result).
   const csMemo = new Map(), csOf = lg => { if (!csMemo.has(lg)) csMemo.set(lg, currentSeason(lg)); return csMemo.get(lg); };
-  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); const cs = csOf(x.subject.lg); const rs = (x.subject.allRows || x.subject.rows).filter(r => (isCup(x.subject.lg) && x.subject.type === 'team' ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === x.subject.lg))); return full ? marketRows(rs, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
+  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); const cs = csOf(x.subject.lg); const rs = (x.subject.allRows || x.subject.rows).filter(r => (x.subject.type === 'team' && r.league ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === x.subject.lg))); return full ? marketRows(rs, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
   // Football has no Minimum Games Played (owner request 20 Oct; NFL only). Every result with a hit rate is kept; the count is still shown.
   const applyMin = res => { for (const x of res) x.validN = validN(x); return { keep: res, hid: [] }; };
   const hiddenHtml = hid => { if (!hid.length) return ''; const mg = 0; const seen = new Map(); for (const x of hid) { const k = x.subject.type + '|' + x.subject.id + '|' + x.def.key; if (!seen.has(k)) seen.set(k, x); } const l = [...seen.values()];
@@ -3857,7 +3883,7 @@ async function viewTrends(root, r) {
   };
   const oneGame = async f => {
     const hs = teamSlugOf(f.home), as = teamSlugOf(f.away), before = rows => rows.filter(x => x.date < f.date);
-    const rowsF = slug => (isCup(f.league) ? teamRowsScoped(slug, scopeFor(f.league)) : teamRowsFor(slug)); // European game: All games / competition only
+    const rowsF = slug => clubRows(slug, f.league); // a club with European matches: the remembered matches-used choice
     const subj = (slug, name) => ({ id: slug, lg: f.league, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(rowsF(slug)), allRows: before(rowsF(slug)) });
     const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKick(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
     const section = async (slug, name, venue) => {
@@ -3871,7 +3897,7 @@ async function viewTrends(root, r) {
     };
     html += await section(hs, f.home, ui.gvH) + await section(as, f.away, ui.gvA);
     const atVenue = ui.hvenue === 'venue';
-    const hh = h2hSample(isCup(f.league) ? teamRowsScoped(hs, scopeFor(f.league)) : teamRowsFor(hs), as, f.date, { homeOnly: atVenue }); // European game: the meetings in the chosen source
+    const hh = h2hSample(clubRows(hs, f.league), as, f.date, { homeOnly: atVenue }); // European game: the meetings in the chosen source
     html += `<section class="sec"><h2>${esc(f.home)} v ${esc(f.away)} — head to head <span class="muted small">(${atVenue ? `only meetings at ${esc(f.home)}` : 'all meetings, either venue'})</span></h2>`;
     if (!hh.ok) html += `<div class="banner info hnoh2h"><b>No H2H data.</b> No ${atVenue ? `meetings at ${esc(f.home)}` : 'meetings between these teams'} are in PropLab's published league records. Nothing is filled in. Both teams' recent form is still shown above.</div>`;
     else {
@@ -3980,7 +4006,7 @@ const sortTh = (st, key, label) => {
 return { nextSort, sortRows, sortTh };
 })();
 __m['v-table'] = (() => {
-const { store, loadAllPlayerRows, teamRowsFor, teamsOfLeague, leagueName, currentSeason, isCup, teamRowsScoped, COMP_SHORT } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, teamsOfLeague, leagueName, currentSeason, isCup, teamRowsScoped, COMP_SHORT, hasEuropean } = __m['data'];
 const { TEAM_MARKETS, SELECTABLE_TEAM_MARKETS, PLAYER_MARKETS, marketRows, marketsWithData, defaultLine, stepLine, marketName, marketDesc } = __m['markets'];
 const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
@@ -3989,7 +4015,7 @@ const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, openGraphModa
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { $, $$, esc, fmt, avg, koLocal, koUK, fmtDay, fxStatus, statusBadge, fixtureId, tzNow } = __m['util'];
-const { getUclScope, setUclScope, scopeFor, finderScopeOpts } = __m['v-hiwi'];
+const { getUclScope, setUclScope, scopeFor, finderScopeOpts, clubRows, clubScopeIn } = __m['v-hiwi'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES, selectableFixtures, teamSlugOf } = __m['data'];
@@ -4032,7 +4058,7 @@ async function viewTable(root) {
     ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p></div>
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Matches</label><div class="seg grid" id="lt">${[[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-      ${lgs.some(isCup) && ui.mode === 'teams' ? `<div class="field"><label>European competitions: matches used</label><div class="seg wrap" id="usc">${finderScopeOpts(lgs.filter(isCup)).map(([v, l]) => `<button data-v="${v}" class="${getUclScope() === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
+      ${(lgs.some(isCup) || lgTeams().some(t => hasEuropean(t.slug))) && ui.mode === 'teams' ? `<div class="field"><label>Matches used (clubs with European matches)</label><div class="seg wrap" id="usc">${finderScopeOpts(lgs.filter(isCup).length ? lgs.filter(isCup) : ['eu']).map(([v, l]) => `<button data-v="${v}" class="${getUclScope() === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div>
       <div class="field"><label for="tord">Sort</label><select class="in" id="tord">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
       ${m?.binary ? '<p class="small muted" style="margin:0">Both teams to score is Yes only: no line to set.</p>' : `<div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p>`}</div>`;
@@ -4040,7 +4066,7 @@ async function viewTable(root) {
   const sample = async () => {
     const m = curMarket(); if (!m) return { items: [], m };
     const both = lgs.some(x => !isCup(x)) && lgs.some(isCup);
-    if (ui.mode === 'teams') return { m, items: lgTeams().map(t => ({ id: isCup(t.lg) ? `${t.lg}:${t.slug}` : t.slug, name: isCup(t.lg) && (both || lgs.filter(isCup).length > 1) ? `${t.name} (${COMP_SHORT[t.lg]})` : t.name, lg: t.lg, sub: multi() ? LEAGUE_NAMES[t.lg] + (isCup(t.lg) ? ` · ${scopeFor(t.lg) === 'all' ? 'All games' : scopeFor(t.lg) === 'dom' ? 'Domestic league only' : 'Competition only'}` : '') : '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(isCup(t.lg) ? teamRowsScoped(t.slug, scopeFor(t.lg)) : teamRowsFor(t.slug), m), fx: fxOfTeam(t.slug), side: (f => (f ? (teamSlugOf(f.home) === t.slug ? 0 : 1) : 2))(fxOfTeam(t.slug)) })) };
+    if (ui.mode === 'teams') return { m, items: lgTeams().map(t => ({ id: isCup(t.lg) ? `${t.lg}:${t.slug}` : t.slug, name: isCup(t.lg) && (both || lgs.filter(isCup).length > 1) ? `${t.name} (${COMP_SHORT[t.lg]})` : t.name, lg: t.lg, sub: multi() ? LEAGUE_NAMES[t.lg] + (clubScopeIn(t.slug, t.lg) ? ` · ${clubScopeIn(t.slug, t.lg) === 'all' ? 'All games' : clubScopeIn(t.slug, t.lg) === 'dom' ? 'Domestic league only' : 'European only'}` : '') : '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(clubRows(t.slug, t.lg), m), fx: fxOfTeam(t.slug), side: (f => (f ? (teamSlugOf(f.home) === t.slug ? 0 : 1) : 2))(fxOfTeam(t.slug)) })) };
     if (!players) players = await loadAllPlayerRows();
     const tod = ui.today ? todaySlugs() : null; const sfx = selFx(); const fsl = sfx.length ? new Set(sfx.flatMap(f => [teamSlugOf(f.home), teamSlugOf(f.away)])) : null;
     return { m, items: [...players.values()].filter(p => lgs.includes(p.league) && (!tod || tod.has(teamSlugOf(p.team))) && (!fsl || fsl.has(teamSlugOf(p.team)))).map(p => { const f = fxOfTeam(teamSlugOf(p.team)); return { id: p.id, name: p.name, lg: p.league, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes'), fx: f, side: f ? (teamSlugOf(f.home) === teamSlugOf(p.team) ? 0 : 1) : 2 }; }) };
@@ -4051,7 +4077,7 @@ async function viewTable(root) {
     if (!items.length || !m) { out.innerHTML = `<div class="banner info">${ui.today && !items.length ? `No ${ui.mode} in ${esc(leaguesLabel(lgs))} play today (UK date).` : 'No data available for this market.'}</div>`; return; }
     const hidden = []; const csM = new Map(), csOf = lg => { if (!csM.has(lg)) csM.set(lg, currentSeason(lg)); return csM.get(lg); };
     // this season's matches / games with the statistic: shown in each row ("N this season")
-    const valid = it => { const cs = csOf(it.lg); return it.rows.filter(r => (isCup(it.lg) && ui.mode === 'teams' ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === it.lg)) && r.value !== null && r.value !== undefined).length; };
+    const valid = it => { const cs = csOf(it.lg); return it.rows.filter(r => (ui.mode === 'teams' && r.league ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === it.lg)) && r.value !== null && r.value !== undefined).length; }; // teams: this season in each row's own competition (rows already follow Matches used)
     // Football has no Minimum Games Played (owner request 20 Oct, NFL only): every club / player with a recorded figure in the chosen sample is ranked;
     // one with nothing recorded in that sample has nothing to rank and is left out (never shown as 0).
     const filt = items.map(it => { it.validN = valid(it); return { it, f: applyFilters(it.rows, { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(it.lg) : null, venue: ui.venue }) }; }).filter(x => x.f.some(r => r.value !== null && r.value !== undefined));
