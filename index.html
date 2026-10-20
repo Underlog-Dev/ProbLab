@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="4c6eb635cc99">
+<meta name="proplab-build" content="ebc632d86b03">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -353,6 +353,7 @@ svg.calib{width:100%;height:auto}.calib .cbox{fill:none;stroke:var(--line)}.cali
 .hscopesel .seg button{max-width:none;overflow:visible;text-overflow:clip;white-space:normal}
 .hb.stacked .hbres{height:4px;min-height:4px;display:block}
 .hbars:has(.hb.stacked){--barbase:40px}
+.hseg.oy{background:#fff0a6;color:#3a3000}.hseg.or{background:#d98d98;color:#2a0008}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1254,21 +1255,46 @@ const marketScope = key => (key.startsWith('t.') ? 'team' : key.startsWith('o.')
 const OVER_ONLY = ['goals', 'assists', 'goal_contrib', 'yellow_cards', 'red_cards', 'm.reds', 't.reds', 'o.reds'];
 for (const m of [...TEAM_MARKETS, ...PLAYER_MARKETS]) if (OVER_ONLY.includes(m.key)) m.overOnly = true;
 
-/** Split bars (owner requests: Cards 19 Oct, Match Goals 20 Oct). For one row (from the selected team's side) the parts that make up
- *  the total, bottom to top, as [[value, kind], ...]: Match Goals = goals scored by the selected team ('gs') + goals conceded ('gc');
- *  Cards = yellow ('y') + red ('r'). null when the market has no split or a part is missing (then no split is drawn; never 0). */
+/** Split bars (owner requests: Cards 19 Oct; Match Goals 20 Oct; every combined-team market 20 Oct evening). For one row, taken from the
+ *  selected team's side (home or away alike), the parts that make up the total, bottom to top, as [[value, kind], ...]:
+ *    combined-team markets: the selected team's figure ('gs' = for / scored) + the opponent's ('gc' = against / conceded);
+ *    Match Cards: team yellow ('y') + team red ('r') + opponent yellow ('oy') + opponent red ('or');
+ *    Team Cards (team only): yellow ('y') + red ('r').
+ *  null when the market has no split or any part is missing: no split is drawn and nothing is filled in (never 0). The O/U test always
+ *  uses the market's own total, which is only known when both parts are recorded. */
+const PAIR = { 'm.goals': 'goals', 'm.htgoals': 'htgoals', 'm.shots': 'shots', 'm.sot': 'sot', 'm.corners': 'corners', 'm.fouls': 'fouls' };
+const known = (...v) => v.every(x => x !== null && x !== undefined);
 const splitParts = (key, r) => {
   if (!r) return null;
   const k = (key || '').replace(/^\w+:/, '');
-  if (k === 'm.goals') return r.goals == null || r.goalsA == null ? null : [[r.goals, 'gs'], [r.goalsA, 'gc']];
-  if (k === 'm.cards') return [r.yellows, r.yellowsA, r.reds, r.redsA].some(v => v == null) ? null : [[r.yellows + r.yellowsA, 'y'], [r.reds + r.redsA, 'r']];
-  if (k === 't.cards') return r.yellows == null || r.reds == null ? null : [[r.yellows, 'y'], [r.reds, 'r']];
+  if (PAIR[k]) { const a = r[PAIR[k]], b = r[PAIR[k] + 'A']; return known(a, b) ? [[a, 'gs'], [b, 'gc']] : null; }
+  if (k === 'm.cards') return known(r.yellows, r.reds, r.yellowsA, r.redsA) ? [[r.yellows, 'y'], [r.reds, 'r'], [r.yellowsA, 'oy'], [r.redsA, 'or']] : null;
+  if (k === 'm.yellows') return known(r.yellows, r.yellowsA) ? [[r.yellows, 'y'], [r.yellowsA, 'oy']] : null;
+  if (k === 'm.reds') return known(r.reds, r.redsA) ? [[r.reds, 'r'], [r.redsA, 'or']] : null;
+  if (k === 't.cards') return known(r.yellows, r.reds) ? [[r.yellows, 'y'], [r.reds, 'r']] : null;
   return null;
 };
-const SPLIT_LEGEND = { 'm.goals': [['gs', 'scored'], ['gc', 'conceded']], 'm.cards': [['y', 'yellow'], ['r', 'red']], 't.cards': [['y', 'yellow'], ['r', 'red']] };
-const SPLIT_COLOURS = { gs: ['#7fb2ff', '#08142a'], gc: ['#56627a', '#ffffff'], y: ['#f5c518', '#1a1400'], r: ['#7a0f1f', '#ffffff'] };
+const hasSplit = key => !!(PAIR[key] || ['m.cards', 'm.yellows', 'm.reds', 't.cards'].includes(key));
+const WHAT = { 'm.goals': 'goals', 'm.htgoals': 'first-half goals', 'm.shots': 'shots', 'm.sot': 'shots on target', 'm.corners': 'corners', 'm.fouls': 'fouls' };
+/** Legend for a split market: [[kind, text], ...]. me = the team the bars are about; other = the opponent's name (H2H) or null. */
+const splitLegend = (key, me = 'the selected team', other = null) => {
+  const opp = other || 'the opponent';
+  if (key === 'm.goals' || key === 'm.htgoals') return [['gs', `${WHAT[key]} ${me} scored`], ['gc', other ? `${WHAT[key]} ${other} scored` : `${WHAT[key]} conceded`]];
+  if (PAIR[key]) return [['gs', `${me}'s ${WHAT[key]} (for)`], ['gc', `${opp}'s ${WHAT[key]} (against)`]];
+  if (key === 'm.cards') return [['y', `${me}: yellow`], ['r', `${me}: red`], ['oy', `${opp}: yellow`], ['or', `${opp}: red`]];
+  if (key === 'm.yellows') return [['y', `${me}'s yellow cards`], ['oy', `${opp}'s yellow cards`]];
+  if (key === 'm.reds') return [['r', `${me}'s red cards`], ['or', `${opp}'s red cards`]];
+  if (key === 't.cards') return [['y', 'yellow'], ['r', 'red']];
+  return null;
+};
+/** One sentence for a card's note. */
+const splitSentence = (key, me, other = null) => { const l = splitLegend(key, me, other); if (!l || key === 't.cards') return '';
+  if (key === 'm.cards') return ` Lower part = cards shown to ${me} (yellow, red), upper paler part = cards shown to ${other || 'the opponent'}; the strip under each bar shows hit / miss for the total.`;
+  return ` Lower part = ${l[0][1]}, upper part = ${l[1][1]}; the strip under each bar shows hit / miss for the total.`; };
+const SPLIT_LEGEND = Object.fromEntries(['m.goals', 'm.htgoals', 'm.shots', 'm.sot', 'm.corners', 'm.fouls', 'm.cards', 'm.yellows', 'm.reds', 't.cards'].map(k => [k, splitLegend(k)]));
+const SPLIT_COLOURS = { gs: ['#7fb2ff', '#08142a'], gc: ['#56627a', '#ffffff'], y: ['#f5c518', '#1a1400'], r: ['#7a0f1f', '#ffffff'], oy: ['#fff0a6', '#3a3000'], or: ['#d98d98', '#2a0008'] };
 
-return { PLAYER_MARKETS, TEAM_MARKETS, RETIRED_MARKETS, SELECTABLE_TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, stepLine, marketName, marketDesc, marketScope, OVER_ONLY, splitParts, SPLIT_LEGEND, SPLIT_COLOURS };
+return { PLAYER_MARKETS, TEAM_MARKETS, RETIRED_MARKETS, SELECTABLE_TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, stepLine, marketName, marketDesc, marketScope, OVER_ONLY, splitParts, hasSplit, splitLegend, splitSentence, SPLIT_LEGEND, SPLIT_COLOURS };
 })();
 __m['analytics'] = (() => {
 // Pure maths. No network, no storage, no DOM. Everything here is unit-tested.
@@ -1585,7 +1611,7 @@ return { FOOTBALL_RANGES, researchLines, rangeText };
 __m['hiwi-markets'] = (() => {
 // Market catalogue for Hiwi's Section: groups, scopes, starting lines, line bounds and bar composition.
 // A market is only offered when the selected league's (or NFL's) own data records it; nothing here creates values.
-const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketName, marketDesc } = __m['markets'];
+const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketName, marketDesc, splitParts, hasSplit } = __m['markets'];
 const { NFL_MARKETS, NFL_TEAM_MARKETS } = __m['nfl-markets'];
 const { FOOTBALL_RANGES } = __m['lines'];
 
@@ -1620,9 +1646,9 @@ const SCOPE_LABEL = { match: 'Match total', team: 'Team', opp: 'Opponent', playe
 /** A football market definition for Hiwi: { key, label, desc, scope, binary, get, parts }. */
 function fbDef(key) {
   const c = CARD_MARKETS.find(m => m.key === key);
-  if (c) return { ...c, scope: scopeOf(key) };
+  if (c) return { ...c, scope: scopeOf(key), parts: hasSplit(key) ? r => splitParts(key, r) || [] : c.parts };
   const t = TEAM_MARKETS.find(m => m.key === key), p = PLAYER_MARKETS.find(m => m.key === key), m = t || p; if (!m) return null;
-  return { ...m, label: marketName(key, m.label), desc: marketDesc(key), scope: scopeOf(key), parts: PARTS[key] || null, exposureKey: p ? 'minutes' : null };
+  return { ...m, label: marketName(key, m.label), desc: marketDesc(key), scope: scopeOf(key), parts: hasSplit(key) ? r => splitParts(key, r) || [] : PARTS[key] || null, exposureKey: p ? 'minutes' : null };
 }
 /** Supported football markets for a league: those with at least one recorded value in the league's team rows / player rows. */
 function fbSupported(teamRows, playerRows) {
@@ -1661,7 +1687,7 @@ __m['panel'] = (() => {
 const { hitRate } = __m['analytics'];
 const { applyFilters, buildSplits } = __m['research'];
 const { drawBars, barAt } = __m['charts'];
-const { marketRows, defaultLine, stepLine, typicalLine: tl, splitParts, SPLIT_LEGEND, SPLIT_COLOURS } = __m['markets'];
+const { marketRows, defaultLine, stepLine, typicalLine: tl, splitParts, splitLegend, SPLIT_LEGEND, SPLIT_COLOURS } = __m['markets'];
 const { $, $$, esc, fmt, fmtShort, fmtLong } = __m['util'];
 const { lineBounds } = __m['hiwi-markets'];
 
@@ -1741,7 +1767,7 @@ function researchPanel(root, cfg) {
     const fmtV = v => (binary ? (v ? 'Yes' : 'No') : String(v));
     const showClub = cfg.subject === 'player' && new Set(all.map(r => r.club).filter(Boolean)).size > 1; // a player who changed clubs: show who he played for
     out.innerHTML = `<div class="hitsum"><b class="${hitCls}">${hr.hitPct === null ? 'n/a' : hr.hitPct + '%'}</b>${both && hrU.n ? ` <b class="hpu" title="Under">/ ${hrU.hitPct}%</b> <span class="xs muted">Over / Under</span>` : ''} <span>${hr.n ? hitsLine(hr, unit) : 'no ' + u} · ${esc(sampleLabel(st.last, st.venue, hr.n, unit))}${cfg.typesControl ? (st.types === 'RP' ? ' · regular season + postseason' : ' · regular season') : ''}${cfg.hasMinutes && st.minMin ? ` · ${st.minMin}+ minutes` : ''}</span></div>
-      ${hr.n ? '<canvas role="img" aria-label="Bar chart of each match against the line. Tap a bar for the match details."></canvas>' + (SPLIT_LEGEND[st.market] ? `<p class="xs muted splitleg">${SPLIT_LEGEND[st.market].map(([k, l]) => `<span class="sw" style="background:${SPLIT_COLOURS[k][0]}"></span>${st.market === 'm.goals' ? (k === 'gs' ? `goals ${esc(cfg.splitWho || 'the selected team')} scored` : (cfg.splitOther ? `goals ${esc(cfg.splitOther)} scored` : 'goals conceded')) : l}`).join(' &nbsp; ')} · strip under each bar = hit / miss for the total</p>` : '') + '<p class="xs muted barinfo" data-barinfo>Tap a bar to see the match.</p>' : `<div class="banner">No ${u} with published data for these filters. Nothing is estimated or filled in.</div>`}
+      ${hr.n ? '<canvas role="img" aria-label="Bar chart of each match against the line. Tap a bar for the match details."></canvas>' + (SPLIT_LEGEND[st.market] ? `<p class="xs muted splitleg">${splitLegend(st.market, cfg.splitWho || 'the selected team', cfg.splitOther || null).map(([k, l]) => `<span class="sw" style="background:${SPLIT_COLOURS[k][0]}"></span>${esc(l)}`).join(' &nbsp; ')}${st.market === 't.cards' ? '' : ' · strip under each bar = hit / miss for the total'}</p>` : '') + '<p class="xs muted barinfo" data-barinfo>Tap a bar to see the match.</p>' : `<div class="banner">No ${u} with published data for these filters. Nothing is estimated or filled in.</div>`}
       <div class="tiles">${tile(U, hr.n)}${tile('Hits', hr.hits)}${tile('Hit rate', hr.hitPct === null ? 'n/a' : hr.hitPct + '%', hitCls)}${tile(binary ? 'Both scored' : 'Average', binary ? (hr.n ? hr.hits + '/' + hr.n : 'n/a') : fmt(hr.avg))}${tile('Median', binary ? '–' : fmt(hr.median))}${tile('High / low', hr.n && !binary ? `${hr.max} / ${hr.min}` : binary ? '–' : 'n/a')}</div>
       <p class="small muted">${binary ? 'Both teams to score (Yes): a hit when both teams scored at least once.' : `${word} ${st.line} ${esc(market.label)}${market.note ? ' (' + esc(market.note) + ')' : ''}: a hit when the recorded figure is ${st.side === 'under' ? 'below' : 'above'} ${st.line}.`} A hit rate describes the past. It is not the chance it happens next time, and it says nothing about whether a bookmaker's price is good value.</p>
       ${hr.n && hr.n < 8 ? `<div class="banner"><b>Small sample.</b> Only ${hr.n} ${hr.n > 1 ? u : unit} with data. Treat this as a rough guide.</div>` : ''}
@@ -1751,7 +1777,7 @@ function researchPanel(root, cfg) {
       <h3>${unit === 'game' ? 'Game by game' : 'Match by match'} <span class="xs muted">(newest first)</span></h3><div class="scroll"><table><tr><th>Date</th>${showClub ? '<th>For</th>' : ''}<th>Opponent</th><th>H/A</th>${cfg.hasMinutes ? '<th>Min</th>' : ''}<th>${esc(market.label)}</th></tr>${filtered.map(r => { const h = st.side === 'under' ? r.value < st.line : r.value > st.line; return `<tr><td>${esc(dl(r.date))}</td>${showClub ? `<td>${esc(r.club || '')}</td>` : ''}<td>${esc(r.opp)}</td><td>${r.home ? 'H' : 'A'}</td>${cfg.hasMinutes ? `<td class="n">${fmt(r.minutes)}</td>` : ''}<td class="n ${h ? 'hit' : 'miss'}"><b>${esc(fmtV(r.value))}</b></td></tr>`; }).join('')}</table></div>` : ''}
       ${binary || cfg.noValueLink ? '' : `<div><a class="go" style="display:inline-flex;align-items:center" href="#/value?s=${cfg.subject}:${encodeURIComponent(cfg.subjectId)}&m=${encodeURIComponent(st.market)}&side=${st.side}&line=${st.line}">Compare with a price</a></div>`}`;
     const asc = [...filtered].reverse();
-    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>${cfg.detail ? cfg.detail(r, st.market) : ''}` : 'Tap a bar to see the match.'; };
+    const info = () => { const el = $('[data-barinfo]', out); if (!el) return; const r = asc[st.sel]; el.innerHTML = r ? `<b>${esc(fmtLong(r.date))}</b> · ${showClub && r.club ? 'for ' + esc(r.club) + ' · ' : ''}${r.home ? 'Home v' : 'Away at'} ${esc(r.opp)}${r.goals != null && r.goalsA != null && cfg.subject === 'team' ? ` (${r.goals}–${r.goalsA})` : ''}${cfg.hasMinutes && r.minutes != null ? ` · ${r.minutes} min` : ''} · ${esc(market.label)}: <b class="${(st.side === 'under' ? r.value < st.line : r.value > st.line) ? 'hit' : 'miss'}">${esc(fmtV(r.value))}</b>${(() => { const p = splitParts(st.market, r), l = p && splitLegend(st.market, cfg.splitWho || 'the selected team', cfg.splitOther || null); return p && l ? ` (${p.map(([v], i) => `${v} ${esc(l[i][1])}`).join(', ')})` : ''; })()}${cfg.detail ? cfg.detail(r, st.market) : ''}` : 'Tap a bar to see the match.'; };
     const draw = () => { const cv = $('canvas', out); if (cv && hr.n) { const sp = SPLIT_LEGEND[st.market] ? asc.map(r => splitParts(st.market, r)) : null; geo = drawBars(cv, { values: asc.map(r => r.value), labels: asc.map(r => dl(r.date)), line: st.line, side, fmtValue: fmtV, selected: st.sel, showLine: !binary, parts: sp && sp.some(Boolean) ? sp : null, partColours: SPLIT_COLOURS }); cv.onclick = e => { const i = barAt(cv, geo, e.clientX); st.sel = i === st.sel ? -1 : i; draw(); info(); }; } };
     if (st.sel >= asc.length) st.sel = -1;
     draw(); info(); panelRedraw = draw;
@@ -2617,6 +2643,7 @@ const { setLeague } = __m['shared'];
 const { leagueGameweek, nextLeagueGameweek, nflWeek, nflNextWeek } = __m['gameweek'];
 const { nflGameDetailHtml } = __m['nfl-markets'];
 const { getPopular, setPopular, getPlayerSort, setPlayerSort, nflHasProminence, mlsProminence } = __m['prominence'];
+const { splitSentence } = __m['markets'];
 const { FB_GROUPS, NFL_GROUPS, fbDef, nflDef, fbSupported, startLine, SCOPE_LABEL } = __m['hiwi-markets'];
 const { cardHtml, paintHCard, wireHCards, headRate } = __m['hiwicard'];
 const { infoTag } = __m['info'];
@@ -2893,8 +2920,8 @@ async function viewHiwi(root, r, sport) {
   // European fixtures (sc set): the meetings in the chosen source (All games = every meeting PropLab holds, league or European), each bar tagged
   const meetings = (h, a, sc) => (nflMode ? teamGameRows(h).filter(x => x.opp === a) : (sc ? teamRowsScoped(h, sc) : teamRowsFor(h)).filter(x => x.oppSlug === a));
   const oppLab = x => `${x.home ? 'v' : '@'}${nflMode ? x.opp : short(x.opp)}`;
-  // Match Goals split bars (20 Oct): bottom part = goals the named team scored, top part = goals it conceded; the hit / miss strip sits under the bar
-  const splitNote = (def, me, other) => (def.key === 'm.goals' ? ` Lower part = goals ${me} scored, upper part = goals ${other ? other + ' scored' : 'conceded'}; the strip under each bar shows hit / miss for the total.` : '');
+  // Split bars (20 Oct): every combined-team market shows the named team's part (bottom) and the opponent's (top); hit / miss strip under the bar
+  const splitNote = (def, me, other) => (nflMode ? '' : splitSentence(def.key, me, other || null));
   const meaning = (def, nm) => (def.scope === 'match' ? `both teams combined in each of ${nm}'s matches` : def.scope === 'opp' ? `by ${nm}'s opponents in each match` : `${nm}'s own figure in each match`);
   const dirNote = (def, me, other) => (def.scope === 'opp' ? `Each bar: ${def.label} for ${me}, i.e. ${other}'s own figure, in one actual meeting between them.` : `Each bar: ${me}'s own ${def.label.replace(/^Team /, '').toLowerCase()} in one actual meeting with ${other} (not both teams added together).`);
   const U = nflMode ? 'game' : 'match';
