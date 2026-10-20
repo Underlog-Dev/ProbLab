@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="de6a586d0a86">
+<meta name="proplab-build" content="793f5be7e26b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -333,6 +333,11 @@ svg.calib{width:100%;height:auto}.calib .cbox{fill:none;stroke:var(--line)}.cali
 .hhidden{margin:6px 0 10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.hhidden ul{margin:6px 0 0;padding-left:18px}
 /* M4: 320px phones (iPhone SE 1st gen): segmented buttons wrap instead of widening the page */
 @media(max-width:360px){.seg{flex-wrap:wrap}.seg button{padding:8px 9px;font-size:13px;white-space:normal}}
+/* M5: Champions League scope switch and competition tag under each bar */
+.hscopesel .seg button{font-size:13px;padding:6px 10px}
+.hscnote{margin:2px 0 4px}
+.hbc{display:block;font-size:9px;line-height:1.2;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.hbc.c-ucl{color:#7aa2ff}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -393,6 +398,13 @@ const GROUPS = [
   ['telstar', 'telstar 1963'], ['heerenveen', 'sc heerenveen'], ['groningen', 'fc groningen'], ['go ahead eagles'], ['heracles', 'heracles almelo'], ['nac breda'], ['sparta rotterdam'], ['emmen', 'fc emmen'], ['volendam', 'fc volendam'], ['waalwijk', 'rkc waalwijk'],
   // Scotland
   ['hearts', 'heart of midlothian'], ['celtic'], ['rangers'], ['aberdeen'], ['hibernian', 'hibs'], ['dundee united', 'dundee utd'], ['dundee'], ['kilmarnock'], ['motherwell'], ['st mirren'], ['st johnstone'], ['ross county'], ['livingston'], ['falkirk'],
+  // Other UEFA Champions League clubs (2021/22 onwards). Spellings from Wikipedia's season articles.
+  ['bodo glimt', 'bod glimt', 'fk bodo glimt', 'bodo/glimt'], ['aek athens', 'aek', 'aek athens fc'], ['lask', 'lask linz'], ['malmo ff', 'malmo'], ['besiktas', 'besiktas jk'], ['fenerbahce', 'fenerbahce sk'],
+  ['galatasaray', 'galatasaray sk'], ['qarabag', 'qarabag fk'], ['viktoria plzen', 'plzen', 'fc viktoria plzen'], ['union saint gilloise', 'union sg', 'royale union saint gilloise', 'union st gilloise'],
+  ['zenit saint petersburg', 'zenit', 'zenit st petersburg'], ['red bull salzburg', 'salzburg', 'rb salzburg', 'fc red bull salzburg'], ['copenhagen', 'fc copenhagen', 'kobenhavn', 'fc kobenhavn'],
+  ['shakhtar donetsk', 'shakhtar'], ['dynamo kyiv', 'dynamo kiev', 'dinamo kiev'], ['club brugge', 'brugge', 'club brugge kv'], ['antwerp', 'royal antwerp'], ['dinamo zagreb', 'gnk dinamo zagreb'],
+  ['red star belgrade', 'crvena zvezda', 'red star'], ['sheriff tiraspol', 'sheriff'], ['slavia prague', 'slavia praha', 'sk slavia prague'], ['sparta prague', 'sparta praha'], ['slovan bratislava', 'sk slovan bratislava'],
+  ['young boys', 'bsc young boys'], ['sturm graz', 'sk sturm graz'], ['olympiacos', 'olympiakos'], ['maccabi haifa'], ['kairat', 'kairat almaty'], ['pafos', 'pafos fc'], ['sabah', 'sabah fk'], ['viking', 'viking fk'],
   // USA / Canada (MLS)
   ['atlanta united', 'atlanta united fc', 'atlanta utd'], ['montreal', 'cf montreal', 'cf montréal', 'club de foot montreal'], ['charlotte', 'charlotte fc'], ['chicago fire', 'chicago fire fc', 'chicago'],
   ['columbus crew', 'columbus'], ['dc united', 'd c united', 'washington dc united'], ['cincinnati', 'fc cincinnati'], ['inter miami', 'inter miami cf', 'miami'], ['new england revolution', 'new england', 'ne revolution'],
@@ -422,6 +434,10 @@ const DISPLAY = { 'leeds': 'Leeds United', 'newcastle': 'Newcastle United', 'bri
   'inter miami': 'Inter Miami', 'new england revolution': 'New England Revolution', 'new york city': 'New York City FC', 'new york red bulls': 'New York Red Bulls', 'nashville': 'Nashville SC', 'orlando city': 'Orlando City',
   'philadelphia union': 'Philadelphia Union', 'toronto': 'Toronto FC', 'austin': 'Austin FC', 'colorado rapids': 'Colorado Rapids', 'dallas': 'FC Dallas', 'houston dynamo': 'Houston Dynamo', 'la galaxy': 'LA Galaxy',
   'los angeles': 'Los Angeles FC', 'minnesota united': 'Minnesota United', 'portland timbers': 'Portland Timbers', 'real salt lake': 'Real Salt Lake', 'san diego': 'San Diego FC', 'san jose earthquakes': 'San Jose Earthquakes',
+  'bodo glimt': 'Bodø/Glimt', 'aek athens': 'AEK Athens', 'lask': 'LASK', 'malmo ff': 'Malmö FF', 'besiktas': 'Beşiktaş', 'fenerbahce': 'Fenerbahçe', 'qarabag': 'Qarabağ', 'viktoria plzen': 'Viktoria Plzeň',
+  'union saint gilloise': 'Union Saint-Gilloise', 'zenit saint petersburg': 'Zenit Saint Petersburg', 'red bull salzburg': 'Red Bull Salzburg', 'club brugge': 'Club Brugge', 'psv eindhoven': 'PSV Eindhoven',
+  'red star belgrade': 'Red Star Belgrade', 'young boys': 'Young Boys', 'dinamo zagreb': 'Dinamo Zagreb', 'dynamo kyiv': 'Dynamo Kyiv', 'shakhtar donetsk': 'Shakhtar Donetsk', 'slavia prague': 'Slavia Prague',
+  'sparta prague': 'Sparta Prague', 'slovan bratislava': 'Slovan Bratislava', 'sturm graz': 'Sturm Graz', 'sheriff tiraspol': 'Sheriff Tiraspol', 'maccabi haifa': 'Maccabi Haifa',
   'seattle sounders': 'Seattle Sounders', 'sporting kansas city': 'Sporting Kansas City', 'st louis city': 'St. Louis City SC', 'vancouver whitecaps': 'Vancouver Whitecaps' };
 const titleCase = s => s.replace(/\b([a-z])/g, c => c.toUpperCase());
 const displayTeam = s => { const k = normTeam(s); return DISPLAY[k] || titleCase(k); };
@@ -533,7 +549,12 @@ __m['data'] = (() => {
 const { normName, teamSlug, normTeam, displayTeam } = __m['teams'];
 const { avg, isUpcoming, koUK, koLocal, fxStatus, recentlyCalledOff } = __m['util'];
 
-const LEAGUE_NAMES = { epl: 'Premier League', laliga: 'La Liga', bundesliga: 'Bundesliga', seriea: 'Serie A', ligue1: 'Ligue 1', ligaportugal: 'Liga Portugal', scotprem: 'Scottish Premiership', eredivisie: 'Eredivisie', mls: 'MLS' };
+const LEAGUE_NAMES = { epl: 'Premier League', laliga: 'La Liga', bundesliga: 'Bundesliga', seriea: 'Serie A', ligue1: 'Ligue 1', ligaportugal: 'Liga Portugal', scotprem: 'Scottish Premiership', eredivisie: 'Eredivisie', mls: 'MLS', ucl: 'Champions League' };
+/** Cup competitions (Milestone 5): a club's identity is shared with its domestic league; its domestic league stays its home league. */
+const CUPS = new Set(['ucl']);
+const isCup = lg => CUPS.has(lg);
+/** Short competition tags for the bars. */
+const COMP_SHORT = { epl: 'PL', laliga: 'LaLiga', seriea: 'Serie A', bundesliga: 'BL', ligue1: 'L1', ligaportugal: 'LPort', eredivisie: 'Ered', scotprem: 'SPFL', mls: 'MLS', ucl: 'UCL' };
 const NEWS_STATUS = { out: 'Out', doubtful: 'Doubtful', suspended: 'Suspended', returning: 'Returning', likely_start: 'Likely to start', rested: 'Rested', other: 'Note' };
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const isCount = v => v === null || v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60);
@@ -578,7 +599,9 @@ const STATS = ['goals', 'htgoals', 'shots', 'sot', 'corners', 'fouls', 'yellows'
 const FIELD = { goals: ['hg', 'ag'], htgoals: ['hthg', 'htag'], shots: ['hs', 'as'], sot: ['hst', 'ast'], corners: ['hc', 'ac'], fouls: ['hf', 'af'], yellows: ['hy', 'ay'], reds: ['hr', 'ar'] };
 function derive(s) {
   s.teams = new Map(); s.teamRows = new Map(); s.refs = new Map();
-  const addTeam = (name, league) => { const slug = teamSlug(name); if (!s.teams.has(slug)) s.teams.set(slug, { slug, name: displayTeam(name), league }); return slug; };
+  // One identity per club across competitions. Its league is its domestic league whenever it has one (a Champions League match never moves
+  // Arsenal out of the Premier League); clubs PropLab only knows from the Champions League keep 'ucl'. comps lists every competition.
+  const addTeam = (name, league) => { const slug = teamSlug(name); const t = s.teams.get(slug); if (!t) s.teams.set(slug, { slug, name: displayTeam(name), league, comps: new Set([league]) }); else { t.comps.add(league); if (isCup(t.league) && !isCup(league)) t.league = league; } return slug; };
   for (const f of s.fixtures) { addTeam(f.home, f.league); addTeam(f.away, f.league); }
   for (const n of s.news) addTeam(n.team, 'epl');
   for (const d of s.directory) addTeam(d.team, d.league);
@@ -586,7 +609,7 @@ function derive(s) {
   for (const r of s.teamMatches) {
     const h = addTeam(r.home, r.league), a = addTeam(r.away, r.league);
     for (const [mine, theirs, home] of [[h, a, true], [a, h, false]]) {
-      const row = { date: r.date, season: r.season, league: r.league, home, opp: s.teams.get(theirs).name, oppSlug: theirs, referee: r.referee || '', value: null };
+      const row = { date: r.date, season: r.season, league: r.league, ...(r.stage ? { stage: r.stage } : {}), home, opp: s.teams.get(theirs).name, oppSlug: theirs, referee: r.referee || '', value: null };
       for (const st of STATS) { const [hk, ak] = FIELD[st]; row[st] = home ? r[hk] : r[ak]; row[st + 'A'] = home ? r[ak] : r[hk]; }
       row.btts = row.goals == null || row.goalsA == null ? null : (row.goals > 0 && row.goalsA > 0 ? 1 : 0); // both teams scored: 1 = yes, 0 = no
       row.cards = row.yellows == null || row.reds == null ? null : row.yellows + row.reds; row.cardsA = row.yellowsA == null || row.redsA == null ? null : row.yellowsA + row.redsA;
@@ -595,11 +618,15 @@ function derive(s) {
     if (r.referee) { const k = normName(r.referee); const e = s.refs.get(k) || { name: r.referee, matches: [] }; e.matches.push(r); s.refs.set(k, e); }
   }
   for (const [slug, rows] of rowsFor) s.teamRows.set(slug, rows.sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0)));
+  // domestic rows only (the default everywhere, so adding the Champions League changes no domestic figure); clubs without domestic data: their cup rows
+  s.teamRowsDom = new Map(); for (const [slug, rows] of s.teamRows) { const d = rows.filter(x => !isCup(x.league)); s.teamRowsDom.set(slug, d.length || !isCup(s.teams.get(slug)?.league) ? d : rows); }
 }
 
 const leagueName = k => LEAGUE_NAMES[k] || k;
 const teamBySlug = slug => store.teams.get(slug) || null;
-const teamRowsFor = slug => store.teamRows.get(slug) || [];
+const teamRowsFor = slug => (store.teamRowsDom || store.teamRows).get(slug) || [];
+/** Milestone 5 scopes: 'all' = domestic league + Champions League in date order; 'ucl' = Champions League only; anything else = domestic (default). */
+const teamRowsScoped = (slug, scope) => (scope === 'all' ? store.teamRows.get(slug) || [] : scope === 'ucl' ? (store.teamRows.get(slug) || []).filter(x => x.league === 'ucl') : teamRowsFor(slug));
 const teamSlugOf = name => teamSlug(name);
 const newsForTeam = name => store.news.filter(n => normTeam(n.team) === normTeam(name));
 // Chronological by UK kick-off: date, then time; a fixture whose time is not set (TBC) goes after the timed games of its day.
@@ -612,15 +639,15 @@ const fxSortLocal = (a, b) => { const x = fxKeyLocal(a), y = fxKeyLocal(b); retu
 const upcomingFixtures = (league = '') => store.fixtures.filter(f => isUpcoming(f) && (!league || f.league === league)).sort(fxSort);
 const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) === normTeam(name) || normTeam(f.away) === normTeam(name));
 // Selector order: England, the other big European leagues, then Portugal, Netherlands, Scotland, and MLS.
-const LEAGUE_ORDER = ['epl', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'ligaportugal', 'eredivisie', 'scotprem', 'mls'];
-const LEAGUE_COUNTRY = { epl: 'England', laliga: 'Spain', seriea: 'Italy', bundesliga: 'Germany', ligue1: 'France', ligaportugal: 'Portugal', eredivisie: 'Netherlands', scotprem: 'Scotland', mls: 'USA / Canada' };
+const LEAGUE_ORDER = ['epl', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'ligaportugal', 'eredivisie', 'scotprem', 'mls', 'ucl'];
+const LEAGUE_COUNTRY = { epl: 'England', laliga: 'Spain', seriea: 'Italy', bundesliga: 'Germany', ligue1: 'France', ligaportugal: 'Portugal', eredivisie: 'Netherlands', scotprem: 'Scotland', mls: 'USA / Canada', ucl: 'Europe' };
 const lgRank = k => { const i = LEAGUE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
 const leaguesPresent = () => [...new Set([...store.fixtures.map(f => f.league), ...store.teamMatches.map(m => m.league)])].filter(k => LEAGUE_NAMES[k]).sort((a, b) => lgRank(a) - lgRank(b) || (a < b ? -1 : 1));
 const currentSeason = lg => { const ss = store.teamMatches.filter(m => m.league === lg).map(m => m.season); return ss.length ? Math.max(...ss) : null; };
 /** Clubs in the league now: in its latest season's matches, its upcoming fixtures or its player directory (relegated clubs from older seasons are left out). */
 const teamsOfLeague = lg => { const cs = currentSeason(lg); const cur = new Set(); for (const m of store.teamMatches) if (m.league === lg && m.season === cs) { cur.add(teamSlug(m.home)); cur.add(teamSlug(m.away)); }
   for (const f of store.fixtures) if (f.league === lg) { cur.add(teamSlug(f.home)); cur.add(teamSlug(f.away)); } for (const d of store.directory) if (d.league === lg) cur.add(teamSlug(d.team));
-  return [...store.teams.values()].filter(t => t.league === lg && cur.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
+  return [...store.teams.values()].filter(t => (t.league === lg || isCup(lg)) && cur.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
 const resultsList = () => [...store.teamMatches].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 /** True when a verified final result for this fixture is published (MLS dates can differ by a day between US and UK dates). */
 function hasFinalResult(f) {
@@ -709,7 +736,7 @@ async function loadAllPlayerRows() {
   return byId;
 }
 
-return { LEAGUE_NAMES, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['nfl-data'] = (() => {
 // NFL data (nflverse, CC-BY 4.0). Loaded only when an NFL page is opened; game logs are loaded per position group on demand.
@@ -1942,11 +1969,11 @@ function resultDetail(m) {
   const gl = Array.isArray(m.goals) && m.goals.length ? `<h4 style="margin:0 0 4px">Goals</h4><ul class="goals">${[...m.goals].sort((a, b) => parseInt(a.min) - parseInt(b.min)).map(g => `<li><span class="gm">${esc(g.min)}'</span><span><b>${esc(g.player)}</b>${g.type === 'pen' ? ' (pen)' : g.type === 'og' ? ' (og)' : ''} <span class="gt">— ${esc(g.team === 'home' ? m.home : m.away)}</span></span></li>`).join('')}</ul>` : '';
   const ROWS = [['Shots', 'hs', 'as'], ['Shots on target', 'hst', 'ast'], ['Corners', 'hc', 'ac'], ['Fouls committed', 'hf', 'af'], ['Yellow cards', 'hy', 'ay'], ['Red cards', 'hr', 'ar']].filter(([, a, b]) => m[a] != null || m[b] != null);
   const cellv = v => (v == null ? '<span class="muted" title="not recorded">–</span>' : v);
-  const stats = !ROWS.length ? (m.season >= 2026 && m.league !== 'mls' ? '<p class="small muted" style="margin:0">Team statistics for this match are not published yet; football-data.co.uk usually adds them within a few days.</p>' : '')
+  const stats = !ROWS.length ? (m.league === 'ucl' ? '<p class="small muted" style="margin:0">Shots, corners, fouls and cards are not available for Champions League matches from PropLab\'s free sources (left out, never 0).</p>' : m.season >= 2026 && m.league !== 'mls' ? '<p class="small muted" style="margin:0">Team statistics for this match are not published yet; football-data.co.uk usually adds them within a few days.</p>' : '')
     : `<div class="scroll"><table class="fxstats"><tr><th></th><th>${esc(m.home.split(' ')[0])}</th><th>${esc(m.away.split(' ')[0])}</th><th>Match</th></tr>
         ${ROWS.map(([l, a, b]) => `<tr><td>${l}</td><td class="n">${cellv(m[a])}</td><td class="n">${cellv(m[b])}</td><td class="n">${m[a] != null && m[b] != null ? m[a] + m[b] : cellv(null)}</td></tr>`).join('')}</table></div>
         <p class="xs muted" style="margin:6px 0 0">Team columns count that team only; Match = both teams combined.</p>`;
-  const src = /Wikipedia/.test(m.source || '') ? '<p class="xs muted" style="margin:6px 0 0">Final score from Wikipedia\'s season results table (verified score only). Statistics are added when football-data.co.uk publishes the match.</p>' : '';
+  const src = m.league === 'ucl' ? `<p class="xs muted" style="margin:6px 0 0">${m.stage ? esc(m.stage) + ' · ' : ''}Champions League score and goal times from Wikipedia (CC BY-SA 4.0).${m.aet_score ? ` After extra time: ${esc(m.aet_score)}. PropLab uses the 90-minute score shown above.` : ''}</p>` : /Wikipedia/.test(m.source || '') ? '<p class="xs muted" style="margin:6px 0 0">Final score from Wikipedia\'s season results table (verified score only). Statistics are added when football-data.co.uk publishes the match.</p>' : '';
   return ht + gl + stats + src + (m.goals_source ? `<p class="xs muted" style="margin:6px 0 0">Goals: ${esc(m.goals_source)}.</p>` : '');
 }
 const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n = newsForTeam(name);
@@ -2109,46 +2136,6 @@ function h2hSample(rows, oppSlug, date, { homeOnly = false, max = 10 } = {}) {
 
 return { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, linesFor, dotsFor, bestLine, closestLine, reliability, scan, h2hSample };
 })();
-__m['scanner'] = (() => {
-// Plays scanner: for ONE subject (a team, a player, or one side of a game) scan every market that has recorded data and,
-// for each market and direction, keep the most ambitious research line whose real hit rate still reaches the minimum:
-//   Over  -> the HIGHEST line with hit rate >= minimum;  Under -> the LOWEST line with hit rate >= minimum.
-// Lowering the minimum therefore moves a result to a harder line (it does not add easier duplicates): one result per market and direction.
-// Order of results (deterministic): actual hit rate high->low, then larger sample, then the market catalogue order, then Over before Under.
-const { marketRows } = __m['markets'];
-const { applyFilters } = __m['research'];
-const { bestLine, closestLine, dotsFor } = __m['plays'];
-
-/**
- * rows: the subject's rows, newest first. markets: [{ key, label, binary?, get(row) }] in catalogue order.
- * o: { lines(def) -> half-point lines, sides: ['over','under'], minPct, last (0/null = no cut), season, venue, types, exposureKey }
- * Returns { results, misses, scanned } — misses are markets with data where no research line reaches the minimum (with their closest line).
- */
-function scanOne(rows, markets, o) {
-  const results = [], misses = []; let scanned = 0;
-  markets.forEach((def, order) => {
-    const f = applyFilters(marketRows(rows, def, o.exposureKey || null), { last: o.last || null, season: o.season || null, venue: o.venue || '', types: o.types || null });
-    if (!f.length) return; // no recorded value for this statistic in this sample: the market is simply not offered
-    const values = f.map(r => r.value); const lines = o.lines(def); if (!lines.length) return;
-    scanned++;
-    // rare-event markets (a player's goals, cards, touchdowns, sacks...) are only offered as Over / Yes: "Under 0.5 goals" for a defender is not a real research idea
-    // Yes-only markets are Over: they are skipped when only Under is asked for
-    for (const side of (def.binary || def.overOnly) ? o.sides.filter(x => x === 'over') : o.sides) {
-      const b = bestLine(values, lines, side, o.minPct);
-      const base = { def, side, order, nUsed: f.length, requested: o.last || 0, venue: o.venue || '', rowsUsed: [...f].reverse(), from: f[f.length - 1].date, to: f[0].date };
-      // A market that does not apply to this subject: Under at the lowest research line when its median is already below that line
-      // (e.g. "Under 0.5 shots" for a goalkeeper). Sportsbooks would not price it, so it is not shown as a result.
-      if (b && side === 'under' && b.line === lines[0] && b.hr.median < lines[0]) continue;
-      if (b) results.push({ ...base, line: b.line, hr: b.hr, dots: dotsFor(values, b.line, side) });
-      else { const c = closestLine(values, lines, side); if (c) misses.push({ ...base, line: c.line, hr: c.hr }); }
-    }
-  });
-  const cmp = (a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n || a.order - b.order || (a.side === b.side ? 0 : a.side === 'over' ? -1 : 1);
-  return { results: results.sort(cmp), misses: misses.sort(cmp), scanned };
-}
-
-return { scanOne };
-})();
 __m['fbscan'] = (() => {
 // Football helpers shared by Plays and Hiwi's Section: which markets a league really records, the research lines, and labels.
 const { store, teamsOfLeague, teamRowsFor, loadAllPlayerRows, teamSlugOf, currentSeason } = __m['data'];
@@ -2180,318 +2167,6 @@ const fbScope = (key, name) => ({ team: `${name} only`, opp: `against ${name}`, 
 const fbSeason = lg => currentSeason(lg);
 
 return { fbTeamMarkets, hasPlayerLogs, fbPlayers, fbPlayerMarkets, fbLines, fbScope, fbSeason };
-})();
-__m['playcard'] = (() => {
-// One play card, shared by Plays (football and NFL) and Hiwi's Section. Every number on a card comes from one sample:
-// hit rate, hits/sample, dots and the match list always agree, and they all move together with the inline line slider.
-const { infoTag } = __m['info'];
-const { reliability } = __m['plays'];
-const { hitRate } = __m['analytics'];
-const { esc, fmtShort, fmtLong } = __m['util'];
-
-const sideWord = s => (s === 'under' ? 'Under' : 'Over');
-const isHit = (v, line, side) => (side === 'under' ? v < line : v > line);
-
-/**
- * x: a scanOne result (def, side, line = best line, hr, rowsUsed oldest first, nUsed, requested, from, to).
- * o: { ri (registry index), head (html shown above, e.g. fixture + kick-off), who (team or player label), scope ("Real Madrid only"),
- *      unit ('match'|'game'), sample ("last 10 home matches"), lines (research lines for the slider), minPct, fmtOpp(row), fmtValue(v), cur (current line) }
- */
-function playCard(x, o = {}) {
-  const unit = o.unit || 'match';
-  const bin = !!x.def.binary, fv = o.fmtValue || (v => (bin ? (v ? 'Yes' : 'No') : v));
-  const fd = d => (d.slice(0, 4) === x.to.slice(0, 4) ? fmtShort(d) : fmtLong(d));
-  const lines = !bin && o.lines && o.lines.length > 1 ? o.lines : null;
-  const cur = o.cur ?? x.line;
-  const rows = [...x.rowsUsed].reverse().map((r, k) => `<tr><td>${esc(fd(r.date))}</td><td>${esc(o.fmtOpp ? o.fmtOpp(r) : `${r.home ? 'v' : 'at'} ${r.opp || ''}`)}</td><td class="n" data-pl-v="${x.rowsUsed.length - 1 - k}">${esc(fv(r.value))}</td></tr>`).join('');
-  const rel = reliability(x.hr.n);
-  return `<div class="card play" style="margin-bottom:10px"${o.ri != null ? ` data-ri="${o.ri}"` : ''}>
-    ${o.head || ''}
-    <div class="row" style="border:0;padding:0"><div class="l">${o.who ? `<b>${esc(o.who)}</b>` : ''}<span class="plwhat" data-pl-what></span>${o.scope ? `<span class="xs muted">${esc(o.scope)}</span>` : ''}</div><div class="r"><b data-pl-pct style="font-size:22px"></b></div></div>
-    <div class="hitn"><b data-pl-hits></b> <span class="muted">· ${esc(o.sample || '')}${x.requested && x.nUsed < x.requested ? ` (only ${x.nUsed} available)` : ''}</span></div>
-    <div class="xs warn" data-pl-below hidden></div>
-    <div class="dots" data-pl-dots aria-label="hits and misses, oldest to newest"></div>
-    ${lines ? `<div class="plslide"><label class="xs muted" for="sl${o.ri}">Line</label><input id="sl${o.ri}" type="range" data-pl-slider min="${lines[0]}" max="${lines[lines.length - 1]}" step="1" value="${cur}" aria-label="Adjust the line"><button type="button" class="chip" data-pl-reset hidden>Reset to best line</button></div>` : ''}
-    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(x.from))} – ${esc(fmtLong(x.to))} · ${infoTag(rel.k, rel.t, { n: x.hr.n, cls: 'rel ' + rel.k })}${bin ? '' : ' · ' + infoTag('research', 'Research line', { cls: 'neutral' })}</div>
-    <details class="mx"><summary class="xs">${unit === 'match' ? 'Matches' : 'Games'} (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>${unit === 'match' ? 'Match' : 'Game'}</th><th>Value</th></tr>${rows}</table></div></details>
-    ${o.ri != null ? '<button type="button" class="chip opengraph" data-open>More details ›</button>' : ''}</div>`;
-}
-
-/** Fills the live parts of a card for line `line` (called on render and every slider move). */
-function paintCard(el, x, line, o = {}) {
-  const unit = o.unit || 'match', units = unit + (unit === 'match' ? 'es' : 's');
-  const bin = !!x.def.binary, fv = o.fmtValue || (v => (bin ? (v ? 'Yes' : 'No') : v));
-  const values = x.rowsUsed.map(r => r.value); // oldest first
-  const hr = hitRate(values, line, x.side);
-  const q = s => el.querySelector(s);
-  q('[data-pl-what]').innerHTML = bin ? `<strong>${esc(x.def.label)}</strong>` : `<strong>${sideWord(x.side)} ${line}</strong> ${esc(x.def.label)}`;
-  const pct = q('[data-pl-pct]'); pct.textContent = hr.hitPct === null ? 'n/a' : `${hr.hitPct}%`; pct.className = hr.hitPct >= (o.minPct ?? 80) ? 'hit' : '';
-  q('[data-pl-hits]').textContent = `${hr.hits}/${hr.n} · ${hr.hits} hit${hr.hits === 1 ? '' : 's'} from ${hr.n} ${hr.n === 1 ? unit : units}`;
-  const below = q('[data-pl-below]'); const isBelow = o.minPct != null && hr.hitPct !== null && hr.hitPct < o.minPct;
-  below.hidden = !isBelow; below.textContent = isBelow ? `Below your ${o.minPct}% minimum at this line` : '';
-  q('[data-pl-dots]').innerHTML = values.map((v, i) => { const h = isHit(v, line, x.side); return `<i class="${h ? 'on' : ''}" title="${esc(x.rowsUsed[i].date)}: ${esc(fv(v))}">${h ? '●' : '○'}</i>`; }).join('');
-  el.querySelectorAll('[data-pl-v]').forEach(td => { const v = values[Number(td.dataset.plV)]; td.className = 'n ' + (isHit(v, line, x.side) ? 'hit' : 'miss'); });
-  const reset = q('[data-pl-reset]'); if (reset) reset.hidden = line === x.line;
-  const sl = q('[data-pl-slider]'); if (sl && Number(sl.value) !== line) sl.value = line;
-}
-
-/**
- * Wires every card under root. reg[i] = { x, o, cur }. onOpen(i) opens the detailed view at the card's current line.
- * The slider and its reset button never open the details: only the "More details" button does.
- */
-function wireCards(root, reg, onOpen) {
-  root.querySelectorAll('.play[data-ri]').forEach(el => { const e = reg[Number(el.dataset.ri)]; if (e) paintCard(el, e.x, e.cur ?? e.x.line, e.o); });
-  // Pages redraw their result list inside the same container, so the listeners are attached once and always use the latest cards.
-  const had = !!root._plWire; root._plWire = { reg, onOpen }; if (had) return;
-  const cur = () => root._plWire;
-  root.addEventListener('input', ev => { const sl = ev.target.closest('[data-pl-slider]'); if (!sl) return; const el = sl.closest('.play'); const e = cur().reg[Number(el.dataset.ri)]; if (!e) return; e.cur = Number(sl.value); paintCard(el, e.x, e.cur, e.o); });
-  root.addEventListener('click', ev => {
-    const rs = ev.target.closest('[data-pl-reset]'); if (rs) { const el = rs.closest('.play'); const e = cur().reg[Number(el.dataset.ri)]; if (!e) return; e.cur = e.x.line; paintCard(el, e.x, e.cur, e.o); return; }
-    const op = ev.target.closest('[data-open]'); if (op) { const el = op.closest('.play'); cur().onOpen(Number(el.dataset.ri)); }
-  });
-}
-
-/** Collapsed list of markets where no research line reached the minimum, with their closest line. */
-function missesHtml(misses, minPct, o = {}) {
-  if (!misses.length) return '';
-  return `<details class="misses"><summary class="small">No qualifying line at ${minPct}% for ${misses.length} market/direction${misses.length === 1 ? '' : 's'}</summary>
-    <p class="xs muted">These markets have recorded data, but no research line reaches ${minPct}%. The closest line is shown with its real hit rate. Lower the minimum to see them as results.</p>
-    <div class="scroll"><table><tr><th>Market</th><th>Closest line</th><th>Hit rate</th></tr>${misses.map(x => `<tr><td>${o.who ? esc(o.who(x)) + ' · ' : ''}${esc(x.def.label)}</td><td>${x.def.binary ? 'Yes' : `${sideWord(x.side)} ${x.line}`}</td><td class="n">${x.hr.hitPct}% <span class="xs muted">(${x.hr.hits}/${x.hr.n})</span></td></tr>`).join('')}</table></div></details>`;
-}
-
-return { playCard, paintCard, wireCards, missesHtml };
-})();
-__m['v-plays'] = (() => {
-// Plays (football): a targeted scanner. Choose ONE team, ONE upcoming match or ONE player, a sample and a minimum hit rate;
-// PropLab scans every market the league really records and shows, per market and direction, the most ambitious research line that
-// still reaches the minimum (see scanner.js). Lowering the minimum moves results to harder lines; it never adds easier duplicates.
-const { store, teamsOfLeague, teamRowsFor, upcomingFixtures, leagueName, teamSlugOf } = __m['data'];
-const { marketDesc } = __m['markets'];
-const { h2hSample } = __m['plays'];
-const { scanOne } = __m['scanner'];
-const { fbTeamMarkets, fbPlayers, fbPlayerMarkets, fbLines, fbScope, hasPlayerLogs, fbSeason } = __m['fbscan'];
-const { playCard, wireCards, missesHtml } = __m['playcard'];
-const { haFormHtml, haFormClick, openGraphModal, venueWord } = __m['panel'];
-const { $, koLocal, tzNow, esc, fmtKick, fixtureId, koUK, fmtDay } = __m['util'];
-const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague, prefs, savePrefs } = __m['shared'];
-
-const PCTS = [60, 65, 70, 75, 80, 85, 90, 95, 100];
-const SAMPLES = [[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
-const ui = { kind: 'team', team: '', game: '', club: '', player: '', last: 10, side: 'both', venue: '', gvH: 'home', gvA: 'away' };
-const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
-
-async function viewPlays(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Plays</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
-  const g = r.q.get('game'); if (g) { const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.kind = 'match'; ui.game = g; ui.gvH = 'home'; ui.gvA = 'away'; }
-  const t = r.q.get('team'); if (t) { const tm = store.teams.get(t); if (tm) { setLeague(tm.league); ui.kind = 'team'; ui.team = t; } }
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Plays</h1>
-    <p class="muted" style="margin-top:-4px">Pick one team, match or player. PropLab checks every market with recorded data and shows the <b>most ambitious line</b> that still reached your minimum hit rate. Historical hit rates, not predictions or tips.</p>
-    <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
-  const ctl = $('#ctl', root), out = $('#out', root);
-  let reg = [], players = [];
-  const league = () => getLeague();
-  const teams = () => teamsOfLeague(league()).slice().sort((a, b) => a.name.localeCompare(b.name));
-  const fixtures = () => upcomingFixtures(league());
-  const minPct = () => prefs.minPct;
-  const sampleOpts = () => ({ last: ui.last === 'season' ? 0 : ui.last, season: ui.last === 'season' ? fbSeason(league()) : null });
-  const sampleText = venue => `${ui.last === 'season' ? "this season's" : `last ${ui.last}`} ${venueWord(venue)}matches`;
-  const sides = () => (ui.side === 'both' ? ['over', 'under'] : [ui.side]);
-  const lines = def => fbLines(def);
-
-  const fixKind = () => {
-    if (ui.kind === 'player' && !hasPlayerLogs(league())) ui.kind = 'team';
-    const ts = teams(); if (!ts.some(x => x.slug === ui.team)) ui.team = ts[0]?.slug || '';
-    const fs = fixtures(); if (!fs.some(f => fixtureId(f) === ui.game)) ui.game = fs[0] ? fixtureId(fs[0]) : '';
-    if (ui.kind === 'player') { if (!players.some(p => p.clubSlug === ui.club)) ui.club = [...players].sort((a, b) => a.team.localeCompare(b.team))[0]?.clubSlug || ''; const ps = players.filter(p => p.clubSlug === ui.club); if (!ps.some(p => p.id === ui.player)) ui.player = [...ps].sort((a, b) => a.name.localeCompare(b.name))[0]?.id || ''; }
-  };
-
-  const drawCtl = () => {
-    fixKind(); const lg = league(), ts = teams(), fs = fixtures();
-    const kinds = [['team', 'Team'], ['match', 'Match'], ...(hasPlayerLogs(lg) ? [['player', 'Player']] : [])];
-    const byDay = new Map(); for (const f of fs) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
-    const clubs = [...new Map(players.map(p => [p.clubSlug, p.team])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
-    const picker = ui.kind === 'team' ? `<div class="field"><label for="tm">Team</label><select class="in" id="tm">${ts.map(x => `<option value="${esc(x.slug)}" ${x.slug === ui.team ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>`
-      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koLocal(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${esc(leagueName(lg))} fixtures are published right now.</p>`)
-      : `<div class="ctl"><div class="field"><label for="pclub">Club</label><select class="in" id="pclub">${clubs.map(([s, n]) => `<option value="${esc(s)}" ${s === ui.club ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
-         <div class="field"><label for="pl">Player</label><select class="in" id="pl">${players.filter(p => p.clubSlug === ui.club).sort((a, b) => a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
-    const one = ui.kind === 'match' ? fs.find(f => fixtureId(f) === ui.game) : null;
-    ctl.innerHTML = `${leagueSelect()}
-      <div class="field"><label>Research</label>${seg('kind', kinds, ui.kind)}</div>${picker}
-      <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only.</span></div>
-      <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), minPct(), 'grid')}</div>
-      <div class="field"><label>Direction</label>${seg('side', [['both', 'Over and Under'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
-      ${ui.kind === 'team' ? haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })
-      : ui.kind === 'match' ? haFormHtml('gvH', ui.gvH, { label: `${one ? one.home : 'Home team'}: Home/Away Form` }) + haFormHtml('gvA', ui.gvA, { label: `${one ? one.away : 'Away team'}: Home/Away Form` }) : ''}`;
-  };
-
-  const scanTeam = (slug, venue, before) => { const rows = before ? teamRowsFor(slug).filter(x => x.date < before) : teamRowsFor(slug);
-    return scanOne(rows, fbTeamMarkets(league()), { lines, sides: sides(), minPct: minPct(), ...sampleOpts(), venue }); };
-  const card = (x, o) => { const oo = { ...o, lines: x.def.binary ? null : lines(x.def), minPct: minPct() }; const ri = reg.push({ x, o: oo, cur: x.line }) - 1; return playCard(x, { ...oo, ri }); };
-  const block = (title, res, o) => `<section class="sec"><h2>${title}</h2>${res.results.length ? res.results.map(x => card(x, { ...o, scope: o.scopeOf ? o.scopeOf(x) : o.scope })).join('') : `<div class="banner info"><b>No qualifying line at ${minPct()}%.</b> ${res.scanned ? `None of the ${res.scanned} markets with data reached ${minPct()}% at any research line in this sample.` : 'No recorded statistics in this sample.'}</div>`}${missesHtml(res.misses, minPct())}</section>`;
-
-  const draw = async () => {
-    reg = []; const lg = league(), pct = minPct();
-    if (ui.kind === 'player' && !players.length) players = await fbPlayers(lg);
-    let html = '';
-    if (ui.kind === 'team') {
-      const tm = store.teams.get(ui.team); if (!tm) { out.innerHTML = '<div class="banner info">Choose a team.</div>'; return; }
-      const res = scanTeam(tm.slug, ui.venue);
-      html = `<p class="xs muted" data-summary>${esc(tm.name)}: ${res.scanned} markets with data scanned, ${sides().length === 2 ? 'Over and Under' : ui.side === 'over' ? 'Over' : 'Under'}, ${esc(sampleText(ui.venue))}, minimum ${pct}%. ${res.results.length} result${res.results.length === 1 ? '' : 's'}.</p>`
-        + block(`${esc(tm.name)} <a class="small" href="#/team/${encodeURIComponent(tm.slug)}">team page</a>`, res, { scopeOf: x => fbScope(x.def.key, tm.name), sample: sampleText(ui.venue), subj: { name: tm.name, slug: tm.slug, type: 'team' } });
-    } else if (ui.kind === 'match') {
-      const f = fixtures().find(x => fixtureId(x) === ui.game); if (!f) { out.innerHTML = `<div class="banner info"><b>No upcoming ${esc(leagueName(lg))} match to choose.</b> Pick Team instead, or another league.</div>`; return; }
-      const hs = teamSlugOf(f.home), as = teamSlugOf(f.away);
-      html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(leagueName(f.league))} · ${esc(fmtKick(f))} · only matches completed before this fixture are used</div></div>`;
-      html += block(`${esc(f.home)} <span class="muted small">(${esc(sampleText(ui.gvH))})</span>`, scanTeam(hs, ui.gvH, f.date), { scopeOf: x => fbScope(x.def.key, f.home), sample: sampleText(ui.gvH), subj: { name: f.home, slug: hs, type: 'team' } });
-      html += block(`${esc(f.away)} <span class="muted small">(${esc(sampleText(ui.gvA))})</span>`, scanTeam(as, ui.gvA, f.date), { scopeOf: x => fbScope(x.def.key, f.away), sample: sampleText(ui.gvA), subj: { name: f.away, slug: as, type: 'team' } });
-      const hh = h2hSample(teamRowsFor(hs), as, f.date);
-      if (hh.ok) { const res = scanOne(hh.rows, fbTeamMarkets(lg).filter(m => m.key.startsWith('m.')), { lines, sides: sides(), minPct: pct, last: 0 });
-        const lab = hh.n === 1 ? 'the only meeting' : `last ${hh.n} meetings`; html += block(`Head to head <span class="muted small">(${lab}, both teams combined${hh.n < 5 ? ' · small sample' : ''})</span>`, res, { scope: `both teams, ${lab}`, sample: lab, subj: { name: `${f.home} v ${f.away}`, slug: hs, type: 'team', h2h: true } }); }
-      else html += `<section class="sec"><h2>Head to head</h2><div class="banner info"><b>No H2H data.</b> These teams have no meeting in PropLab's published league records.</div></section>`;
-      if (hasPlayerLogs(lg)) {
-        if (!players.length) players = await fbPlayers(lg);
-        const pm = fbPlayerMarkets(players);
-        for (const [slug, name, venue] of [[hs, f.home, ui.gvH], [as, f.away, ui.gvA]]) {
-          let cards = '', n = 0;
-          for (const p of players.filter(q => q.clubSlug === slug)) {
-            const res = scanOne(p.rows.filter(x => x.date < f.date), pm, { lines, sides: sides(), minPct: pct, ...sampleOpts(), venue, exposureKey: 'minutes' });
-            for (const x of res.results) { cards += card(x, { who: p.name, sample: sampleText(venue), subj: { name: p.name, id: p.id, type: 'player', club: p.team } }); n++; }
-          }
-          html += `<section class="sec"><h2>${esc(name)} players <span class="muted small">(${n} result${n === 1 ? '' : 's'})</span></h2>${cards || `<div class="banner info">No ${esc(name)} player reached ${pct}% at a research line in this sample.</div>`}</section>`;
-        }
-      }
-    } else {
-      const p = players.find(x => x.id === ui.player); if (!p) { out.innerHTML = '<div class="banner info">Choose a player.</div>'; return; }
-      const res = scanOne(p.rows, fbPlayerMarkets(players), { lines, sides: sides(), minPct: pct, ...sampleOpts(), venue: '', exposureKey: 'minutes' });
-      html = `<p class="xs muted" data-summary>${esc(p.name)} (${esc(p.team)}): ${res.scanned} player markets with data scanned, ${esc(sampleText(''))}, minimum ${pct}%.</p>` + block(`${esc(p.name)} <a class="small" href="#/player/${encodeURIComponent(p.id)}">profile</a>`, res, { sample: sampleText(''), subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
-    }
-    html += `<p class="xs muted">How a result is chosen: for each market and direction PropLab tests its research lines (typical sportsbook line ranges, half-point lines only, not checked against a live bookmaker) and keeps the most ambitious one whose real hit rate reaches your minimum: the highest Over line or the lowest Under line. Results are ordered by hit rate, then sample size. Move a card's slider to try other lines; "Reset to best line" goes back. Missing statistics are left out, never counted as zero.</p>`;
-    out.innerHTML = html;
-    wireCards(out, reg, openDetails);
-  };
-  const openDetails = i => {
-    const e = reg[i]; if (!e) return; const s = e.o.subj, isP = s.type === 'player';
-    const rows = isP ? players.find(p => p.id === s.id)?.rows || [] : s.h2h ? e.x.rowsUsed.slice().reverse() : teamRowsFor(s.slug);
-    openGraphModal({ title: s.name, subtitle: `${isP ? s.club + ' · Player' : s.h2h ? 'Head to head' : 'Team'} · ${e.x.def.label}`, desc: marketDesc(e.x.def.key), ladder: () => lines(e.x.def),
-      panel: { key: 'plays:' + s.name + e.x.def.key, markets: [e.x.def], rows, exposureKey: isP ? 'minutes' : null, hasMinutes: isP, subject: isP ? 'player' : 'team', subjectId: isP ? s.id : s.slug,
-        init: { market: e.x.def.key, side: e.x.side, line: e.cur ?? e.x.line, last: s.h2h ? 0 : ui.last, venue: s.h2h ? '' : e.x.venue },
-        lastOptions: s.h2h ? [[0, 'The meetings on the card']] : [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']], noVenue: !!s.h2h } });
-  };
-
-  // delegated listeners on containers that survive redraws
-  ctl.addEventListener('click', async e => {
-    const hf = haFormClick(e, n => ui[n], n => (n === 'gvA' ? 'away' : 'home')); if (hf) { ui[hf.name] = hf.value; drawCtl(); draw(); return; }
-    const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg, v = b.dataset.v;
-    if (k === 'pct') { prefs.minPct = Number(v); savePrefs(); } else if (k === 'last') ui.last = v === 'season' ? 'season' : Number(v); else ui[k] = v;
-    if (k === 'kind' && v === 'player' && !players.length) players = await fbPlayers(league());
-    drawCtl(); draw();
-  });
-  ctl.addEventListener('change', async e => {
-    const tg = e.target;
-    if (tg.id === 'lgsel') { setLeague(tg.value); players = []; ui.team = ''; ui.game = ''; ui.club = ''; ui.player = ''; if (ui.kind === 'player') players = await fbPlayers(league()); }
-    else if (tg.id === 'tm') ui.team = tg.value; else if (tg.id === 'gm') ui.game = tg.value; else if (tg.id === 'pclub') { ui.club = tg.value; ui.player = ''; } else if (tg.id === 'pl') ui.player = tg.value; else return;
-    drawCtl(); draw();
-  });
-  if (ui.kind === 'player') players = await fbPlayers(league());
-  drawCtl(); draw();
-}
-
-return { PCTS, viewPlays };
-})();
-__m['v-match'] = (() => {
-const { store, teamRowsFor, teamSlugOf, newsForTeam, refereeProfile, teamsOfLeague, currentSeason } = __m['data'];
-const { TEAM_MARKETS, marketRows, marketsWithData, defaultLine, stepLine } = __m['markets'];
-const { TEAM_PLAY_MARKETS, dotsFor, h2hSample } = __m['plays'];
-const { hitRate } = __m['analytics'];
-const { applyFilters } = __m['research'];
-const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick } = __m['panel'];
-const { $, $$, esc, fmtDay, fmtShort, fmtLong, avg, fmtKick } = __m['util'];
-const { dataBanner, problemsBanner, newsItem } = __m['shared'];
-
-// line: null = set the starting line for a newly chosen market. Sample and Home/Away Form changes keep the line.
-const ui = { mode: 'form', market: 'm.goals', side: 'over', line: null, last: 10, vH: 'home', vA: 'away', hv: 'all', fx: '' };
-const seg = (name, items, cur) => `<div class="seg" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
-const dotsHtml = d => `<div class="dots">${d.map(h => `<i class="${h ? 'on' : ''}">${h ? '●' : '○'}</i>`).join('')}</div>`;
-
-async function viewMatch(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
-  const home = r.q.get('h') || '', away = r.q.get('a') || '', date = r.q.get('d') || '';
-  const hs = teamSlugOf(home), as = teamSlugOf(away);
-  const fx = store.fixtures.find(f => f.date === date && teamSlugOf(f.home) === hs && teamSlugOf(f.away) === as);
-  if (!store.teams.has(hs) || !store.teams.has(as) || hs === as) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a><h1>Match not found</h1><p class="muted">That fixture is not in the published data.</p>`; return; }
-  const H = store.teams.get(hs).name, A = store.teams.get(as).name;
-  const before = rows => rows.filter(x => !date || x.date < date);
-  const rowsH = before(teamRowsFor(hs)), rowsA = before(teamRowsFor(as));
-  const lg = store.teams.get(hs).league;
-  const has = new Set(marketsWithData(teamsOfLeague(lg).flatMap(t => teamRowsFor(t.slug)), TEAM_MARKETS).map(m => m.key));
-  const markets = TEAM_PLAY_MARKETS.filter(m => has.has(m.key));
-  if (!markets.some(m => m.key === ui.market)) { ui.market = markets.find(m => m.key === 'm.goals')?.key || markets[0]?.key; ui.line = null; }
-  const rp = fx?.referee ? refereeProfile(fx.referee) : null;
-  const fxKey = `${date}|${hs}|${as}`; if (ui.fx !== fxKey) { ui.fx = fxKey; ui.vH = 'home'; ui.vA = 'away'; ui.line = null; } // a new fixture starts with each team's own home/away form
-  root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a>
-    <h1 style="margin-bottom:4px">${esc(H)} v ${esc(A)}</h1><div class="muted">${esc(fx ? fmtKick(fx) : fmtDay(date))}${fx?.referee ? ' · Referee ' + esc(fx.referee) : ''}</div>
-    ${[H, A].map(t => newsForTeam(t).length ? `<div class="card" style="margin-top:12px"><h3>${esc(t)} team news</h3><div class="list">${newsForTeam(t).map(newsItem).join('')}</div></div>` : '').join('')}
-    <div class="card stack" id="ctl" style="margin-top:14px">
-      <div class="field">${seg('mode', [['form', 'Recent form'], ['h2h', 'Head to head']], ui.mode)}</div>
-      <div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${m.key}" ${m.key === ui.market ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>
-      <div class="field" id="sidef"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div>
-      <div class="field" data-form><label>Matches</label>${seg('last', [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season'], [0, 'All']], ui.last)}<span class="xs muted">Season = the current league season only. All = every published match, including older seasons.</span></div>
-      <div data-form id="hafH"></div><div data-form id="hafA"></div>
-      <div class="field" data-h2h><label>Meetings</label>${seg('hv', [['all', 'All meetings'], ['venue', `At ${H}`]], ui.hv)}</div></div>
-      <div class="linebar" id="lbar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p></div>
-    <div id="out" style="margin-top:14px"></div>
-    ${rp && rp.ref.n ? `<p class="small muted">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}`;
-  const out = $('#out', root), ln = $('#ln', root);
-  const mdef = key => TEAM_MARKETS.find(m => m.key === key);
-  const sampleOf = (rows, key, venue) => applyFilters(marketRows(rows, mdef(key)), { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(lg) : null, venue });
-  const hafNote = (team, v) => (v ? `Analysing ${esc(team)}'s ${v} matches only.` : `Analysing ${esc(team)}'s home and away matches.`);
-  const block = (title, used, line, side, note, bin) => {
-    const vals = used.map(x => x.value); const hr = hitRate(vals, line, side); const fv = v => (bin ? (v ? 'Yes' : 'No') : v);
-    if (!used.length) return `<section class="sec"><h2>${esc(title)}</h2><div class="banner info">No published matches with this statistic for this selection${note ? '. ' + esc(note) : ''}.</div></section>`;
-    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${bin ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line}`}</b><span>${hitsLine(hr)}${bin ? '' : ` · average ${hr.avg}`}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
-      ${dotsHtml(dotsFor(vals, line, side))}<div class="scroll" style="margin-top:8px"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${used.map(x => { const hit = side === 'under' ? x.value < line : x.value > line; return `<tr><td>${esc(x.date.slice(0, 4) === used[0].date.slice(0, 4) ? fmtShort(x.date) : fmtLong(x.date))}</td><td>${x.home ? 'v' : 'at'} ${esc(x.opp)}</td><td class="n">${x.goals ?? '–'}–${x.goalsA ?? '–'}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('')}</table></div>
-      ${note ? `<p class="xs muted" style="margin:8px 0 0">${esc(note)}</p>` : ''}</div></section>`;
-  };
-  const draw = () => {
-    $$('[data-seg]', root).forEach(g => $$('button', g).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[g.dataset.seg]))));
-    $('#hafH', root).innerHTML = haFormHtml('vH', ui.vH, { label: `${H}: Home/Away Form`, note: hafNote(H, ui.vH) }); $('#hafA', root).innerHTML = haFormHtml('vA', ui.vA, { label: `${A}: Home/Away Form`, note: hafNote(A, ui.vA) });
-    $$('[data-form]', root).forEach(x => { x.hidden = ui.mode !== 'form'; }); $$('[data-h2h]', root).forEach(x => { x.hidden = ui.mode !== 'h2h'; });
-    const key = ui.market, def = TEAM_PLAY_MARKETS.find(m => m.key === key), bin = !!def.binary, isMatch = key.startsWith('m.');
-    $('#lbar', root).hidden = bin; $('#sidef', root).hidden = bin; if (bin) { ui.side = 'over'; ui.line = 0.5; }
-    const sH = sampleOf(rowsH, key, ui.vH), sA = sampleOf(rowsA, key, ui.vA);
-    const hh = h2hSample(rowsH, as, date || '9999-12-31', { homeOnly: ui.hv === 'venue' });
-    let note = '';
-    if (ui.line === null) {
-      const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
-      if (ui.mode === 'form') { const v = [...sH, ...sA].map(x => x.value); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the observed averages of the two samples below: ${H} ${avg(sH.map(x => x.value)) ?? 'n/a'} (${sH.length} ${venueWord(ui.vH)}matches), ${A} ${avg(sA.map(x => x.value)) ?? 'n/a'} (${sA.length} ${venueWord(ui.vA)}matches), pooled ${avg(v) ?? 'n/a'}. An average of past figures, not a prediction.`; }
-      else { const v = marketRows(hh.rows, mdef(key)).map(x => x.value).filter(x => x !== null); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(v) ?? 'n/a'}) of the ${v.length} head-to-head meetings shown.`; }
-      ui.note = note;
-    }
-    if (document.activeElement !== ln) ln.value = ui.line;
-    $('#lnlab', root).textContent = `${def.label} — ${ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; $('#lnnote', root).textContent = bin ? '' : ui.note || '';
-    const line = ui.line, side = ui.side; let html = '';
-    const sampleTxt = v => `${ui.last === 'season' ? "this season's" : ui.last ? 'last ' + ui.last : 'all published'} ${venueWord(v) || 'home and away '}matches`;
-    if (ui.mode === 'form') html = block(`${H}: ${sampleTxt(ui.vH)}`, sH, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin) + block(`${A}: ${sampleTxt(ui.vA)}`, sA, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin);
-    else {
-      const atV = ui.hv === 'venue';
-      if (!hh.ok) html = `<div class="banner info hnoh2h"><b>No H2H data.</b> No ${atV ? `meetings at ${esc(H)}` : 'meetings between these teams'} are in PropLab's published league records. Nothing is filled in.</div>`;
-      else {
-        const used = marketRows(hh.rows, mdef(key)).filter(x => x.value !== null);
-        if (!used.length) html = `<div class="banner info">None of the ${hh.n} meeting${hh.n === 1 ? '' : 's'} has this statistic recorded, so no head-to-head figure is shown for it.</div>`;
-        else html = block(`${H} v ${A}: ${used.length === 1 ? 'the only meeting' : `last ${used.length} meetings`} in the records${atV ? ` at ${H}` : ' (either venue)'}`, used, line, side, (isMatch ? 'Match total, both teams.' : `${H}'s own figures in these meetings.`) + (used.length < 5 ? ` Only ${used.length} meeting${used.length === 1 ? '' : 's'}: ${used.length}/${used.length} is not a reliable trend.` : ''), bin);
-      }
-    }
-    out.innerHTML = html + `<p class="xs muted">${esc(def.label)}: historical hit rate from published matches only. Home/Away is applied before the sample (Last 10 + Home = the last 10 home matches). Missing statistics are left out, never counted as zero. Yellow and red cards are separate markets. This is not a prediction.</p>`;
-  };
-  $('#ctl', root).addEventListener('click', e => { const hf = haFormClick(e, n => ui[n], n => (n === 'vA' ? 'away' : 'home')); if (hf) { ui[hf.name] = hf.value; draw(); return; }
-    const b = e.target.closest('button'); if (!b) return; const g = b.parentElement.dataset.seg;
-    if (g) ui[g] = g === 'last' && b.dataset.v !== 'season' ? Number(b.dataset.v) : b.dataset.v; else if (b.dataset.step) ui.line = stepLine(ui.line, Number(b.dataset.step)); else return; draw(); });
-  $('#mk', root).onchange = e => { ui.market = e.target.value; ui.line = null; draw(); };
-  ln.addEventListener('input', () => { const v = parseFloat(ln.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } });
-  draw();
-}
-
-return { viewMatch };
 })();
 __m['gameweek'] = (() => {
 // "This Gameweek" for Hiwi's Section. Membership never depends on the viewer's time zone: it uses official round / week numbers,
@@ -2613,6 +2288,8 @@ function cardHtml(card, st) {
     <header class="hch"><div class="hct"><b>${esc(card.title)}</b><span class="hscope s-${esc(card.tagCls || d.scope)}">${esc(card.tag || SCOPE_LABEL[d.scope])}</span></div><div class="hpct" data-h-pct></div></header>
     <div class="hcm"><b>${esc(d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
     ${card.persp ? `<div class="hpersp"><span class="xs muted">Whose ${esc(d.label.toLowerCase())}:</span><div class="seg" role="group" aria-label="Whose figures">${card.persp.map(([v, l]) => `<button type="button" data-h-persp="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
+    ${card.scopes ? `<div class="hpersp hscopesel"><span class="xs muted">Form:</span><div class="seg" role="group" aria-label="Which matches">${card.scopes.map(([v, l]) => `<button type="button" data-h-scope="${v}" class="${card.sc === v ? 'on' : ''}" aria-pressed="${card.sc === v}">${esc(l)}</button>`).join('')}</div></div>
+      <p class="xs muted hscnote" data-h-scnote>${esc(card.eligNote(card.sc))}${card.scopeViews[card.sc].below ? ' · <b>below your Minimum games played</b>: shown because you chose this view on the card' : ''}</p>` : ''}
     ${note ? `<p class="xs hnote2">${esc(note)}</p>` : ''}
     <div class="hctl"><div class="seg hsides" role="group" aria-label="${bin ? 'Outcome' : 'Over, Under or Both'}">${sides.map(([v, l]) => `<button type="button" data-h-side="${v}" class="${st.side === v ? 'on' : ''}" aria-pressed="${st.side === v}">${l}</button>`).join('')}</div>
       ${bin ? '' : `<div class="hline"><button type="button" class="hstep" data-h-step="-1" aria-label="Lower line">−</button><input type="range" data-h-range min="${sMin}" max="${sMax}" step="1" value="${st.line}" aria-label="Line for ${esc(d.label)}"><button type="button" class="hstep" data-h-step="1" aria-label="Raise line">+</button><input type="number" inputmode="decimal" class="in hnum" data-h-num step="0.5" value="${st.line}" aria-label="Type a line"></div>`}</div>
@@ -2633,7 +2310,7 @@ function barsHtml(card, rows, off, years = false) {
     const div = years && (j === 0 || yr(r.date) !== yr(rows[j - 1].date)) ? `<div class="hyr${j === 0 ? ' first' : ''}" aria-hidden="true"><span>${yr(r.date)}</span></div>` : '';
     const parts = card.def.parts ? card.def.parts(r.raw || {}).filter(([v]) => v > 0) : null;
     const segs = parts && parts.length ? parts.map(([v, c]) => `<div class="hseg ${c}" style="flex:${v}"><i>${v}</i></div>`).join('') : '';
-    return `${div}<div class="hb${parts ? ' stacked' : ''}" data-i="${i}" title="${esc(fmtLong(r.date))}: ${esc(String(r.value))}"><span class="hbv">${esc(card.def.binary ? (r.value ? 'Yes' : 'No') : String(r.value))}</span><div class="hbcol">${segs}</div><div class="hblab"><span class="hbres"></span><span class="hbd">${esc(years ? fmtShortY(r.date) : fmtShort(r.date))}</span><span class="hbo">${esc(r.opp || '')}</span></div></div>`;
+    return `${div}<div class="hb${parts ? ' stacked' : ''}" data-i="${i}" title="${esc(fmtLong(r.date))}: ${esc(String(r.value))}"><span class="hbv">${esc(card.def.binary ? (r.value ? 'Yes' : 'No') : String(r.value))}</span><div class="hbcol">${segs}</div><div class="hblab"><span class="hbres"></span><span class="hbd">${esc(years ? fmtShortY(r.date) : fmtShort(r.date))}</span><span class="hbo">${esc(r.opp || '')}</span>${card.showComp && r.comp ? `<span class="hbc c-${esc(r.comp.toLowerCase().replace(/[^a-z]/g, ''))}">${esc(r.comp)}</span>` : ''}</div></div>`;
   }).join('') + '<div class="hbline" data-h-line></div>';
 }
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2693,6 +2370,11 @@ function wireHCards(root, reg, onDetail, onCommit = () => {}) {
       e.st.persp = pp.dataset.hPersp; e.card.rows = e.card.views[e.st.persp];
       const tmp = document.createElement('div'); tmp.innerHTML = cardHtml(e.card, e.st); const n = tmp.firstElementChild; c.replaceWith(n); paintHCard(n, e.card, e.st);
       n.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); root._h.onCommit(n.dataset.cid); return; }
+    const sc = t.closest('[data-h-scope]');
+    if (sc && e.card.scopeViews) { // Champions League fixture: All games / Champions League only. Same line and side; bars, hit rate, average and sample follow.
+      e.st.scope = sc.dataset.hScope; Object.assign(e.card, e.card.scopeViews[e.st.scope]);
+      const tmp = document.createElement('div'); tmp.innerHTML = cardHtml(e.card, e.st); const n = tmp.firstElementChild; c.replaceWith(n); paintHCard(n, e.card, e.st);
+      n.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); root.dispatchEvent(new CustomEvent('hscope', { detail: { cid: n.dataset.cid, scope: e.card.sc } })); return; }
     const sd = t.closest('[data-h-side]'); if (sd) { e.st.side = sd.dataset.hSide; paintHCard(c, e.card, e.st); root._h.onCommit(c.dataset.cid); return; }
     const sp = t.closest('[data-h-step]'); if (sp) { setLine(c, e, half(e.st.line + Number(sp.dataset.hStep))); root._h.onCommit(c.dataset.cid, 'step'); return; }
     const dt = t.closest('[data-h-detail]'); if (dt) root._h.onDetail(c.dataset.cid, dt.dataset.g);
@@ -2757,7 +2439,7 @@ __m['v-hiwi'] = (() => {
 // the team's next published fixture; without one, only the team's own statistics are shown (no opponent is invented).
 // Football can research several leagues at once (league checkboxes, All Leagues, Today's Games Only = UK date). NFL is never mixed in.
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
-const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason } = __m['data'];
+const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT } = __m['data'];
 const { fbPlayers, hasPlayerLogs } = __m['fbscan'];
 const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, teamGameRows, nflSelectable } = __m['nfl-data'];
 const { openGraphModal } = __m['panel'];
@@ -2786,6 +2468,11 @@ const PAGE = 24;
 // Minimum Games Played (owner request, Milestone 4): hides a player or team card when the subject has fewer games / matches with a
 // recorded value for that market across every season PropLab has. Default 10, remembered on this device; 0 or 1 shows everything.
 const MINKEY = 'proplab.hiwi.minGames.v1';
+// Milestone 5: Champions League fixtures can use All games (domestic league + Champions League, in date order) or Champions League only.
+const SCOPEKEY = 'proplab.uclScope.v1';
+const getUclScope = () => { try { const v = localStorage.getItem(SCOPEKEY); return v === 'ucl' ? 'ucl' : 'all'; } catch { return 'all'; } };
+const setUclScope = v => { try { localStorage.setItem(SCOPEKEY, v === 'ucl' ? 'ucl' : 'all'); } catch { /* this visit only */ } };
+const SCOPE_OPTS = [['all', 'All games'], ['ucl', 'Champions League only']];
 // Minimum Games Played (owner correction 20 Oct): 1–20, default 10, counted from the CURRENT SEASON only (games with a recorded figure).
 const MIN_LO = 1, MIN_HI = 20;
 const clampMin = n => Math.max(MIN_LO, Math.min(MIN_HI, n));
@@ -2958,33 +2645,44 @@ async function viewHiwi(root, r, sport) {
 
   // ---------- result cards ----------
   let cards = [], shown = 0, reg = new Map(), notes = [];
-  const periodText = lg => (st.period === 'season' ? `${lg === 'nfl' ? `${seasonOf('nfl')} regular season` : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season`}` : `last ${st.period} ${nflMode ? 'games' : 'matches'}`);
+  const periodText = (lg, sc) => (sc === 'all' ? (st.period === 'season' ? `${seasonOf('ucl')}/${String(seasonOf('ucl') + 1).slice(2)} season, league + Champions League` : `last ${st.period} matches, league + Champions League`)
+    : sc === 'ucl' ? (st.period === 'season' ? `Champions League ${seasonOf('ucl')}/${String(seasonOf('ucl') + 1).slice(2)}` : `last ${st.period} Champions League matches`)
+    : st.period === 'season' ? `${lg === 'nfl' ? `${seasonOf('nfl')} regular season` : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season`}` : `last ${st.period} ${nflMode ? 'games' : 'matches'}`);
   const trCache = new Map();
   /** A team's completed rows, newest first: the current season (Season) or every season PropLab has (Last N picks from these). */
-  const teamRowsAll = id => { const k = 'all|' + id; if (!trCache.has(k)) trCache.set(k, nflMode ? teamGameRows(id).filter(x => x.type === 'R') : teamRowsFor(id)); return trCache.get(k); };
-  const teamRowsNow = id => { const k = 'cur|' + id; if (!trCache.has(k)) { const lg = lgOfTeam(id), cs = seasonOf(lg); trCache.set(k, teamRowsAll(id).filter(x => x.season === cs && (nflMode || x.league === lg))); } return trCache.get(k); };
+  // sc (Champions League fixtures only): 'all' = league + Champions League rows in date order; 'ucl' = Champions League rows only. Default: domestic.
+  const teamRowsAll = (id, sc) => { const k = 'all|' + (sc || '') + '|' + id; if (!trCache.has(k)) trCache.set(k, nflMode ? teamGameRows(id).filter(x => x.type === 'R') : sc ? teamRowsScoped(id, sc) : teamRowsFor(id)); return trCache.get(k); };
+  // current season: with a scope, each row's own competition's current season (league 2026/27 and Champions League 2026/27); never earlier seasons
+  const teamRowsNow = (id, sc) => { const k = 'cur|' + (sc || '') + '|' + id; if (!trCache.has(k)) { const lg = lgOfTeam(id), cs = seasonOf(lg); trCache.set(k, sc ? teamRowsAll(id, sc).filter(x => x.season === seasonOf(x.league)) : teamRowsAll(id).filter(x => x.season === cs && (nflMode || x.league === lg))); } return trCache.get(k); };
   const forPeriod = (cur, all) => (st.period === 'season' ? cur : all.slice(0, st.period));
-  const mkRows = (rows, def, label) => rows.map(x => ({ date: x.date, opp: label(x), value: def.get(x), raw: x })).filter(x => x.value !== null && x.value !== undefined).reverse();
+  const mkRows = (rows, def, label) => rows.map(x => ({ date: x.date, opp: label(x), value: def.get(x), raw: x, comp: COMP_SHORT[x.league] || '' })).filter(x => x.value !== null && x.value !== undefined).reverse();
   const coverFrom = lg => { const k = 'cov|' + lg; if (!trCache.has(k)) { let m = null; if (lg === 'nfl') { for (const g of nfl.games) if (g.final && (!m || g.date < m)) m = g.date; } else for (const x of store.teamMatches) if (x.league === lg && (!m || x.date < m)) m = x.date; trCache.set(k, m); } return trCache.get(k); };
   /** Head-to-head meetings between team h and team a in PropLab's records (any season), newest first, from h's side. */
-  const meetings = (h, a) => (nflMode ? teamGameRows(h).filter(x => x.opp === a) : teamRowsFor(h).filter(x => x.oppSlug === a));
+  // Champions League fixtures (sc set): every meeting PropLab holds, league or Champions League, each bar tagged with its competition
+  const meetings = (h, a, sc) => (nflMode ? teamGameRows(h).filter(x => x.opp === a) : (sc ? teamRowsScoped(h, 'all') : teamRowsFor(h)).filter(x => x.oppSlug === a));
   const oppLab = x => `${x.home ? 'v' : '@'}${nflMode ? x.opp : short(x.opp)}`;
   const meaning = (def, nm) => (def.scope === 'match' ? `both teams combined in each of ${nm}'s matches` : def.scope === 'opp' ? `by ${nm}'s opponents in each match` : `${nm}'s own figure in each match`);
   const dirNote = (def, me, other) => (def.scope === 'opp' ? `Each bar: ${def.label} for ${me}, i.e. ${other}'s own figure, in one actual meeting between them.` : `Each bar: ${me}'s own ${def.label.replace(/^Team /, '').toLowerCase()} in one actual meeting with ${other} (not both teams added together).`);
   const U = nflMode ? 'game' : 'match';
   /** One team's own history card. */
-  const teamCard = (id, def, extra) => { const lg = lgOfTeam(id), rows = forPeriod(teamRowsNow(id), teamRowsAll(id)), nm = teamLabel(id);
-    return { title: nm, def, unit: U, m: rows.length, rows: mkRows(rows, def, oppLab), note: `Each bar: ${def.label}, ${meaning(def, nm)}.`, period: periodText(lg), detail: { rows: teamRowsAll(id), subjectId: id }, team: id, lg, ...extra }; };
+  const teamCard = (id, def, extra, sc) => { const lg = lgOfTeam(id), rows = forPeriod(teamRowsNow(id, sc), teamRowsAll(id, sc)), nm = teamLabel(id);
+    return { title: nm, def, unit: U, m: rows.length, rows: mkRows(rows, def, oppLab), note: `Each bar: ${def.label}, ${meaning(def, nm)}.`, period: periodText(lg, sc), detail: { rows: teamRowsAll(id, sc), subjectId: id }, team: id, lg, showComp: !!sc, sc, ...extra }; };
+  /** A Champions League fixture card: both scopes are prepared, the card shows sc and can switch (same line, same side). Eligibility: the
+   *  current-season count in the scope shown (All games: league + Champions League this season; Champions League only: this season's UCL games). */
+  const scopedCard = (id, def, extra, sc) => { const views = {};
+    for (const [v] of SCOPE_OPTS) { const c = teamCard(id, def, {}, v), n = teamRowsNow(id, v).reduce((t, x) => { const y = def.get(x); return t + (y !== null && y !== undefined ? 1 : 0); }, 0);
+      views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n < getMinGames() || n === 0 }; }
+    return { ...teamCard(id, def, extra, sc), scopes: SCOPE_OPTS, scopeViews: views, eligNote: v => `${views[v].elig} ${views[v].elig === 1 ? 'match' : 'matches'} this season${v === 'all' ? ' (league + Champions League)' : ' (Champions League)'}` }; };
   /** The head-to-head card (used in Detailed analysis), from team h's side; Team / Opponent markets can switch to a's side. */
-  const h2hCard = (h, a, def, cid) => {
-    const lg = lgOfTeam(h), from = coverFrom(lg), mH = meetings(h, a), mA = meetings(a, h), hN = teamLabel(h), aN = teamLabel(a);
+  const h2hCard = (h, a, def, cid, sc) => {
+    const lg = sc ? 'ucl' : lgOfTeam(h), from = sc ? [coverFrom('ucl'), coverFrom(lgOfTeam(h))].filter(Boolean).sort()[0] : coverFrom(lg), mH = meetings(h, a, sc), mA = meetings(a, h, sc), hN = teamLabel(h), aN = teamLabel(a);
     const view = id => (id === h ? mH : mA);
     const rows = id => mkRows(view(id), def, x => `${x.home ? 'v' : '@'}${code(id === h ? a : h)}`);
     const n = rows(h).length, dir = def.scope !== 'match';
-    const cover = `${n === 1 ? `The only meeting in PropLab's records, ${monthYear(mH[0].date)}` : `All ${n} meetings in PropLab's records${n ? `, ${monthYear(mH[mH.length - 1].date)} to ${monthYear(mH[0].date)}` : ''}`}. ${nflMode ? 'Regular-season and playoff games' : 'League matches only'} since ${from ? monthYear(from) : 'the start of the records'}; older${nflMode ? '' : ' and cup'} meetings are not included.${n && n < 5 ? ` Only ${n} meeting${n === 1 ? '' : 's'}: ${n}/${n} is not a reliable trend.` : ''}`;
+    const cover = `${n === 1 ? `The only meeting in PropLab's records, ${monthYear(mH[0].date)}` : `All ${n} meetings in PropLab's records${n ? `, ${monthYear(mH[mH.length - 1].date)} to ${monthYear(mH[0].date)}` : ''}`}. ${nflMode ? 'Regular-season and playoff games' : sc ? 'League and Champions League matches' : 'League matches only'} since ${from ? monthYear(from) : 'the start of the records'}; older${nflMode || sc ? '' : ' and cup'} meetings are not included.${n && n < 5 ? ` Only ${n} meeting${n === 1 ? '' : 's'}: ${n}/${n} is not a reliable trend.` : ''}`;
     return { cid, title: `Head-to-head: ${hN} v ${aN}`, def, tag: 'Head-to-head', tagCls: 'h2h', h2h: true, unit: U, m: n, rows: rows(h), views: dir ? { h: rows(h), a: rows(a) } : null, persp: dir ? [['h', hN], ['a', aN]] : null,
       note: dir ? null : `Each bar: ${def.label}, both teams combined, in one actual meeting between ${hN} and ${aN}.`, noteFor: dir ? { h: dirNote(def, hN, aN), a: dirNote(def, aN, hN) } : null,
-      cover: n ? cover : `${nflMode ? 'Regular-season and playoff games' : 'League matches'} since ${from ? monthYear(from) : 'the start of the records'} checked; older${nflMode ? '' : ' and cup'} meetings are not included.`,
+      cover: n ? cover : `${nflMode ? 'Regular-season and playoff games' : sc ? 'League and Champions League matches' : 'League matches'} since ${from ? monthYear(from) : 'the start of the records'} checked; older${nflMode || sc ? '' : ' and cup'} meetings are not included.`,
       empty: `No meetings between ${hN} and ${aN} in PropLab's records${from ? ` since ${monthYear(from)}` : ''}. Nothing is filled in.`, period: 'head-to-head meetings',
       detail: { rows: mH, subjectId: h, h2h: true, views: dir ? { h: { rows: mH, subjectId: h, name: hN }, a: { rows: mA, subjectId: a, name: aN } } : null } };
   };
@@ -3023,6 +2721,12 @@ async function viewHiwi(root, r, sport) {
           const [h, a] = homeAway(f), fid = fxId(f), base = [fxName(f), mi];
           const ctx = `${fxName(f)} · ${kickTxt(f)}${nflMode ? '' : lgTag(f.league)}`;
           const ko = f.ko_utc || `~${f.date}`; // fixtures without a confirmed time sort after timed ones on the same scheme
+          if (!nflMode && isCup(f.league)) { // Champions League fixture: All games / Champions League only (the scope chosen last is the default)
+            const sc = getUclScope();
+            const eh = enough(teamRowsNow(h, sc), def, teamLabel(h), 'match'); if (eh !== null) outc.push(scopedCard(h, def, { cid: `fh|${fid}|${k}`, ord: [...base, 0], ko, tag: 'Home team history', tagCls: 'home', context: ctx, fixture: fid, opp: a, fxLeague: f.league }, sc));
+            const ea = enough(teamRowsNow(a, sc), def, teamLabel(a), 'match'); if (ea !== null) outc.push(scopedCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away team history', tagCls: 'away', context: ctx, fixture: fid, opp: h, fxLeague: f.league }, sc));
+            continue;
+          }
           const eh = enough(teamRowsNow(h), def, teamLabel(h), nflMode ? 'game' : 'match'); if (eh !== null) outc.push(teamCard(h, def, { cid: `fh|${fid}|${k}`, ord: [...base, 0], ko, tag: 'Home team history', tagCls: 'home', context: `${ctx} · ${elig(eh, nflMode ? 'game' : 'match')}`, fixture: fid, opp: a }));
           const ea = enough(teamRowsNow(a), def, teamLabel(a), nflMode ? 'game' : 'match'); if (ea !== null) outc.push(teamCard(a, def, { cid: `fa|${fid}|${k}`, ord: [...base, 1], ko, tag: 'Away team history', tagCls: 'away', context: `${ctx} · ${elig(ea, nflMode ? 'game' : 'match')}`, fixture: fid, opp: h }));
         }
@@ -3033,6 +2737,7 @@ async function viewHiwi(root, r, sport) {
   const stateFor = (c, sportKey = sport, store_ = cardState) => {
     const key = `${sportKey}|${c.cid}`; let s = store_.get(key);
     if (c.views) { if (!s || !c.views[s.persp]) { if (s) s.persp = 'h'; } c.rows = c.views[(s && s.persp) || 'h']; }
+    if (c.scopeViews && s && s.scope && c.scopeViews[s.scope]) Object.assign(c, c.scopeViews[s.scope]); // the card's own All games / Champions League only choice
     const fresh = () => startLine(c.def.key, c.rows.map(x => x.value));
     if (!s) { s = { line: c.def.binary ? 0.5 : fresh(), side: c.def.binary ? 'yes' : 'over', userLine: false, persp: 'h' }; store_.set(key, s); }
     else if (!s.userLine && !c.def.binary) s.line = fresh();
@@ -3083,6 +2788,7 @@ async function viewHiwi(root, r, sport) {
       <div id="hcards"></div><button type="button" class="btn" id="hmore" hidden></button>
       <p class="xs muted">Past results only: historical hit rates, not model probabilities or bookmaker prices. Check each card's sample size: 100% from 1 match is weak evidence.</p>`;
     wireHCards($('#hcards', out), reg, openDetails, onCommit);
+    { const hc = $('#hcards', out); if (!hc._scopeWired) { hc._scopeWired = true; hc.addEventListener('hscope', ev => setUclScope(ev.detail.scope)); } } // the last choice becomes the default for new cards
     renderMore();
     $('#hmore', out).onclick = renderMore;
     if (io) io.disconnect();
@@ -3124,10 +2830,11 @@ async function viewHiwi(root, r, sport) {
     const carry = x => ({ line: s0.line, side: s0.side, userLine: true, persp: 'h', ...x });
     const sections = () => {
       const secs = [];
-      const tc = (id, cidp, tag, tagCls) => { const lg = lgOfTeam(id), rows = per === 'season' ? teamRowsNow(id) : teamRowsAll(id).slice(0, per), nm = teamLabel(id);
-        return { cid: cidp, title: nm, def: d, unit: U, m: rows.length, rows: mkRows(rows, d, oppLab), tag, tagCls, period: per === 'season' ? periodText(lg) : `last ${per} ${nflMode ? 'games' : 'matches'}`, note: `Each bar: ${d.label}, ${meaning(d, nm)}.`, detail: { rows: teamRowsAll(id), subjectId: id }, team: id, detailLabel: 'Full chart and filters ›' }; };
+      const sc = c.sc || null; // Champions League fixture: the scope shown on the card (All games / Champions League only)
+      const tc = (id, cidp, tag, tagCls) => { const lg = lgOfTeam(id), rows = per === 'season' ? teamRowsNow(id, sc) : teamRowsAll(id, sc).slice(0, per), nm = teamLabel(id);
+        return { cid: cidp, title: nm, def: d, unit: U, m: rows.length, rows: mkRows(rows, d, oppLab), tag, tagCls, showComp: !!sc, sc, period: per === 'season' ? periodText(lg, sc) : sc ? `last ${per} matches${sc === 'ucl' ? ' (Champions League)' : ' (league + Champions League)'}` : `last ${per} ${nflMode ? 'games' : 'matches'}`, note: `Each bar: ${d.label}, ${meaning(d, nm)}.`, detail: { rows: teamRowsAll(id, sc), subjectId: id }, team: id, detailLabel: 'Full chart and filters ›' }; };
       secs.push(['Selected team', tc(me, 'cmp|me', 'Selected team', 'home')]);
-      if (opp) { secs.push(['Opponent', tc(opp, 'cmp|opp', 'Opponent', 'away')]); const hc = h2hCard(me, opp, d, 'cmp|h2h'); hc.detailLabel = 'Full chart and filters ›'; secs.push(['Head-to-head', hc]); }
+      if (opp) { secs.push(['Opponent', tc(opp, 'cmp|opp', 'Opponent', 'away')]); const hc = h2hCard(me, opp, d, 'cmp|h2h', sc); hc.showComp = !!sc; hc.detailLabel = 'Full chart and filters ›'; secs.push(['Head-to-head', hc]); }
       return secs;
     };
     const modal = document.createElement('div'); modal.className = 'modal hcmpmodal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'Detailed analysis');
@@ -3255,12 +2962,370 @@ async function viewHiwi(root, r, sport) {
   draw(); await refresh();
 }
 
-return { wilson, MODE_SCOPES, MIN_LO, clampMin, getMinGames, setMinGames, sortCards, viewHiwi };
+return { wilson, MODE_SCOPES, getUclScope, setUclScope, SCOPE_OPTS, MIN_LO, clampMin, getMinGames, setMinGames, sortCards, viewHiwi };
+})();
+__m['scanner'] = (() => {
+// Plays scanner: for ONE subject (a team, a player, or one side of a game) scan every market that has recorded data and,
+// for each market and direction, keep the most ambitious research line whose real hit rate still reaches the minimum:
+//   Over  -> the HIGHEST line with hit rate >= minimum;  Under -> the LOWEST line with hit rate >= minimum.
+// Lowering the minimum therefore moves a result to a harder line (it does not add easier duplicates): one result per market and direction.
+// Order of results (deterministic): actual hit rate high->low, then larger sample, then the market catalogue order, then Over before Under.
+const { marketRows } = __m['markets'];
+const { applyFilters } = __m['research'];
+const { bestLine, closestLine, dotsFor } = __m['plays'];
+
+/**
+ * rows: the subject's rows, newest first. markets: [{ key, label, binary?, get(row) }] in catalogue order.
+ * o: { lines(def) -> half-point lines, sides: ['over','under'], minPct, last (0/null = no cut), season, venue, types, exposureKey }
+ * Returns { results, misses, scanned } — misses are markets with data where no research line reaches the minimum (with their closest line).
+ */
+function scanOne(rows, markets, o) {
+  const results = [], misses = []; let scanned = 0;
+  markets.forEach((def, order) => {
+    const f = applyFilters(marketRows(rows, def, o.exposureKey || null), { last: o.last || null, season: o.season || null, venue: o.venue || '', types: o.types || null });
+    if (!f.length) return; // no recorded value for this statistic in this sample: the market is simply not offered
+    const values = f.map(r => r.value); const lines = o.lines(def); if (!lines.length) return;
+    scanned++;
+    // rare-event markets (a player's goals, cards, touchdowns, sacks...) are only offered as Over / Yes: "Under 0.5 goals" for a defender is not a real research idea
+    // Yes-only markets are Over: they are skipped when only Under is asked for
+    for (const side of (def.binary || def.overOnly) ? o.sides.filter(x => x === 'over') : o.sides) {
+      const b = bestLine(values, lines, side, o.minPct);
+      const base = { def, side, order, nUsed: f.length, requested: o.last || 0, venue: o.venue || '', rowsUsed: [...f].reverse(), from: f[f.length - 1].date, to: f[0].date };
+      // A market that does not apply to this subject: Under at the lowest research line when its median is already below that line
+      // (e.g. "Under 0.5 shots" for a goalkeeper). Sportsbooks would not price it, so it is not shown as a result.
+      if (b && side === 'under' && b.line === lines[0] && b.hr.median < lines[0]) continue;
+      if (b) results.push({ ...base, line: b.line, hr: b.hr, dots: dotsFor(values, b.line, side) });
+      else { const c = closestLine(values, lines, side); if (c) misses.push({ ...base, line: c.line, hr: c.hr }); }
+    }
+  });
+  const cmp = (a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n || a.order - b.order || (a.side === b.side ? 0 : a.side === 'over' ? -1 : 1);
+  return { results: results.sort(cmp), misses: misses.sort(cmp), scanned };
+}
+
+return { scanOne };
+})();
+__m['playcard'] = (() => {
+// One play card, shared by Plays (football and NFL) and Hiwi's Section. Every number on a card comes from one sample:
+// hit rate, hits/sample, dots and the match list always agree, and they all move together with the inline line slider.
+const { infoTag } = __m['info'];
+const { reliability } = __m['plays'];
+const { hitRate } = __m['analytics'];
+const { esc, fmtShort, fmtLong } = __m['util'];
+
+const sideWord = s => (s === 'under' ? 'Under' : 'Over');
+const isHit = (v, line, side) => (side === 'under' ? v < line : v > line);
+
+/**
+ * x: a scanOne result (def, side, line = best line, hr, rowsUsed oldest first, nUsed, requested, from, to).
+ * o: { ri (registry index), head (html shown above, e.g. fixture + kick-off), who (team or player label), scope ("Real Madrid only"),
+ *      unit ('match'|'game'), sample ("last 10 home matches"), lines (research lines for the slider), minPct, fmtOpp(row), fmtValue(v), cur (current line) }
+ */
+function playCard(x, o = {}) {
+  const unit = o.unit || 'match';
+  const bin = !!x.def.binary, fv = o.fmtValue || (v => (bin ? (v ? 'Yes' : 'No') : v));
+  const fd = d => (d.slice(0, 4) === x.to.slice(0, 4) ? fmtShort(d) : fmtLong(d));
+  const lines = !bin && o.lines && o.lines.length > 1 ? o.lines : null;
+  const cur = o.cur ?? x.line;
+  const rows = [...x.rowsUsed].reverse().map((r, k) => `<tr><td>${esc(fd(r.date))}</td><td>${esc(o.fmtOpp ? o.fmtOpp(r) : `${r.home ? 'v' : 'at'} ${r.opp || ''}`)}</td><td class="n" data-pl-v="${x.rowsUsed.length - 1 - k}">${esc(fv(r.value))}</td></tr>`).join('');
+  const rel = reliability(x.hr.n);
+  return `<div class="card play" style="margin-bottom:10px"${o.ri != null ? ` data-ri="${o.ri}"` : ''}>
+    ${o.head || ''}
+    <div class="row" style="border:0;padding:0"><div class="l">${o.who ? `<b>${esc(o.who)}</b>` : ''}<span class="plwhat" data-pl-what></span>${o.scope ? `<span class="xs muted">${esc(o.scope)}</span>` : ''}</div><div class="r"><b data-pl-pct style="font-size:22px"></b></div></div>
+    <div class="hitn"><b data-pl-hits></b> <span class="muted">· ${esc(o.sample || '')}${x.requested && x.nUsed < x.requested ? ` (only ${x.nUsed} available)` : ''}</span></div>
+    <div class="xs warn" data-pl-below hidden></div>
+    <div class="dots" data-pl-dots aria-label="hits and misses, oldest to newest"></div>
+    ${lines ? `<div class="plslide"><label class="xs muted" for="sl${o.ri}">Line</label><input id="sl${o.ri}" type="range" data-pl-slider min="${lines[0]}" max="${lines[lines.length - 1]}" step="1" value="${cur}" aria-label="Adjust the line"><button type="button" class="chip" data-pl-reset hidden>Reset to best line</button></div>` : ''}
+    <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(x.from))} – ${esc(fmtLong(x.to))} · ${infoTag(rel.k, rel.t, { n: x.hr.n, cls: 'rel ' + rel.k })}${bin ? '' : ' · ' + infoTag('research', 'Research line', { cls: 'neutral' })}</div>
+    <details class="mx"><summary class="xs">${unit === 'match' ? 'Matches' : 'Games'} (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>${unit === 'match' ? 'Match' : 'Game'}</th><th>Value</th></tr>${rows}</table></div></details>
+    ${o.ri != null ? '<button type="button" class="chip opengraph" data-open>More details ›</button>' : ''}</div>`;
+}
+
+/** Fills the live parts of a card for line `line` (called on render and every slider move). */
+function paintCard(el, x, line, o = {}) {
+  const unit = o.unit || 'match', units = unit + (unit === 'match' ? 'es' : 's');
+  const bin = !!x.def.binary, fv = o.fmtValue || (v => (bin ? (v ? 'Yes' : 'No') : v));
+  const values = x.rowsUsed.map(r => r.value); // oldest first
+  const hr = hitRate(values, line, x.side);
+  const q = s => el.querySelector(s);
+  q('[data-pl-what]').innerHTML = bin ? `<strong>${esc(x.def.label)}</strong>` : `<strong>${sideWord(x.side)} ${line}</strong> ${esc(x.def.label)}`;
+  const pct = q('[data-pl-pct]'); pct.textContent = hr.hitPct === null ? 'n/a' : `${hr.hitPct}%`; pct.className = hr.hitPct >= (o.minPct ?? 80) ? 'hit' : '';
+  q('[data-pl-hits]').textContent = `${hr.hits}/${hr.n} · ${hr.hits} hit${hr.hits === 1 ? '' : 's'} from ${hr.n} ${hr.n === 1 ? unit : units}`;
+  const below = q('[data-pl-below]'); const isBelow = o.minPct != null && hr.hitPct !== null && hr.hitPct < o.minPct;
+  below.hidden = !isBelow; below.textContent = isBelow ? `Below your ${o.minPct}% minimum at this line` : '';
+  q('[data-pl-dots]').innerHTML = values.map((v, i) => { const h = isHit(v, line, x.side); return `<i class="${h ? 'on' : ''}" title="${esc(x.rowsUsed[i].date)}: ${esc(fv(v))}">${h ? '●' : '○'}</i>`; }).join('');
+  el.querySelectorAll('[data-pl-v]').forEach(td => { const v = values[Number(td.dataset.plV)]; td.className = 'n ' + (isHit(v, line, x.side) ? 'hit' : 'miss'); });
+  const reset = q('[data-pl-reset]'); if (reset) reset.hidden = line === x.line;
+  const sl = q('[data-pl-slider]'); if (sl && Number(sl.value) !== line) sl.value = line;
+}
+
+/**
+ * Wires every card under root. reg[i] = { x, o, cur }. onOpen(i) opens the detailed view at the card's current line.
+ * The slider and its reset button never open the details: only the "More details" button does.
+ */
+function wireCards(root, reg, onOpen) {
+  root.querySelectorAll('.play[data-ri]').forEach(el => { const e = reg[Number(el.dataset.ri)]; if (e) paintCard(el, e.x, e.cur ?? e.x.line, e.o); });
+  // Pages redraw their result list inside the same container, so the listeners are attached once and always use the latest cards.
+  const had = !!root._plWire; root._plWire = { reg, onOpen }; if (had) return;
+  const cur = () => root._plWire;
+  root.addEventListener('input', ev => { const sl = ev.target.closest('[data-pl-slider]'); if (!sl) return; const el = sl.closest('.play'); const e = cur().reg[Number(el.dataset.ri)]; if (!e) return; e.cur = Number(sl.value); paintCard(el, e.x, e.cur, e.o); });
+  root.addEventListener('click', ev => {
+    const rs = ev.target.closest('[data-pl-reset]'); if (rs) { const el = rs.closest('.play'); const e = cur().reg[Number(el.dataset.ri)]; if (!e) return; e.cur = e.x.line; paintCard(el, e.x, e.cur, e.o); return; }
+    const op = ev.target.closest('[data-open]'); if (op) { const el = op.closest('.play'); cur().onOpen(Number(el.dataset.ri)); }
+  });
+}
+
+/** Collapsed list of markets where no research line reached the minimum, with their closest line. */
+function missesHtml(misses, minPct, o = {}) {
+  if (!misses.length) return '';
+  return `<details class="misses"><summary class="small">No qualifying line at ${minPct}% for ${misses.length} market/direction${misses.length === 1 ? '' : 's'}</summary>
+    <p class="xs muted">These markets have recorded data, but no research line reaches ${minPct}%. The closest line is shown with its real hit rate. Lower the minimum to see them as results.</p>
+    <div class="scroll"><table><tr><th>Market</th><th>Closest line</th><th>Hit rate</th></tr>${misses.map(x => `<tr><td>${o.who ? esc(o.who(x)) + ' · ' : ''}${esc(x.def.label)}</td><td>${x.def.binary ? 'Yes' : `${sideWord(x.side)} ${x.line}`}</td><td class="n">${x.hr.hitPct}% <span class="xs muted">(${x.hr.hits}/${x.hr.n})</span></td></tr>`).join('')}</table></div></details>`;
+}
+
+return { playCard, paintCard, wireCards, missesHtml };
+})();
+__m['v-plays'] = (() => {
+// Plays (football): a targeted scanner. Choose ONE team, ONE upcoming match or ONE player, a sample and a minimum hit rate;
+// PropLab scans every market the league really records and shows, per market and direction, the most ambitious research line that
+// still reaches the minimum (see scanner.js). Lowering the minimum moves results to harder lines; it never adds easier duplicates.
+const { store, teamsOfLeague, teamRowsFor: teamRowsDom, upcomingFixtures, leagueName, teamSlugOf, isCup, teamRowsScoped } = __m['data'];
+const { getUclScope } = __m['v-hiwi'];
+const { marketDesc } = __m['markets'];
+const { h2hSample } = __m['plays'];
+const { scanOne } = __m['scanner'];
+const { fbTeamMarkets, fbPlayers, fbPlayerMarkets, fbLines, fbScope, hasPlayerLogs, fbSeason } = __m['fbscan'];
+const { playCard, wireCards, missesHtml } = __m['playcard'];
+const { haFormHtml, haFormClick, openGraphModal, venueWord } = __m['panel'];
+const { $, koLocal, tzNow, esc, fmtKick, fixtureId, koUK, fmtDay } = __m['util'];
+const { dataBanner, problemsBanner, leagueSelect, getLeague, setLeague, prefs, savePrefs } = __m['shared'];
+
+const PCTS = [60, 65, 70, 75, 80, 85, 90, 95, 100];
+const SAMPLES = [[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
+const ui = { kind: 'team', team: '', game: '', club: '', player: '', last: 10, side: 'both', venue: '', gvH: 'home', gvA: 'away' };
+const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
+
+async function viewPlays(root, r) {
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Plays</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
+  const g = r.q.get('game'); if (g) { const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.kind = 'match'; ui.game = g; ui.gvH = 'home'; ui.gvA = 'away'; }
+  const t = r.q.get('team'); if (t) { const tm = store.teams.get(t); if (tm) { setLeague(tm.league); ui.kind = 'team'; ui.team = t; } }
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Plays</h1>
+    <p class="muted" style="margin-top:-4px">Pick one team, match or player. PropLab checks every market with recorded data and shows the <b>most ambitious line</b> that still reached your minimum hit rate. Historical hit rates, not predictions or tips.</p>
+    <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
+  const ctl = $('#ctl', root), out = $('#out', root);
+  let reg = [], players = [];
+  const league = () => getLeague();
+  // Champions League: All games / Champions League only (set in Hiwi or Finder); head-to-head: every meeting PropLab holds
+  const teamRowsFor = slug => (isCup(league()) ? teamRowsScoped(slug, getUclScope()) : teamRowsDom(slug));
+  const teams = () => teamsOfLeague(league()).slice().sort((a, b) => a.name.localeCompare(b.name));
+  const fixtures = () => upcomingFixtures(league());
+  const minPct = () => prefs.minPct;
+  const sampleOpts = () => ({ last: ui.last === 'season' ? 0 : ui.last, season: ui.last === 'season' ? fbSeason(league()) : null });
+  const sampleText = venue => `${ui.last === 'season' ? "this season's" : `last ${ui.last}`} ${venueWord(venue)}matches`;
+  const sides = () => (ui.side === 'both' ? ['over', 'under'] : [ui.side]);
+  const lines = def => fbLines(def);
+
+  const fixKind = () => {
+    if (ui.kind === 'player' && !hasPlayerLogs(league())) ui.kind = 'team';
+    const ts = teams(); if (!ts.some(x => x.slug === ui.team)) ui.team = ts[0]?.slug || '';
+    const fs = fixtures(); if (!fs.some(f => fixtureId(f) === ui.game)) ui.game = fs[0] ? fixtureId(fs[0]) : '';
+    if (ui.kind === 'player') { if (!players.some(p => p.clubSlug === ui.club)) ui.club = [...players].sort((a, b) => a.team.localeCompare(b.team))[0]?.clubSlug || ''; const ps = players.filter(p => p.clubSlug === ui.club); if (!ps.some(p => p.id === ui.player)) ui.player = [...ps].sort((a, b) => a.name.localeCompare(b.name))[0]?.id || ''; }
+  };
+
+  const drawCtl = () => {
+    fixKind(); const lg = league(), ts = teams(), fs = fixtures();
+    const kinds = [['team', 'Team'], ['match', 'Match'], ...(hasPlayerLogs(lg) ? [['player', 'Player']] : [])];
+    const byDay = new Map(); for (const f of fs) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
+    const clubs = [...new Map(players.map(p => [p.clubSlug, p.team])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    const picker = ui.kind === 'team' ? `<div class="field"><label for="tm">Team</label><select class="in" id="tm">${ts.map(x => `<option value="${esc(x.slug)}" ${x.slug === ui.team ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>`
+      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koLocal(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${esc(leagueName(lg))} fixtures are published right now.</p>`)
+      : `<div class="ctl"><div class="field"><label for="pclub">Club</label><select class="in" id="pclub">${clubs.map(([s, n]) => `<option value="${esc(s)}" ${s === ui.club ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+         <div class="field"><label for="pl">Player</label><select class="in" id="pl">${players.filter(p => p.clubSlug === ui.club).sort((a, b) => a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
+    const one = ui.kind === 'match' ? fs.find(f => fixtureId(f) === ui.game) : null;
+    ctl.innerHTML = `${leagueSelect()}
+      <div class="field"><label>Research</label>${seg('kind', kinds, ui.kind)}</div>${picker}
+      <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only.</span></div>
+      <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), minPct(), 'grid')}</div>
+      <div class="field"><label>Direction</label>${seg('side', [['both', 'Over and Under'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
+      ${ui.kind === 'team' ? haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })
+      : ui.kind === 'match' ? haFormHtml('gvH', ui.gvH, { label: `${one ? one.home : 'Home team'}: Home/Away Form` }) + haFormHtml('gvA', ui.gvA, { label: `${one ? one.away : 'Away team'}: Home/Away Form` }) : ''}`;
+  };
+
+  const scanTeam = (slug, venue, before) => { const rows = before ? teamRowsFor(slug).filter(x => x.date < before) : teamRowsFor(slug);
+    return scanOne(rows, fbTeamMarkets(league()), { lines, sides: sides(), minPct: minPct(), ...sampleOpts(), venue }); };
+  const card = (x, o) => { const oo = { ...o, lines: x.def.binary ? null : lines(x.def), minPct: minPct() }; const ri = reg.push({ x, o: oo, cur: x.line }) - 1; return playCard(x, { ...oo, ri }); };
+  const block = (title, res, o) => `<section class="sec"><h2>${title}</h2>${res.results.length ? res.results.map(x => card(x, { ...o, scope: o.scopeOf ? o.scopeOf(x) : o.scope })).join('') : `<div class="banner info"><b>No qualifying line at ${minPct()}%.</b> ${res.scanned ? `None of the ${res.scanned} markets with data reached ${minPct()}% at any research line in this sample.` : 'No recorded statistics in this sample.'}</div>`}${missesHtml(res.misses, minPct())}</section>`;
+
+  const draw = async () => {
+    reg = []; const lg = league(), pct = minPct();
+    if (ui.kind === 'player' && !players.length) players = await fbPlayers(lg);
+    let html = '';
+    if (ui.kind === 'team') {
+      const tm = store.teams.get(ui.team); if (!tm) { out.innerHTML = '<div class="banner info">Choose a team.</div>'; return; }
+      const res = scanTeam(tm.slug, ui.venue);
+      html = `<p class="xs muted" data-summary>${esc(tm.name)}: ${res.scanned} markets with data scanned, ${sides().length === 2 ? 'Over and Under' : ui.side === 'over' ? 'Over' : 'Under'}, ${esc(sampleText(ui.venue))}, minimum ${pct}%. ${res.results.length} result${res.results.length === 1 ? '' : 's'}.</p>`
+        + block(`${esc(tm.name)} <a class="small" href="#/team/${encodeURIComponent(tm.slug)}">team page</a>`, res, { scopeOf: x => fbScope(x.def.key, tm.name), sample: sampleText(ui.venue), subj: { name: tm.name, slug: tm.slug, type: 'team' } });
+    } else if (ui.kind === 'match') {
+      const f = fixtures().find(x => fixtureId(x) === ui.game); if (!f) { out.innerHTML = `<div class="banner info"><b>No upcoming ${esc(leagueName(lg))} match to choose.</b> Pick Team instead, or another league.</div>`; return; }
+      const hs = teamSlugOf(f.home), as = teamSlugOf(f.away);
+      html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(leagueName(f.league))} · ${esc(fmtKick(f))} · only matches completed before this fixture are used</div></div>`;
+      html += block(`${esc(f.home)} <span class="muted small">(${esc(sampleText(ui.gvH))})</span>`, scanTeam(hs, ui.gvH, f.date), { scopeOf: x => fbScope(x.def.key, f.home), sample: sampleText(ui.gvH), subj: { name: f.home, slug: hs, type: 'team' } });
+      html += block(`${esc(f.away)} <span class="muted small">(${esc(sampleText(ui.gvA))})</span>`, scanTeam(as, ui.gvA, f.date), { scopeOf: x => fbScope(x.def.key, f.away), sample: sampleText(ui.gvA), subj: { name: f.away, slug: as, type: 'team' } });
+      const hh = h2hSample(isCup(league()) ? teamRowsScoped(hs, 'all') : teamRowsDom(hs), as, f.date);
+      if (hh.ok) { const res = scanOne(hh.rows, fbTeamMarkets(lg).filter(m => m.key.startsWith('m.')), { lines, sides: sides(), minPct: pct, last: 0 });
+        const lab = hh.n === 1 ? 'the only meeting' : `last ${hh.n} meetings`; html += block(`Head to head <span class="muted small">(${lab}, both teams combined${hh.n < 5 ? ' · small sample' : ''})</span>`, res, { scope: `both teams, ${lab}`, sample: lab, subj: { name: `${f.home} v ${f.away}`, slug: hs, type: 'team', h2h: true } }); }
+      else html += `<section class="sec"><h2>Head to head</h2><div class="banner info"><b>No H2H data.</b> These teams have no meeting in PropLab's published league records.</div></section>`;
+      if (hasPlayerLogs(lg)) {
+        if (!players.length) players = await fbPlayers(lg);
+        const pm = fbPlayerMarkets(players);
+        for (const [slug, name, venue] of [[hs, f.home, ui.gvH], [as, f.away, ui.gvA]]) {
+          let cards = '', n = 0;
+          for (const p of players.filter(q => q.clubSlug === slug)) {
+            const res = scanOne(p.rows.filter(x => x.date < f.date), pm, { lines, sides: sides(), minPct: pct, ...sampleOpts(), venue, exposureKey: 'minutes' });
+            for (const x of res.results) { cards += card(x, { who: p.name, sample: sampleText(venue), subj: { name: p.name, id: p.id, type: 'player', club: p.team } }); n++; }
+          }
+          html += `<section class="sec"><h2>${esc(name)} players <span class="muted small">(${n} result${n === 1 ? '' : 's'})</span></h2>${cards || `<div class="banner info">No ${esc(name)} player reached ${pct}% at a research line in this sample.</div>`}</section>`;
+        }
+      }
+    } else {
+      const p = players.find(x => x.id === ui.player); if (!p) { out.innerHTML = '<div class="banner info">Choose a player.</div>'; return; }
+      const res = scanOne(p.rows, fbPlayerMarkets(players), { lines, sides: sides(), minPct: pct, ...sampleOpts(), venue: '', exposureKey: 'minutes' });
+      html = `<p class="xs muted" data-summary>${esc(p.name)} (${esc(p.team)}): ${res.scanned} player markets with data scanned, ${esc(sampleText(''))}, minimum ${pct}%.</p>` + block(`${esc(p.name)} <a class="small" href="#/player/${encodeURIComponent(p.id)}">profile</a>`, res, { sample: sampleText(''), subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
+    }
+    html += `<p class="xs muted">How a result is chosen: for each market and direction PropLab tests its research lines (typical sportsbook line ranges, half-point lines only, not checked against a live bookmaker) and keeps the most ambitious one whose real hit rate reaches your minimum: the highest Over line or the lowest Under line. Results are ordered by hit rate, then sample size. Move a card's slider to try other lines; "Reset to best line" goes back. Missing statistics are left out, never counted as zero.</p>`;
+    out.innerHTML = html;
+    wireCards(out, reg, openDetails);
+  };
+  const openDetails = i => {
+    const e = reg[i]; if (!e) return; const s = e.o.subj, isP = s.type === 'player';
+    const rows = isP ? players.find(p => p.id === s.id)?.rows || [] : s.h2h ? e.x.rowsUsed.slice().reverse() : teamRowsFor(s.slug);
+    openGraphModal({ title: s.name, subtitle: `${isP ? s.club + ' · Player' : s.h2h ? 'Head to head' : 'Team'} · ${e.x.def.label}`, desc: marketDesc(e.x.def.key), ladder: () => lines(e.x.def),
+      panel: { key: 'plays:' + s.name + e.x.def.key, markets: [e.x.def], rows, exposureKey: isP ? 'minutes' : null, hasMinutes: isP, subject: isP ? 'player' : 'team', subjectId: isP ? s.id : s.slug,
+        init: { market: e.x.def.key, side: e.x.side, line: e.cur ?? e.x.line, last: s.h2h ? 0 : ui.last, venue: s.h2h ? '' : e.x.venue },
+        lastOptions: s.h2h ? [[0, 'The meetings on the card']] : [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']], noVenue: !!s.h2h } });
+  };
+
+  // delegated listeners on containers that survive redraws
+  ctl.addEventListener('click', async e => {
+    const hf = haFormClick(e, n => ui[n], n => (n === 'gvA' ? 'away' : 'home')); if (hf) { ui[hf.name] = hf.value; drawCtl(); draw(); return; }
+    const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg, v = b.dataset.v;
+    if (k === 'pct') { prefs.minPct = Number(v); savePrefs(); } else if (k === 'last') ui.last = v === 'season' ? 'season' : Number(v); else ui[k] = v;
+    if (k === 'kind' && v === 'player' && !players.length) players = await fbPlayers(league());
+    drawCtl(); draw();
+  });
+  ctl.addEventListener('change', async e => {
+    const tg = e.target;
+    if (tg.id === 'lgsel') { setLeague(tg.value); players = []; ui.team = ''; ui.game = ''; ui.club = ''; ui.player = ''; if (ui.kind === 'player') players = await fbPlayers(league()); }
+    else if (tg.id === 'tm') ui.team = tg.value; else if (tg.id === 'gm') ui.game = tg.value; else if (tg.id === 'pclub') { ui.club = tg.value; ui.player = ''; } else if (tg.id === 'pl') ui.player = tg.value; else return;
+    drawCtl(); draw();
+  });
+  if (ui.kind === 'player') players = await fbPlayers(league());
+  drawCtl(); draw();
+}
+
+return { PCTS, viewPlays };
+})();
+__m['v-match'] = (() => {
+const { store, teamRowsFor, teamSlugOf, newsForTeam, refereeProfile, teamsOfLeague, currentSeason, isCup, teamRowsScoped } = __m['data'];
+const { getUclScope } = __m['v-hiwi'];
+const { TEAM_MARKETS, marketRows, marketsWithData, defaultLine, stepLine } = __m['markets'];
+const { TEAM_PLAY_MARKETS, dotsFor, h2hSample } = __m['plays'];
+const { hitRate } = __m['analytics'];
+const { applyFilters } = __m['research'];
+const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick } = __m['panel'];
+const { $, $$, esc, fmtDay, fmtShort, fmtLong, avg, fmtKick } = __m['util'];
+const { dataBanner, problemsBanner, newsItem } = __m['shared'];
+
+// line: null = set the starting line for a newly chosen market. Sample and Home/Away Form changes keep the line.
+const ui = { mode: 'form', market: 'm.goals', side: 'over', line: null, last: 10, vH: 'home', vA: 'away', hv: 'all', fx: '' };
+const seg = (name, items, cur) => `<div class="seg" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
+const dotsHtml = d => `<div class="dots">${d.map(h => `<i class="${h ? 'on' : ''}">${h ? '●' : '○'}</i>`).join('')}</div>`;
+
+async function viewMatch(root, r) {
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
+  const home = r.q.get('h') || '', away = r.q.get('a') || '', date = r.q.get('d') || '';
+  const hs = teamSlugOf(home), as = teamSlugOf(away);
+  const fx = store.fixtures.find(f => f.date === date && teamSlugOf(f.home) === hs && teamSlugOf(f.away) === as);
+  if (!store.teams.has(hs) || !store.teams.has(as) || hs === as) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a><h1>Match not found</h1><p class="muted">That fixture is not in the published data.</p>`; return; }
+  const H = store.teams.get(hs).name, A = store.teams.get(as).name;
+  const before = rows => rows.filter(x => !date || x.date < date);
+  // a Champions League fixture uses the All games / Champions League only choice (head-to-head: every meeting, league or UCL)
+  const cup = fx && isCup(fx.league), trs = slug => (cup ? teamRowsScoped(slug, getUclScope()) : teamRowsFor(slug));
+  const rowsH = before(trs(hs)), rowsA = before(trs(as));
+  const lg = cup ? fx.league : store.teams.get(hs).league;
+  const has = new Set(marketsWithData(teamsOfLeague(lg).flatMap(t => teamRowsFor(t.slug)), TEAM_MARKETS).map(m => m.key));
+  const markets = TEAM_PLAY_MARKETS.filter(m => has.has(m.key));
+  if (!markets.some(m => m.key === ui.market)) { ui.market = markets.find(m => m.key === 'm.goals')?.key || markets[0]?.key; ui.line = null; }
+  const rp = fx?.referee ? refereeProfile(fx.referee) : null;
+  const fxKey = `${date}|${hs}|${as}`; if (ui.fx !== fxKey) { ui.fx = fxKey; ui.vH = 'home'; ui.vA = 'away'; ui.line = null; } // a new fixture starts with each team's own home/away form
+  root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/fixtures">← Fixtures</a>
+    <h1 style="margin-bottom:4px">${esc(H)} v ${esc(A)}</h1><div class="muted">${esc(fx ? fmtKick(fx) : fmtDay(date))}${fx?.referee ? ' · Referee ' + esc(fx.referee) : ''}</div>
+    ${[H, A].map(t => newsForTeam(t).length ? `<div class="card" style="margin-top:12px"><h3>${esc(t)} team news</h3><div class="list">${newsForTeam(t).map(newsItem).join('')}</div></div>` : '').join('')}
+    <div class="card stack" id="ctl" style="margin-top:14px">
+      <div class="field">${seg('mode', [['form', 'Recent form'], ['h2h', 'Head to head']], ui.mode)}</div>
+      <div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(m => `<option value="${m.key}" ${m.key === ui.market ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>
+      <div class="field" id="sidef"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div>
+      <div class="field" data-form><label>Matches</label>${seg('last', [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season'], [0, 'All']], ui.last)}<span class="xs muted">Season = the current league season only. All = every published match, including older seasons.</span></div>
+      <div data-form id="hafH"></div><div data-form id="hafA"></div>
+      <div class="field" data-h2h><label>Meetings</label>${seg('hv', [['all', 'All meetings'], ['venue', `At ${H}`]], ui.hv)}</div></div>
+      <div class="linebar" id="lbar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div><p class="xs muted" id="lnnote" style="margin:0"></p></div>
+    <div id="out" style="margin-top:14px"></div>
+    ${rp && rp.ref.n ? `<p class="small muted">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}`;
+  const out = $('#out', root), ln = $('#ln', root);
+  const mdef = key => TEAM_MARKETS.find(m => m.key === key);
+  const sampleOf = (rows, key, venue) => applyFilters(marketRows(rows, mdef(key)), { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(lg) : null, venue });
+  const hafNote = (team, v) => (v ? `Analysing ${esc(team)}'s ${v} matches only.` : `Analysing ${esc(team)}'s home and away matches.`);
+  const block = (title, used, line, side, note, bin) => {
+    const vals = used.map(x => x.value); const hr = hitRate(vals, line, side); const fv = v => (bin ? (v ? 'Yes' : 'No') : v);
+    if (!used.length) return `<section class="sec"><h2>${esc(title)}</h2><div class="banner info">No published matches with this statistic for this selection${note ? '. ' + esc(note) : ''}.</div></section>`;
+    return `<section class="sec"><h2>${esc(title)}</h2><div class="card"><div class="row" style="border:0;padding:0"><div class="l"><b>${bin ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line}`}</b><span>${hitsLine(hr)}${bin ? '' : ` · average ${hr.avg}`}</span></div><div class="r"><b class="${hr.hitPct >= 60 ? 'hit' : hr.hitPct <= 40 ? 'miss' : ''}" style="font-size:20px">${hr.hitPct}%</b></div></div>
+      ${dotsHtml(dotsFor(vals, line, side))}<div class="scroll" style="margin-top:8px"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${used.map(x => { const hit = side === 'under' ? x.value < line : x.value > line; return `<tr><td>${esc(x.date.slice(0, 4) === used[0].date.slice(0, 4) ? fmtShort(x.date) : fmtLong(x.date))}</td><td>${x.home ? 'v' : 'at'} ${esc(x.opp)}</td><td class="n">${x.goals ?? '–'}–${x.goalsA ?? '–'}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('')}</table></div>
+      ${note ? `<p class="xs muted" style="margin:8px 0 0">${esc(note)}</p>` : ''}</div></section>`;
+  };
+  const draw = () => {
+    $$('[data-seg]', root).forEach(g => $$('button', g).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[g.dataset.seg]))));
+    $('#hafH', root).innerHTML = haFormHtml('vH', ui.vH, { label: `${H}: Home/Away Form`, note: hafNote(H, ui.vH) }); $('#hafA', root).innerHTML = haFormHtml('vA', ui.vA, { label: `${A}: Home/Away Form`, note: hafNote(A, ui.vA) });
+    $$('[data-form]', root).forEach(x => { x.hidden = ui.mode !== 'form'; }); $$('[data-h2h]', root).forEach(x => { x.hidden = ui.mode !== 'h2h'; });
+    const key = ui.market, def = TEAM_PLAY_MARKETS.find(m => m.key === key), bin = !!def.binary, isMatch = key.startsWith('m.');
+    $('#lbar', root).hidden = bin; $('#sidef', root).hidden = bin; if (bin) { ui.side = 'over'; ui.line = 0.5; }
+    const sH = sampleOf(rowsH, key, ui.vH), sA = sampleOf(rowsA, key, ui.vA);
+    const hh = h2hSample(cup ? before(teamRowsScoped(hs, 'all')) : rowsH, as, date || '9999-12-31', { homeOnly: ui.hv === 'venue' });
+    let note = '';
+    if (ui.line === null) {
+      const fixed = defaultLine(key, [999]) === defaultLine(key, [0]);
+      if (ui.mode === 'form') { const v = [...sH, ...sA].map(x => x.value); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the observed averages of the two samples below: ${H} ${avg(sH.map(x => x.value)) ?? 'n/a'} (${sH.length} ${venueWord(ui.vH)}matches), ${A} ${avg(sA.map(x => x.value)) ?? 'n/a'} (${sA.length} ${venueWord(ui.vA)}matches), pooled ${avg(v) ?? 'n/a'}. An average of past figures, not a prediction.`; }
+      else { const v = marketRows(hh.rows, mdef(key)).map(x => x.value).filter(x => x !== null); ui.line = defaultLine(key, v); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(v) ?? 'n/a'}) of the ${v.length} head-to-head meetings shown.`; }
+      ui.note = note;
+    }
+    if (document.activeElement !== ln) ln.value = ui.line;
+    $('#lnlab', root).textContent = `${def.label} — ${ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; $('#lnnote', root).textContent = bin ? '' : ui.note || '';
+    const line = ui.line, side = ui.side; let html = '';
+    const sampleTxt = v => `${ui.last === 'season' ? "this season's" : ui.last ? 'last ' + ui.last : 'all published'} ${venueWord(v) || 'home and away '}matches`;
+    if (ui.mode === 'form') html = block(`${H}: ${sampleTxt(ui.vH)}`, sH, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin) + block(`${A}: ${sampleTxt(ui.vA)}`, sA, line, side, isMatch ? 'Match totals count both teams in each match.' : '', bin);
+    else {
+      const atV = ui.hv === 'venue';
+      if (!hh.ok) html = `<div class="banner info hnoh2h"><b>No H2H data.</b> No ${atV ? `meetings at ${esc(H)}` : 'meetings between these teams'} are in PropLab's published league records. Nothing is filled in.</div>`;
+      else {
+        const used = marketRows(hh.rows, mdef(key)).filter(x => x.value !== null);
+        if (!used.length) html = `<div class="banner info">None of the ${hh.n} meeting${hh.n === 1 ? '' : 's'} has this statistic recorded, so no head-to-head figure is shown for it.</div>`;
+        else html = block(`${H} v ${A}: ${used.length === 1 ? 'the only meeting' : `last ${used.length} meetings`} in the records${atV ? ` at ${H}` : ' (either venue)'}`, used, line, side, (isMatch ? 'Match total, both teams.' : `${H}'s own figures in these meetings.`) + (used.length < 5 ? ` Only ${used.length} meeting${used.length === 1 ? '' : 's'}: ${used.length}/${used.length} is not a reliable trend.` : ''), bin);
+      }
+    }
+    out.innerHTML = html + `<p class="xs muted">${esc(def.label)}: historical hit rate from published matches only. Home/Away is applied before the sample (Last 10 + Home = the last 10 home matches). Missing statistics are left out, never counted as zero. Yellow and red cards are separate markets. This is not a prediction.</p>`;
+  };
+  $('#ctl', root).addEventListener('click', e => { const hf = haFormClick(e, n => ui[n], n => (n === 'vA' ? 'away' : 'home')); if (hf) { ui[hf.name] = hf.value; draw(); return; }
+    const b = e.target.closest('button'); if (!b) return; const g = b.parentElement.dataset.seg;
+    if (g) ui[g] = g === 'last' && b.dataset.v !== 'season' ? Number(b.dataset.v) : b.dataset.v; else if (b.dataset.step) ui.line = stepLine(ui.line, Number(b.dataset.step)); else return; draw(); });
+  $('#mk', root).onchange = e => { ui.market = e.target.value; ui.line = null; draw(); };
+  ln.addEventListener('input', () => { const v = parseFloat(ln.value.replace(',', '.')); if (!Number.isNaN(v) && v >= 0) { ui.line = v; draw(); } });
+  draw();
+}
+
+return { viewMatch };
 })();
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
 const { infoTag } = __m['info'];
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
 const { applyFilters } = __m['research'];
@@ -3268,7 +3333,7 @@ const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
 const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg } = __m['util'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
-const { getMinGames, setMinGames, MIN_LO, MIN_HI } = __m['v-hiwi'];
+const { getMinGames, setMinGames, MIN_LO, MIN_HI, getUclScope, setUclScope, SCOPE_OPTS } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES } = __m['data'];
 
@@ -3319,10 +3384,13 @@ async function viewTrends(root, r) {
   const now = new Date();
   const lgFixtures = () => lgs.flatMap(l => selectableFixtures(l, now)).filter(f => !ui.today || isTodayUK(f, now)).sort((a, b) => (koUK(a).ymd + koUK(a).hm < koUK(b).ymd + koUK(b).hm ? -1 : 1));
   const playingToday = () => { const s2 = new Set(); for (const f of lgFixtures()) { s2.add(teamSlugOf(f.home)); s2.add(teamSlugOf(f.away)); } return s2; };
-  const leagueTeams = () => { const tod = ui.today ? playingToday() : null; return lgs.flatMap(l => teamsOfLeague(l).map(t => ({ ...t, lg: l }))).filter(t => !tod || tod.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
-  const selSet = () => { const k = lgs.join(',') + (ui.today ? '|today' : ''); if (!ui.sel[k]) ui.sel[k] = new Set(leagueTeams().map(t => t.slug)); return ui.sel[k]; };
+  const leagueTeams = () => { const tod = ui.today ? playingToday() : null; const both = lgs.some(x => !isCup(x)) && lgs.some(isCup); // a club in its league and in the Champions League is listed twice: domestic, and (UCL)
+    return lgs.flatMap(l => teamsOfLeague(l).map(t => ({ ...t, lg: l, key: isCup(l) ? `${l}:${t.slug}` : t.slug, name: isCup(l) && both ? `${t.name} (UCL)` : t.name }))).filter(t => !tod || tod.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
+  // Champions League entries use All games / Champions League only (shared with Hiwi); domestic entries use domestic matches as before
+  const rowsOfT = t => (isCup(t.lg) ? teamRowsScoped(t.slug, getUclScope()) : teamRowsFor(t.slug));
+  const selSet = () => { const k = lgs.join(',') + (ui.today ? '|today' : ''); if (!ui.sel[k]) ui.sel[k] = new Set(leagueTeams().map(t => t.key)); return ui.sel[k]; };
   const lgLabel = () => leaguesLabel(lgs);
-  const teamMarkets = () => { const rows = leagueTeams().flatMap(t => teamRowsFor(t.slug)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)); };
+  const teamMarkets = () => { const rows = leagueTeams().flatMap(t => rowsOfT(t)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)); };
   const hasPlayers = () => store.playerIndex.some(p => lgs.includes(p.league));
   const playerMarkets = () => (hasPlayers() ? PLAYER_PLAY_MARKETS.filter(m => playerAll ? [...playerAll.values()].some(p => lgs.includes(p.league) && marketsWithData(p.rows, PLAYER_MARKETS).some(x => x.key === m.key)) : ['shots', 'shots_on_target', 'goals', 'assists', 'goal_contrib'].includes(m.key)) : []);
   const allMarkets = () => [...teamMarkets(), ...playerMarkets()];
@@ -3339,7 +3407,7 @@ async function viewTrends(root, r) {
 
   // ---- default exact line: from the real values in the sample being researched (goals markets have fixed defaults) ----
   const sampleValues = async (rows, key, venue, before) => { const m = (isPlayerKey(key) ? PLAYER_MARKETS : TEAM_MARKETS).find(x => x.key === key); if (!m) return []; const rs = before ? rows.filter(x => x.date < before) : rows; return applyFilters(marketRows(rs, m), { ...period(), last: period().last || null, venue }).map(x => x.value); };
-  const subjectsRows = async (slugs) => { if (isPlayerKey(ui.exKey)) { const ps = await playerSubjects(); return ps.filter(p => slugs.includes(p.clubSlug)).map(p => p.rows); } return slugs.map(s => teamRowsFor(s)); };
+  const subjectsRows = async (slugs) => { if (isPlayerKey(ui.exKey)) { const ps = await playerSubjects(); return ps.filter(p => slugs.includes(p.clubSlug)).map(p => p.rows); } return slugs.map(s => (s.includes(':') ? teamRowsScoped(s.split(':')[1], getUclScope()) : teamRowsFor(s))); };
   const computeDefault = async () => {
     const key = ui.exKey; const def = allMarkets().find(m => m.key === key); if (!def) return;
     if (def.binary) { ui.exLine = 0.5; defNote = ''; return; }
@@ -3365,11 +3433,12 @@ async function viewTrends(root, r) {
     const byDay = new Map(), tbcFx = fx.filter(f => !f.ko_utc); for (const f of fx.filter(f => f.ko_utc)) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const f = ui.mode === 'game' ? curFixture() : null;
     ctl.innerHTML = `${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'flg' })}
+      ${lgs.some(isCup) ? `<div class="field"><label>Champions League: matches used</label>${seg('uscope', SCOPE_OPTS, getUclScope())}<span class="xs muted">All games = each club's league and Champions League matches in date order (competition shown on every match). Champions League only = its Champions League matches, across seasons. Missing statistics never count as 0.</span></div>` : ''}
       <div class="field"><label>Research mode</label>${seg('mode', [['browse', 'Browse teams'], ['game', 'Select game']], ui.mode)}</div>
       ${ui.mode === 'browse' ? `<details class="teamsel" id="tsel"><summary><b>Teams</b> <span id="tcount">${set.size === tms.length ? `All ${tms.length} teams selected` : `${set.size} team${set.size === 1 ? '' : 's'} selected`}</span></summary>
         <div class="stack" style="margin-top:10px"><input class="in" id="tq" type="search" placeholder="Search clubs" value="${esc(ui.tq)}" aria-label="Search clubs">
         <div class="row" style="border:0;padding:0;gap:8px"><button class="chip" id="tall">Select all</button><button class="chip" id="tnone">Clear all</button></div>
-        <div class="tlist">${tms.map(t => `<label class="tcheck" data-name="${esc(t.name.toLowerCase())}"><input type="checkbox" value="${esc(t.slug)}" ${set.has(t.slug) ? 'checked' : ''}> ${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</label>`).join('') || `<p class="xs muted">${ui.today ? `No team in ${esc(lgLabel())} plays today.` : 'No teams.'}</p>`}</div></div></details>
+        <div class="tlist">${tms.map(t => `<label class="tcheck" data-name="${esc(t.name.toLowerCase())}"><input type="checkbox" value="${esc(t.key)}" ${set.has(t.key) ? 'checked' : ''}> ${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</label>`).join('') || `<p class="xs muted">${ui.today ? `No team in ${esc(lgLabel())} plays today.` : 'No teams.'}</p>`}</div></div></details>
         ${hasPlayers() ? `<div class="field"><label>Show</label>${seg('kind', [['all', 'All'], ['team', 'Teams'], ['player', 'Players']], ui.kind)}</div>` : ''}
         ${haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })}`
       : `<details class="teamsel" id="gselbox"${ui.gOpen ? ' open' : ''}><summary><b>Games</b> <span id="gcount">${ui.games.size ? `${selFixtures().length} selected` : 'none selected'}</span> <span class="xs muted">(your time, ${esc(tzNow())})</span></summary>
@@ -3396,7 +3465,7 @@ async function viewTrends(root, r) {
 
   // Minimum Games Played: count every game (all seasons) with a recorded value for the market; results below it are hidden and listed.
   const csMemo = new Map(), csOf = lg => { if (!csMemo.has(lg)) csMemo.set(lg, currentSeason(lg)); return csMemo.get(lg); };
-  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); const cs = csOf(x.subject.lg); const rs = (x.subject.allRows || x.subject.rows).filter(r => r.season === cs && (!r.league || r.league === x.subject.lg)); return full ? marketRows(rs, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
+  const validN = x => { const full = (x.subject.type === 'team' ? TEAM_MARKETS : PLAYER_MARKETS).find(m => m.key === x.def.key); const cs = csOf(x.subject.lg); const rs = (x.subject.allRows || x.subject.rows).filter(r => (isCup(x.subject.lg) && x.subject.type === 'team' ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === x.subject.lg))); return full ? marketRows(rs, full).filter(r => r.value !== null && r.value !== undefined).length : 0; };
   const applyMin = res => { const mg = getMinGames(), keep = [], hid = []; for (const x of res) { x.validN = validN(x); (x.validN >= mg && x.validN > 0 ? keep : hid).push(x); } return { keep, hid }; };
   const hiddenHtml = hid => { if (!hid.length) return ''; const mg = getMinGames(); const seen = new Map(); for (const x of hid) { const k = x.subject.type + '|' + x.subject.id + '|' + x.def.key; if (!seen.has(k)) seen.set(k, x); } const l = [...seen.values()];
     return `<details class="xs hhidden"><summary><b>${l.length} result${l.length === 1 ? '' : 's'} hidden by Minimum games played (${mg})</b></summary><ul>${l.slice(0, 60).map(x => `<li>${esc(x.subject.name)}${x.subject.type === 'player' ? ` (${esc(x.subject.club)})` : ''}, ${esc(x.def.label)}: ${x.validN} ${x.subject.type === 'player' ? 'game' : 'match'}${x.validN === 1 ? '' : 'es'.slice(x.subject.type === 'player' ? 1 : 0)} this season with this statistic</li>`).join('')}${l.length > 60 ? `<li>… and ${l.length - 60} more</li>` : ''}</ul></details>`; };
@@ -3419,7 +3488,7 @@ async function viewTrends(root, r) {
   const drawBrowse = async () => {
     const set = selSet(), tms = leagueTeams();
     if (!set.size) { out.innerHTML = '<div class="banner"><b>No teams selected.</b> Tick at least one club in Teams, or tap Select all.</div>'; return; }
-    const teams = tms.filter(t => set.has(t.slug)).map(t => ({ id: t.slug, lg: t.lg, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: teamRowsFor(t.slug), nextFx: selectableFixtures(t.lg, now).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null })).map(t => ({ ...t, homeSide: t.nextFx ? (teamSlugOf(t.nextFx.home) === t.id ? 0 : 1) : 2 }));
+    const teams = tms.filter(t => set.has(t.key)).map(t => ({ id: t.key, lg: t.lg, type: 'team', name: t.name, club: '', clubSlug: t.slug, href: `#/team/${encodeURIComponent(t.slug)}`, rows: rowsOfT(t), nextFx: selectableFixtures(t.lg, now).find(f => teamSlugOf(f.home) === t.slug || teamSlugOf(f.away) === t.slug) || null })).map(t => ({ ...t, homeSide: t.nextFx ? (teamSlugOf(t.nextFx.home) === t.clubSlug ? 0 : 1) : 2 }));
     const players = ui.kind === 'team' ? [] : (await playerSubjects()).filter(p => set.has(p.clubSlug));
     let html = '';
     if (ui.kind === 'player' && !hasPlayers()) html += noPlayersNote();
@@ -3444,7 +3513,8 @@ async function viewTrends(root, r) {
   };
   const oneGame = async f => {
     const hs = teamSlugOf(f.home), as = teamSlugOf(f.away), before = rows => rows.filter(x => x.date < f.date);
-    const subj = (slug, name) => ({ id: slug, lg: f.league, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(teamRowsFor(slug)), allRows: before(teamRowsFor(slug)) });
+    const rowsF = slug => (isCup(f.league) ? teamRowsScoped(slug, getUclScope()) : teamRowsFor(slug)); // Champions League game: All games / Champions League only
+    const subj = (slug, name) => ({ id: slug, lg: f.league, type: 'team', name, club: '', clubSlug: slug, href: `#/team/${encodeURIComponent(slug)}`, rows: before(rowsF(slug)), allRows: before(rowsF(slug)) });
     const o = baseOpts(); let html = `<div class="card gamehead"><b>${esc(f.home)} v ${esc(f.away)}</b><div class="small muted">${esc(fmtKick(f))}${f.venue ? ' · ' + esc(f.venue) : ''} · only matches completed before this fixture are used</div></div>`;
     const section = async (slug, name, venue) => {
       const ex = ui.lineMode === 'exact'; const oo = ex ? { ...o, minPct: 0 } : o; // exact line: always show the real hit rate, flag it if below the minimum
@@ -3457,7 +3527,7 @@ async function viewTrends(root, r) {
     };
     html += await section(hs, f.home, ui.gvH) + await section(as, f.away, ui.gvA);
     const atVenue = ui.hvenue === 'venue';
-    const hh = h2hSample(teamRowsFor(hs), as, f.date, { homeOnly: atVenue });
+    const hh = h2hSample(isCup(f.league) ? teamRowsScoped(hs, 'all') : teamRowsFor(hs), as, f.date, { homeOnly: atVenue }); // Champions League game: every meeting, league or UCL
     html += `<section class="sec"><h2>${esc(f.home)} v ${esc(f.away)} — head to head <span class="muted small">(${atVenue ? `only meetings at ${esc(f.home)}` : 'all meetings, either venue'})</span></h2>`;
     if (!hh.ok) html += `<div class="banner info hnoh2h"><b>No H2H data.</b> No ${atVenue ? `meetings at ${esc(f.home)}` : 'meetings between these teams'} are in PropLab's published league records. Nothing is filled in. Both teams' recent form is still shown above.</div>`;
     else {
@@ -3501,7 +3571,7 @@ async function viewTrends(root, r) {
   // details 'toggle' does not bubble: listen in the capture phase. Only a tap on the Games heading changes ui.gOpen.
   ctl.addEventListener('toggle', e => { if (e.target.id === 'flg') ui.lgOpen = e.target.open; if (e.target.id === 'gselbox') ui.gOpen = e.target.open; if (e.target.id === 'tsel') ui.tOpen = e.target.open; }, true);
   ctl.addEventListener('click', e => {
-    if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.slug)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
+    if (e.target.id === 'tall') { e.preventDefault(); leagueTeams().forEach(t => selSet().add(t.key)); $$('.tcheck input', ctl).forEach(i => { i.checked = true; }); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
     if (e.target.id === 'gall' || e.target.id === 'gnone' || e.target.dataset.gday) { e.preventDefault(); const fx = lgFixtures();
       ui.gShown = 12; if (e.target.id === 'gnone') for (const x of fx) { ui.games.delete(fixtureId(x)); ui.untick.add(fixtureId(x)); } else for (const x of fx) if (e.target.id === 'gall' || (x.ko_utc && koLocal(x).ymd === e.target.dataset.gday)) { ui.games.add(fixtureId(x)); ui.untick.delete(fixtureId(x)); }
       redrawCtl(); draw(); return; }
@@ -3509,6 +3579,7 @@ async function viewTrends(root, r) {
     const st = e.target.closest('[data-step]'); if (st) { ui.exLine = stepLine(ui.exLine, Number(st.dataset.step)); draw(); return; }
     const hf = haFormClick(e, n => ui[n], n => (n === 'gvA' ? 'away' : 'home')); if (hf) { ui[hf.name] = hf.value; ui.shown = 40; redrawCtl(); draw(); return; }
     const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg;
+    if (k === 'uscope') { setUclScope(b.dataset.v); $$('[data-seg=uscope] button', ctl).forEach(x => x.classList.toggle('on', x === b)); ui.shown = 40; ui.exLine = null; draw(); return; }
     ui[k] = k === 'minPct' ? Number(b.dataset.v) : (k === 'period' && b.dataset.v !== 'season' ? Number(b.dataset.v) : b.dataset.v); ui.shown = 40;
     if (RESET.includes(k)) ui.exLine = null;
     if (['mode', 'lineMode', 'exSide', 'hvenue', 'kind'].includes(k)) redrawCtl();
@@ -3566,7 +3637,7 @@ const sortTh = (st, key, label) => {
 return { nextSort, sortRows, sortTh };
 })();
 __m['v-table'] = (() => {
-const { store, loadAllPlayerRows, teamRowsFor, teamsOfLeague, leagueName, currentSeason } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, teamsOfLeague, leagueName, currentSeason, isCup, teamRowsScoped } = __m['data'];
 const { TEAM_MARKETS, SELECTABLE_TEAM_MARKETS, PLAYER_MARKETS, marketRows, marketsWithData, defaultLine, stepLine, marketName, marketDesc } = __m['markets'];
 const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
@@ -3575,7 +3646,7 @@ const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, openGraphModa
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { $, $$, esc, fmt, avg, koLocal, koUK, fmtDay, fxStatus, statusBadge, fixtureId, tzNow } = __m['util'];
-const { getMinGames, setMinGames, MIN_LO, MIN_HI } = __m['v-hiwi'];
+const { getMinGames, setMinGames, MIN_LO, MIN_HI, getUclScope, setUclScope, SCOPE_OPTS } = __m['v-hiwi'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { LEAGUE_NAMES, selectableFixtures, teamSlugOf } = __m['data'];
@@ -3618,6 +3689,7 @@ async function viewTable(root) {
     ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p></div>
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
       <div class="field"><label>Matches</label><div class="seg grid" id="lt">${[[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      ${lgs.some(isCup) && ui.mode === 'teams' ? `<div class="field"><label>Champions League: matches used</label><div class="seg wrap" id="usc">${SCOPE_OPTS.map(([v, l]) => `<button data-v="${v}" class="${getUclScope() === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div>
       <div class="field"><label for="tmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="tmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">${ui.mode === 'teams' ? 'Team matches' : 'Player games'} with a recorded figure for this market, <b>this season only</b> (1–20). Earlier seasons still count for Last N. Shared with Hiwi's Section.</span></div></div>
       <div class="field"><label for="tord">Sort</label><select class="in" id="tord">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
@@ -3625,7 +3697,8 @@ async function viewTable(root) {
   };
   const sample = async () => {
     const m = curMarket(); if (!m) return { items: [], m };
-    if (ui.mode === 'teams') return { m, items: lgTeams().map(t => ({ id: t.slug, name: t.name, lg: t.lg, sub: multi() ? LEAGUE_NAMES[t.lg] : '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(teamRowsFor(t.slug), m), fx: fxOfTeam(t.slug), side: (f => (f ? (teamSlugOf(f.home) === t.slug ? 0 : 1) : 2))(fxOfTeam(t.slug)) })) };
+    const both = lgs.some(x => !isCup(x)) && lgs.some(isCup);
+    if (ui.mode === 'teams') return { m, items: lgTeams().map(t => ({ id: isCup(t.lg) ? `${t.lg}:${t.slug}` : t.slug, name: isCup(t.lg) && both ? `${t.name} (UCL)` : t.name, lg: t.lg, sub: multi() ? LEAGUE_NAMES[t.lg] + (isCup(t.lg) ? ` · ${SCOPE_OPTS.find(o => o[0] === getUclScope())[1]}` : '') : '', href: `#/team/${encodeURIComponent(t.slug)}`, rows: marketRows(isCup(t.lg) ? teamRowsScoped(t.slug, getUclScope()) : teamRowsFor(t.slug), m), fx: fxOfTeam(t.slug), side: (f => (f ? (teamSlugOf(f.home) === t.slug ? 0 : 1) : 2))(fxOfTeam(t.slug)) })) };
     if (!players) players = await loadAllPlayerRows();
     const tod = ui.today ? todaySlugs() : null; const sfx = selFx(); const fsl = sfx.length ? new Set(sfx.flatMap(f => [teamSlugOf(f.home), teamSlugOf(f.away)])) : null;
     return { m, items: [...players.values()].filter(p => lgs.includes(p.league) && (!tod || tod.has(teamSlugOf(p.team))) && (!fsl || fsl.has(teamSlugOf(p.team)))).map(p => { const f = fxOfTeam(teamSlugOf(p.team)); return { id: p.id, name: p.name, lg: p.league, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes'), fx: f, side: f ? (teamSlugOf(f.home) === teamSlugOf(p.team) ? 0 : 1) : 2 }; }) };
@@ -3636,7 +3709,7 @@ async function viewTable(root) {
     if (!items.length || !m) { out.innerHTML = `<div class="banner info">${ui.today && !items.length ? `No ${ui.mode} in ${esc(leaguesLabel(lgs))} play today (UK date).` : 'No data available for this market.'}</div>`; return; }
     const minG = getMinGames(), hidden = []; const csM = new Map(), csOf = lg => { if (!csM.has(lg)) csM.set(lg, currentSeason(lg)); return csM.get(lg); };
     // current season only (owner correction 20 Oct): previous seasons never count towards the minimum; 0 games is always excluded
-    const valid = it => { const cs = csOf(it.lg); return it.rows.filter(r => r.season === cs && (!r.league || r.league === it.lg) && r.value !== null && r.value !== undefined).length; };
+    const valid = it => { const cs = csOf(it.lg); return it.rows.filter(r => (isCup(it.lg) && ui.mode === 'teams' ? r.season === csOf(r.league) : r.season === cs && (!r.league || r.league === it.lg)) && r.value !== null && r.value !== undefined).length; };
     const filt = items.filter(it => { it.validN = valid(it); if (it.validN < minG || it.validN === 0) { if (it.validN > 0) hidden.push(it); return false; } return true; }).map(it => ({ it, f: applyFilters(it.rows, { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(it.lg) : null, venue: ui.venue }) }));
     const side = m.binary ? 'over' : ui.side;
     if (m.binary) ui.line = 0.5;
@@ -3687,6 +3760,7 @@ async function viewTable(root) {
   ctl.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; const seg = b.parentElement.id;
     const hf = haFormClick(e, () => ui.venue); if (hf) { ui.venue = hf.value; $('#hafw', ctl).innerHTML = haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' }); draw(); return; }
+    if (seg === 'usc') { setUclScope(b.dataset.v); $$('#usc button', ctl).forEach(x => x.classList.toggle('on', x === b)); draw(); return; }
     if (seg === 'sd') ui.side = b.dataset.v; else if (seg === 'lt') ui.last = b.dataset.v === 'season' ? 'season' : Number(b.dataset.v);
     else if (b.dataset.step) ui.line = stepLine(ui.line, Number(b.dataset.step)); else return;
     $$('.seg button', ctl).forEach(x => { const p = x.parentElement.id; if (p === 'sd') x.classList.toggle('on', x.dataset.v === ui.side); if (p === 'lt') x.classList.toggle('on', String(x.dataset.v) === String(ui.last)); });
