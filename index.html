@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="fd8b752478ed">
+<meta name="proplab-build" content="2faba760ff78">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -572,8 +572,15 @@ const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live"
   : st === 'postponed' ? '<button type="button" class="pp" data-info="postponed" aria-haspopup="dialog">Postponed</button>' : st === 'abandoned' ? '<button type="button" class="pp" data-info="abandoned" aria-haspopup="dialog">Abandoned</button>' : '');
 /** Time cell for lists: local time with the zone name underneath, or TBC. */
 const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : '<button type="button" class="tbcb" data-info="tbc" aria-haspopup="dialog">TBC</button>'; };
+/** Runs fn (which rebuilds part of the page inside root) and puts every scrolled element inside root back where it was: each element is
+ *  matched by its place (nearest id, tag, class, index), so ticking a box in a long list never jumps the list to the top. */
+const keepScrollIn = (root, fn) => {
+  const keys = () => { const seen = new Map(), out = new Map(); for (const el of root.querySelectorAll('*')) { const host = el.parentElement?.closest('[id]'); const k = `${host ? host.id : ''}|${el.tagName}|${el.className}`; const n = seen.get(k) || 0; seen.set(k, n + 1); out.set(el, `${k}|${n}`); } return out; };
+  const saved = new Map(); for (const [el, k] of keys()) if (el.scrollTop > 0 || el.scrollLeft > 0) saved.set(k, [el.scrollTop, el.scrollLeft]); const wy = scrollY;
+  const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
+};
 
-return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, fxStatus, recentlyCalledOff, statusBadge, timeHtml };
+return { $, $$, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, fxStatus, recentlyCalledOff, statusBadge, timeHtml, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -2243,7 +2250,7 @@ function cardHtml(card, st) {
     <div class="hcm"><b>${esc(d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
     ${card.persp ? `<div class="hpersp"><span class="xs muted">Whose ${esc(d.label.toLowerCase())}:</span><div class="seg" role="group" aria-label="Whose figures">${card.persp.map(([v, l]) => `<button type="button" data-h-persp="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
     ${card.scopes ? `<div class="hpersp hscopesel"><span class="xs muted">Form:</span><div class="seg" role="group" aria-label="Which matches">${card.scopes.map(([v, l]) => `<button type="button" data-h-scope="${v}" class="${card.sc === v ? 'on' : ''}" aria-pressed="${card.sc === v}">${esc(l)}</button>`).join('')}</div></div>
-      <p class="xs muted hscnote" data-h-scnote>${esc(card.eligNote(card.sc))}${card.scopeViews[card.sc].below ? ' · <b>no match this season with this figure</b>: shown because you chose this view on the card' : ''}</p>` : ''}
+      <p class="xs muted hscnote" data-h-scnote>${card.eligNote(card.sc)}${card.scopeViews[card.sc].below ? ' · <b>no match this season with this figure</b>: shown because you chose this view on the card' : ''}</p>` : ''}
     ${note ? `<p class="xs hnote2">${esc(note)}</p>` : ''}
     <div class="hctl"><div class="seg hsides" role="group" aria-label="${bin ? 'Outcome' : 'Over, Under or Both'}">${sides.map(([v, l]) => `<button type="button" data-h-side="${v}" class="${st.side === v ? 'on' : ''}" aria-pressed="${st.side === v}">${l}</button>`).join('')}</div>
       ${bin ? '' : `<div class="hline"><button type="button" class="hstep" data-h-step="-1" aria-label="Lower line">−</button><input type="range" data-h-range min="${sMin}" max="${sMax}" step="1" value="${st.line}" aria-label="Line for ${esc(d.label)}"><button type="button" class="hstep" data-h-step="1" aria-label="Raise line">+</button><input type="number" inputmode="decimal" class="in hnum" data-h-num step="0.5" value="${st.line}" aria-label="Type a line"></div>`}</div>
@@ -2350,6 +2357,8 @@ let mem = null;
 function getLeagues() {
   const have = leaguesPresent();
   if (!mem) { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s)) mem = s; } catch { /* private mode */ } }
+  // owner request 20 Oct: an empty selection is allowed and kept (never turned into All Leagues or back into the default league)
+  if (Array.isArray(mem) && mem.length === 0) return [];
   const out = (mem || [getLeague()]).filter(l => have.includes(l));
   return out.length ? out : [have.includes(getLeague()) ? getLeague() : have[0]].filter(Boolean);
 }
@@ -2357,6 +2366,7 @@ function setLeagues(list) { mem = [...new Set(list)].sort((a, b) => LEAGUE_ORDER
 /** "Premier League", "Premier League, Bundesliga", "All 9 leagues", "Premier League +3" */
 function leaguesLabel(list) {
   const have = leaguesPresent();
+  if (!list.length) return 'none selected';
   if (list.length === have.length && have.length > 1) return `All ${have.length} leagues`;
   if (list.length <= 2) return list.map(l => LEAGUE_NAMES[l]).join(', ');
   return `${LEAGUE_NAMES[list[0]]} +${list.length - 1}`;
@@ -2368,25 +2378,25 @@ const isTodayUK = (f, now = new Date()) => koUK(f).ymd === todayUKymd(now);
 function leaguePickHtml(sel, today, { open = false, id = 'lgpick' } = {}) {
   const have = leaguesPresent(), all = have.every(l => sel.includes(l));
   return `<details class="hsel lgpick" id="${id}" ${open ? 'open' : ''}><summary><b>Leagues</b> <span class="muted small" data-lgsum>${esc(leaguesLabel(sel))}${today ? " · today's games" : ''}</span></summary>
-    <div class="row lgbtns" style="border:0;padding:4px 0 0;gap:8px"><button type="button" class="chip" data-lgselall>Select all</button><button type="button" class="chip" data-lgclear>Clear all</button><span class="xs muted" data-lgclearnote hidden>Nothing ticked: tick the competitions you want (results update on your first tick).</span></div>
+    <div class="row lgbtns" style="border:0;padding:4px 0 0;gap:8px"><button type="button" class="chip" data-lgselall>Select all</button><button type="button" class="chip" data-lgclear>Clear all</button></div>
     <div class="hlist hgrid lgpgrid"><label class="hcheck lgall"><input type="checkbox" data-lgall ${all ? 'checked' : ''}><span><b>All Leagues</b></span></label>
     ${have.map(l => `<label class="hcheck"><input type="checkbox" data-lgpick value="${esc(l)}" ${sel.includes(l) ? 'checked' : ''}><span>${esc(LEAGUE_NAMES[l])}</span></label>`).join('')}</div>
     ${today === null ? '' : `<label class="hcheck lgtoday"><input type="checkbox" data-today ${today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">UK date ${esc(todayUKymd())}</span></span></label>`}</details>`;
 }
-/** Applies a change event from the block. Returns { leagues, today } or null when the event was not ours. At least one league stays on. */
+/** Applies a change event from the block. Returns { leagues, today } or null when the event was not ours. Zero leagues is allowed. */
 function leaguePickChange(t, sel, today) {
   const have = leaguesPresent();
-  if (t.matches('[data-lgall]')) return { leagues: t.checked ? have.slice() : [sel[0] || have[0]], today };
+  if (t.matches('[data-lgall]')) return { leagues: t.checked ? have.slice() : [], today }; // unticking All Leagues = none (20 Oct)
   if (t.matches('[data-lgpick]')) { // the ticks on screen are the selection (after Clear all, the first tick starts a new selection)
     const box = t.closest('.lgpick'); const on = box ? new Set([...box.querySelectorAll('input[data-lgpick]')].filter(x => x.checked).map(x => x.value)) : null;
     const s = on || new Set(sel); if (!on) { t.checked ? s.add(t.value) : s.delete(t.value); }
-    const out = have.filter(l => s.has(l)); return { leagues: out.length ? out : sel, today, kept: !out.length }; }
+    const out = have.filter(l => s.has(l)); return { leagues: out, today }; } // the last league can be unticked: zero selected is allowed
   if (t.matches('[data-today]')) return { leagues: sel, today: t.checked };
   return null;
 }
 
 // Select all / Clear all buttons (one listener for every picker on the page). Select all = the All Leagues box; Clear all unticks every box
-// on screen only, so the next tick starts a fresh selection (a view always keeps at least one competition).
+// (zero leagues is a valid selection: the page shows "Select a league" until one is ticked).
 if (typeof document !== 'undefined' && !globalThis.__lgpickBtns) {
   globalThis.__lgpickBtns = true;
   document.addEventListener('click', e => {
@@ -2394,8 +2404,8 @@ if (typeof document !== 'undefined' && !globalThis.__lgpickBtns) {
     const box = b.closest('.lgpick'); if (!box) return; e.preventDefault();
     const all = box.querySelector('input[data-lgall]'), note = box.querySelector('[data-lgclearnote]');
     if (b.matches('[data-lgselall]')) { if (note) note.hidden = true; if (all) { all.checked = true; all.dispatchEvent(new Event('change', { bubbles: true })); } return; }
-    box.querySelectorAll('input[data-lgpick], input[data-lgall]').forEach(x => { x.checked = false; });
-    if (note) note.hidden = false;
+    box.querySelectorAll('input[data-lgpick]').forEach(x => { x.checked = false; });
+    if (all) { all.checked = false; all.dispatchEvent(new Event('change', { bubbles: true })); }
   });
 }
 
@@ -2640,7 +2650,7 @@ async function viewHiwi(root, r, sport) {
     const gwLabels = () => (st.today ? '' : `<div class="xs muted hgwlabs">${(nflMode ? ['nfl'] : lgs).map(lg => ['cur', 'next'].filter(k => st.gw[k]).map(k => `${k === 'cur' ? 'Current' : 'Next'} Gameweek${nflMode ? '' : ' · ' + esc(LEAGUE_NAMES[lg])}: ${esc(gameweeks(lg)[k].label)}`).join('<br>')).filter(Boolean).join('<br>')}</div>`);
     const sec = () => { const items = vis.map(x => ({ ...x, w: x.which === 'cur' || x.which === 'next' ? gameweeks(x.lg)[x.which] : null }));
       return items.length ? `${gwLabels()}${listHtml(items)}` : ''; };
-    const empty = () => (st.today ? `<p class="xs muted">No games today in ${esc(nflMode ? 'the NFL' : leaguesLabel(lgs))} that can still be researched.</p>` : `${gwLabels()}<p class="xs muted">No fixtures in the chosen gameweeks.</p>`); // the gameweek labels explain why (e.g. "no fixtures left")
+    const empty = () => (!nflMode && !lgs.length ? '<p class="xs muted hnolg"><b>Select a league to view fixtures.</b></p>' : st.today ? `<p class="xs muted">No games today in ${esc(nflMode ? 'the NFL' : leaguesLabel(lgs))} that can still be researched.</p>` : `${gwLabels()}<p class="xs muted">No fixtures in the chosen gameweeks.</p>`); // the gameweek labels explain why (e.g. "no fixtures left")
     return `<div class="field"><label>Gameweeks</label><div class="hgwt" id="hgw" role="group" aria-label="Gameweeks">${tog('cur', 'Current Gameweek')}${tog('next', 'Next Gameweek')}</div>
         ${nflMode ? `<label class="hcheck lgtoday" style="margin-top:6px"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">UK date ${esc(todayUK)}</span></span></label>` : ''}
         ${st.today ? '<p class="xs muted" style="margin:6px 0 0">Today\'s Games Only is on: the gameweek choice is paused.</p>' : ''}</div>
@@ -2670,7 +2680,7 @@ async function viewHiwi(root, r, sport) {
         ${nflMode ? `<label class="hcheck lgtoday"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">UK date ${esc(todayUK)}</span></span></label>` : ''}
         <input class="in" id="htq" type="search" placeholder="Search ${nflMode ? 'NFL' : esc(leaguesLabel(lgs))} teams (e.g. ${nflMode ? 'KC, chiefs' : 'spurs, man utd, psg'})" value="${esc(st.tq)}" aria-label="Search teams" autocomplete="off">
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="teams">Select all${st.tq ? ' shown' : ''}</button><button type="button" class="chip" data-none="teams">Clear all</button></div>
-        <div class="hlist hgrid">${tms.map(t => `<label class="hcheck"><input type="checkbox" data-pick="teams" value="${esc(t.id)}" ${st.teams.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${st.today && !st.tq ? `No ${nflMode ? 'NFL' : esc(leaguesLabel(lgs))} team plays today.` : `No ${nflMode ? 'NFL' : esc(leaguesLabel(lgs))} team matches "${esc(st.tq)}".`}</p>`}</div></details>`}
+        <div class="hlist hgrid">${tms.map(t => `<label class="hcheck"><input type="checkbox" data-pick="teams" value="${esc(t.id)}" ${st.teams.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${!nflMode && !lgs.length ? '<b>Select a league to view its teams.</b>' : st.today && !st.tq ? `No ${nflMode ? 'NFL' : esc(leaguesLabel(lgs))} team plays today.` : `No ${nflMode ? 'NFL' : esc(leaguesLabel(lgs))} team matches "${esc(st.tq)}".`}</p>`}</div></details>`}
       ${hasPlayers() ? `<details class="hsel" id="hpl" ${st.plOpen ? 'open' : ''}><summary><b>Players</b> <span class="muted small">${P.size ? `${P.size} selected` : lgsWithPlayers().some(lg => !playersBy.has(lg)) && !nflMode ? (plLoading ? 'loading players…' : 'open to load players') : 'none selected'}</span></summary>
         <p class="xs muted" style="margin:4px 0">${st.mode === 'teams' ? (st.teams.size ? 'Players of the selected teams.' : 'Select teams to narrow the list, or search by name.') : (selFx().length ? 'Players of the teams in the selected fixtures.' : 'Select fixtures to narrow the list, or search by name.')}</p>
         ${nflMode ? `<div class="seg wrap" id="hpos">${[['', 'All'], ['qb', 'QB'], ['rb', 'RB'], ['wr', 'WR'], ['te', 'TE'], ['k', 'K'], ['def', 'Defence']].map(([v, l]) => `<button type="button" data-v="${v}" class="${st.ppos === v ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
@@ -2725,7 +2735,10 @@ async function viewHiwi(root, r, sport) {
       const none = isEuScope(v) && !teamRowsAll(id, v).some(x => { const y = def.get(x); return y !== null && y !== undefined; }) && teamRowsAll(id, v).length > 0;
       const noDom = v === 'dom' && teamRowsAll(id, 'dom').length === 0; // a club whose domestic league PropLab does not cover
       views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n === 0, note: noDom ? `PropLab does not cover ${teamLabel(id)}'s domestic league, so there are no domestic matches to show (nothing is filled in). All games and ${cup === 'eu' ? 'European matches' : leagueName(cup)} only use its European matches (goals, first-half goals and both teams to score only).` : none ? `${def.label} is not recorded for ${scopeName(v)} matches in any free source PropLab uses, so this view has no data (missing, never counted as 0). All games and Domestic league only use the league matches that do record it.` : c.note }; }
-    return { ...teamCard(id, def, extra, sc), ...(views[sc] ? { note: views[sc].note } : {}), scopes: opts, scopeViews: views, eligNote: v => `${views[v].elig} ${views[v].elig === 1 ? 'match' : 'matches'} this season${v === 'all' ? ' (all competitions)' : v === 'dom' ? (isCup(lgOfTeam(id)) ? ' (domestic league not covered)' : ` (${leagueName(lgOfTeam(id))} only)`) : ` (${v === 'eu' ? 'European matches' : leagueName(v)})`}` }; };
+    return { ...teamCard(id, def, extra, sc), ...(views[sc] ? { note: views[sc].note } : {}), scopes: opts, scopeViews: views, eligNote: v => { const tot = teamRowsAll(id, v).filter(x => { const y = def.get(x); return y !== null && y !== undefined; }), first = tot.length ? tot[tot.length - 1].date : null;
+      // owner report 20 Oct: with Season, "Champions League only" shows this season's few matches; say how much history there is and how to see it
+      const hist = st.period === 'season' && tot.length > views[v].elig ? ` · <b>${tot.length} ${v === 'all' ? '' : v === 'dom' ? 'league ' : v === 'eu' ? 'European ' : leagueName(v) + ' '}matches in PropLab since ${monthYear(first)}</b>: choose Last 5 / 10 / 20 above to include earlier seasons` : '';
+      return `${views[v].elig} ${views[v].elig === 1 ? 'match' : 'matches'} this season${v === 'all' ? ' (all competitions)' : v === 'dom' ? (isCup(lgOfTeam(id)) ? ' (domestic league not covered)' : ` (${leagueName(lgOfTeam(id))} only)`) : ` (${v === 'eu' ? 'European matches' : leagueName(v)})`}${hist}`; } }; };
   /** The head-to-head card (used in Detailed analysis), from team h's side; Team / Opponent markets can switch to a's side. */
   const h2hCard = (h, a, def, cid, sc) => {
     const lg = sc ? (isCup(sc) ? sc : 'ucl') : lgOfTeam(h), from = sc ? [coverFrom('ucl'), coverFrom('uel'), coverFrom('uecl'), coverFrom(lgOfTeam(h))].filter(Boolean).sort()[0] : coverFrom(lg), mH = meetings(h, a, sc), mA = meetings(a, h, sc), hN = teamLabel(h), aN = teamLabel(a);
@@ -2833,6 +2846,8 @@ async function viewHiwi(root, r, sport) {
   const onCommit = () => {};
   let io = null;
   const refresh = async () => {
+    // zero leagues ticked (allowed since 20 Oct): nothing to search or calculate until one is chosen
+    if (!nflMode && !lgs.length) { out.innerHTML = '<div class="banner info"><b>Select a league to view fixtures.</b> Tick one or more leagues or competitions above.</div>'; return; }
     const subj = st.mode === 'teams' ? st.teams.size : selFx().length;
     const nothing = !mkts().size || (!subj && !pls().size);
     if (nothing) {
@@ -3019,7 +3034,7 @@ async function viewHiwi(root, r, sport) {
     if (t.matches('[data-today]') && nflMode) { remember(); setToday(t.checked); if (!t.checked) for (const k of ['cur', 'next']) if (st.gw[k]) setGw(k, true); draw(); refresh(); return; }
     const lp = nflMode ? null : leaguePickChange(t, lgs, st.today);
     if (lp) {
-      remember(); const before = lgs.join(); lgs = lp.leagues; setLeagues(lgs); setLeague(lgs[0]); gwCache.clear(); trCache.clear();
+      remember(); const before = lgs.join(); lgs = lp.leagues; setLeagues(lgs); if (lgs[0]) setLeague(lgs[0]); gwCache.clear(); trCache.clear();
       if (lp.today !== st.today) { setToday(lp.today); if (!lp.today) for (const k of ['cur', 'next']) if (st.gw[k]) setGw(k, true); }
       if (before !== lgs.join()) { // keep selections that still belong to a selected league
         const okT = new Set(lgs.flatMap(l => teamsOfLeague(l).map(x => x.slug))); for (const id of [...st.teams]) if (!okT.has(id)) st.teams.delete(id);
@@ -3701,7 +3716,7 @@ const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } =
 const { applyFilters } = __m['research'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
-const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg } = __m['util'];
+const { $, koLocal, tzNow, fxStatus, statusBadge, $$, esc, fmtShort, fmtLong, fmtDay, koUK, fmtKick, fixtureId, avg, keepScrollIn } = __m['util'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
 const { getUclScope, setUclScope, scopeFor, finderScopeOpts, clubRows } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
@@ -3797,7 +3812,8 @@ async function viewTrends(root, r) {
     defNote = fixed ? `Starting line: the standard ${sideWord('over')} ${ui.exLine} for this goals market.` : `Starting line from the average (${avg(vals) ?? 'n/a'}) of ${vals.length} real values: ${periodWord()} ${venueWord(ui.venue)}matches of the selected ${isPlayerKey(key) ? 'players' : 'teams'}.`;
   };
 
-  const drawCtl = () => {
+  const drawCtl = () => keepScrollIn(ctl, drawCtlNow); // lists inside the controls keep their scroll position (20 Oct)
+  const drawCtlNow = () => {
     fixMarkets(); const tms = leagueTeams(), set = selSet(), mk = kindMarkets(), fx = lgFixtures();
     const exDef = mk.find(m => m.key === ui.exKey);
     const byDay = new Map(), tbcFx = fx.filter(f => !f.ko_utc); for (const f of fx.filter(f => f.ko_utc)) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
@@ -3927,6 +3943,7 @@ async function viewTrends(root, r) {
 
   const draw = async () => {
     reg = [];
+    if (!lgs.length) { out.innerHTML = '<div class="banner info"><b>Select a league to view fixtures.</b> Tick one or more leagues or competitions above.</div>'; return; } // zero leagues ticked: no search, no calculation
     $$('[data-seg]', ctl).forEach(gp => $$('button', gp).forEach(b => b.classList.toggle('on', b.dataset.v === String(ui[gp.dataset.seg]))));
     if (ui.lineMode === 'exact' && ui.exLine === null) await computeDefault();
     showLine();
@@ -3958,7 +3975,7 @@ async function viewTrends(root, r) {
   ctl.addEventListener('change', e => {
     const t = e.target;
     const lp = leaguePickChange(t, lgs, ui.today);
-    if (lp) { const lo = $('#flg', ctl); ui.lgOpen = lo ? lo.open : ui.lgOpen; lgs = lp.leagues; setLeagues(lgs); setLeague(lgs[0]); ui.today = lp.today;
+    if (lp) { const lo = $('#flg', ctl); ui.lgOpen = lo ? lo.open : ui.lgOpen; lgs = lp.leagues; setLeagues(lgs); if (lgs[0]) setLeague(lgs[0]); ui.today = lp.today;
       for (const id of [...ui.games]) { const f = store.fixtures.find(x => fixtureId(x) === id); if (!f || !lgs.includes(f.league) || (ui.today && !isTodayUK(f, now))) ui.games.delete(id); }
       if (ui.today && ui.mode === 'game') for (const f of lgFixtures()) if (!ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); // never re-ticks a game the user unticked
       ui.market = ''; ui.exLine = null; ui.shown = 40; ui.gShown = 12; redrawCtl(); draw(); return; }
@@ -4014,7 +4031,7 @@ const { applyFilters } = __m['research'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
-const { $, $$, esc, fmt, avg, koLocal, koUK, fmtDay, fxStatus, statusBadge, fixtureId, tzNow } = __m['util'];
+const { $, $$, esc, fmt, avg, koLocal, koUK, fmtDay, fxStatus, statusBadge, fixtureId, tzNow, keepScrollIn } = __m['util'];
 const { getUclScope, setUclScope, scopeFor, finderScopeOpts, clubRows, clubScopeIn } = __m['v-hiwi'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
@@ -4053,7 +4070,8 @@ async function viewTable(root) {
     <div id="tfx"></div><div id="ctl"></div><div id="out"></div></div>`;
   const out = $('#out', root), ctl = $('#ctl', root);
   const curMarket = () => { const ms = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const k = ui.mode === 'teams' ? ui.market : ui.pmarket; return ms.find(m => m.key === k) || ms[0]; };
-  const drawCtl = () => {
+  const drawCtl = () => keepScrollIn(ctl, drawCtlNow); // lists inside the controls keep their scroll position (20 Oct)
+  const drawCtlNow = () => {
     const markets = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const key = ui.mode === 'teams' ? 'market' : 'pmarket'; const m = curMarket();
     ctl.innerHTML = `<div class="card stack"><div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p></div>
       ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
@@ -4072,6 +4090,7 @@ async function viewTable(root) {
     return { m, items: [...players.values()].filter(p => lgs.includes(p.league) && (!tod || tod.has(teamSlugOf(p.team))) && (!fsl || fsl.has(teamSlugOf(p.team)))).map(p => { const f = fxOfTeam(teamSlugOf(p.team)); return { id: p.id, name: p.name, lg: p.league, sub: p.team, href: `#/player/${encodeURIComponent(p.id)}`, rows: marketRows(p.rows, m, 'minutes'), fx: f, side: f ? (teamSlugOf(f.home) === teamSlugOf(p.team) ? 0 : 1) : 2 }; }) };
   };
   const draw = async () => {
+    if (!lgs.length) { out.innerHTML = '<div class="banner info"><b>Select a league to view fixtures.</b> Tick one or more leagues or competitions above.</div>'; return; } // zero leagues ticked: no search, no calculation
     if (ui.mode === 'players' && !lgHasPlayers()) { out.innerHTML = `<div class="banner info"><b>No player match logs are published for ${esc(leaguesLabel(lgs))}.</b> No free source licenses these leagues' player match statistics for public display (PropLab has MLS player logs only). Switch to Teams to scan team totals, or include MLS for player trends.</div>`; return; }
     const { items, m } = await sample();
     if (!items.length || !m) { out.innerHTML = `<div class="banner info">${ui.today && !items.length ? `No ${ui.mode} in ${esc(leaguesLabel(lgs))} play today (UK date).` : 'No data available for this market.'}</div>`; return; }
@@ -4124,7 +4143,7 @@ async function viewTable(root) {
   syncMode(); drawFx(); drawCtl(); draw();
   const onLeagues = (keepLine) => { teamMarkets = marketsWithData(lgTeams().flatMap(t => store.teamRows.get(t.slug) || []), SELECTABLE_TEAM_MARKETS); if (!teamMarkets.some(m => m.key === ui.market)) ui.market = teamMarkets.find(m => m.key === 'm.goals')?.key || teamMarkets[0]?.key; if (!keepLine) ui.line = null; syncMode(); drawCtl(); draw(); };
   $('#tlg', root).addEventListener('toggle', e => { if (e.target.id === 'tblg') ui.lgOpen = e.target.open; }, true);
-  $('#tlg', root).addEventListener('change', e => { const lp = leaguePickChange(e.target, lgs, ui.today); if (!lp) return; lgs = lp.leagues; setLeagues(lgs); setLeague(lgs[0]); ui.today = lp.today; $('#tlg', root).innerHTML = leaguePickHtml(lgs, ui.today, { open: true, id: 'tblg' }); for (const id of [...ui.games]) if (!fxList().some(f => fixtureId(f) === id)) ui.games.delete(id); if (ui.today) for (const f of fxList()) if (!ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); drawFx(); onLeagues(); });
+  $('#tlg', root).addEventListener('change', e => { const lp = leaguePickChange(e.target, lgs, ui.today); if (!lp) return; lgs = lp.leagues; setLeagues(lgs); if (lgs[0]) setLeague(lgs[0]); ui.today = lp.today; $('#tlg', root).innerHTML = leaguePickHtml(lgs, ui.today, { open: true, id: 'tblg' }); for (const id of [...ui.games]) if (!fxList().some(f => fixtureId(f) === id)) ui.games.delete(id); if (ui.today) for (const f of fxList()) if (!ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); drawFx(); onLeagues(); });
   $('#mode', root).onclick = async e => { const b = e.target.closest('button'); if (!b) return; ui.mode = b.dataset.m; ui.line = null; $$('#mode button', root).forEach(x => x.classList.toggle('on', x === b)); if (ui.mode === 'players' && lgHasPlayers() && !players) players = await loadAllPlayerRows(); drawCtl(); draw(); };
   ctl.addEventListener('change', e => { if (e.target.id === 'tord') { ui.order = e.target.value; ui.sort = { key: null, dir: null }; draw(); return; } if (e.target.id === 'mk') { if (ui.mode === 'teams') ui.market = e.target.value; else ui.pmarket = e.target.value; ui.line = null; drawCtl(); draw(); } });
   ctl.addEventListener('click', e => {
