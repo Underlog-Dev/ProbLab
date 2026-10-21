@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-10-21T09:00:00Z",
+ "updated": "2026-10-21T22:27:11Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -219,7 +219,7 @@
    "group": "BOS",
    "file": "data-nba-logs-BOS.json",
    "players": 17,
-   "rows": 4499
+   "rows": 4513
   },
   {
    "group": "CHA",
@@ -255,7 +255,7 @@
    "group": "DET",
    "file": "data-nba-logs-DET.json",
    "players": 18,
-   "rows": 4622
+   "rows": 4636
   },
   {
    "group": "FA",
@@ -327,13 +327,13 @@
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5174
+   "rows": 5189
   },
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 17,
-   "rows": 3229
+   "rows": 3242
   },
   {
    "group": "ORL",
@@ -345,7 +345,7 @@
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4445
+   "rows": 4458
   },
   {
    "group": "PHX",
@@ -369,7 +369,7 @@
    "group": "SAS",
    "file": "data-nba-logs-SAS.json",
    "players": 17,
-   "rows": 4140
+   "rows": 4155
   },
   {
    "group": "TOR",
@@ -392,10 +392,10 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7776,
+  "final": 7779,
   "players": 1191,
-  "player_games": 204473,
-  "quarter_points_ok": 166030,
+  "player_games": 204557,
+  "quarter_points_ok": 166098,
   "quarter_points_dropped": 245
  },
  "problems": [],
