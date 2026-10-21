@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="2f15ff84c631">
+<meta name="proplab-build" content="2ad731a8325a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -373,12 +373,12 @@ svg.calib{width:100%;height:auto}.calib .cbox{fill:none;stroke:var(--line)}.cali
 .gouou{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .hbt{display:block;font-size:8.5px;line-height:1.2;color:#c9a7ff}.hbars:has(.hbt){--barbase:52px}
 /* ---- redesign (21 Oct 2026): neutral initials team badges ---- */
-.teamb{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:50%;font-weight:700;letter-spacing:-.02em;color:#fff;background:hsl(var(--bh) 45% 38%);vertical-align:middle;line-height:1}
+.teamb{display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:50%;font-weight:800;letter-spacing:-.02em;vertical-align:middle;line-height:1}
 .teamb.s{width:22px;height:22px;font-size:8.5px}.teamb.m{width:30px;height:30px;font-size:11px}
 .vsb{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
 .notime{font-size:11px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:0 4px;white-space:nowrap}
-.fx .teams .vsb{display:flex;font-size:15px;color:var(--text);margin-bottom:2px;column-gap:4px}.fx .teams .vsb b{display:inline}.vsb .tm{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%}.vsb .tm b{overflow:hidden;text-overflow:ellipsis}.fx .teams .teamb.s{font-size:8.5px;color:#fff}.fx .teams .notime{font-size:11px}
-.row .l .vsb{display:flex;font-weight:600;color:var(--text);column-gap:4px}.row .l .vsb b{display:inline;font-weight:600}.row .l .teamb.s{font-size:8px;color:#fff;width:24px;height:24px}
+.fx .teams .vsb{display:flex;font-size:15px;color:var(--text);margin-bottom:2px;column-gap:4px}.fx .teams .vsb b{display:inline}.vsb .tm{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;max-width:100%}.vsb .tm b{overflow:hidden;text-overflow:ellipsis}.fx .teams .teamb.s{font-size:8.5px}.fx .teams .notime{font-size:11px}
+.row .l .vsb{display:flex;font-weight:600;color:var(--text);column-gap:4px}.row .l .vsb b{display:inline;font-weight:600}.row .l .teamb.s{font-size:8px;width:24px;height:24px}
 /* ---- redesign (21 Oct 2026) ---- */
 .fpnav{display:flex;align-items:center;gap:8px;margin:0 0 10px;flex-wrap:wrap}.fpnav .seg a{padding:7px 12px;border-radius:9px;color:var(--muted);font-weight:600;font-size:14px}.fpnav .seg a.on{background:var(--s2);color:var(--text)}
 .startpg h1{font-size:26px}.journeys{display:grid;gap:10px}.journey{display:flex;flex-direction:column;gap:4px;padding:14px 16px;color:var(--text)}.journey b{font-size:17px}.journey.main{border-color:var(--accent)}.journey .jgo{color:var(--accent);font-weight:700;font-size:14px;margin-top:2px}
@@ -398,6 +398,9 @@ svg.calib{width:100%;height:auto}.calib .cbox{fill:none;stroke:var(--line)}.cali
 .teamb::before{content:attr(data-i)}.vsb .tm{display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis}.vsb{font-weight:600}
 .fx .teams .vsb,.row .l .vsb{display:block}.vsb .tm{display:inline;white-space:normal}.vsb .teamb{display:inline-flex;vertical-align:-6px;margin-right:5px}
 .infobox{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
+.dirb{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.hpct{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}.hpdir{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.vsb .teamb{vertical-align:-5px}.fx .teams .vsb{line-height:1.6}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1048,11 +1051,99 @@ function injuryStatus(p, g) {
 
 return { nba, NBA_POS, posGroup, TYPE_NAME, isPlayoff, isPlayIn, loadNba, loadNbaInjuries, teamName, latestSeason, seasonLabel, playerRows, loadLogs, played, nbaSort, nbaUpcoming, nbaSelectable, nextGameOf, teamGameRows, standings, injuryStatus };
 })();
+__m['teamcolors'] = (() => {
+// Team badge colours (owner request 21 Oct, evening): each badge uses the team's own home / main colours, [background, text].
+// Written from each club's or franchise's published home colours (colour values are approximate brand shades, not official asset files;
+// no logos are used). A team not listed here keeps a neutral grey badge rather than a guessed colour.
+const C = {
+  // ---- NBA ----
+  'Atlanta Hawks': ['C8102E', 'FFFFFF'], 'Boston Celtics': ['007A33', 'FFFFFF'], 'Brooklyn Nets': ['000000', 'FFFFFF'], 'Charlotte Hornets': ['1D1160', '00A3AD'],
+  'Chicago Bulls': ['CE1141', 'FFFFFF'], 'Cleveland Cavaliers': ['860038', 'FDBB30'], 'Dallas Mavericks': ['00538C', 'FFFFFF'], 'Denver Nuggets': ['0E2240', 'FEC524'],
+  'Detroit Pistons': ['1D42BA', 'FFFFFF'], 'Golden State Warriors': ['1D428A', 'FFC72C'], 'Houston Rockets': ['CE1141', 'FFFFFF'], 'Indiana Pacers': ['002D62', 'FDBB30'],
+  'LA Clippers': ['1D428A', 'FFFFFF'], 'Los Angeles Clippers': ['1D428A', 'FFFFFF'], 'Los Angeles Lakers': ['552583', 'FDB927'], 'Memphis Grizzlies': ['12173F', '5D76A9'],
+  'Miami Heat': ['98002E', 'FFFFFF'], 'Milwaukee Bucks': ['00471B', 'EEE1C6'], 'Minnesota Timberwolves': ['0C2340', '78BE20'], 'New Orleans Pelicans': ['0C2340', 'C8A97E'],
+  'New York Knicks': ['006BB6', 'F58426'], 'Oklahoma City Thunder': ['007AC1', 'FFFFFF'], 'Orlando Magic': ['0077C0', 'FFFFFF'], 'Philadelphia 76ers': ['006BB6', 'FFFFFF'],
+  'Phoenix Suns': ['1D1160', 'E56020'], 'Portland Trail Blazers': ['E03A3E', 'FFFFFF'], 'Sacramento Kings': ['5A2D81', 'FFFFFF'], 'San Antonio Spurs': ['000000', 'C4CED4'],
+  'Toronto Raptors': ['CE1141', 'FFFFFF'], 'Utah Jazz': ['002B5C', 'F9A01B'], 'Washington Wizards': ['002B5C', 'FFFFFF'],
+  // ---- NFL ----
+  'Arizona Cardinals': ['97233F', 'FFFFFF'], 'Atlanta Falcons': ['A71930', 'FFFFFF'], 'Baltimore Ravens': ['241773', 'FFFFFF'], 'Buffalo Bills': ['00338D', 'FFFFFF'],
+  'Carolina Panthers': ['0085CA', 'FFFFFF'], 'Chicago Bears': ['0B162A', 'E64100'], 'Cincinnati Bengals': ['FB4F14', '000000'], 'Cleveland Browns': ['311D00', 'FF3C00'],
+  'Dallas Cowboys': ['003594', 'FFFFFF'], 'Denver Broncos': ['FB4F14', '002244'], 'Detroit Lions': ['0076B6', 'FFFFFF'], 'Green Bay Packers': ['203731', 'FFB612'],
+  'Houston Texans': ['03202F', 'FFFFFF'], 'Indianapolis Colts': ['002C5F', 'FFFFFF'], 'Jacksonville Jaguars': ['006778', 'D7A22A'], 'Kansas City Chiefs': ['E31837', 'FFB81C'],
+  'Las Vegas Raiders': ['000000', 'A5ACAF'], 'Los Angeles Chargers': ['0080C6', 'FFC20E'], 'Los Angeles Rams': ['003594', 'FFA300'], 'Miami Dolphins': ['008E97', 'FFFFFF'],
+  'Minnesota Vikings': ['4F2683', 'FFC62F'], 'New England Patriots': ['002244', 'FFFFFF'], 'New Orleans Saints': ['D3BC8D', '101820'], 'New York Giants': ['0B2265', 'FFFFFF'],
+  'New York Jets': ['125740', 'FFFFFF'], 'Philadelphia Eagles': ['004C54', 'FFFFFF'], 'Pittsburgh Steelers': ['FFB612', '101820'], 'San Francisco 49ers': ['AA0000', 'FFFFFF'],
+  'Seattle Seahawks': ['002244', '69BE28'], 'Tampa Bay Buccaneers': ['D50A0A', 'FFFFFF'], 'Tennessee Titans': ['0C2340', '4B92DB'], 'Washington Commanders': ['5A1414', 'FFB612'],
+  // ---- Premier League ----
+  'AFC Bournemouth': ['DA291C', '000000'], 'Arsenal': ['EF0107', 'FFFFFF'], 'Aston Villa': ['670E36', '95BFE5'], 'Brentford': ['E30613', 'FFFFFF'], 'Brighton': ['0057B8', 'FFFFFF'],
+  'Chelsea': ['034694', 'FFFFFF'], 'Coventry City': ['59CBE8', '0B2341'], 'Crystal Palace': ['1B458F', 'FFFFFF'], 'Everton': ['003399', 'FFFFFF'], 'Fulham': ['FFFFFF', '000000'],
+  'Hull City': ['F5A12D', '000000'], 'Ipswich Town': ['0044A9', 'FFFFFF'], 'Leeds United': ['FFFFFF', '1D428A'], 'Liverpool': ['C8102E', 'FFFFFF'], 'Manchester City': ['6CABDD', '1C2C5B'],
+  'Manchester United': ['DA291C', 'FFFFFF'], 'Newcastle United': ['241F20', 'FFFFFF'], 'Nottingham Forest': ['DD0000', 'FFFFFF'], 'Sunderland': ['EB172B', 'FFFFFF'], 'Tottenham Hotspur': ['FFFFFF', '132257'],
+  // ---- La Liga ----
+  'Alavés': ['0761AF', 'FFFFFF'], 'Athletic Club': ['EE2523', 'FFFFFF'], 'Atlético Madrid': ['CB3524', 'FFFFFF'], 'Barcelona': ['A50044', 'EDBB00'], 'Celta Vigo': ['8AC3EE', '0B2341'],
+  'Deportivo La Coruña': ['0067B1', 'FFFFFF'], 'Elche': ['05642C', 'FFFFFF'], 'Espanyol': ['007FC8', 'FFFFFF'], 'Getafe': ['005999', 'FFFFFF'], 'Levante': ['B4053F', 'FFFFFF'],
+  'Málaga': ['0090D0', 'FFFFFF'], 'Osasuna': ['D91A21', 'FFFFFF'], 'Racing Santander': ['00663B', 'FFFFFF'], 'Rayo Vallecano': ['FFFFFF', 'E53027'], 'Real Betis': ['0BB363', 'FFFFFF'],
+  'Real Madrid': ['FFFFFF', '1A3A7A'], 'Real Sociedad': ['0067B1', 'FFFFFF'], 'Sevilla': ['FFFFFF', 'D2001F'], 'Valencia': ['FFFFFF', '000000'], 'Villarreal': ['FFE667', '005187'],
+  // ---- Serie A ----
+  'Atalanta': ['1E71B8', 'FFFFFF'], 'Bologna': ['A21C26', 'FFFFFF'], 'Cagliari': ['AD002A', 'FFFFFF'], 'Como': ['1C3F94', 'FFFFFF'], 'Fiorentina': ['482E92', 'FFFFFF'],
+  'Frosinone': ['FFD100', '004B93'], 'Genoa': ['A41C2C', 'FFFFFF'], 'Inter': ['0068A8', 'FFFFFF'], 'Juventus': ['000000', 'FFFFFF'], 'Lazio': ['87D8F7', '0B2341'],
+  'Lecce': ['FFD200', 'D7141A'], 'Milan': ['FB090B', 'FFFFFF'], 'Monza': ['CE1126', 'FFFFFF'], 'Napoli': ['12A0D7', 'FFFFFF'], 'Parma': ['FFFFFF', '000000'],
+  'Roma': ['8E1F2F', 'F0BC42'], 'Sassuolo': ['00A752', 'FFFFFF'], 'Torino': ['8A1E03', 'FFFFFF'], 'Udinese': ['FFFFFF', '000000'], 'Venezia': ['000000', 'F58220'],
+  // ---- Bundesliga ----
+  '1. FC Köln': ['FFFFFF', 'ED1C24'], 'Augsburg': ['BA3733', 'FFFFFF'], 'Bayer Leverkusen': ['E32221', 'FFFFFF'], 'Bayern Munich': ['DC052D', 'FFFFFF'], 'Borussia Dortmund': ['FDE100', '000000'],
+  'Borussia Mönchengladbach': ['FFFFFF', '000000'], 'Eintracht Frankfurt': ['000000', 'E1000F'], 'Elversberg': ['000000', 'FFFFFF'], 'Freiburg': ['E2001A', 'FFFFFF'], 'Hamburger SV': ['FFFFFF', '0A3F86'],
+  'Hoffenheim': ['1961B5', 'FFFFFF'], 'Mainz': ['C3141E', 'FFFFFF'], 'Paderborn': ['005CA9', 'FFFFFF'], 'RB Leipzig': ['FFFFFF', 'DD0741'], 'Schalke 04': ['004D9D', 'FFFFFF'],
+  'Stuttgart': ['FFFFFF', 'E32219'], 'Union Berlin': ['EB1923', 'FFFFFF'], 'Werder Bremen': ['1D9053', 'FFFFFF'],
+  // ---- Ligue 1 ----
+  'Angers': ['000000', 'FFFFFF'], 'Auxerre': ['FFFFFF', '0050A0'], 'Brest': ['E30613', 'FFFFFF'], 'Le Havre': ['5BB7E5', '0B2341'], 'Le Mans': ['E4002B', 'FFDD00'],
+  'Lens': ['FDE100', 'E10600'], 'Lille': ['E01E13', 'FFFFFF'], 'Lorient': ['F58113', '000000'], 'Lyon': ['FFFFFF', 'DA001A'], 'Marseille': ['FFFFFF', '2FAEE0'],
+  'Monaco': ['E51B22', 'FFFFFF'], 'Nice': ['C8102E', 'FFFFFF'], 'Paris FC': ['002856', 'FFFFFF'], 'Paris Saint-Germain': ['004170', 'FFFFFF'], 'Rennes': ['E13327', 'FFFFFF'],
+  'Strasbourg': ['009FE3', 'FFFFFF'], 'Toulouse': ['6B1E87', 'FFFFFF'], 'Troyes': ['0055A4', 'FFFFFF'],
+  // ---- Liga Portugal ----
+  'Arouca': ['FFE100', '003B7A'], 'Benfica': ['E83030', 'FFFFFF'], 'Casa Pia': ['000000', 'FFFFFF'], 'Estoril': ['FFE500', '0054A6'], 'Estrela da Amadora': ['C8102E', 'FFFFFF'],
+  'FC Porto': ['003893', 'FFFFFF'], 'Famalicão': ['1D3C8C', 'FFFFFF'], 'Gil Vicente': ['E11F26', 'FFFFFF'], 'Marítimo': ['00843D', 'FFFFFF'], 'Moreirense': ['008C45', 'FFFFFF'],
+  'Nacional': ['000000', 'FFFFFF'], 'Rio Ave': ['00954C', 'FFFFFF'], 'SC Braga': ['E2001A', 'FFFFFF'], 'Santa Clara': ['C8102E', 'FFFFFF'], 'Sporting CP': ['008057', 'FFFFFF'],
+  'Vitória de Guimarães': ['FFFFFF', '000000'],
+  // ---- Eredivisie ----
+  'ADO Den Haag': ['00853E', 'FFD700'], 'AZ Alkmaar': ['E1001A', 'FFFFFF'], 'Ajax': ['D2122E', 'FFFFFF'], 'Cambuur': ['FFD100', '0055A4'], 'Excelsior': ['E30613', 'FFFFFF'],
+  'FC Twente': ['E1001A', 'FFFFFF'], 'FC Utrecht': ['E30613', 'FFFFFF'], 'Feyenoord': ['E3000F', 'FFFFFF'], 'Fortuna Sittard': ['FFDD00', '008A44'], 'Go Ahead Eagles': ['C8102E', 'FFD100'],
+  'Groningen': ['008C45', 'FFFFFF'], 'Heerenveen': ['0051A5', 'FFFFFF'], 'NEC Nijmegen': ['E30613', 'FFFFFF'], 'PEC Zwolle': ['005DAA', 'FFFFFF'], 'PSV Eindhoven': ['ED1C24', 'FFFFFF'],
+  'Sparta Rotterdam': ['E30613', 'FFFFFF'], 'Telstar': ['FFFFFF', '000000'], 'Willem II': ['0A2B6E', 'FFFFFF'],
+  // ---- Scottish Premiership ----
+  'Aberdeen': ['E30613', 'FFFFFF'], 'Celtic': ['018749', 'FFFFFF'], 'Dundee': ['1B2A5B', 'FFFFFF'], 'Dundee United': ['F58220', '000000'], 'Falkirk': ['13274F', 'FFFFFF'],
+  'Hearts': ['8B1E3F', 'FFFFFF'], 'Hibernian': ['00703C', 'FFFFFF'], 'Kilmarnock': ['004B9D', 'FFFFFF'], 'Motherwell': ['FFB400', '8B1E3F'], 'Rangers': ['1B458F', 'FFFFFF'],
+  'St Johnstone': ['0055A4', 'FFFFFF'], 'St Mirren': ['000000', 'FFFFFF'],
+  // ---- MLS ----
+  'Atlanta United': ['80000A', 'A19060'], 'Austin FC': ['00B140', '000000'], 'CF Montréal': ['000000', 'FFFFFF'], 'Charlotte FC': ['1A85C8', 'FFFFFF'], 'Chicago Fire': ['C8102E', 'FFFFFF'],
+  'Colorado Rapids': ['960A2C', '9CC2EA'], 'Columbus Crew': ['FEDD00', '000000'], 'D.C. United': ['000000', 'EF3E42'], 'FC Cincinnati': ['003087', 'FE5000'], 'FC Dallas': ['BF0D3E', 'FFFFFF'],
+  'Houston Dynamo': ['FF6B00', '101820'], 'Inter Miami': ['F7B5CD', '231F20'], 'LA Galaxy': ['00245D', 'FFD200'], 'Los Angeles FC': ['000000', 'C39E6D'], 'Minnesota United': ['231F20', '8CD2F4'],
+  'Nashville SC': ['ECE83A', '1F1646'], 'New England Revolution': ['022166', 'FFFFFF'], 'New York City FC': ['6CACE4', '041E42'], 'New York Red Bulls': ['ED1E36', 'FFFFFF'], 'Orlando City': ['633492', 'FFFFFF'],
+  'Philadelphia Union': ['071B2C', 'B49759'], 'Portland Timbers': ['004812', 'D69A00'], 'Real Salt Lake': ['B30838', 'FFFFFF'], 'San Jose Earthquakes': ['0D4C92', 'FFFFFF'], 'Seattle Sounders': ['5D9741', 'FFFFFF'],
+  'Sporting Kansas City': ['91B0D5', '002F65'], 'St. Louis City SC': ['EC1458', 'FFFFFF'], 'Toronto FC': ['B81137', 'FFFFFF'], 'Vancouver Whitecaps': ['FFFFFF', '00245E'],
+  // ---- other clubs in the Champions, Europa and Conference League ----
+  'AEK Athens': ['FFD700', '000000'], 'AGF': ['FFFFFF', '0047AB'], 'Anderlecht': ['4C2A85', 'FFFFFF'], 'Beşiktaş': ['000000', 'FFFFFF'], 'Bodø/Glimt': ['FFE500', '000000'],
+  'Brann': ['E30613', 'FFFFFF'], 'CSKA Sofia': ['C8102E', 'FFFFFF'], 'Club Brugge': ['0067CE', 'FFFFFF'], 'Copenhagen': ['FFFFFF', '0E2F67'], 'Dinamo Zagreb': ['0055A4', 'FFFFFF'],
+  'Fenerbahçe': ['1A2B6D', 'FFED00'], 'Ferencváros': ['00843D', 'FFFFFF'], 'Galatasaray': ['A90432', 'FDB912'], 'Gent': ['004B93', 'FFFFFF'], 'Hajduk Split': ['FFFFFF', '1F3E8A'],
+  'Hapoel Beer Sheva': ['E30613', 'FFFFFF'], 'Jablonec': ['00843D', 'FFFFFF'], 'Jagiellonia Białystok': ['FFD100', 'E30613'], 'Kairat': ['FFD100', '000000'], 'Kauno Žalgiris': ['00843D', 'FFFFFF'],
+  'Kups': ['FFD100', '000000'], 'LASK': ['000000', 'FFFFFF'], 'Lech Poznań': ['0055A4', 'FFFFFF'], 'Levski Sofia': ['004C99', 'FFFFFF'], 'Lillestrøm': ['FFD100', '000000'],
+  'Lincoln Red Imps': ['E30613', 'FFFFFF'], 'Lugano': ['000000', 'FFFFFF'], 'Midtjylland': ['000000', 'E30613'], 'Mjällby AIF': ['FFD100', '000000'], 'OFI': ['000000', 'FFFFFF'],
+  'Olympiacos': ['E30613', 'FFFFFF'], 'Omonia': ['00843D', 'FFFFFF'], 'Panathinaikos': ['007A3D', 'FFFFFF'], 'Red Bull Salzburg': ['FFFFFF', 'DD0741'], 'Red Star Belgrade': ['C8102E', 'FFFFFF'],
+  'Shakhtar Donetsk': ['FF6B00', '000000'], 'Sint Truiden': ['FFD100', '0055A4'], 'Slavia Prague': ['E30613', 'FFFFFF'], 'Slovan Bratislava': ['6CB4EE', '0B2341'], 'Sparta Prague': ['A6192E', 'FFFFFF'],
+  'Sturm Graz': ['000000', 'FFFFFF'], 'Thun': ['E30613', 'FFFFFF'], 'Trabzonspor': ['7B1E3F', '6CABDD'], 'Union Saint-Gilloise': ['FFD100', '0055A4'], 'Universitatea Craiova': ['0072CE', 'FFFFFF'],
+  'Viking': ['1D3C8C', 'FFFFFF'], 'Viktoria Plzeň': ['004B93', 'FFFFFF'],
+};
+/** [background, text] hex (with #) for a team name, or null when the colours are not in the table. */
+const teamColours = name => { const c = C[name]; return c ? ['#' + c[0], '#' + c[1]] : null; };
+const COLOURED_TEAMS = Object.keys(C);
+
+return { teamColours, COLOURED_TEAMS };
+})();
 __m['badge'] = (() => {
 // Team badges (redesign, 21 Oct 2026). PropLab has no licensed source of club or franchise logos, so every team gets a neutral
 // initials badge instead: the team's initials (or its official abbreviation for NFL / NBA) on a colour derived from the name.
-// The colour is only there to tell badges apart; it is not the team's real colour and implies no affiliation.
+// Colours: the team's home colours from teamcolors.js (owner request 21 Oct, evening); not logos, no affiliation implied.
 const { esc } = __m['util'];
+const { teamColours } = __m['teamcolors'];
 const SKIP = new Set(['fc', 'afc', 'cf', 'sc', 'ac', 'ssc', 'as', 'rc', 'cd', 'ud', 'sd', 'fk', 'sk', 'if', 'bk', 'the', 'de', 'of', 'and', '&', 'club', 'calcio', 'vfb', 'vfl', 'tsg', '1.', 'ca', 'rcd', 'us', 'losc', 'olympique']);
 function initials(name, abbr) {
   if (abbr) return String(abbr).slice(0, 3).toUpperCase();
@@ -1066,8 +1157,10 @@ function initials(name, abbr) {
 function hue(s) { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 360; }
 /** <span class="teamb"> with initials. size: 's' (fixture rows) or 'm'. */
 function badge(name, { abbr = '', size = 's' } = {}) {
-  const t = initials(name, abbr), h = hue(name || abbr);
-  return `<span class="teamb ${size}" style="--bh:${h}" data-i="${esc(t)}" aria-hidden="true"></span>`; // initials drawn by CSS (::before), so the team names read exactly as before
+  const t = initials(name, abbr), c = teamColours(name);
+  // the team's own home colours; a team without known colours gets a neutral grey badge (never a made-up colour)
+  const style = c ? `background:${c[0]};color:${c[1]};${c[0] === '#FFFFFF' ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)' : ''}` : 'background:#4b5563;color:#fff';
+  return `<span class="teamb ${size}" style="${style}" data-i="${esc(t)}" aria-hidden="true"></span>`; // initials drawn by CSS (::before), so the team names read exactly as before
 }
 
 return { initials, badge };
@@ -1154,6 +1247,36 @@ async function viewNbaPlayer(root, id) {
 }
 
 return { nbaBanner, nbaLoading, nbaCredit, teamInjuryHtml, viewNbaFixtures, viewNbaSearch, viewNbaPlayer };
+})();
+__m['nightdate'] = (() => {
+// NBA / NFL viewing nights (owner request 21 Oct, evening). US games are scheduled on a US date; a game that tips off at 03:00 UK on Thursday
+// belongs to Wednesday night's schedule. So US games are grouped by their scheduled date in US Eastern time (the leagues' own schedule date),
+// worked out from the exact tip-off instant, and "today" for a UK viewer means tonight's schedule: the UK date, except before 08:00 UK,
+// when last night's games are still the ones being watched. Football is not affected.
+const { koUK } = __m['util'];
+const ETF = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+const UKF = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+const UKH = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' });
+const NIGHT_CUTOFF_H = 8;
+/** The schedule night of a US game: its date in US Eastern time (from the tip-off instant); without a time, its published date. */
+const nightOf = g => (g && g.ko_utc ? ETF.format(new Date(g.ko_utc)) : g ? g.date : null);
+/** Tonight's schedule for a UK viewer: today's UK date, or yesterday's before 08:00 UK. */
+function viewingNight(now = new Date()) {
+  const h = Number(UKH.format(now)); const d = h < NIGHT_CUTOFF_H ? new Date(now.getTime() - (h + 1) * 3600e3) : now;
+  return UKF.format(d);
+}
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dow = ymd => { const [y, m, d] = ymd.split('-').map(Number); return DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; };
+/** A game's UK tip-off: "23:00", or "Thu 03:30" when it falls on the next UK day. '' when no time is published. */
+function ukTip(g) { if (!g || !g.ko_utc) return ''; const k = koUK(g); return k.ymd !== nightOf(g) ? `${dow(k.ymd)} ${k.hm}` : k.hm; }
+/** "UK tip-offs Wed 23:00 – Thu 03:30" for a night's games. */
+function nightSpan(games, night) {
+  const t = games.filter(g => g.ko_utc).sort((a, b) => (a.ko_utc < b.ko_utc ? -1 : 1)); if (!t.length) return 'tip-off times not published';
+  const f = g => { const k = koUK(g); return `${dow(k.ymd)} ${k.hm}`; };
+  const a = f(t[0]), b = f(t[t.length - 1]); return `UK tip-offs ${a}${b !== a ? ` – ${b}` : ''}${koUK(t[t.length - 1]).ymd !== night ? ' (after midnight UK)' : ''}`;
+}
+
+return { NIGHT_CUTOFF_H, nightOf, viewingNight, ukTip, nightSpan };
 })();
 __m['rank'] = (() => {
 // Ranking, evidence labels and plain-English card sentences (redesign, 21 Oct 2026). One set of rules for Hiwi's Section, Finder and Plays.
@@ -2167,7 +2290,9 @@ const SK = 'proplab.nfl.minSnaps.v1';
 let memS = null;
 const getNflSnap = () => { if (memS) return memS; try { const o = JSON.parse(localStorage.getItem(SK) || 'null'); memS = o && typeof o.val === 'number' ? { on: !!o.on, val: Math.max(1, Math.min(100, o.val)) } : { on: false, val: 50 }; } catch { memS = { on: false, val: 50 }; } return memS; };
 const setNflSnap = (on, val) => { memS = { on: !!on, val: Math.max(1, Math.min(100, Math.round(Number(val) || 50))) }; try { localStorage.setItem(SK, JSON.stringify(memS)); } catch { /* this visit only */ } };
-const nflSnapGlobal = () => { const m = getNflSnap(); return m.on ? m.val : null; };
+// Owner request 21 Oct (evening): no snap-share filter is offered any more, so none is applied (an old saved setting is ignored). The snap
+// counts stay in the data for analysis. NFL Games Used counts game appearances, never snaps.
+const nflSnapGlobal = () => null;
 const nflFiltersHtml = (haveSnaps = true) => { const m = getNflSnap();
   return `<div class="field nbaminf"><label class="hcheck"><input type="checkbox" id="nflsnapon" ${m.on ? 'checked' : ''} ${haveSnaps ? '' : 'disabled'}><span><b>Minimum Snap Share Filter</b> <span class="xs muted">${!haveSnaps ? 'snap counts are not in the published data yet (they arrive with the next nightly refresh)' : m.on ? 'Enabled' : 'Off: every game counts'}</span></span></label>
     ${m.on && haveSnaps ? `<div class="hminrow"><label class="xs" for="nflsnapval">Minimum share of snaps (%)</label> <input class="in hnum" id="nflsnapval" type="number" inputmode="numeric" min="1" max="100" step="1" value="${m.val}" aria-label="Minimum snap share"></div>` : ''}
@@ -2180,14 +2305,15 @@ __m['globalside'] = (() => {
 // NFL and NBA. A card's own Over / Under toggle changes only that card and never changes this setting. Remembered on this device.
 const KEY = 'proplab.globalSide.v1';
 let mem = null;
-const getGlobalSide = () => { if (mem) return mem; try { mem = localStorage.getItem(KEY) === 'under' ? 'under' : 'over'; } catch { mem = 'over'; } return mem; };
-const setGlobalSide = v => { mem = v === 'under' ? 'under' : 'over'; try { localStorage.setItem(KEY, mem); } catch { /* this visit only */ } };
-const globalSideHtml = (id = 'gside') => `<div class="field gsidef"><label>Over / Under</label><div class="seg gouou" id="${id}" role="group" aria-label="Over or Under for new results">${[['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-gside="${v}" class="${getGlobalSide() === v ? 'on' : ''}" aria-pressed="${getGlobalSide() === v}">${l}</button>`).join('')}</div>
-  <p class="xs muted" style="margin:4px 0 0">The side results start on. Each card keeps its own Over / Under toggle: changing one card never changes this.</p></div>`;
+const getGlobalSide = () => { if (mem) return mem; try { { const v = localStorage.getItem(KEY); mem = v === 'under' || v === 'both' ? v : 'over'; } } catch { mem = 'over'; } return mem; };
+const setGlobalSide = v => { mem = v === 'under' || v === 'both' ? v : 'over'; try { localStorage.setItem(KEY, mem); } catch { /* this visit only */ } };
+const globalSideHtml = (id = 'gside') => `<div class="field gsidef"><label>Over / Under</label><div class="seg gouou" id="${id}" role="group" aria-label="Over or Under for new results">${[['over', 'Over'], ['under', 'Under'], ['both', 'Both']].map(([v, l]) => `<button type="button" data-gside="${v}" class="${getGlobalSide() === v ? 'on' : ''}" aria-pressed="${getGlobalSide() === v}">${l}</button>`).join('')}</div>
+  <p class="xs muted" style="margin:4px 0 0">Which directions the search shows. Both = Over and Under results, each with its own percentage and clearly labelled. Every card keeps its own Over / Under switch.</p></div>`;
 /** Starting side for a new card: binary markets use Yes / No. */
-const startSide = def => (def && def.binary ? (getGlobalSide() === 'under' ? 'no' : 'yes') : getGlobalSide());
+const startSide = def => { const g = getGlobalSide() === 'under' ? 'under' : 'over'; return def && def.binary ? (g === 'under' ? 'no' : 'yes') : g; }; // Both: cards are made in pairs (Over card, Under card)
+const searchSides = () => (getGlobalSide() === 'both' ? ['over', 'under'] : [getGlobalSide()]);
 
-return { getGlobalSide, setGlobalSide, globalSideHtml, startSide };
+return { getGlobalSide, setGlobalSide, globalSideHtml, startSide, searchSides };
 })();
 __m['info'] = (() => {
 // Tappable explanation labels ("Small sample", "Research line", "Started – status unconfirmed"...). They work by tap/click, not hover,
@@ -2304,13 +2430,13 @@ const oppCls = r => (r.raw && r.raw.type === 'P' ? ' po' : r.raw && r.raw.type =
 function cardHtml(card, st) {
   const d = card.def, bin = !!d.binary, vals = card.rows.map(r => r.value), b = d.hcp ? { min: Math.min(d.range[0], st.line) - 0.5, max: Math.max(d.range[1], st.line) + 0.5 } : lineBounds(d, vals, st.line);
   const sMin = Math.floor(b.min - 0.5) + 0.5, sMax = Math.max(sMin + 1, b.max);
-  const sides = bin ? [['yes', 'Yes'], ['no', 'No'], ['both', 'Both']] : d.hcp ? [['over', 'Cover'], ['under', 'Fail'], ['both', 'Both']] : [['over', 'Over'], ['under', 'Under'], ['both', 'Both']];
+  const sides = bin ? [['yes', 'Yes'], ['no', 'No']] : d.hcp ? [['over', 'Cover'], ['under', 'Fail']] : [['over', 'Over'], ['under', 'Under']]; // a card researches one direction (Both is a search setting at the top)
   const po = card.rows.some(r => r.raw && r.raw.type === 'P'), pi = card.rows.some(r => r.raw && r.raw.type === 'PI');
   const n = card.rows.length, rel = reliability(n), pv = st.persp || 'h';
   const note = card.noteFor ? card.noteFor[pv] : card.note;
   const unitW = card.h2h ? (n === 1 ? 'meeting' : 'meetings') : `completed ${card.unit === 'game' ? 'game' : 'match'}${n === 1 ? '' : card.unit === 'game' ? 's' : 'es'}`;
   return `<article class="hcard${card.h2h ? ' isH2H' : ''}" data-cid="${esc(card.cid)}">
-    <header class="hch"><div class="hct"><b>${esc(card.title)}</b><span class="hscope s-${esc(card.tagCls || d.scope)}">${esc(card.tag || SCOPE_LABEL[d.scope])}</span>${isConfirmedOut(card.injury) ? `<span class="outb" title="${esc(card.injury.label + (card.injury.detail ? ' · ' + card.injury.detail : ''))}">Unavailable (OUT)</span>` : ''}${card.newTeam ? `<button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM" data-text="${esc(card.newTeam)}" aria-haspopup="dialog">NEW TEAM</button>` : ''}</div><div class="hpct" data-h-pct></div></header>
+    <header class="hch"><div class="hct">${card.playerHref ? `<a class="hplink" href="${esc(card.playerHref)}" title="All markets for ${esc(card.title)}"><b>${esc(card.title)}</b></a>` : `<b>${esc(card.title)}</b>`}<span class="hscope s-${esc(card.tagCls || d.scope)}">${esc(card.tag || SCOPE_LABEL[d.scope])}</span>${isConfirmedOut(card.injury) ? `<span class="outb" title="${esc(card.injury.label + (card.injury.detail ? ' · ' + card.injury.detail : ''))}">Unavailable (OUT)</span>` : ''}${card.newTeam ? `<button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM" data-text="${esc(card.newTeam)}" aria-haspopup="dialog">NEW TEAM</button>` : ''}</div><div class="hpct"><span data-h-pct></span><small class="hpdir" data-h-dir></small></div></header>
     <div class="hcm"><b>${esc(d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
     ${card.tabs ? `<div class="hpersp htabs"><div class="seg" role="tablist" aria-label="Which games">${card.tabs.map(([v, l]) => `<button type="button" role="tab" data-h-tab="${v}" class="${(st.view || 'form') === v ? 'on' : ''}" aria-selected="${(st.view || 'form') === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
     ${card.segs ? card.segs.map(g => `<div class="hpersp hsegsel"><span class="xs muted">${esc(g.label)}:</span><div class="seg" role="group" aria-label="${esc(g.label)}">${g.opts.map(([v, l]) => `<button type="button" data-h-seg="${esc(g.key)}" data-v="${esc(v)}" class="${(st[g.key] || g.opts[0][0]) === v ? 'on' : ''}" aria-pressed="${(st[g.key] || g.opts[0][0]) === v}">${esc(l)}</button>`).join('')}</div></div>`).join('') : ''}
@@ -2318,7 +2444,7 @@ function cardHtml(card, st) {
       <input type="range" data-h-minm min="0" max="${card.minCtl.max || 44}" step="1" value="${st.minMin ?? card.minCtl.global ?? 0}" aria-label="${esc(card.minCtl.label || 'Minimum minutes')} (0 = off)"></div>` : ''}
     ${card.lineNote ? `<p class="xs hlinenote">${card.lineNote}</p>` : ''}
     ${card.persp ? `<div class="hpersp"><span class="xs muted">Whose ${esc(d.label.toLowerCase())}:</span><div class="seg" role="group" aria-label="Whose figures">${card.persp.map(([v, l]) => `<button type="button" data-h-persp="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
-    ${card.scopes ? `<div class="hpersp hscopesel"><span class="xs muted">Form:</span><div class="seg" role="group" aria-label="Which matches">${card.scopes.map(([v, l]) => `<button type="button" data-h-scope="${v}" class="${card.sc === v ? 'on' : ''}" aria-pressed="${card.sc === v}">${esc(l)}</button>`).join('')}</div></div>
+    ${card.scopes ? `<div class="hpersp hscopesel"><span class="xs muted">Matches used:</span><div class="seg" role="group" aria-label="Matches used on this card">${card.scopes.map(([v, l]) => `<button type="button" data-h-scope="${v}" class="${card.sc === v ? 'on' : ''}" aria-pressed="${card.sc === v}">${esc(l)}</button>`).join('')}</div></div>
       <p class="xs muted hscnote" data-h-scnote>${card.eligNote(card.sc)}${card.scopeViews[card.sc].below ? ' · <b>no match this season with this figure</b>: shown because you chose this view on the card' : ''}</p>` : ''}
     ${note ? `<p class="xs hnote2">${esc(note)}</p>` : ''}
     ${card.perOk && !card.h2h ? `<div class="hperc"><label class="xs muted" for="hper-${esc(card.cid)}">Games used</label><select class="in hpersel" id="hper-${esc(card.cid)}" data-h-per aria-label="Games used on this card">${PER_OPTS.map(([v, l]) => `<option value="${v}" ${String(st.per ?? card.perDefault ?? 'season') === v ? 'selected' : ''}>${l}${v === String(card.perDefault ?? '') ? ' (page)' : ''}</option>`).join('')}</select></div>` : ''}
@@ -2349,7 +2475,7 @@ function barsHtml(card, rows, off, years = false) {
 }
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fmtShortY = s => `${Number(s.slice(8, 10))} ${MON[Number(s.slice(5, 7)) - 1]} ${s.slice(2, 4)}`;
-const sideOf = st => (st.side === 'both' ? null : (st.side === 'under' || st.side === 'no') ? 'under' : 'over');
+const sideOf = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over'); // an old 'both' state reads as Over
 /** The card's hit rate for sorting: { pct, n } for its current line and side (Both sorts by Over / Yes). pct null = no data. */
 function headRate(card, st) {
   const s = lineStats(card.rows.map(r => r.value), cmpLine(card.def, st.line));
@@ -2361,7 +2487,8 @@ function paintHCard(el, card, st) {
   const q = x => el.querySelector(x);
   const lbl = bin ? { over: 'Yes', under: 'No' } : hc ? { over: `Cover ${signed(st.line)}`, under: `Fail ${signed(st.line)}` } : { over: `Over ${line}`, under: `Under ${line}` };
   const main = sideOf(st);
-  const pctHtml = x => (!x.n ? 'n/a' : main ? `${x[main + 'Pct']}%` : `<span class="hpo">${x.overPct}%</span><span class="hpu">${x.underPct}%</span>`);
+  const pctHtml = x => (!x.n ? 'n/a' : `${x[main + 'Pct']}%`);
+  { const dEl = q('[data-h-dir]'); if (dEl) dEl.textContent = bin ? (main === 'over' ? 'Yes' : 'No') : hc ? (main === 'over' ? 'Cover' : 'Fail') : main === 'over' ? 'Over' : 'Under'; } // the direction the % refers to
   const avgTxt = x => (bin ? '' : hc ? ` · average margin ${signed(x.avg)}` : ` · average ${x.avg}`);
   const statHtml = (x, unitWord) => (!x.n ? '' : main
     ? `<b>${esc(lbl[main])}</b>: ${x[main]} of ${x.n} ${unitWord(x.n)}${avgTxt(x)}`
@@ -2477,7 +2604,7 @@ function buildUsPlayerCard(o) {
   const ij = A.injury(p, g), nt = p.new_team || null, base = isNba ? baselineLine(p, o.key) : nflBaseline(raw, def, cs);
   // participation: NBA minutes; NFL snap share (offence or defence by position group), only when the data has snap counts
   const pk = isNba ? 'min' : p.group === 'def' ? 'dpct' : 'opct';
-  const hasPart = isNba || raw.some(x => x[pk] != null);
+  const hasPart = isNba; // NBA minutes only: no NFL snap-share control or label on cards (owner request 21 Oct, evening)
   const glob = () => (isNba ? nbaMinGlobal() : hasPart ? nflSnapGlobal() : null);
   const lab = x => `${x.home ? 'v' : '@'}${x.opp}`;
   const card = { cid: o.cid || `p|${p.id}|${o.key}`, ord: [p.name, o.mi || 0, 0], title: p.name, def, unit: 'game', pteam: p.team, showMin: hasPart, partKey: pk, partUnit: isNba ? 'm' : '%', partLabel: isNba ? 'minutes played' : `${pk === 'dpct' ? 'defensive' : 'offensive'} snap share`, newTeam: nt ? newTeamText(p, A.teamName) : null,
@@ -2489,6 +2616,7 @@ function buildUsPlayerCard(o) {
     baseLine: o.startLine != null ? o.startLine : base ? base.line : null,
     lineNote: `${o.startLine != null ? '' : base ? `Starting line ${base.line}: ${esc(base.text)}. An estimated research line, not a bookmaker line.` : ''}${nt ? ` <span class="warnline">Line may be less reliable following a team change.</span>` : ''}`.trim() || null };
   card.perOk = true; card.perDefault = String(o.period());
+  if (!o.noLink) card.playerHref = `#/${sport}/research/${encodeURIComponent(p.id)}`; // tap the name: every market for this player
   card.rebuild = s0 => {
     const minM = hasPart ? (s0.minMin ?? glob() ?? 0) : 0, view = s0.view || 'form', tf = s0.teamF || 'all';
     const okMin = x => !minM || (x[pk] != null && x[pk] >= minM); // unknown minutes / snaps never meet a minimum
@@ -2914,7 +3042,7 @@ const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
 const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, statusBadge } = __m['util'];
 const { normName, teamAliases } = __m['teams'];
-const { setLeague } = __m['shared'];
+const { setLeague, hooks } = __m['shared'];
 const { leagueGameweek, nextLeagueGameweek, nflWeek, nflNextWeek } = __m['gameweek'];
 const { nflGameDetailHtml } = __m['nfl-markets'];
 const { getPopular, setPopular, getPlayerSort, setPlayerSort, nflHasProminence, mlsProminence } = __m['prominence'];
@@ -2925,6 +3053,7 @@ const { getGlobalSide, setGlobalSide, globalSideHtml, startSide } = __m['globals
 const { buildUsPlayerCard } = __m['uscards'];
 const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaTypes, setNbaTypes, getNbaMin, setNbaMin, nflFiltersHtml, getNflSnap, setNflSnap } = __m['nbaprefs'];
 const { infoTag } = __m['info'];
+const { nightOf, viewingNight, ukTip, nightSpan } = __m['nightdate'];
 const { wilson, qualMin, getMinQual, setMinQual, QMIN, QMAX, getExcludeOut, setExcludeOut, isConfirmedOut } = __m['rank'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { fbSearchTerms, nflSearchTerms, rankTeams } = __m['aliases'];
@@ -2941,10 +3070,16 @@ const usAdapter = sport => (sport === 'nba' ? NBA_A : NFL_A);
 // Form period: Season = this season only; Last 5/10/20 = the latest 5/10/20 completed matches across seasons (five-year records).
 const PERIODS = [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20']];
 const SORTS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
+const POP_TEXT = {
+  nba: 'Rule-based, recomputed every night from the box scores (no fixed number, no paid or social-media data): a current-roster player averaging 15+ points, 9+ rebounds or 6+ assists, this season (5+ games) or last season (20+ games), or the season before (40+ games) if he missed most of last season. Every team also has at least its leading scorer. The count follows from the rule (about 100–110).',
+  nfl: 'Rule-based, recomputed every night from the game logs (no fixed number, no paid or social-media data): a QB with 50%+ of his team\'s pass attempts; an RB with 30%+ of the carries (or 15%+ of carries and 10%+ of targets); a WR or TE with 13%+ of the targets; or anyone producing 12+ fantasy-style points a game. Met this season (2+ games) or last season (6+ games). Kickers and defenders are never included. The count follows from the rules (about 200).',
+  football: 'Regular starters and leading scorers / creators of the selected clubs, from the published MLS match logs.',
+};
 const RANK_TEXT = 'Highest % First ranks cards by the hit rate of the side shown on each card. Only cards with at least the minimum number of qualifying games are ranked together; cards with fewer follow under Limited data. Ties go to the larger sample, then A–Z. Strongest Evidence ranks by the 95% lower bound of the hit rate, which rewards a high rate and a large sample together. The order is fixed until you sort again: changing a line, side or Games used on a card updates that card where it is.';
 const MODE_SCOPES = { teams: ['match', 'team', 'opp', 'player'], matches: ['match', 'team', 'opp', 'player'] };
 const mk = () => ({ dates: null, fteams: new Set(), popAuto: new Set(), popRemoved: new Set(), untick: new Set(), mode: 'teams', gw: { cur: true, next: false }, today: false, fx: new Set(), linked: null, teams: new Set(), players: { teams: new Set(), matches: new Set() }, markets: { teams: new Set(), matches: new Set() }, period: 'season', sort: 'hi', tq: '', pq: '', ppos: '' });
 const S = { football: mk(), nfl: mk(), nba: { ...mk(), period: 10 } }; // NBA starts on Last 10: early in a season 'Season' has few games
+const SNAP = {}; // sport -> { order: [cid], shown } of the last results list, to restore it exactly after Back to Plays
 const cardState = new Map(); // `${sport}|${cid}` -> { line, side, userLine } kept while the visitor stays on the site
 const PAGE = 24;
 // Minimum Games Played (owner request, Milestone 4): hides a player or team card when the subject has fewer games / matches with a
@@ -2965,7 +3100,7 @@ const getUclScope = () => uclMem;
 const resetUclScope = () => { uclMem = scopeBase(); };
 const setUclScope = v => { uclMem = v === 'all' ? 'all' : v === 'dom' ? 'dom' : 'cup'; }; // 'eu', 'cup' or a competition code = that club's European matches
 /** The rows scope for a fixture of competition lg: 'all', 'dom' or the cup's own code. */
-const scopeFor = lg => { const p = getUclScope(); return !isCup(lg) ? 'all' : p === 'cup' ? lg : p; };
+const scopeFor = lg => { const p = getUclScope(); return !isCup(lg) ? 'all' : p === 'cup' ? 'eu' : p; }; // European Competition Only = Champions, Europa and Conference League matches
 /** A club seen outside a European fixture (team view, league fixture, Finder league entry...): 'all' | 'dom' | 'eu' (any European competition). */
 const clubScopeFor = () => { const p = getUclScope(); return p === 'cup' ? 'eu' : p; };
 /** Name of a scope's competition: a cup's name, or 'European' for 'eu'. */
@@ -2977,9 +3112,9 @@ const clubRows = (slug, ctxLg) => (isCup(ctxLg) ? teamRowsScoped(slug, scopeFor(
 /** The scope a page shows for slug in ctxLg, or null when the club has no European matches (no switch needed). */
 const clubScopeIn = (slug, ctxLg) => (isCup(ctxLg) ? scopeFor(ctxLg) : hasEuropean(slug) ? clubScopeFor() : null);
 /** The three choices on a card of competition lg ('eu' = a club's European matches in any competition). */
-const scopeOpts = lg => [['all', 'All games'], ['dom', 'Domestic league only'], [lg, lg === 'eu' ? 'European matches only' : `${leagueName(lg)} only`]];
+const scopeOpts = () => [['all', 'All Games'], ['dom', 'Domestic League Only'], ['eu', 'European Competition Only']]; // the same three everywhere (owner request 21 Oct, evening)
 /** Finder (several competitions at once): 'cup' = each club's own European competition only. */
-const finderScopeOpts = cups => [['all', 'All games'], ['dom', 'Domestic league only'], ['cup', cups.length === 1 && cups[0] !== 'eu' ? `${leagueName(cups[0])} only` : 'European matches only']];
+const finderScopeOpts = () => [['all', 'All Games'], ['dom', 'Domestic League Only'], ['cup', 'European Competition Only']];
 // Minimum Games Played (owner correction 20 Oct): 1–20, default 10, counted from the CURRENT SEASON only (games with a recorded figure).
 const MIN_LO = 1;
 const MIN_HI = 20;
@@ -3016,7 +3151,8 @@ function sortCards(cards, how, stOf, order = new Map()) {
 
 async function viewHiwi(root, r, sport) {
   const st = S[sport], usMode = sport !== 'football', isNfl = sport === 'nfl', isNba = sport === 'nba', A = usAdapter(sport), now = new Date(), todayUK = koUK({ ko_utc: now.toISOString() }).ymd;
-  st.gw = { cur: true, next: false }; st.linked = null; // Current Gameweek every time the page opens (its fixtures are ticked below)
+  let restoring = !!(hooks.restore && SNAP[sport]); // back from a player page: same selections, same cards, same order, same place
+  if (!restoring) { st.gw = { cur: true, next: false }; st.linked = null; } // Current Gameweek every time the page opens (its fixtures are ticked below)
   const ready = usMode ? A.d.status === 'ready' : store.status === 'ready';
   root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Research a team's own record, or an upcoming match. Each result card has its own line: move it and the hit rate and bars update. Detailed analysis compares both teams and their head-to-head.</p></div></div>
     <div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
@@ -3026,13 +3162,13 @@ async function viewHiwi(root, r, sport) {
   let lgs = usMode ? [sport] : getLeagues();
   const playersBy = new Map(); // league -> football players with match logs
   // deep links: #/hiwi?fx=<fixture id> opens Upcoming Matches with that fixture; ?team=<slug> opens Individual Teams with that team
-  const qfx = r.q.get('fx'), qteam = r.q.get('team');
+  const qfx = restoring ? null : r.q.get('fx'), qteam = restoring ? null : r.q.get('team');
   const addLg = l => { if (!lgs.includes(l)) { lgs = [...lgs, l]; setLeagues(lgs); } setLeague(l); };
   if (!usMode && qfx) { const f = store.fixtures.find(x => fixtureId(x) === qfx); if (f) { addLg(f.league); st.mode = 'matches'; st.fx = new Set([qfx]); st.linked = qfx; st.today = false; } }
   if (!usMode && qteam && store.teams.get(qteam)) { addLg(store.teams.get(qteam).league); st.mode = 'teams'; st.teams = new Set([qteam]); st.today = false; }
   if (usMode && qfx && A.d.gameById.get(qfx)) { st.mode = 'matches'; st.fx = new Set([qfx]); st.linked = qfx; }
   if (usMode && qteam && A.d.teams.get(qteam)) { st.mode = 'teams'; st.teams = new Set([qteam]); }
-  { const qp = r.q.get('player'), pp = usMode && qp ? A.d.playerById.get(qp) : null; if (pp && pp.current) { st.mode = 'teams'; st.teams = new Set([pp.team]); st.players.teams.add(pp.id); st.plOpen = true; } } // from a player profile
+  { const qp = restoring ? null : r.q.get('player'), pp = usMode && qp ? A.d.playerById.get(qp) : null; if (pp && pp.current) { st.mode = 'teams'; st.teams = new Set([pp.team]); st.players.teams.add(pp.id); st.plOpen = true; } } // from a player profile
   const seasonOf = lg => (lg === 'nfl' || lg === 'nba' ? A.latestSeason() : currentSeason(lg));
   const lgOfTeam = id => (usMode ? sport : store.teams.get(id)?.league || lgs[0]);
   const multi = () => !usMode && lgs.length > 1;
@@ -3065,7 +3201,8 @@ async function viewHiwi(root, r, sport) {
   };
   const fxById = id => (usMode ? A.d.gameById.get(id) : store.fixtures.find(x => fixtureId(x) === id));
   /** Today's fixtures (UK date) in the selected leagues that can still be researched (not finished, postponed or abandoned). */
-  const todayFx = () => (usMode ? A.selectable(now).filter(g => isTodayUK(g, now)) : lgs.flatMap(lg => selectableFixtures(lg, now)).filter(f => isTodayUK(f, now))).sort(fxSortLocal);
+  const todayFx = () => (usMode ? A.selectable(now).filter(g => nightOf(g) === viewingNight(now)) // tonight's US schedule, incl. games after midnight UK
+     : lgs.flatMap(lg => selectableFixtures(lg, now)).filter(f => isTodayUK(f, now))).sort(fxSortLocal);
   /** Fixtures shown in Upcoming Matches: Today's Games Only, or the enabled gameweeks of each league; plus a fixture opened from a link. */
   const visibleFx = () => {
     if (isNba) { const v = nbaVisible().map(f => ({ f, which: 'date', lg: 'nba' })); if (st.linked && !v.some(x => x.f.id === st.linked)) { const f = fxById(st.linked); if (f) v.push({ f, which: 'linked', lg: 'nba' }); } return v; }
@@ -3158,26 +3295,29 @@ async function viewHiwi(root, r, sport) {
   let nbaDayCache = null;
   /** UK dates with researchable NBA games (next three weeks), chronological: [[ymd, games]]. */
   const nbaDays = () => { if (nbaDayCache) return nbaDayCache; const by = new Map();
-    for (const g of A.selectable(now)) { const d = koUK(g).ymd; if (by.size < 21 || by.has(d)) { if (!by.has(d)) by.set(d, []); by.get(d).push(g); } }
+    for (const g of A.selectable(now)) { const d = nightOf(g); if (by.size < 21 || by.has(d)) { if (!by.has(d)) by.set(d, []); by.get(d).push(g); } } // schedule nights (US date), not UK calendar days
     nbaDayCache = [...by.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)); return nbaDayCache; };
   const nbaTeamOk = g => !st.fteams.size || st.fteams.has(g.home) || st.fteams.has(g.away);
   const nbaVisible = () => nbaDays().filter(([d]) => st.dates.has(d)).flatMap(([, gs]) => gs.filter(nbaTeamOk));
   const setDate = (d, on) => { on ? st.dates.add(d) : st.dates.delete(d); const day = nbaDays().find(x => x[0] === d); if (!day) return;
     for (const g of day[1]) { if (on) { if (nbaTeamOk(g) && !st.untick.has(g.id)) st.fx.add(g.id); } else st.fx.delete(g.id); } };
-  const initNbaDates = () => { if (st.dates) { for (const d of [...st.dates]) if (!nbaDays().some(x => x[0] === d)) st.dates.delete(d); for (const id of [...st.fx]) { const g = fxById(id); if (!g || !st.dates.has(koUK(g).ymd)) st.fx.delete(id); } return; }
+  const initNbaDates = () => { if (st.dates) { for (const d of [...st.dates]) if (!nbaDays().some(x => x[0] === d)) st.dates.delete(d); for (const id of [...st.fx]) { const g = fxById(id); if (!g || !st.dates.has(nightOf(g))) st.fx.delete(id); } return; }
     st.dates = new Set(); const first = nbaDays().find(([, gs]) => gs.some(g => fxStatus(g, now) === 'pre')) || nbaDays()[0]; if (first) setDate(first[0], true); }; // the next UK date with a game still to tip off
   const nbaFixturesHtml = (vis, nSel, listHtml) => { const days = nbaDays();
     const picked = days.filter(([d]) => st.dates.has(d)), nG = picked.reduce((t, [, gs]) => t + gs.length, 0);
     const dsum = !picked.length ? 'no date selected' : `${esc(fullDay(picked[0][0]).replace(/^(\w{3})\w*/, '$1'))}${picked.length > 1 ? ` + ${picked.length - 1} more date${picked.length > 2 ? 's' : ''}` : ''} · ${nG} game${nG === 1 ? '' : 's'}`;
-    return `<details class="hsel datechk" id="hdts" ${st.dtOpen ? 'open' : ''}><summary><b>Dates (UK)</b> <span class="muted small" id="hdtsum">${dsum}</span></summary>
+    const tn = viewingNight(now), tnGames = (days.find(x => x[0] === tn) || [null, []])[1];
+    return `<label class="hcheck lgtoday nbatoday"><input type="checkbox" id="hnbtoday" ${st.nbaToday ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${tnGames.length ? `tonight's NBA schedule, ${esc(fullDay(tn))}: ${tnGames.length} game${tnGames.length === 1 ? '' : 's'}, ${esc(nightSpan(tnGames, tn))}` : `no NBA games on tonight's schedule (${esc(fullDay(tn))})`}</span></span></label>
+      <details class="hsel datechk" id="hdts" ${st.dtOpen ? 'open' : ''}><summary><b>Dates (NBA schedule)</b> <span class="muted small" id="hdtsum">${dsum}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="dates">Select all dates</button><button type="button" class="chip" data-none="dates">Clear all dates</button></div>
-        <div class="hlist" id="hdates">${days.map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-nbadate="${d}" ${st.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div></details>
+        <div class="hlist" id="hdates">${days.map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-nbadate="${d}" ${st.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'} · ${esc(nightSpan(gs, d))}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div>
+        <p class="xs muted" style="margin:4px 0 0">Dates are NBA schedule nights (US date): a game at 03:00 UK on Thursday belongs to Wednesday night and is shown with its UK day and time.</p></details>
       <details class="hsel" id="hnbt" ${st.ntOpen ? 'open' : ''}><summary><b>Teams filter</b> <span class="muted small">${st.fteams.size ? `${st.fteams.size} ticked: only their games are listed` : 'none ticked: every team'}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-none="fteams">Clear teams</button></div>
         <div class="hlist hgrid">${[...A.d.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<label class="hcheck"><input type="checkbox" data-nbateam="${t.abbr}" ${st.fteams.has(t.abbr) ? 'checked' : ''}><span>${esc(t.name)}</span></label>`).join('')}</div></details>
       <p class="rulebox">How the filters combine: a game is listed when it is on a ticked date <b>and</b> (if you tick teams) involves a ticked team. Ticking a date ticks its games; untick or tick any game below. Nothing ticked = nothing searched.</p>
       <p class="small hfxcount" id="hfxcount"><b>${nSel}</b> game${nSel === 1 ? '' : 's'} selected</p>
-      <p class="xs muted hiwiweek" style="margin:6px 0">Dates and times in UK time for the date list (GMT/BST); times below in ${esc(tzNow())}</p>
+      <p class="xs muted hiwiweek" style="margin:6px 0">Tip-off times below are UK time (GMT / BST), with the UK day when a game tips off after midnight.</p>
       <details class="hsel" id="hfx" ${st.fxOpen === false ? '' : 'open'}><summary><b>Games</b> <span class="muted small">${nSel ? `${nSel} selected` : 'none selected'}</span></summary>
         ${!st.dates.size ? '<div class="banner info hgwempty"><b>Select a date to list games.</b></div>' : `<div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="fx">Select all${vis.length ? ` (${vis.length})` : ''}</button><button type="button" class="chip" data-none="fx">Clear all</button></div>
         <div class="hlist">${vis.length ? listHtml(vis) : '<p class="xs muted">No games on the ticked dates for the ticked teams.</p>'}</div>`}</details>`; };
@@ -3208,11 +3348,11 @@ async function viewHiwi(root, r, sport) {
     // One list in kick-off order across every selected league (not league blocks); league and kick-off beside each fixture; matches that
     // have kicked off stay (with their status); fixtures without a confirmed kick-off time are listed separately, never given a time.
     const row = (x) => { const f = x.f, k = koLocal(f), stt = fxStatus(f, now); const tag = x.which === 'linked' ? 'Linked' : x.which === 'today' ? 'Today' : (x.w ? x.w.tag : '');
-      return `<label class="hcheck hfxrow"><input type="checkbox" data-pick="fx" value="${esc(fxId(f))}" ${st.fx.has(fxId(f)) ? 'checked' : ''}><span><b>${esc(f.ko_utc ? k.hm : 'TBC')}</b> ${esc(fxName(f))}${usMode ? '' : ` <span class="hfxlg">${esc(LEAGUE_NAMES[f.league])}</span>`}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}${tag ? `<span class="hgwtag${x.which === 'next' ? ' next' : ''}">${esc(tag)}</span>` : ''}</span></label>`; };
+      return `<label class="hcheck hfxrow"><input type="checkbox" data-pick="fx" value="${esc(fxId(f))}" ${st.fx.has(fxId(f)) ? 'checked' : ''}><span><b>${esc(f.ko_utc ? (usMode ? ukTip(f) : k.hm) : 'TBC')}</b> ${esc(fxName(f))}${usMode ? '' : ` <span class="hfxlg">${esc(LEAGUE_NAMES[f.league])}</span>`}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}${tag ? `<span class="hgwtag${x.which === 'next' ? ' next' : ''}">${esc(tag)}</span>` : ''}</span></label>`; };
     const listHtml = items => { const seen = new Set(), uniq = items.filter(x => { const id = fxId(x.f); if (seen.has(id)) return false; seen.add(id); return true; });
       const timed = uniq.filter(x => x.f.ko_utc).sort((a, b) => fxSortLocal(a.f, b.f)), tbc = uniq.filter(x => !x.f.ko_utc).sort((a, b) => (a.f.date < b.f.date ? -1 : a.f.date > b.f.date ? 1 : fxName(a.f).localeCompare(fxName(b.f))));
-      const days = new Map(); for (const x of timed) { const d = koLocal(x.f).ymd; if (!days.has(d)) days.set(d, []); days.get(d).push(x); }
-      return [...days.entries()].map(([d, xs]) => `<div class="hday">${esc(fmtDay(d))}</div>${xs.map(row).join('')}`).join('')
+      const days = new Map(); for (const x of timed) { const d = usMode ? nightOf(x.f) : koLocal(x.f).ymd; if (!days.has(d)) days.set(d, []); days.get(d).push(x); } // NBA / NFL: by schedule night
+      return [...days.entries()].map(([d, xs]) => `<div class="hday">${esc(fmtDay(d))}${usMode ? ' <span class="xs muted">US schedule night · UK times</span>' : ''}</div>${xs.map(row).join('')}`).join('')
         + (tbc.length ? `<div class="hday hdaytbc">Kick-off time not confirmed ${infoTag('tbc', 'TBC', { cls: 'neutral' })}</div>${tbc.map(x => `<div class="xs muted hfxdate">${esc(fmtDay(x.f.date))}</div>${row(x)}`).join('')}` : ''); };
     const gwLabels = () => (st.today ? '' : `<div class="xs muted hgwlabs">${(usMode ? [sport] : lgs).map(lg => ['cur', 'next'].filter(k => st.gw[k]).map(k => `${k === 'cur' ? 'Current' : 'Next'} Gameweek${usMode ? '' : ' · ' + esc(LEAGUE_NAMES[lg])}: ${esc(gameweeks(lg)[k].label)}`).join('<br>')).filter(Boolean).join('<br>')}</div>`);
     const sec = () => { const items = vis.map(x => ({ ...x, w: x.which === 'cur' || x.which === 'next' ? gameweeks(x.lg)[x.which] : null }));
@@ -3220,14 +3360,14 @@ async function viewHiwi(root, r, sport) {
     const empty = () => (!usMode && !lgs.length ? '<p class="xs muted hnolg"><b>Select a league to view fixtures.</b></p>' : st.today ? `<p class="xs muted">No games today in ${esc(usMode ? 'the ' + A.name : leaguesLabel(lgs))} that can still be researched.</p>` : `${gwLabels()}<p class="xs muted">No fixtures in the chosen gameweeks.</p>`); // the gameweek labels explain why (e.g. "no fixtures left")
     if (isNba) return nbaFixturesHtml(vis, nSel, listHtml);
     return `<div class="field"><label>Gameweeks</label><div class="hgwt" id="hgw" role="group" aria-label="Gameweeks">${tog('cur', 'Current Gameweek')}${tog('next', 'Next Gameweek')}</div>
-        ${usMode ? `<label class="hcheck lgtoday" style="margin-top:6px"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">UK date ${esc(todayUK)}</span></span></label>` : ''}
+        ${usMode ? `<label class="hcheck lgtoday" style="margin-top:6px"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}), including games after midnight UK` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
         ${st.today ? '<p class="xs muted" style="margin:6px 0 0">Today\'s Games Only is on: the gameweek choice is paused.</p>' : ''}</div>
       <p class="small hfxcount" id="hfxcount"><b>${nSel}</b> fixture${nSel === 1 ? '' : 's'} selected${multi() ? ` across ${lgs.length} leagues` : ''}</p>
       <p class="xs muted hiwiweek" style="margin:6px 0">${usMode ? `Official ${A.name} weeks` : 'Official league rounds where published; otherwise the next match days by date'} · times in ${esc(tzNow())}</p>
       <details class="hsel" id="hfx" ${st.fxOpen === false ? '' : 'open'}><summary><b>Fixtures</b> <span class="muted small">${nSel ? `${nSel} selected` : 'none selected'}</span></summary>
         ${!st.today && !st.gw.cur && !st.gw.next && !st.linked ? '<div class="banner info hgwempty">Turn on <b>Current Gameweek</b>, <b>Next Gameweek</b> or both to list fixtures.</div>' : `
         <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="fx">Select all${vis.length ? ` (${vis.length})` : ''}</button><button type="button" class="chip" data-none="fx">Clear all</button></div>
-        <div class="hlist">${st.today ? `<div class="hday hgwh"><b>Today's games (UK date ${esc(todayUK)})${usMode ? '' : ' · ' + esc(leaguesLabel(lgs))}</b></div>` : ''}${sec() || empty()}</div>`}</details>`;
+        <div class="hlist">${st.today ? `<div class="hday hgwh"><b>${usMode ? `Tonight's ${A.name} schedule (${esc(viewingNight(now))})` : `Today's games (UK date ${esc(todayUK)}) · ${esc(leaguesLabel(lgs))}`}</b></div>` : ''}${sec() || empty()}</div>`}</details>`;
   };
   // Owner report 20 Oct: ticking a fixture redrew the filter and the fixture list inside it jumped back to the top. Every scrolled element in
   // the filter (fixture, team, player lists...) is remembered by its place (nearest id + class + index) and restored after a redraw.
@@ -3237,7 +3377,7 @@ async function viewHiwi(root, r, sport) {
   const draw = () => keepScroll(drawNow);
   /** Exclude injured players (OUT only), with the injury report and its freshness. Football: no injury feed, so the box is off and greyed. */
   const availHtml = () => (usMode ? `<div class="field havail"><label class="hcheck"><input type="checkbox" id="hxout" ${getExcludeOut() ? 'checked' : ''}><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">${getExcludeOut() ? 'On: players confirmed Out for that game get no card' : 'Off: Out players get a card marked Unavailable'}. Questionable, Doubtful and Probable players always stay; a missing or old report never counts as Out.</span></span></label>${injNote()}</div>`
-    : '<div class="field havail"><label class="hcheck"><input type="checkbox" disabled><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">Not available for football: PropLab has no licensed football injury feed, so nobody is excluded and nothing is assumed about fitness.</span></span></label></div>');
+    : ''); // football: no box at all until a reliable football injury feed exists (owner request 21 Oct, evening)
   /** Compact selected-players summary (redesign): "18 players selected"; Show opens a searchable list with Remove buttons. */
   const pName = id => (usMode ? A.d.playerById.get(id)?.name : fbPlayerList().find(p => p.id === id)?.name) || null;
   const selectedHtml = P => { const ids = [...P].map(id => [id, pName(id)]).filter(x => x[1]).sort((a, b) => a[1].localeCompare(b[1])); const q = normName(st.sq || '');
@@ -3246,16 +3386,18 @@ async function viewHiwi(root, r, sport) {
       ${st.selOpen ? `<input class="in" id="hsq" type="search" placeholder="Search selected players" value="${esc(st.sq || '')}" aria-label="Search selected players" autocomplete="off" style="margin-top:6px"><div class="hlist hsellist">${sh.map(([id, n]) => `<div class="hselrow"><span>${esc(n)}${st.popAuto.has(id) ? ' <span class="xs muted">Popular</span>' : ''}</span><button type="button" class="chip" data-unpick="${esc(id)}" aria-label="Remove ${esc(n)}">Remove</button></div>`).join('') || '<p class="xs muted">No selected player matches.</p>'}</div>` : ''}</div>`; };
   const drawNow = () => {
     const tms = rankTeams(st.tq, allTeams());
-    const pool = hasPlayers() ? playerPool() : []; const shownP = pool.filter(p => match(st.pq, [p.name])); const nShow = st.pshow || 100; const popOn = getPopular() && promAvailable();
+    const pool = hasPlayers() ? playerPool() : []; const shownP = pool.filter(p => match(st.pq, [p.name])); const popOn = getPopular() && promAvailable(); const nShow = popOn ? Infinity : st.pshow || 100; // Popular on: every popular player is listed (no page of 100)
     const sup = supported(); const ms = mkts(); for (const k of [...ms]) if (!sup.has(k)) ms.delete(k);
     const P = pls();
-    hf.innerHTML = `<div class="ctl"><div class="field"><label for="hsport">Sport</label><select class="in" id="hsport"><option value="football" ${usMode ? '' : 'selected'}>Football ⚽</option><option value="nfl" ${isNfl ? 'selected' : ''}>American Football 🏈</option><option value="nba" ${isNba ? 'selected' : ''}>Basketball (NBA) 🏀</option></select></div></div>
+    hf.innerHTML = `
       ${globalSideHtml('hgside')}
+      ${usMode ? '' : `<div class="field"><label>Matches used</label><div class="seg wrap" id="hscope" role="group" aria-label="Matches used">${scopeOpts().map(([v, l]) => `<button type="button" data-hscope="${v}" class="${clubScopeFor() === v ? 'on' : ''}" aria-pressed="${clubScopeFor() === v}">${l}</button>`).join('')}</div>
+        <p class="xs muted" style="margin:4px 0 0">The starting choice for every card in this search. All Games = league and European matches; Domestic League Only = league matches; European Competition Only = Champions, Europa and Conference League matches (goals only are recorded for those). Each card can switch on its own.</p></div>`}
       ${usMode ? '' : leaguePickHtml(lgs, st.today, { open: !!st.lgOpen, id: 'hlg' })}
       <div class="field"><label>Research</label><div class="seg hmode" id="hmode" role="group" aria-label="Research mode">${[['teams', 'Individual Teams'], ['matches', 'Upcoming Matches']].map(([v, l]) => `<button type="button" data-v="${v}" class="${st.mode === v ? 'on' : ''}" aria-pressed="${st.mode === v}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:6px 0 0">${st.mode === 'teams' ? "Each selected team's own past results. Opponents are not added, and a team does not need a fixture." : "Upcoming fixtures: each team's own history, one card per team. Detailed analysis adds the head-to-head meetings."}</p></div>
       ${st.mode === 'matches' ? fixturesHtml() : `<details class="hsel" id="htm" ${st.tmOpen === false ? '' : 'open'}><summary><b>Teams</b> <span class="muted small">${st.teams.size ? `${st.teams.size} selected` : 'none selected'}</span></summary>
-        ${isNfl ? `<label class="hcheck lgtoday"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">UK date ${esc(todayUK)}</span></span></label>` : ''}
+        ${isNfl ? `<label class="hcheck lgtoday"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}), including games after midnight UK` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
         <input class="in" id="htq" type="search" placeholder="Search ${usMode ? A.name : esc(leaguesLabel(lgs))} teams (e.g. ${isNba ? 'BOS, lakers' : usMode ? 'KC, chiefs' : 'spurs, man utd, psg'})" value="${esc(st.tq)}" aria-label="Search teams" autocomplete="off">
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="teams">Select all${st.tq ? ' shown' : ''}</button><button type="button" class="chip" data-none="teams">Clear all</button></div>
         <div class="hlist hgrid">${tms.map(t => `<label class="hcheck"><input type="checkbox" data-pick="teams" value="${esc(t.id)}" ${st.teams.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${!usMode && !lgs.length ? '<b>Select a league to view its teams.</b>' : st.today && !st.tq ? `No ${usMode ? A.name : esc(leaguesLabel(lgs))} team plays today.` : `No ${usMode ? A.name : esc(leaguesLabel(lgs))} team matches "${esc(st.tq)}".`}</p>`}</div></details>`}
@@ -3263,7 +3405,7 @@ async function viewHiwi(root, r, sport) {
         <p class="xs muted" style="margin:4px 0">${st.mode === 'teams' ? (st.teams.size ? 'Players of the selected teams.' : 'Select teams to narrow the list, or search by name.') : (selFx().length ? 'Players of the teams in the selected fixtures.' : 'Select fixtures to narrow the list, or search by name.')}</p>
         ${usMode ? `<div class="seg wrap" id="hpos">${(isNba ? nba_NBA_POS : [['', 'All'], ['qb', 'QB'], ['rb', 'RB'], ['wr', 'WR'], ['te', 'TE'], ['k', 'K'], ['def', 'Defence']]).map(([v, l]) => `<button type="button" data-v="${v}" class="${st.ppos === v ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
         ${P.size ? selectedHtml(P) : ''}
-        <label class="hcheck hpopchk"><input type="checkbox" id="hpop" ${popOn ? 'checked' : ''} ${promAvailable() ? '' : 'disabled'}><span><b>${usMode ? 'Popular Players' : 'Popular Players Only'}</b> <span class="xs muted">${promAvailable() ? (isNba ? 'stars and regular scorers / rebounders / passers (rule in About samples); ticking it selects them all' : usMode ? 'established starters and main targets of the selected teams (no limit per team or position)' : 'regular starters and leading scorers / creators of the selected clubs') : 'prominence data unavailable today: every player is listed'}</span></span></label>
+        <label class="hcheck hpopchk"><input type="checkbox" id="hpop" ${popOn ? 'checked' : ''} ${promAvailable() ? '' : 'disabled'}><span><b>${usMode ? 'Popular Players' : 'Popular Players Only'}</b> <span class="xs muted">${promAvailable() ? (usMode ? 'ticks every popular player of the selected teams / games' : 'regular starters and leading scorers / creators of the selected clubs') : 'prominence data unavailable today: every player is listed'}</span> ${infoTag('pop', 'How they are chosen', { cls: 'neutral' }).replace('data-info="pop"', `data-info="pop" data-title="Popular Players" data-text="${esc(POP_TEXT[sport])}"`)}</span></span></label>
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px;align-items:center"><label class="xs muted" for="hpsort">Order</label><select class="in" id="hpsort" style="max-width:220px"><option value="prom" ${getPlayerSort() === 'prom' ? 'selected' : ''}>Player Prominence (biggest first)</option><option value="az" ${getPlayerSort() === 'az' ? 'selected' : ''}>A–Z</option></select></div>
         <input class="in" id="hpq" type="search" placeholder="Search players" value="${esc(st.pq)}" aria-label="Search players" autocomplete="off" style="margin-top:6px">
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="players">Select all shown</button><button type="button" class="chip" data-none="players">Clear all</button></div>
@@ -3275,11 +3417,10 @@ async function viewHiwi(root, r, sport) {
       <div class="field"><label>Form period</label><div class="seg" id="hper" role="group" aria-label="Form period">${PERIODS.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(st.period) === String(v) ? 'on' : ''}" aria-pressed="${String(st.period) === String(v)}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:4px 0 0">Season: this season only. Last 5 / 10 / 20: the latest completed ${isNba ? 'games (regular season, NBA Cup final, Play-In and playoffs unless you choose Regular season only)' : usMode ? 'regular-season games' : 'league matches'}, going back into earlier seasons when needed.</p></div>
       ${isNba ? nbaFiltersHtml() : ''}
-      <details class="hsel hadv" id="hadv" ${st.advOpen ? 'open' : ''}><summary><b>Advanced filters</b> <span class="muted small">minimum qualifying games ${getMinQual()}${isNfl ? `, snap share ${getNflSnap().on ? getNflSnap().val + '%+' : 'off'}, minimum games ${getMinGames()}` : ''}</span></summary>
+      <details class="hsel hadv" id="hadv" ${st.advOpen ? 'open' : ''}><summary><b>Advanced filters</b> <span class="muted small">minimum qualifying games ${getMinQual()}${isNfl ? `, minimum games ${getMinGames()}` : ''}</span></summary>
         <div class="field"><label for="hqmin">Minimum qualifying games for the ranking</label><div class="hminrow"><input class="in hnum" id="hqmin" type="number" inputmode="numeric" min="${QMIN}" max="${QMAX}" step="1" value="${getMinQual()}" aria-label="Minimum qualifying games">
           <span class="xs muted">${QMIN}–${QMAX}, default 10. A card needs this many games in its sample to be ranked with the others; cards with fewer are listed below them under <b>Limited data</b> (never hidden). With Last 5, a full 5 counts. ${infoTag('gl', 'How ranking works', { cls: 'neutral' }).replace('data-info="gl"', `data-info="gl" data-title="How ranking works" data-text="${esc(RANK_TEXT)}"`)}</span></div></div>
-        ${isNfl ? `<div class="field"><p class="xs muted" style="margin:0 0 4px"><b>Snap share</b> is the share of his team's plays a player was on the field for. Leave it off unless you want to ignore games where he barely played.</p>${nflFiltersHtml((A.d.meta?.sources || []).some(x => /snap/.test(x.used_for || '')))}</div>
-        <div class="field"><label for="hmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="hmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}" aria-label="Minimum games played">
+        ${isNfl ? `        <div class="field"><label for="hmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="hmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}" aria-label="Minimum games played">
         <span class="xs muted">1–20. Players need this many games, teams this many matches, <b>this season</b>, with a recorded figure for the market. Earlier seasons do not count here (they are still used for Last 5 / 10 / 20 and H2H). Below it a card is hidden and listed with its count.</span></div></div>` : ''}
       </details>
       <div class="hsortbar"><button type="button" class="chip" id="hsort" aria-haspopup="dialog">⇅ Sort: ${esc(SORTS.find(x => x[0] === st.sort)[1])}</button></div>`;
@@ -3327,7 +3468,8 @@ async function viewHiwi(root, r, sport) {
       // a statistic no European source records (corners, shots, fouls, cards): say so on the card instead of an empty chart (never 0)
       const none = isEuScope(v) && !teamRowsAll(id, v).some(x => { const y = def.get(x); return y !== null && y !== undefined; }) && teamRowsAll(id, v).length > 0;
       const noDom = v === 'dom' && teamRowsAll(id, 'dom').length === 0; // a club whose domestic league PropLab does not cover
-      views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n === 0, note: noDom ? `PropLab does not cover ${teamLabel(id)}'s domestic league, so there are no domestic matches to show (nothing is filled in). All games and ${cup === 'eu' ? 'European matches' : leagueName(cup)} only use its European matches (goals, first-half goals and both teams to score only).` : none ? `${def.label} is not recorded for ${scopeName(v)} matches in any free source PropLab uses, so this view has no data (missing, never counted as 0). All games and Domestic league only use the league matches that do record it.` : c.note }; }
+      const noEu = v === 'eu' && teamRowsAll(id, 'eu').length === 0; // a club with no European competition match in PropLab's records
+      views[v] = { rows: c.rows, m: c.m, period: c.period, detail: c.detail, sc: v, elig: n, below: n === 0, emptyTitle: noEu ? 'No European matches' : none ? 'Not recorded' : noDom ? 'Not covered' : null, empty: noEu ? `${teamLabel(id)} has no Champions, Europa or Conference League match in PropLab's records, so there is nothing to show for European Competition Only (no 0% is invented).` : none ? `${def.label} is not recorded for Champions, Europa or Conference League matches in any free source PropLab uses, so this view has no data (missing, never counted as 0).` : null, note: noDom ? `PropLab does not cover ${teamLabel(id)}'s domestic league, so there are no domestic matches to show (nothing is filled in). All games and ${cup === 'eu' ? 'European matches' : leagueName(cup)} only use its European matches (goals, first-half goals and both teams to score only).` : none ? `${def.label} is not recorded for ${scopeName(v)} matches in any free source PropLab uses, so this view has no data (missing, never counted as 0). All games and Domestic league only use the league matches that do record it.` : c.note }; }
     return { ...teamCard(id, def, extra, sc), ...(views[sc] ? { note: views[sc].note } : {}), scopes: opts, scopeViews: views, eligNote: v => { const tot = teamRowsAll(id, v).filter(x => { const y = def.get(x); return y !== null && y !== undefined; }), first = tot.length ? tot[tot.length - 1].date : null;
       // owner report 20 Oct: with Season, "Champions League only" shows this season's few matches; say how much history there is and how to see it
       const hist = st.period === 'season' && tot.length > views[v].elig ? ` · <b>${tot.length} ${v === 'all' ? '' : v === 'dom' ? 'league ' : v === 'eu' ? 'European ' : leagueName(v) + ' '}matches in PropLab since ${monthYear(first)}</b>: choose Last 5 / 10 / 20 above to include earlier seasons` : '';
@@ -3385,12 +3527,12 @@ async function viewHiwi(root, r, sport) {
           const ij = null; const plab = x => `${x.home ? 'v' : '@'}${short(x.opp)}`;
           const perFn = s0 => { const per = s0.per ?? String(st.period), r0 = perRows(curRows, all, per); return { rows: mkRows(r0, def, plab), m: r0.length, want: perWant(per), period: perText(lg, null, per) }; };
           outc.push({ cid: `p|${id}|${k}`, ord: [pl.name, mi, 0], title: pl.name, def, context: `${pl.sub} · ${elig(en, usMode ? 'game' : 'match')}${ij && ij.cls !== 'none' ? ` · ${ij.cls === 'na' ? '' : '⚠ '}${ij.label}${ij.rec && ij.rec.injury ? ' (' + ij.rec.injury + ')' : ''}${ij.current === false ? ', earlier report' : ''}` : ''}`, unit: U, m: rows.length, period: periodText(lg),
-            rows: mkRows(rows, def, plab), detail: { rows: all, subjectId: id, player: pl }, pteam: pl.team, want: perWant(String(st.period)), perOk: true, perDefault: String(st.period), perFn });
+            rows: mkRows(rows, def, plab), detail: { rows: all, subjectId: id, player: pl }, pteam: pl.team, want: perWant(String(st.period)), perOk: true, perDefault: String(st.period), perFn, playerHref: `#/research/${encodeURIComponent(id)}` });
         }
       } else if (st.mode === 'teams') {
         for (const id of [...st.teams]) {
           // a club with European matches (e.g. Bayern: Bundesliga + Champions League): All games by default, or Domestic / European matches only
-          if (!usMode && hasEuropean(id)) { const sc = clubScopeFor(); const en = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (en !== null) outc.push(scopedCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: leagueName(lgOfTeam(id)) }, sc, 'eu')); continue; }
+          if (!usMode) { const sc = clubScopeFor(); const en = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (en !== null) outc.push(scopedCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: leagueName(lgOfTeam(id)) }, sc, 'eu')); continue; }
           const en = enough(teamRowsNow(id), def, teamLabel(id), usMode ? 'game' : 'match'); if (en !== null) outc.push(teamCard(id, def, { cid: `t|${id}|${k}`, ord: [teamLabel(id), mi, 0], context: `${usMode ? A.name : leagueName(lgOfTeam(id))} · ${elig(en, usMode ? 'game' : 'match')}` })); }
       } else {
         // Upcoming Matches: two cards per fixture and market, the home team's and the away team's own history (head-to-head: Detailed analysis)
@@ -3407,7 +3549,7 @@ async function viewHiwi(root, r, sport) {
           // league fixture: a club with European matches gets All games (default) / Domestic league only / European matches only; others as before
           for (const [id, other, side, tag, cls] of [[h, a, 0, 'Home Team', 'home'], [a, h, 1, 'Away Team', 'away']]) {
             const extra = { cid: `${side ? 'fa' : 'fh'}|${fid}|${k}`, ord: [...base, side], ko, tag, tagCls: cls, fixture: fid, opp: other };
-            if (!usMode && hasEuropean(id)) { const sc = clubScopeFor(); const e = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (e !== null) outc.push(scopedCard(id, def, { ...extra, context: ctx }, sc, 'eu')); continue; }
+            if (!usMode) { const sc = clubScopeFor(); const e = enough(teamRowsNow(id, sc), def, teamLabel(id), 'match'); if (e !== null) outc.push(scopedCard(id, def, { ...extra, context: ctx }, sc, 'eu')); continue; }
             const e = enough(teamRowsNow(id), def, teamLabel(id), usMode ? 'game' : 'match'); if (e !== null) outc.push(teamCard(id, def, { ...extra, context: `${ctx} · ${elig(e, usMode ? 'game' : 'match')}` }));
           }
         }
@@ -3421,7 +3563,9 @@ async function viewHiwi(root, r, sport) {
     if (c.scopeViews && s && s.scope && c.scopeViews[s.scope]) Object.assign(c, c.scopeViews[s.scope]); // the card's own All games / competition-only choice
     if (c.rebuild) Object.assign(c, c.rebuild(s || {})); else if (c.perFn && s && s.per) Object.assign(c, c.perFn(s));
     const fresh = () => (c.baseLine != null ? c.baseLine : c.def.hcp ? 0.5 : startLine(c.def.key, c.rows.map(x => x.value)));
-    if (!s) { s = { line: c.def.binary ? 0.5 : fresh(), side: startSide(c.def), userLine: false, persp: 'h' }; store_.set(key, s); }
+    const side0 = () => (c.forceSide ? (c.def.binary ? (c.forceSide === 'under' ? 'no' : 'yes') : c.forceSide) : startSide(c.def));
+    if (!s) { s = { line: c.def.binary ? 0.5 : fresh(), side: side0(), userLine: false, persp: 'h' }; store_.set(key, s); }
+    else if (!s.side || (!s.userSide && c.forceSide)) s.side = side0();
     else if (!s.userLine && !c.def.binary) s.line = fresh();
     return s;
   };
@@ -3436,14 +3580,14 @@ async function viewHiwi(root, r, sport) {
     const box = $('#hcards', out); if (!box) return;
     const next = cards.slice(shown, shown + PAGE);
     next.forEach((c, i) => { addHead(box, c, cards[shown + i - 1]); const el = box.appendChild(makeEl(c)); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); });
-    shown += next.length;
+    shown += next.length; SNAP[sport] = { order: cards.map(c => c.cid), shown };
     const more = $('#hmore', out); if (more) { more.hidden = shown >= cards.length; more.textContent = moreText(); }
   };
   /** Re-apply the chosen sort to the cards on screen: only when the visitor chooses (or re-applies) a sort. Keeps the scroll position. */
   const resort = () => {
     const box = $('#hcards', out); if (!box) return;
     const y = scrollY;
-    cards = sortCards(cards, st.sort, c => reg.get(c.cid).st, marketOrder());
+    cards = sortCards(cards, st.sort, c => reg.get(c.cid).st, marketOrder()); SNAP[sport] = { order: cards.map(c => c.cid), shown };
     const els = new Map([...box.children].map(e => [e.dataset.cid, e]));
     const keep = new Set(cards.slice(0, shown).map(c => c.cid));
     for (const [cid, e] of els) if (!keep.has(cid)) e.remove();
@@ -3465,8 +3609,15 @@ async function viewHiwi(root, r, sport) {
       out.innerHTML = `${seasonNote()}<div class="banner info"><b>${!mkts().size ? 'Choose at least one market' : `Choose ${what}${hasPlayers() ? ' or players' : ''}`}.</b> ${!mkts().size ? 'Tap Select Markets.' : st.mode === 'matches' && !st.today && !st.gw.cur && !st.gw.next ? 'Turn on a gameweek, then tick fixtures.' : 'Tick them above.'} Every choice gets its own card with an adjustable line and bar chart.</div>`; return;
     }
     out.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>';
-    const built = await build(); reg = new Map(); for (const c of built) reg.set(c.cid, { card: c, st: stateFor(c) });
+    const built0 = await build();
+    // Over / Under / Both at the top (owner request 21 Oct, evening): Both makes each card twice, an Over card and an Under card, each with its
+    // own percentage and clearly labelled; nothing is merged into one figure. A card's own switch is Over / Under only.
+    const built = getGlobalSide() === 'both' ? built0.flatMap(c => [{ ...c, forceSide: 'over' }, { ...c, cid: c.cid + '|u', forceSide: 'under' }]) : built0;
+    reg = new Map(); for (const c of built) reg.set(c.cid, { card: c, st: stateFor(c) });
     cards = sortCards(built, st.sort, c => reg.get(c.cid).st, marketOrder()); shown = 0;
+    let want = 0;
+    if (restoring) { const snap = SNAP[sport], pos = new Map(snap.order.map((cid, i) => [cid, i])); restoring = false;
+      if (built.every(c => pos.has(c.cid))) { const lim = new Map(cards.map(c => [c.cid, c._lim])); cards = built.slice().sort((a, b) => pos.get(a.cid) - pos.get(b.cid)); cards.forEach(c => { c._lim = lim.get(c.cid); }); want = snap.shown; } }
     out.innerHTML = `${seasonNote()}<p class="small muted" id="hcount">${cards.length} result card${cards.length === 1 ? '' : 's'}: one per ${[...new Set(cards.map(c => (c.def.scope === 'player' ? 'player' : 'team')))].join(' / ')} and market${multi() ? `, ${lgs.length} leagues together` : ''} · ${sortText()}. Bars: green = hit, red = miss for the side you choose.</p>
       ${st.mode === 'matches' && cards.some(c => c.fixture) ? '<p class="xs muted">Each fixture shows the home team\'s and the away team\'s own history for every market. Tap <b>Detailed analysis</b> on either card to compare both teams with their head-to-head meetings.</p>' : ''}
       ${hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} card${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${getMinGames()})</b></summary><ul>${hidden.map(h => `<li>${esc(h.name)} · ${esc(h.market)}: ${h.n} ${h.unit}${h.n === 1 ? '' : 'es'.slice(h.unit === 'game' ? 1 : 0)} this season with a recorded figure</li>`).join('')}</ul><p style="margin:4px 0 0">Lower the minimum above to show them.</p></details>` : ''}
@@ -3484,7 +3635,7 @@ async function viewHiwi(root, r, sport) {
       const pop = document.createElement('div'); pop.className = 'infopop hbarsheet'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Match details');
       pop.innerHTML = `<div class="infobox">${barInfo(x.card, row)}</div>`; document.body.appendChild(pop);
       pop.addEventListener('click', e2 => { if (e2.target === pop || e2.target.closest('[data-popclose]')) pop.remove(); }); }); } }
-    renderMore();
+    renderMore(); while (shown < want && shown < cards.length) renderMore(); // restore: as many cards as were on screen
     $('#hmore', out).onclick = renderMore;
     $('#hresort', out).onclick = () => { resort(); refreshCount(); };
     if (io) io.disconnect();
@@ -3640,7 +3791,7 @@ async function viewHiwi(root, r, sport) {
     pop.addEventListener('click', e => { if (e.target.closest('[data-sdone]')) apply(); else if (e.target === pop) pop.remove(); });
   };
   /** The global Over / Under changed: every card whose side the visitor has not set on the card itself follows it (in place, no reload). */
-  const applyGlobalSide = () => { const box = $('#hcards', out); for (const [cid, e] of reg) { if (e.st.userSide) continue; e.st.side = startSide(e.card.def); const el = box && box.querySelector(`.hcard[data-cid="${CSS.escape(cid)}"]`); if (el) paintHCard(el, e.card, e.st); } };
+  const applyGlobalSide = () => { const box = $('#hcards', out); for (const [cid, e] of reg) { if (e.st.userSide || e.card.forceSide) continue; e.st.side = startSide(e.card.def); const el = box && box.querySelector(`.hcard[data-cid="${CSS.escape(cid)}"]`); if (el) paintHCard(el, e.card, e.st); } };
   const refreshCount = () => { const hc = $('#hcount', out); if (hc) hc.innerHTML = hc.innerHTML.replace(/ · sorted [^.]+\./, ` · ${esc(sortText())}.`); };
 
   // ---------- events ----------
@@ -3653,7 +3804,11 @@ async function viewHiwi(root, r, sport) {
     if (e.target.id === 'nflsnapval') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) { setNflSnap(true, n); e.target.value = getNflSnap().val; refresh(); } return; }
     if (e.target.id === 'nbaminon') { remember(); setNbaMin(e.target.checked, getNbaMin().val); draw(); refresh(); return; }
     if (e.target.id === 'nbaminval') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) { setNbaMin(true, n); e.target.value = getNbaMin().val; refresh(); } return; }
-    if (e.target.dataset.nbadate) { remember(); setDate(e.target.dataset.nbadate, e.target.checked); popApply(); draw(); refresh(); return; }
+    if (e.target.id === 'hnbtoday') { remember(); const tn = viewingNight(now);
+      if (e.target.checked) { st.datesBefore = new Set(st.dates); for (const [d] of nbaDays()) setDate(d, d === tn); st.nbaToday = true; }
+      else { st.nbaToday = false; const back = st.datesBefore || new Set(); st.datesBefore = null; for (const [d] of nbaDays()) setDate(d, back.has(d)); }
+      popApply(); draw(); refresh(); return; }
+    if (e.target.dataset.nbadate) { st.nbaToday = false; remember(); setDate(e.target.dataset.nbadate, e.target.checked); popApply(); draw(); refresh(); return; }
     if (e.target.dataset.nbateam) { remember(); const t = e.target.dataset.nbateam; e.target.checked ? st.fteams.add(t) : st.fteams.delete(t);
       if (e.target.checked) for (const g of nbaVisible()) if (!st.untick.has(g.id)) st.fx.add(g.id); // the newly listed games of ticked dates
       popApply(); draw(); refresh(); return; }
@@ -3683,7 +3838,8 @@ async function viewHiwi(root, r, sport) {
     if (t.closest('#hmkbtn')) { const btn = t.closest('#hmkbtn'); if (!usMode && lgsWithPlayers().some(lg => !playersBy.has(lg))) { btn.disabled = true; btn.textContent = 'Loading player markets…'; ensurePlayers().then(() => { btn.disabled = false; openMarkets(); }); } else openMarkets(); return; }
     if (t.closest('#hpl > summary')) bgPlayers(); // the Players list loads player data when first opened
     if (t.closest('#hsort')) { openSort(); return; }
-    const gs = t.closest('[data-gside]'); if (gs) { setGlobalSide(gs.dataset.gside); applyGlobalSide(); remember(); draw(); return; }
+    const hs = t.closest('[data-hscope]'); if (hs) { setUclScope(hs.dataset.hscope === 'eu' ? 'cup' : hs.dataset.hscope); for (const [k2, v2] of cardState) if (k2.startsWith(sport + '|')) delete v2.scope; remember(); draw(); refresh(); return; } // a new search: every card starts on this choice
+    const gs = t.closest('[data-gside]'); if (gs) { const was = getGlobalSide(); setGlobalSide(gs.dataset.gside); remember(); draw(); if ((was === 'both') !== (gs.dataset.gside === 'both')) { for (const [, v2] of cardState) if (!v2.userSide) delete v2.side; refresh(); } else applyGlobalSide(); return; }
     const nt = t.closest('[data-nbatypes]'); if (nt) { setNbaTypes(nt.dataset.nbatypes); remember(); draw(); refresh(); return; }
     if (t.closest('[data-selshow]')) { remember(); st.selOpen = !st.selOpen; draw(); return; }
     const up = t.closest('[data-unpick]'); if (up) { const id = up.dataset.unpick; pls().delete(id); if (st.popAuto.has(id)) { st.popAuto.delete(id); st.popRemoved.add(id); } remember(); draw(); refresh(); return; }
@@ -3718,7 +3874,8 @@ async function viewHiwi(root, r, sport) {
   // and the Players list fills in when ready. Cards that use players still wait for them (see build).
   const bgPlayers = () => { if (!usMode && lgsWithPlayers().some(lg => !playersBy.has(lg))) ensurePlayers().then(() => { if (hf.isConnected) draw(); }); };
   if (pls().size || st.plOpen) bgPlayers(); // otherwise loaded when the Players list or the market list is opened
-  if (st.linked) st.gw = { cur: false, next: false };
+  if (restoring) { /* keep every selection exactly as it was */ }
+  else if (st.linked) st.gw = { cur: false, next: false };
   else if (isNba) initNbaDates();
   else { st.fx = new Set(); if (st.today) setToday(true); else setGw('cur', true); }
   if (usMode && getPopular()) popApply();
@@ -3733,6 +3890,7 @@ __m['v-nba-finder'] = (() => {
 // confirmed OUT on the Official NBA Injury Report are marked. Graph opens the same result card as Hiwi (Recent Form / Vs Opponent,
 // minutes slider, playoff labels).
 const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, loadLogs, teamGameRows, injuryStatus, NBA_POS, loadNbaInjuries } = __m['nba-data'];
+const { nightOf, viewingNight, ukTip, nightSpan } = __m['nightdate'];
 const { rankList, RANK_ORDERS, getExcludeOut, setExcludeOut, isConfirmedOut, getMinQual } = __m['rank'];
 const { NBA_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef, nbaGameDetailHtml } = __m['nba-markets'];
 const { defaultLine } = __m['markets'];
@@ -3756,36 +3914,38 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const fullDay = ymd => { const [y, m, d] = ymd.split('-').map(Number); return `${DAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]} ${d} ${MONTHS[m - 1]}`; };
 const signed = v => (v > 0 ? '+' + v : String(v));
 
+const dirWord = (m, sd) => (m.binary ? (sd === 'under' ? 'No' : 'Yes') : m.hcp ? (sd === 'under' ? 'Fail' : 'Cover') : sd === 'under' ? 'Under' : 'Over');
 async function viewNbaFinder(root) {
   if (nbaLoading(root)) return;
   await loadNbaInjuries();
   root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Which NBA players (or teams) clear a line most often. For one player or game, use <a href="#/nba/hiwi">Hiwi's Section</a>.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>${nbaCredit()}`;
   const ctl = $('#ctl', root), out = $('#out', root), now = new Date(), cs = latestSeason(); let shown = [];
-  if (ui.side === null) ui.side = getGlobalSide();
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up)
   const isT = () => ui.subj === 'team';
   const market = () => (isT() ? NBA_TEAM_MARKETS.find(m => m.key === ui.tmarket) : NBA_MARKETS.find(m => m.key === ui.market)) || NBA_MARKETS[0];
   // dates (UK) -> games; same rule as Hiwi: a game is listed when its date is ticked; ticking a date ticks its games
-  const days = () => { const by = new Map(); for (const g of nbaSelectable(now)) { const d = koUK(g).ymd; if (by.size < 21 || by.has(d)) { if (!by.has(d)) by.set(d, []); by.get(d).push(g); } } return [...by.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)); };
+  const days = () => { const by = new Map(); for (const g of nbaSelectable(now)) { const d = nightOf(g); /* NBA schedule nights (US date) */ if (by.size < 21 || by.has(d)) { if (!by.has(d)) by.set(d, []); by.get(d).push(g); } } return [...by.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)); };
   if (!ui.dates) { ui.dates = new Set(); const f = days().find(([, gs]) => gs.some(g => fxStatus(g, now) === 'pre')) || days()[0]; if (f) { ui.dates.add(f[0]); for (const g of f[1]) ui.games.add(g.id); } }
   const listed = () => days().filter(([d]) => ui.dates.has(d)).flatMap(([, gs]) => gs);
   const selGames = () => { const ids = new Set(listed().map(g => g.id)); return [...ui.games].filter(id => ids.has(id)).map(id => nba.gameById.get(id)).filter(Boolean); };
   const drawCtl = () => {
     const m = market(), L = listed(), nSel = selGames().length;
-    const gRow = g => { const stt = fxStatus(g, now, 3 * 3600e3); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
+    const gRow = g => { const stt = fxStatus(g, now, 3 * 3600e3); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? ukTip(g) : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     ctl.innerHTML = `${globalSideHtml('fgside')}
       <div class="field"><label>Research</label>${seg('subj', [['player', 'Players'], ['team', 'Teams']], ui.subj)}</div>
       <div class="field"><label for="mk">Market</label><select class="in" id="mk">${(isT() ? NBA_TEAM_MARKETS : NBA_MARKETS).map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc((x.grp ? x.grp + ': ' : '') + x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}${m.hcp ? ' Research against a handicap you choose: not a bookmaker spread.' : ''}</p></div>
       ${isT() ? '' : `<div class="field"><label>Positions</label><div class="hgrid nposgrid">${NBA_POS.slice(1).map(([v, l]) => `<label class="hcheck"><input type="checkbox" data-pos value="${v}" ${ui.pos.has(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
       <label class="hcheck hpopchk"><input type="checkbox" id="fpop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">only the popular players (stars and regular scorers / rebounders / passers) are listed</span></span></label>`}
       <div class="ctl"><div class="field"><label for="tm">Team</label><select class="in" id="tm"><option value="">All teams</option>${[...nba.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div></div>
-      <details class="hsel datechk" id="fdts" ${ui.dtOpen ? 'open' : ''}><summary><b>Dates (UK)</b> <span class="muted small">${(() => { const pk = days().filter(([d]) => ui.dates.has(d)); const n = pk.reduce((t, [, gs]) => t + gs.length, 0); return pk.length ? `${esc(fullDay(pk[0][0]).replace(/^(\w{3})\w*/, '$1'))}${pk.length > 1 ? ` + ${pk.length - 1} more` : ''} · ${n} game${n === 1 ? '' : 's'}` : 'no date selected'; })()}</span></summary><div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-dall>Select all dates</button><button type="button" class="chip" data-dnone>Clear all dates</button></div>
-        <div class="hlist" id="fdates">${days().map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-date="${d}" ${ui.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div></details>
+      ${(() => { const tn = viewingNight(now), tg = (days().find(x => x[0] === tn) || [null, []])[1]; return `<label class="hcheck lgtoday nbatoday"><input type="checkbox" id="fnbtoday" ${ui.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${tg.length ? `tonight's NBA schedule, ${esc(fullDay(tn))}: ${tg.length} game${tg.length === 1 ? '' : 's'}, ${esc(nightSpan(tg, tn))}` : `no NBA games on tonight's schedule (${esc(fullDay(tn))})`}</span></span></label>`; })()}
+      <details class="hsel datechk" id="fdts" ${ui.dtOpen ? 'open' : ''}><summary><b>Dates (NBA schedule)</b> <span class="muted small">${(() => { const pk = days().filter(([d]) => ui.dates.has(d)); const n = pk.reduce((t, [, gs]) => t + gs.length, 0); return pk.length ? `${esc(fullDay(pk[0][0]).replace(/^(\w{3})\w*/, '$1'))}${pk.length > 1 ? ` + ${pk.length - 1} more` : ''} · ${n} game${n === 1 ? '' : 's'}` : 'no date selected'; })()}</span></summary><div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-dall>Select all dates</button><button type="button" class="chip" data-dnone>Clear all dates</button></div>
+        <div class="hlist" id="fdates">${days().map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-date="${d}" ${ui.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'} · ${esc(nightSpan(gs, d))}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div><p class="xs muted" style="margin:4px 0 0">Dates are NBA schedule nights (US date); games after midnight UK show their UK day and time.</p></details>
       <details class="hsel" id="ngsel" ${ui.gOpen ? 'open' : ''}><summary><b>Games</b> <span class="muted small">${nSel ? `${nSel} selected` : 'none ticked: every team'}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-gall>Select all</button><button type="button" class="chip" data-gnone>Clear all</button></div>
         <div class="hlist">${L.length ? L.map(gRow).join('') : '<p class="xs muted">Tick a date to list its games.</p>'}</div>
         <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. A game is listed when its UK date is ticked; ticking a date ticks its games. With no game ticked, every team's players are included (the Team filter still applies).</p></details>
-      ${m.binary ? '' : `<div class="field"><label>Side</label>${seg('side', m.hcp ? [['over', 'Cover'], ['under', 'Fail']] : [['over', 'Over'], ['under', 'Under']], ui.side)}<span class="xs muted">Starts on the Over / Under chosen at the top; changing it here changes only this table.</span></div><div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', m.hcp ? 'Handicap' : 'Line')}</div>`}
+      ${m.binary ? '' : `<div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', m.hcp ? 'Handicap' : 'Line')}</div>`}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (from ${esc(seasonLabel(nba.meta.seasons[0]))}).</span></div>
       ${nbaFiltersHtml()}
       <div class="field"><label>Show ${isT() ? 'teams' : 'players'} at or above</label>${seg('min', [[0, 'Any'], [60, '60%'], [70, '70%'], [80, '80%'], [90, '90%'], [100, '100%']], ui.min, 'grid')}</div>
@@ -3817,29 +3977,30 @@ async function viewNbaFinder(root) {
         items.push({ p, f, game, opp, vs, inj: injuryStatus(p, game), avgMin: (a => (a.length ? Math.round(a.reduce((s, x) => s + x, 0) / a.length) : null))(sample.map(r => r.min).filter(x => x != null)) });
       }
     }
-    if (m.binary) { ui.side = ui.side === 'under' ? 'under' : 'over'; ui.line = 0.5; } else if (ui.line === null) ui.line = m.hcp ? 0.5 : defaultLine(m.key, items.flatMap(x => x.f.map(r => r.value)));
+    if (m.binary) { ui.line = 0.5; } else if (ui.line === null) ui.line = m.hcp ? 0.5 : defaultLine(m.key, items.flatMap(x => x.f.map(r => r.value)));
     const L = cmpLine(m, ui.line);
-    const lab = $('#lnlab', ctl), inp = $('#ln', ctl); if (lab) lab.textContent = m.hcp ? `${m.label} — ${ui.side === 'under' ? 'Fail' : 'Cover'} ${signed(ui.line)}` : `${m.label} — ${ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line;
+    const lab = $('#lnlab', ctl), inp = $('#ln', ctl); if (lab) lab.textContent = `${m.label} — ${ui.side === 'both' ? (m.hcp ? 'Cover / Fail' : m.binary ? 'Yes / No' : 'Over / Under') : dirWord(m, ui.side)} ${m.hcp ? signed(ui.line) : m.binary ? '' : ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line;
     const name = x => (x.p ? x.p.name : teamName(x.t));
     const cmp = { hi: (a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n || name(a).localeCompare(name(b)), lo: (a, b) => a.hr.hitPct - b.hr.hitPct || b.hr.n - a.hr.n || name(a).localeCompare(name(b)), az: (a, b) => name(a).localeCompare(name(b)),
       market: (a, b) => ((a.game?.ko_utc || '~') < (b.game?.ko_utc || '~') ? -1 : (a.game?.ko_utc || '~') > (b.game?.ko_utc || '~') ? 1 : 0) || name(a).localeCompare(name(b)) };
-    const base0 = items.map(x => ({ ...x, hr: hitRate(x.f.map(r => r.value), L, ui.side) })).filter(x => x.hr.n && x.hr.hitPct >= ui.min);
+    const SIDES = ui.side === 'both' ? ['over', 'under'] : [ui.side]; // Both (redesign follow-up): one row per direction, each with its own percentage
+    const base0 = items.flatMap(x => SIDES.map(sd => ({ ...x, sd, hr: hitRate(x.f.map(r => r.value), L, sd) }))).filter(x => x.hr.n && x.hr.hitPct >= ui.min);
     const outX = getExcludeOut() ? base0.filter(x => x.p && isConfirmedOut(x.inj)) : []; if (outX.length) { const keep = base0.filter(x => !outX.includes(x)); base0.length = 0; base0.push(...keep); }
     const ranked = rankList(base0, ui.order, name, lastN, cmp[ui.order]); base0.length = 0; base0.push(...ranked); const base = base0;
     const res = sortRows(base, ui.sort, (x, k) => (k === 'hit' ? x.hr.hitPct : k === 'avg' ? x.hr.avg : null)); shown = res;
-    const sideW = m.hcp ? (ui.side === 'under' ? 'Fail' : 'Cover') : (ui.side === 'under' ? 'Under' : 'Over');
+    const sideW = ui.side === 'both' ? (m.binary ? 'Yes and No' : m.hcp ? 'Cover and Fail' : 'Over and Under') : dirWord(m, ui.side);
     const exN = outX.length ? `<p class="xs muted">${outX.length} player${outX.length === 1 ? '' : 's'} left out, confirmed OUT: ${outX.map(x => esc(x.p.name)).join(', ')}. Untick Exclude injured players to list them (marked Unavailable).</p>` : '';
     out.innerHTML = res.length ? `${exN}<div class="card"><div class="scroll"><table id="tb"><tr><th>${isT() ? 'Team' : 'Player'}</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / games</th>${sortTh(ui.sort, 'avg', m.binary ? 'Yes' : m.hcp ? 'Avg margin' : 'Avg')}${isT() ? '' : '<th>Avg min</th><th>Vs opp</th>'}<th>${lastN ? `Last ${lastN}` : 'Season'} (old → new)</th></tr>
-      ${res.slice(0, ui.shown).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && ['hi', 'ev', 'n', 'lo'].includes(ui.order) && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying games: ranked separately below the rest</span></td></tr>` : ''}<tr><td class="w">${x.p ? `<a href="#/nba/player/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a>${x.p.new_team ? ' <button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM">NEW TEAM</button>' : ''}${isConfirmedOut(x.inj) ? ' <span class="outb">Unavailable (OUT)</span>' : ''}${x.inj && (x.inj.cls === 'out' || x.inj.cls === 'warn') ? ` <span class="injb inj-${x.inj.cls}" title="${esc(x.inj.detail || '')}">${esc(x.inj.label)}</span>` : ''}<br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)}${x.p.notable ? ' · ★' : ''}</span>` : `<b>${esc(teamName(x.t))}</b>`}${x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">${x.p ? 'Card ›' : 'Graph ›'}</button></td>
-        <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ` <span class="xs muted">(only ${x.hr.n})</span>` : ''}</td><td class="n">${m.binary ? x.hr.hits : m.hcp ? signed(fmt(x.hr.avg)) : fmt(x.hr.avg)}</td>
-        ${isT() ? '' : `<td class="n">${x.avgMin ?? '–'}</td><td class="n">${x.opp ? (x.vs.length ? `${hitRate(x.vs, L, ui.side).hits}/${x.vs.length} <span class="xs muted">v ${esc(x.opp)}</span>` : `<span class="xs muted">none v ${esc(x.opp)}</span>`) : '–'}</td>`}
-        <td><span class="fdots">${dotsFor(x.f.map(r => r.value), L, ui.side).map(h => `<i class="${h ? 'h' : ''}">${h ? '●' : '○'}</i>`).join('')}</span></td></tr>`).join('')}</table></div>${res.length > ui.shown ? `<button type="button" class="btn" data-nmore>Show more (${res.length - ui.shown} more)</button>` : ''}</div>
+      ${res.slice(0, ui.pop ? res.length : ui.shown).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && ['hi', 'ev', 'n', 'lo'].includes(ui.order) && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying games: ranked separately below the rest</span></td></tr>` : ''}<tr><td class="w">${x.p ? `<a class="hplink" href="#/nba/research/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a>${x.p.new_team ? ' <button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM">NEW TEAM</button>' : ''}${isConfirmedOut(x.inj) ? ' <span class="outb">Unavailable (OUT)</span>' : ''}${x.inj && (x.inj.cls === 'out' || x.inj.cls === 'warn') ? ` <span class="injb inj-${x.inj.cls}" title="${esc(x.inj.detail || '')}">${esc(x.inj.label)}</span>` : ''}<br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)}${x.p.notable ? ' · ★' : ''}</span>` : `<b>${esc(teamName(x.t))}</b>`}${x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">${x.p ? 'Card ›' : 'Graph ›'}</button></td>
+        <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b><br><span class="dirb">${esc(dirWord(m, x.sd))}</span></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ` <span class="xs muted">(only ${x.hr.n})</span>` : ''}</td><td class="n">${m.binary ? x.hr.hits : m.hcp ? signed(fmt(x.hr.avg)) : fmt(x.hr.avg)}</td>
+        ${isT() ? '' : `<td class="n">${x.avgMin ?? '–'}</td><td class="n">${x.opp ? (x.vs.length ? `${hitRate(x.vs, L, x.sd).hits}/${x.vs.length} <span class="xs muted">v ${esc(x.opp)}</span>` : `<span class="xs muted">none v ${esc(x.opp)}</span>`) : '–'}</td>`}
+        <td><span class="fdots">${dotsFor(x.f.map(r => r.value), L, x.sd).map(h => `<i class="${h ? 'h' : ''}">${h ? '●' : '○'}</i>`).join('')}</span></td></tr>`).join('')}</table></div>${!ui.pop && res.length > ui.shown ? `<button type="button" class="btn" data-nmore>Show more (${res.length - ui.shown} more)</button>` : ''}</div>
       <p class="xs muted">${res.length} ${isT() ? 'team' : 'player'}${res.length === 1 ? '' : 's'} · ${sideW} ${m.hcp ? signed(ui.line) : ui.line}${minM ? ` · only games with ${minM}+ minutes (applied before Last N)` : ''}${games.length ? ` · ${games.length} game${games.length === 1 ? '' : 's'}` : ''}. ${isT() ? '' : 'Current roster players; a DNP is never a game. "Vs opp" = every game he played against the opponent of his selected game, all seasons held. '}Dots show the games in the sample, oldest first.</p>`
       : `<div class="banner info"><b>No ${isT() ? 'teams' : 'players'} match these filters.</b> ${minM ? `The Minimum Minutes Filter (${minM}+) is on. ` : ''}Try another line, sample or hit-rate minimum.</div>`;
   };
   const openCard = x => { // the same result card as Hiwi's Section, in a sheet
     const m = market(); const A = usAdapter('nba');
-    const reg = new Map(); const st = { line: ui.line, side: ui.side, userLine: true, persp: 'h' };
+    const reg = new Map(); const st = { line: ui.line, side: m.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h' };
     const c = buildUsPlayerCard({ sport: 'nba', A, p: x.p, def: nbaDef(m.key), key: m.key, raw: [], game: x.game, period: () => ui.last, periodText: () => `${seasonLabel(latestSeason())} season`, startLine: ui.line });
     loadLogs(x.p.logs_file).then(by => { const c2 = buildUsPlayerCard({ sport: 'nba', A, p: x.p, def: nbaDef(m.key), key: m.key, raw: by.get(x.p.id) || [], game: x.game, period: () => ui.last, periodText: () => `${seasonLabel(latestSeason())} season`, startLine: ui.line });
       Object.assign(c2, c2.rebuild(st)); c2.detailLabel = false; reg.set(c2.cid, { card: c2, st });
@@ -3857,7 +4018,7 @@ async function viewNbaFinder(root) {
     const g = e.target.closest('[data-graph]'); if (!g) return; const x = shown[Number(g.dataset.graph)]; if (!x) return; const m = market();
     if (x.p) { openCard(x); return; }
     openGraphModal({ title: teamName(x.t), subtitle: `Team · ${m.label}`, desc: m.desc, ladder: () => nbaLines(m),
-      panel: { key: 'nbaft:' + x.t, markets: [m], rows: teamGameRows(x.t), subject: 'team', subjectId: x.t, unit: 'game', typesControl: true, typesReg: ['R'], typesAll: ['R', 'C', 'PI', 'P'], noValueLink: true, init: { market: m.key, side: ui.side, line: cmpLine(m, ui.line), last: ui.last, venue: '', types: 'RP' }, lastOptions: [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], [0, 'All seasons']] } });
+      panel: { key: 'nbaft:' + x.t, markets: [m], rows: teamGameRows(x.t), subject: 'team', subjectId: x.t, unit: 'game', typesControl: true, typesReg: ['R'], typesAll: ['R', 'C', 'PI', 'P'], noValueLink: true, init: { market: m.key, side: x.sd, line: cmpLine(m, ui.line), last: ui.last, venue: '', types: 'RP' }, lastOptions: [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], [0, 'All seasons']] } });
   });
   const redraw = () => keepScrollIn(ctl, drawCtl); // ticking a date or game never jumps a list (or the page) back to the top
   ctl.addEventListener('toggle', e => { if (e.target.id === 'ngsel') ui.gOpen = e.target.open; if (e.target.id === 'fdts') ui.dtOpen = e.target.open; }, true);
@@ -3878,7 +4039,8 @@ async function viewNbaFinder(root) {
     if (t.id === 'mk') { if (isT()) ui.tmarket = t.value; else ui.market = t.value; ui.line = null; ui.sort = { key: null, dir: null }; }
     else if (t.matches('[data-pos]')) t.checked ? ui.pos.add(t.value) : ui.pos.delete(t.value);
     else if (t.id === 'fpop') ui.pop = t.checked;
-    else if (t.matches('[data-date]')) { const d = t.dataset.date, day = days().find(x => x[0] === d); if (t.checked) { ui.dates.add(d); for (const g of day ? day[1] : []) if (!ui.untick.has(g.id)) ui.games.add(g.id); } else { ui.dates.delete(d); for (const g of day ? day[1] : []) ui.games.delete(g.id); } }
+    else if (t.id === 'fnbtoday') { const tn = viewingNight(now); if (t.checked) { ui.datesBefore = new Set(ui.dates); ui.dates.clear(); ui.games.clear(); const day = days().find(x => x[0] === tn); if (day) { ui.dates.add(tn); for (const g of day[1]) if (!ui.untick.has(g.id)) ui.games.add(g.id); } ui.today = true; } else { ui.today = false; ui.dates = ui.datesBefore || new Set(); ui.datesBefore = null; ui.games.clear(); for (const [d, gs2] of days()) if (ui.dates.has(d)) for (const g of gs2) if (!ui.untick.has(g.id)) ui.games.add(g.id); } }
+    else if (t.matches('[data-date]')) { ui.today = false; const d = t.dataset.date, day = days().find(x => x[0] === d); if (t.checked) { ui.dates.add(d); for (const g of day ? day[1] : []) if (!ui.untick.has(g.id)) ui.games.add(g.id); } else { ui.dates.delete(d); for (const g of day ? day[1] : []) ui.games.delete(g.id); } }
     else if (t.matches('[data-g]')) { t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value)); }
     else if (t.id === 'nbaminon') setNbaMin(t.checked, getNbaMin().val);
     else if (t.id === 'nbaminval') setNbaMin(true, parseInt(t.value, 10));
@@ -3937,6 +4099,7 @@ __m['v-nba-plays'] = (() => {
 // Players confirmed OUT (or otherwise unavailable) on the Official NBA Injury Report for that game are never in the active results;
 // Doubtful / Questionable players stay, clearly marked. A game not yet on the report is flagged, and nobody is removed for it.
 const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, nbaUpcoming, loadLogs, teamGameRows, injuryStatus, loadNbaInjuries } = __m['nba-data'];
+const { nightOf, ukTip } = __m['nightdate'];
 const { rankList, getExcludeOut, setExcludeOut, isConfirmedOut } = __m['rank'];
 const { NBA_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef } = __m['nba-markets'];
 const { scanOne } = __m['scanner'];
@@ -3960,7 +4123,7 @@ async function viewNbaPlays(root, r) {
   await loadNbaInjuries(true); // availability changes during the day: always re-read the report when Plays opens
   if (r && r.q.get('game') && nba.gameById.get(r.q.get('game'))) { ui.kind = 'game'; ui.game = r.q.get('game'); ui.picked = null; }
   if (r && r.q.get('player') && nba.playerById.get(r.q.get('player'))) { ui.kind = 'player'; ui.player = r.q.get('player'); }
-  if (ui.side === null) ui.side = getGlobalSide();
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up)
   root.innerHTML = `<h1>Plays</h1><p class="muted" style="margin-top:-4px">Pick one NBA game, player or team. PropLab scans every market with recorded data and shows the <b>most ambitious line</b> that still reached your minimum hit rate. Historical hit rates, not predictions or tips.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>${nbaCredit()}`;
   const ctl = $('#ctl', root), out = $('#out', root), now = new Date(), cs = latestSeason(), A = usAdapter('nba');
@@ -3976,15 +4139,15 @@ async function viewNbaPlays(root, r) {
   const playersOf = g => [...roster(g.away), ...roster(g.home)];
   const outOf = g => playersOf(g).filter(p => injuryStatus(p, g).unavailable);
   const ensurePicked = g => { if (ui.picked && ui.picked.gid === g.id) return; ui.picked = { gid: g.id, set: new Set() }; ui.removed = new Set(); if (ui.pop) for (const p of playersOf(g)) if (p.notable && !injuryStatus(p, g).unavailable) ui.picked.set.add(p.id); };
-  const drawCtl = () => { fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = koUK(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+  const drawCtl = () => { fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = nightOf(g); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     const g = gameOf(); if (ui.kind === 'game' && g) ensurePicked(g);
-    const picker = ui.kind === 'game' ? (g ? `<div class="field"><label for="gm">Game (UK dates; times in ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(x => `<option value="${esc(x.id)}" ${x.id === ui.game ? 'selected' : ''}>${esc(koLocal(x).hm || 'TBC')} ${esc(teamName(x.away))} at ${esc(teamName(x.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
+    const picker = ui.kind === 'game' ? (g ? `<div class="field"><label for="gm">Game (NBA schedule nights; UK tip-off times)</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))} (US night)">${list.map(x => `<option value="${esc(x.id)}" ${x.id === ui.game ? 'selected' : ''}>${esc(ukTip(x) || 'TBC')} ${esc(teamName(x.away))} at ${esc(teamName(x.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
         <label class="hcheck hpopchk"><input type="checkbox" id="ppop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">ticks every popular player of both teams; add or remove anyone below</span></span></label>
         <details class="hsel" id="pplist"><summary><b>Players</b> <span class="muted small">${ui.picked.set.size} selected</span></summary><div class="hlist hgrid">${playersOf(g).map(p => { const ij = injuryStatus(p, g); return `<label class="hcheck"><input type="checkbox" data-pp value="${esc(p.id)}" ${ui.picked.set.has(p.id) ? 'checked' : ''} ${ij.unavailable ? 'disabled' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.team)}${p.notable ? ' · ★' : ''}</span>${ij.cls !== 'none' ? ` <span class="injb inj-${ij.cls}">${esc(ij.label)}</span>` : ''}</span></label>`; }).join('')}</div></details>` : '<p class="small muted">No upcoming NBA games are published.</p>')
       : ui.kind === 'player' ? `<div class="field"><label for="pfind">Player</label><select class="in" id="pfind">${teams().map(t => `<optgroup label="${esc(t.name)}">${roster(t.abbr).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}${p.notable ? ' ★' : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>`
       : `<div class="field"><label for="tt">Team</label><select class="in" id="tt">${teams().map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>`;
     ctl.innerHTML = `${globalSideHtml('pgside')}<div class="field"><label>Research</label>${seg('kind', [['game', 'Game'], ['player', 'Player'], ['team', 'Team']], ui.kind)}</div>${picker}
-      <div class="field"><label>Direction</label>${seg('side', [['over', 'Over'], ['under', 'Under'], ['both', 'Over and Under']], ui.side)}<span class="xs muted">Starts on the Over / Under chosen at the top. Each result card keeps its own toggle.</span></div>
+      
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = ${esc(seasonLabel(cs))} only.</span></div>
       ${nbaFiltersHtml()}
       <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), prefs.minPct, 'grid')}</div>`; };
@@ -4094,19 +4257,21 @@ const { store, leagueName } = __m['data'];
 const { $, esc, debounce } = __m['util'];
 const { ICON } = __m['icons'];
 
-const href = it => (it.type === 'player' ? `#/player/${encodeURIComponent(it.id)}` : `#/team/${encodeURIComponent(it.id)}`);
+const fbHref = it => (it.type === 'player' ? `#/player/${encodeURIComponent(it.id)}` : `#/team/${encodeURIComponent(it.id)}`);
 /** Renders a search box. opts: {value, placeholder, onSubmit(text), onPick(item) (default: navigate), autofocus, filter(item)} */
 function searchBox(root, opts = {}) {
+  // opts.index (21 Oct, evening): another sport's directory (NBA / NFL players and teams); opts.hrefOf: its links; opts.emptyText
+  const href = opts.hrefOf || fbHref;
   root.innerHTML = `<form class="search" role="search" autocomplete="off"><div class="box">${ICON.search}<input type="search" enterkeyhint="search" placeholder="${esc(opts.placeholder || 'Search a player or team')}" aria-label="Search players and teams" value="${esc(opts.value || '')}" autocapitalize="words" spellcheck="false"><button class="go" type="submit">Search</button></div><div class="suggest" hidden></div></form>`;
   const form = $('form', root), input = $('input', root), box = $('.suggest', root);
   let index = null, items = [], hl = -1;
-  const ensure = () => { if (!index && store.status === 'ready') index = buildSearchIndex(); return index || []; };
+  const ensure = () => { if (!index) index = opts.index ? opts.index() : store.status === 'ready' ? buildSearchIndex() : null; return index || []; };
   const close = () => { box.hidden = true; hl = -1; };
   const show = () => {
-    const q = input.value.trim(); if (!q) return close();
+    const q = input.value.trim(); if (q.length < (opts.minChars || 1)) return close();
     items = search(opts.filter ? ensure().filter(opts.filter) : ensure(), q, 6); // opts.filter: e.g. Value only lists subjects with match data
     box.innerHTML = items.length ? items.map((it, i) => `<a href="${href(it)}" data-i="${i}"><span class="t">${esc(it.name)}<br><small>${esc(it.sub)}</small></span><span class="badge">${it.type === 'player' ? 'Player' : 'Team'}</span></a>`).join('')
-      : `<div class="empty"><span class="muted">${store.status === 'ready' ? 'No match. Try a surname or club name. Players: current Premier League and MLS squads only. Teams: all nine leagues and the three European competitions.' : 'Loading data…'}</span></div>`;
+      : `<div class="empty"><span class="muted">${opts.emptyText ? esc(opts.emptyText) : store.status === 'ready' ? 'No match. Try a surname or club name. Players: current Premier League and MLS squads only. Teams: all nine leagues and the three European competitions.' : 'Loading data…'}</span></div>`;
     box.hidden = false;
   };
   input.addEventListener('input', debounce(show, 80));
@@ -4127,7 +4292,7 @@ function searchBox(root, opts = {}) {
   if (opts.autofocus) input.focus();
   return { input, refresh: show, setValue: v => { input.value = v; } };
 }
-const itemHref = href;
+const itemHref = fbHref;
 
 return { searchBox, itemHref };
 })();
@@ -4529,7 +4694,7 @@ function playCard(x, o = {}) {
   const rel = reliability(x.hr.n);
   return `<div class="card play" style="margin-bottom:10px"${o.ri != null ? ` data-ri="${o.ri}"` : ''}>
     ${o.head || ''}
-    <div class="row" style="border:0;padding:0"><div class="l">${o.who ? `<b>${esc(o.who)}</b>` : ''}<span class="plwhat" data-pl-what></span>${o.scope ? `<span class="xs muted">${esc(o.scope)}</span>` : ''}</div><div class="r"><b data-pl-pct style="font-size:22px"></b></div></div>
+    <div class="row" style="border:0;padding:0"><div class="l">${o.who ? (o.subj && o.subj.type === 'player' && o.subj.id ? `<a class="hplink" href="#/research/${encodeURIComponent(o.subj.id)}"><b>${esc(o.who)}</b></a>` : `<b>${esc(o.who)}</b>`) : ''}<span class="plwhat" data-pl-what></span>${o.scope ? `<span class="xs muted">${esc(o.scope)}</span>` : ''}</div><div class="r"><b data-pl-pct style="font-size:22px"></b></div></div>
     <div class="hitn"><b data-pl-hits></b> <span class="muted">· ${esc(o.sample || '')}${x.requested && x.nUsed < x.requested ? ` (only ${x.nUsed} available)` : ''}</span></div>
     <p class="hsent" data-pl-sent></p>
     <div class="xs warn" data-pl-below hidden></div>
@@ -4613,7 +4778,7 @@ const PLAY_ORDERS = [['hi', 'Highest % First'], ['lo', 'Lowest % First'], ['az',
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
 
 async function viewPlays(root, r) {
-  if (!ui._gside) { ui.side = getGlobalSide(); ui._gside = true; } // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Plays</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
   const g = r.q.get('game'); if (g) { const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.kind = 'match'; ui.game = g; ui.gvH = 'home'; ui.gvA = 'away'; }
   const t = r.q.get('team'); if (t) { const tm = store.teams.get(t); if (tm) { setLeague(tm.league); ui.kind = 'team'; ui.team = t; } }
@@ -4656,7 +4821,7 @@ async function viewPlays(root, r) {
       ${(isCup(lg) || ts.some(t => hasEuropean(t.slug))) && ui.kind !== 'player' ? `<div class="field"><label>Matches used${isCup(lg) ? '' : ' (clubs with European matches)'}</label>${seg('src', scopeOpts(isCup(lg) ? lg : 'eu').map(([v, l]) => [v === 'all' || v === 'dom' ? v : 'cup', l]), getUclScope())}<span class="xs muted">All games (default) = league + European matches; Domestic league only = league matches; ${isCup(lg) ? esc(leagueName(lg)) + ' only' : 'European matches only'} = European matches (goals markets only). Clubs without European matches always use their league matches. Shared with Hiwi and Finder.</span></div>` : ''}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only.</span></div>
       <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), minPct(), 'grid')}</div>
-      <div class="field"><label>Direction</label>${seg('side', [['both', 'Over and Under'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
+      
       <div class="ctl"><div class="field"><label for="pmk">Market</label><select class="in" id="pmk"><option value="">All markets</option>${mkList().map(m => `<option value="${esc(m.key)}" ${ui.mk === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc" id="pmdesc">${esc(ui.mk ? marketDesc(ui.mk) : 'Every market with recorded data is scanned. Pick one to see exactly what it counts and to show only that market.')}</p></div>
       <div class="field"><label for="pord">Sort</label><select class="in" id="pord">${PLAY_ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
       ${ui.kind === 'team' ? haFormHtml('venue', ui.venue, { note: 'Applied before the sample: Last 10 + Home = the last 10 home matches.' })
@@ -4728,7 +4893,7 @@ async function viewPlays(root, r) {
     } else {
       const p = players.find(x => x.id === ui.player); if (!p) { out.innerHTML = '<div class="banner info">Choose a player.</div>'; return; }
       const res = scanOne(p.rows, fbPlayerMarkets(players), { lines, sides: sides(), minPct: pct, ...sampleOpts(), venue: '', exposureKey: 'minutes' });
-      html = `<p class="xs muted" data-summary>${esc(p.name)} (${esc(p.team)}): ${res.scanned} player markets with data scanned, ${esc(sampleText(''))}, minimum ${pct}%.</p>` + block(`${esc(p.name)} <a class="small" href="#/player/${encodeURIComponent(p.id)}">profile</a>`, res, { sample: sampleText(''), subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
+      html = `<p class="xs muted" data-summary>${esc(p.name)} (${esc(p.team)}): ${res.scanned} player markets with data scanned, ${esc(sampleText(''))}, minimum ${pct}%.</p>` + block(`<a class="hplink" href="#/research/${encodeURIComponent(p.id)}">${esc(p.name)}</a> <a class="small" href="#/player/${encodeURIComponent(p.id)}">profile</a>`, res, { sample: sampleText(''), subj: { name: p.name, id: p.id, type: 'player', club: p.team } });
     }
     html += `<p class="xs muted">How a result is chosen: for each market and direction PropLab tests its research lines (typical sportsbook line ranges, half-point lines only, not checked against a live bookmaker) and keeps the most ambitious one whose real hit rate reaches your minimum: the highest Over line or the lowest Under line. Results follow your Sort choice (default: hit rate, then sample size); By Market / Play groups each market as Home Team, Away Team, then head-to-head. Move a card's slider to try other lines; "Reset to best line" goes back. Missing statistics are left out, never counted as zero.</p>`;
     out.innerHTML = html;
@@ -4899,7 +5064,7 @@ function cardHtml(r, ctx = {}) {
   /* list newest first; the dots stay oldest -> newest */ const rows = [...r.rowsUsed].reverse().map(x => { const hit = r.side === 'under' ? x.value < r.line : x.value > r.line;
     return `<tr><td>${esc(fd(x.date))}</td><td>${s.type === 'team' ? `${x.home ? 'v' : 'at'} ${esc(x.opp)}` : `${x.home ? 'v' : 'at'} ${esc(x.opp || '')}`}</td><td class="n">${x.goals != null && x.goalsA != null ? `${x.goals}–${x.goalsA}` : ''}</td><td class="n ${hit ? 'hit' : 'miss'}">${fv(x.value)}</td></tr>`; }).join('');
   const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'this season\'s'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} available)` : ''}`;
-  return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
+  return `<div class="card play tap" style="margin-bottom:10px"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.type === 'player' ? `#/research/${encodeURIComponent(s.id)}` : s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
     <div style="margin:6px 0 2px">${playText(r.def, r.side, r.line)} <span class="xs muted">· ${esc(ctx.h2h ? 'both teams combined' : SCOPE[marketScope(r.def.key)](s.name))}</span></div>
     <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span>${r.validN != null && !ctx.h2h ? ` <span class="xs muted vn">· ${r.validN} ${s.type === 'player' ? (r.validN === 1 ? 'game' : 'games') : (r.validN === 1 ? 'match' : 'matches')} this season with this statistic</span>` : ''}</div>
     ${(() => { const ev = evidence(r.hr.n, r.hr.hits), sd = r.side === 'under' ? 'under' : 'over', st0 = { n: r.hr.n, [sd]: r.hr.hits, [sd + 'Pct']: r.hr.hitPct };
@@ -4912,7 +5077,7 @@ function cardHtml(r, ctx = {}) {
 }
 
 async function viewTrends(root, r) {
-  if (!ui._gside) { ui.side = getGlobalSide(); ui._gside = true; } // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
   const g = r.q.get('tgame'); if (g) { ui.mode = 'game'; ui.game = g; ui.games = new Set([g]); ui.gOpen = false; ui.gvH = 'home'; ui.gvA = 'away'; const lg = g.split(':')[0]; if (lg) { setLeague(lg); const cur = getLeagues(); if (!cur.includes(lg)) setLeagues([...cur, lg]); } ui.today = false; ui.exLine = null; }
   let playerAll = null, defNote = '';
@@ -5001,7 +5166,7 @@ async function viewTrends(root, r) {
       ${ui.lineMode === 'exact' && exDef ? `<div class="ctl"><div class="field"><label for="exk">Market</label><select class="in" id="exk">${mk.map(m => `<option value="${m.key}" ${m.key === ui.exKey ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(marketDesc(ui.exKey))}</p></div>
         ${exDef.binary ? '' : `<div class="field"><label>Side</label>${seg('exSide', [['over', 'Over'], ['under', 'Under']], ui.exSide)}</div>`}</div>
         ${exDef.binary ? '<p class="small muted" style="margin:0">Both teams to score is Yes only: no line to set.</p>' : `<div class="linebar"><div class="lt"><b id="exlab"></b></div>${stepperHtml('exl', 'Line')}</div><p class="xs muted" id="exnote" style="margin:0"></p>`}`
-      : `<div class="ctl"><div class="field"><label>Direction</label>${seg('side', [['both', 'Both'], ['over', 'Over'], ['under', 'Under']], ui.side)}</div>
+      : `<div class="ctl">
         <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="">All markets</option>${mk.map(m => `<option value="${esc(m.key)}" ${ui.market === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(ui.market ? marketDesc(ui.market) : 'Every market below is scanned; pick one to see what it counts.')}</p></div></div>`}
       <div class="field"><label>Minimum historical hit rate</label>${seg('minPct', PCTS.map(p => [p, p + '%']), ui.minPct, 'grid')}</div>
       <div class="field"><label>Sample (completed matches)</label>${seg('period', PERIODS, ui.period, 'grid')}<span class="xs muted">Season = the current league season only. Last N = the last N matches after Home/Away Form.</span></div>
@@ -5182,7 +5347,7 @@ const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
 const ui = { today: false, lgOpen: false, mode: 'teams', market: 'm.goals', pmarket: 'shots', side: 'over', line: null, last: 10, venue: '', sort: { key: null, dir: null }, games: new Set(), untick: new Set(), gOpen: false, order: 'hi' };
 const ORDERS = [...RANK_ORDERS, ['market', 'By Market / Play (by fixture)']];
 async function viewTable(root) {
-  if (!ui._gside) { ui.side = getGlobalSide(); ui._gside = true; } // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
   let players = null, note = '', shown = [];
   // Several leagues can be compared in one table (league checkboxes, All Leagues); rows are ranked together. Today's Games Only keeps the
@@ -5215,7 +5380,7 @@ async function viewTable(root) {
   const drawCtlNow = () => {
     const markets = ui.mode === 'teams' ? teamMarkets : playerMarkets(); const key = ui.mode === 'teams' ? 'market' : 'pmarket'; const m = curMarket();
     ctl.innerHTML = `<div class="card stack">${globalSideHtml('tbgside')}<div class="ctl"><div class="field"><label>Market</label><select class="in" id="mk">${markets.map(x => `<option value="${esc(x.key)}" ${x.key === ui[key] ? 'selected' : ''}>${esc(marketName(x.key, x.label))}</option>`).join('')}</select><p class="xs muted mdesc" id="mdesc">${esc(marketDesc(m?.key))}</p></div>
-      ${m?.binary ? '' : `<div class="field"><label>Side</label><div class="seg" id="sd"><button data-v="over" class="${ui.side === 'over' ? 'on' : ''}">Over</button><button data-v="under" class="${ui.side === 'under' ? 'on' : ''}">Under</button></div></div>`}
+      ${m?.binary ? '' : ``}
       <div class="field"><label>Matches</label><div class="seg grid" id="lt">${[[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']].map(([n, l]) => `<button data-v="${n}" class="${String(ui.last) === String(n) ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       ${(lgs.some(isCup) || lgTeams().some(t => hasEuropean(t.slug))) && ui.mode === 'teams' ? `<div class="field"><label>Matches used (clubs with European matches)</label><div class="seg wrap" id="usc">${finderScopeOpts(lgs.filter(isCup).length ? lgs.filter(isCup) : ['eu']).map(([v, l]) => `<button data-v="${v}" class="${getUclScope() === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       <div id="hafw">${haFormHtml('venue', ui.venue, { note: 'Applied before the sample.' })}</div>
@@ -5241,13 +5406,13 @@ async function viewTable(root) {
     // Football has no Minimum Games Played (owner request 20 Oct, NFL only): every club / player with a recorded figure in the chosen sample is ranked;
     // one with nothing recorded in that sample has nothing to rank and is left out (never shown as 0).
     const filt = items.map(it => { it.validN = valid(it); return { it, f: applyFilters(it.rows, { last: ui.last === 'season' ? null : ui.last || null, season: ui.last === 'season' ? currentSeason(it.lg) : null, venue: ui.venue }) }; }).filter(x => x.f.some(r => r.value !== null && r.value !== undefined));
-    const side = m.binary ? 'over' : ui.side;
+    const side = m.binary ? 'over' : ui.side; const SIDES = side === 'both' ? ['over', 'under'] : [side]; // Both: one row per direction
     if (m.binary) ui.line = 0.5;
     else if (ui.line === null) { const vals = filt.flatMap(x => x.f.map(r => r.value)); ui.line = defaultLine(m.key, vals); const fixed = defaultLine(m.key, [999]) === defaultLine(m.key, [0]); note = fixed ? `Starting line: the standard Over ${ui.line} for this goals market.` : `Starting line from the average (${avg(vals) ?? 'n/a'}) of ${vals.length} real values when this market was chosen. Use the arrows to change it; changing the sample or Home/Away Form keeps your line.`; }
-    const lab = $('#lnlab', ctl), inp = $('#ln', ctl), nt = $('#lnnote', ctl); if (lab) lab.textContent = `${marketName(m.key, m.label)} — ${side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line; if (nt) nt.textContent = note;
+    const lab = $('#lnlab', ctl), inp = $('#ln', ctl), nt = $('#lnnote', ctl); if (lab) lab.textContent = `${marketName(m.key, m.label)} — ${side === 'both' ? 'Over / Under' : side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line; if (nt) nt.textContent = note;
     const line = ui.line, fv = v => (m.binary ? (v ? 'Yes' : 'No') : v);
     // default order: hit rate high to low, then the larger sample, then name (stable); sorting off returns to exactly this order
-    const base = filt.map(({ it, f }) => ({ it, f, hr: hitRate(f.map(r => r.value), line, side) })).filter(x => x.hr.n >= 1)
+    const base = filt.flatMap(({ it, f }) => SIDES.map(sd => ({ it, f, sd, hr: hitRate(f.map(r => r.value), line, sd) }))).filter(x => x.hr.n >= 1)
       .sort((a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n || a.it.name.localeCompare(b.it.name));
     const koK = x => { const f = x.it.fx; return f ? (f.ko_utc || '~' + f.date) + '|' + fixtureId(f) : '~~'; };
     if (['hi', 'ev', 'n', 'lo'].includes(ui.order)) { const r0 = rankList(base, ui.order, x => x.it.name, typeof ui.last === 'number' ? ui.last : null); base.length = 0; base.push(...r0); }
@@ -5258,10 +5423,10 @@ async function viewTable(root) {
     const lastN = typeof ui.last === 'number' ? ui.last : null;
     const formHead = lastN ? `Last ${lastN} (old → new)` : 'Season (old → new)';
     // one dot per match in the sample (no placeholders), oldest on the left, coloured by the line shown above
-    const dotsHtml = x => `<span class="fdots" aria-label="${x.hr.hits} of ${x.hr.n} hit, oldest to newest">${dotsFor(x.f.map(r => r.value), line, side).map((h, i) => `<i class="${h ? 'h' : ''}" title="${esc([...x.f].reverse()[i].date)}">${h ? '●' : '○'}</i>`).join('')}</span>`;
+    const dotsHtml = x => `<span class="fdots" aria-label="${x.hr.hits} of ${x.hr.n} hit, oldest to newest">${dotsFor(x.f.map(r => r.value), line, x.sd).map((h, i) => `<i class="${h ? 'h' : ''}" title="${esc([...x.f].reverse()[i].date)}">${h ? '●' : '○'}</i>`).join('')}</span>`;
     const hid = ''; // football: no Minimum Games Played, nothing is hidden
-    out.innerHTML = res.length ? `${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / matches</th>${sortTh(ui.sort, 'avg', m.binary ? 'Both scored' : 'Avg')}<th>${formHead}</th></tr>${res.slice(0, 100).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying matches: ranked separately below the rest</span></td></tr>` : ''}<tr data-row="${i}" class="tap"><td class="w"><a href="${x.it.href}"><b>${esc(x.it.name)}</b></a><br><span class="xs muted">${x.it.sub ? esc(x.it.sub) + ' · ' : ''}${x.it.validN} ${ui.mode === 'teams' ? (x.it.validN === 1 ? 'match' : 'matches') : (x.it.validN === 1 ? 'game' : 'games')} this season${ui.order === 'market' && x.it.fx ? ` · ${esc(x.it.fx.home)} v ${esc(x.it.fx.away)}` : ''}</span><br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td>${dotsHtml(x)}</td></tr>`).join('')}</table></div></div>
-      <p class="xs muted">${m.binary ? 'Both Teams to Score: Yes' : `${side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label)}`}, ${ui.last === 'season' ? "this season's" : 'last ' + ui.last} ${venueWord(ui.venue)}matches${ui.venue ? ' (Home/Away Form ON, applied before the sample)' : ''}. "Hits / matches" is the real number of matches with data; the form dots show exactly those matches, oldest on the left (filled = hit). Tap Hit rate or Avg: ascending, then descending, then back to the default order. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
+    out.innerHTML = res.length ? `${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>${ui.mode === 'teams' ? 'Team' : 'Player'}</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / matches</th>${sortTh(ui.sort, 'avg', m.binary ? 'Both scored' : 'Avg')}<th>${formHead}</th></tr>${res.slice(0, 100).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying matches: ranked separately below the rest</span></td></tr>` : ''}<tr data-row="${i}" class="tap"><td class="w"><a href="${ui.mode === 'teams' ? x.it.href : `#/research/${encodeURIComponent(x.it.id)}`}"><b>${esc(x.it.name)}</b></a><br><span class="xs muted">${x.it.sub ? esc(x.it.sub) + ' · ' : ''}${x.it.validN} ${ui.mode === 'teams' ? (x.it.validN === 1 ? 'match' : 'matches') : (x.it.validN === 1 ? 'game' : 'games')} this season${ui.order === 'market' && x.it.fx ? ` · ${esc(x.it.fx.home)} v ${esc(x.it.fx.away)}` : ''}</span><br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td><td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b>${m.binary ? '' : `<br><span class="dirb">${x.sd === 'under' ? 'Under' : 'Over'}</span>`}</td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ' <span class="xs muted">(only ' + x.hr.n + ')</span>' : ''}</td><td class="n">${m.binary ? fv(x.hr.hits) : fmt(x.hr.avg)}</td><td>${dotsHtml(x)}</td></tr>`).join('')}</table></div></div>
+      <p class="xs muted">${m.binary ? 'Both Teams to Score: Yes' : `${side === 'both' ? 'Over and Under' : side === 'under' ? 'Under' : 'Over'} ${line} ${esc(m.label)}`}, ${ui.last === 'season' ? "this season's" : 'last ' + ui.last} ${venueWord(ui.venue)}matches${ui.venue ? ' (Home/Away Form ON, applied before the sample)' : ''}. "Hits / matches" is the real number of matches with data; the form dots show exactly those matches, oldest on the left (filled = hit). Tap Hit rate or Avg: ascending, then descending, then back to the default order. ${ui.mode === 'teams' ? 'Team markets do not adjust for the opponent.' : ''} Missing values are left out, never counted as zero.</p>`
       : `${hid}<div class="banner info"><b>No ${ui.mode} have matches with data</b> for this market and filter. Choose another market or venue${hidden.length ? ', or lower the minimum' : ''}.</div>`;
   };
   out.addEventListener('click', e => {
@@ -5271,7 +5436,7 @@ async function viewTable(root) {
     openGraphModal({ title: x.it.name, subtitle: `${isP ? (x.it.sub ? x.it.sub + ' · ' : '') + 'Player' : 'Team'} · ${marketName(m.key, m.label)}`, desc: marketDesc(m.key),
       ladder: key => researchLines(FOOTBALL_RANGES, key, m.binary),
       panel: { key: 'tbl:' + x.it.id, markets: [m], rows: x.it.rows, exposureKey: isP ? 'minutes' : null, hasMinutes: isP, subject: isP ? 'player' : 'team', subjectId: x.it.id,
-        init: { market: m.key, side: m.binary ? 'over' : ui.side, line: ui.line, last: ui.last, venue: ui.venue },
+        init: { market: m.key, side: m.binary ? 'over' : x.sd, line: ui.line, last: ui.last, venue: ui.venue },
         lastOptions: [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']] } });
   });
   // Teams / Players is only offered when the selected league has player match logs.
@@ -5530,6 +5695,115 @@ function wireCarry(root) {
 
 return { carryPrice, hasCarry, setCarried, carryHtml, wireCarry };
 })();
+__m['usprice'] = (() => {
+// Value pages for the NBA and the NFL (owner request 21 Oct, evening): one search box with suggestions for every current player and every team
+// of the sport, and the same result card as Hiwi's Section for the chosen player or team and market, ready for Compare Price.
+const { normName } = __m['teams'];
+const { nflSearchTerms } = __m['aliases'];
+const { buildUsPlayerCard, usRows } = __m['uscards'];
+const { nbaTypeOk } = __m['nbaprefs'];
+const { startSide } = __m['globalside'];
+
+const SPORT_NAME = { nba: 'NBA', nfl: 'NFL' };
+/** Search entries for one US sport: every team and every current-roster player. */
+function usSubjectIndex(A, sport) {
+  const out = [];
+  for (const t of A.d.teams.values()) {
+    const terms = sport === 'nfl' ? nflSearchTerms(t.abbr, t.name) : [normName(t.abbr), normName(t.name), normName(t.name.split(' ').slice(-1)[0]), normName(t.name.split(' ').slice(0, -1).join(' '))];
+    out.push({ type: 'team', id: t.abbr, name: t.name, sub: `Team · ${t.abbr} · ${SPORT_NAME[sport]}`, norm: normName(t.name), extra: normName(t.abbr), alias: terms.filter(Boolean) });
+  }
+  for (const p of A.d.players) {
+    if (!p.current) continue;
+    out.push({ type: 'player', id: p.id, name: p.name, sub: `${p.pos || ''}${p.pos ? ' · ' : ''}${A.teamName(p.team)} · ${SPORT_NAME[sport]}`, norm: normName(p.name), extra: normName(`${p.team} ${A.teamName(p.team)}`), hasLogs: true });
+  }
+  return out;
+}
+/** The markets with recorded data for a subject: [{ key, label }]. */
+async function usMarketsFor(A, sport, subj) {
+  const keys = A.groups().flatMap(([, ks]) => ks), defs = keys.map(k => A.def(k)).filter(Boolean);
+  if (subj.type === 'team') { const rows = teamRows(A, sport, subj.id); return defs.filter(d => d.scope !== 'player' && !d.hcp && rows.some(r => { const v = d.get(r); return v !== null && v !== undefined; })); }
+  const p = A.d.playerById.get(subj.id); if (!p) return [];
+  const raw = await A.playerRowsOf(p);
+  return defs.filter(d => d.scope === 'player' && (!d.for || d.for.includes(p.group)) && raw.some(r => !r.dnp && (() => { const v = d.get(r); return v !== null && v !== undefined; })()));
+}
+const teamRows = (A, sport, abbr) => A.teamGameRows(abbr).filter(r => (sport === 'nba' ? nbaTypeOk(r.type) : r.type === 'R'));
+/** A result card (plus its starting state) for a player or team and one market. Last 10 games to start; Games used can change it. */
+async function usPriceCard(A, sport, subj, key) {
+  const def = A.def(key);
+  if (subj.type === 'player') {
+    const p = A.d.playerById.get(subj.id); const raw = await A.playerRowsOf(p);
+    const g = A.upcoming(new Date()).find(x => x.home === p.team || x.away === p.team) || null;
+    const card = buildUsPlayerCard({ sport, A, p, def, key, raw, game: g, period: () => 10, periodText: () => 'this season', cid: `uv|${sport}|${p.id}|${key}` });
+    const st = { side: startSide(def), userLine: false, persp: 'h' }; Object.assign(card, card.rebuild(st));
+    st.line = def.binary ? 0.5 : card.baseLine != null ? card.baseLine : half(avg(card.rows.map(r => r.value)));
+    return { card, st };
+  }
+  const all = teamRows(A, sport, subj.id), cs = A.latestSeason(), lab = x => `${x.home ? 'v' : '@'}${x.opp}`;
+  const pick = per => (per === 'season' ? all.filter(r => r.season === cs) : per === 'all' ? all : all.slice(0, Number(per)));
+  const g = A.upcoming(new Date()).find(x => x.home === subj.id || x.away === subj.id) || null;
+  const card = { cid: `uv|${sport}|t|${subj.id}|${key}`, title: A.teamName(subj.id), def, unit: 'game', tag: def.scope === 'match' ? 'Match total' : def.scope === 'opp' ? 'Opponent' : 'Team', tagCls: def.scope,
+    context: g ? `Next: ${A.teamName(g.away)} at ${A.teamName(g.home)}` : 'No upcoming game published', game: g, team: subj.id, perOk: true, perDefault: '10',
+    note: `Each bar: ${def.label}${def.scope === 'match' ? ', both teams combined,' : ''} in one ${A.teamName(subj.id)} game.`, detailLabel: false };
+  card.perFn = s0 => { const per = s0.per ?? '10', r0 = pick(per), rows = usRows(r0, def, lab); return { rows, m: rows.length, want: per === 'season' || per === 'all' ? null : Number(per), period: per === 'season' ? 'this season' : per === 'all' ? 'every game PropLab holds' : `last ${per} games` }; };
+  Object.assign(card, card.perFn({}));
+  const st = { side: startSide(def), userLine: false, persp: 'h', line: def.binary ? 0.5 : half(avg(card.rows.map(r => r.value))) };
+  return { card, st };
+}
+const avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0.5);
+const half = x => Math.max(0.5, Math.round(x - 0.5) + 0.5);
+
+return { usSubjectIndex, usMarketsFor, usPriceCard };
+})();
+__m['v-nba-value'] = (() => {
+// NBA Value (redesign): compare a price you can see with a player's or team's past frequency. No NBA model exists, so no EV is shown:
+// only the implied probability of the odds you type next to the card's historical hit rate (rules in pricecheck.js).
+// Search (21 Oct, evening): suggestions for every current NBA player and all 30 teams while typing (names, surnames, abbreviations).
+const { nba } = __m['nba-data'];
+const { usAdapter } = __m['v-hiwi'];
+const { carryHtml, wireCarry, setCarried } = __m['pricecheck'];
+const { searchBox } = __m['searchbox'];
+const { usSubjectIndex, usMarketsFor, usPriceCard } = __m['usprice'];
+const { $, esc } = __m['util'];
+const { parseOdds } = __m['analytics'];
+
+const ui = { subj: null, market: '' };
+async function viewNbaValue(root, r) { return usValuePage(root, r, 'nba'); }
+/** The shared NBA / NFL "compare a price" block: search, market, the card, odds. Used by NBA Value and NFL Value. */
+async function usValuePage(root, r, sport, { into = null, intro = true, onPick = null } = {}) {
+  const A = usAdapter(sport), box = into || root, carried = r && r.q && r.q.get('carry');
+  const U = ui[sport] || (ui[sport] = { subj: null, market: '' });
+  box.innerHTML = `${intro ? `<h1>Value: compare a price</h1>
+    <div class="banner info"><b>Historical frequency, not a probability.</b> ${sport === 'nba' ? 'PropLab has no NBA model, so it' : 'This section'} shows how often the line was beaten in the past next to the chance your odds imply. No expected value (EV) is calculated from it, and PropLab has no bookmaker odds: you type the ones you see.</div>` : ''}
+    <div class="uvcarry">${carried && intro ? carryHtml(sport, r) : ''}</div>
+    <div class="card stack" style="margin-top:12px"><h2 style="margin:0">${carried && intro ? 'Or choose another player or team' : 'Choose a player or team'}</h2>
+      <div class="field"><label>Player or team</label><div class="uvsb"></div></div><div class="uvmk"></div></div>
+    <div class="uvown"></div>
+    ${intro ? '<div class="card stack" style="margin-top:12px"><h3>Odds converter</h3><div class="field"><label for="uvcv">Odds (e.g. 1.91, 10/11, evens)</label><input class="in" id="uvcv" inputmode="text"></div><div id="uvcvo" class="small">–</div></div>' : ''}`;
+  if (carried && intro) wireCarry(box);
+  const q = s => box.querySelector(s);
+  const index = usSubjectIndex(A, sport);
+  searchBox(q('.uvsb'), { placeholder: sport === 'nba' ? 'e.g. LeBron, Tatum, BOS, Lakers' : 'e.g. Mahomes, Kelce, KC, Chiefs', index: () => index, hrefOf: () => '#', emptyText: `No ${A.name} player or team matches. Try a surname, team name or abbreviation.`,
+    value: U.subj ? U.subj.name : '', onPick: it => { U.subj = { type: it.type, id: it.id, name: it.name }; U.market = ''; if (onPick) onPick(U.subj); load(); } });
+  const load = async () => {
+    const mk = q('.uvmk'), own = q('.uvown'); if (!U.subj) { mk.innerHTML = '<p class="small muted" style="margin:0">Type at least two letters: suggestions appear as you type.</p>'; own.innerHTML = ''; return; }
+    const ms = await usMarketsFor(A, sport, U.subj);
+    if (!ms.length) { mk.innerHTML = `<p style="margin:0"><b>${esc(U.subj.name)}</b></p>`; own.innerHTML = `<div class="banner info" style="margin-top:12px"><b>No recorded games with market data for ${esc(U.subj.name)}.</b> Nothing to compare a price with.</div>`; return; }
+    if (!ms.some(m => m.key === U.market)) U.market = ms[0].key;
+    mk.innerHTML = `<p style="margin:0"><b>${esc(U.subj.name)}</b> <span class="muted small">${U.subj.type === 'team' ? 'team' : 'player'}</span></p><div class="field"><label>Market</label><select class="in uvsel">${ms.map(m => `<option value="${esc(m.key)}" ${m.key === U.market ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select></div>`;
+    mk.querySelector('.uvsel').onchange = e => { U.market = e.target.value; load(); };
+    const { card, st } = await usPriceCard(A, sport, U.subj, U.market);
+    const tok = setCarried(card, st, sport);
+    own.innerHTML = carryHtml(sport, null, tok).replace('Compare a price for this card', `Compare a price: ${esc(U.subj.name)}, ${esc(card.def.label)}`).replace('The same card you tapped, with the same line, side and games. Change them here if your bookmaker\'s line is different.', 'Starting line from his (or the team\'s) own recent average: set it to your bookmaker\'s line.');
+    box.querySelectorAll('.uvcarry #pcbox').forEach(x => x.remove()); // one comparison at a time
+    wireCarry(own);
+  };
+  const cv = q('#uvcv'); if (cv) cv.addEventListener('input', e => { const o = parseOdds(e.target.value); q('#uvcvo').textContent = o ? `Decimal ${o.toFixed(2)} · implied probability ${(100 / o).toFixed(1)}%` : '–'; });
+  if (carried && intro) q('.uvmk').innerHTML = '<p class="small muted" style="margin:0">Type at least two letters: suggestions appear as you type.</p>'; else load();
+  void nba;
+}
+
+return { viewNbaValue, usValuePage };
+})();
 __m['v-nfl-model'] = (() => {
 // NFL Model Picks, Model Performance and the model-based EV (Value) page. Experimental: every probability here comes from the
 // published model output (data-nfl-model.json), recomputed in the browser for the exact line chosen. Historical hit rates are shown only
@@ -5548,6 +5822,7 @@ const kick = p => fmtKick({ ko_utc: p.kickoff.replace('+00:00', 'Z') });
 const who = p => (p.market === 'pts' ? teamName(p.team) : p.player);
 const fxText = p => `${teamName(p.team)} ${p.home ? 'v' : 'at'} ${teamName(p.opp)}`;
 const { carryHtml, wireCarry } = __m['pricecheck'];
+const { usValuePage } = __m['v-nba-value'];
 const valueHref = (p, side, line) => `#/nfl/value?pid=${encodeURIComponent(p.player_id)}&m=${encodeURIComponent(p.market)}&line=${line}&side=${side}`;
 const stamp = () => (model.data ? `Model ${esc(model.data.version)} · trained ${esc(model.data.trained.slice(0, 10))} · predictions updated ${esc(new Date(model.data.generated).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }))}` : '');
 const loading = root => { root.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>'; };
@@ -5663,12 +5938,18 @@ async function viewNflEv(root, r) {
   const players = [...byPlayer.values()].map(ps => ps[0]).sort((a, b) => who(a).localeCompare(who(b)));
   const label = p => `${who(p)} (${p.position === 'TEAM' ? 'team' : p.position + ', ' + p.team})`;
   root.innerHTML = `<h1>Value Research ${AI}</h1>${carryHtml('nfl', r)}${q && q.get('carry') ? `<p class="small" style="margin:8px 0">${ev.pid ? '<b>The experimental model also covers this player and market:</b> its probability and EV at your line are below (model estimate, not the card\'s hit rate).' : 'The experimental model does not cover this card, so only the comparison above is available.'}</p>` : ''}${EV_NOTICE}
-    <p class="muted small">Pick a player (or tap Compare Price on a Model Pick), set the bookmaker's line and side, then type the odds you can see. The model probability is recalculated for that exact line. PropLab has no odds of its own and saves nothing you type.</p>
-    <div class="card stack"><div class="field"><label for="evp">Player or team</label><input class="in" id="evp" list="evpl" placeholder="Type a name" autocomplete="off" value="${esc(ev.pid && byPlayer.get(ev.pid) ? label(byPlayer.get(ev.pid)[0]) : '')}"><datalist id="evpl">${players.map(p => `<option value="${esc(label(p))}">`).join('')}</datalist></div><div id="evc"></div></div>
+    <section id="nfluv"></section>
+    <h2 style="margin:16px 0 4px">Experimental model ${AI}</h2>
+    <p class="muted small">For players the model covers, it gives its own probability and EV at exactly your line. Choose the player above (or tap Compare Price on a Model Pick), set the bookmaker's line and side, then type the odds you can see. PropLab has no odds of its own and saves nothing you type.</p>
+    <div class="card stack"><p class="small" id="evwho" style="margin:0">${ev.pid && byPlayer.get(ev.pid) ? `Model player: <b>${esc(label(byPlayer.get(ev.pid)[0]))}</b>` : `Choose a player above. The model covers ${players.length} players and teams this week.`}</p><div id="evc"></div></div>
     <div id="evr"></div>
     <p class="xs muted">${stamp()} · <a href="#/nfl/picks">Recommended Plays</a> · <a href="#/nfl/performance">Model Performance</a></p>`;
   wireCarry(root);
   const evc = $('#evc', root), evr = $('#evr', root);
+  // one search for every NFL player and team (21 Oct, evening): the historical card for anyone; the model section when it covers him
+  usValuePage(root, r, 'nfl', { into: $('#nfluv', root), intro: false, onPick: subj => { const w = $('#evwho', root);
+    if (byPlayer.has(subj.id)) { ev.pid = subj.id; ev.market = ''; ev.line = null; if (w) w.innerHTML = `Model player: <b>${esc(label(byPlayer.get(subj.id)[0]))}</b>`; draw(); }
+    else { ev.pid = null; if (w) w.innerHTML = `The experimental model has no prediction for <b>${esc(subj.name)}</b> this week; the historical card above is still available.`; draw(); } } });
   const draw = () => {
     const ps = byPlayer.get(ev.pid);
     if (!ps) { evc.innerHTML = '<p class="small muted" style="margin:0">Choose a player or team to begin. Only players with a model prediction for an upcoming game are listed.</p>'; evr.innerHTML = ''; return; }
@@ -5758,7 +6039,7 @@ async function viewValue(root, r) {
     <div class="card stack" style="margin-top:12px"><div class="field"><label>Player or team</label><div id="sb"></div></div><div id="subj"></div></div><div id="result"></div>
     <div class="card stack" style="margin-top:12px"><h3>Odds converter</h3><div class="ctl"><div class="field"><label>Odds (e.g. 2.5, 6/4, evens)</label><input class="in" id="cv" inputmode="text" placeholder="6/4"></div><div class="field"><label>Implied chance</label><div id="cvo" class="stat" style="font-size:20px;font-weight:700">–</div></div></div><p class="xs muted" style="margin:0">Implied chance is 1 ÷ decimal odds and includes the bookmaker's margin.</p></div>`;
   wireCarry(root);
-  searchBox($('#sb', root), { placeholder: 'Search a player or team', filter: it => it.type === 'team' || it.hasLogs, onPick: it => { ui.subject = `${it.type}:${it.id}`; ui.market = null; ui.line = null; load(); } });
+  searchBox($('#sb', root), { placeholder: 'Search a player or team (e.g. Saka, Spurs, Messi)', onPick: it => { ui.subject = `${it.type}:${it.id}`; ui.market = null; ui.line = null; load(); } });
   $('#cv', root).oninput = e => { const o = parseOdds(e.target.value); $('#cvo', root).textContent = o ? `${(100 / o).toFixed(1)}% (decimal ${o})` : '–'; };
   let subj = null;
   async function load() {
@@ -6289,7 +6570,7 @@ const PLAYER_MKTS = () => { const seen = new Map(); for (const g of Object.keys(
 
 async function viewNflFinder(root) {
   if (nflLoading(root)) return;
-  if (!ui._side) { ui.side = getGlobalSide(); ui._side = true; } // starts on the global Over / Under; changing Side here changes this table only
+  ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under; changing Side here changes this table only
   root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover which players clear a line most often. For one player or game, use <a href="#/nfl/hiwi">Hiwi's Section</a>.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root); const season = latestSeason(); let shown = []; const now = new Date();
@@ -6316,11 +6597,11 @@ async function viewNflFinder(root) {
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-gall>Select all</button><button type="button" class="chip" data-gnone>Clear all</button></div>
         <div class="hlist">${[...byDay.entries()].map(([d, gl]) => `<div class="hday">${esc(fmtDay(d))}</div>${gl.map(gRow).join('')}`).join('')}${tbc.length ? `<div class="hday">Kick-off time not confirmed</div>${tbc.map(gRow).join('')}` : ''}${list.length ? '' : `<p class="xs muted">${ui.today ? 'No NFL games today (UK date) that can still be researched.' : 'No upcoming or in-progress NFL games.'}</p>`}</div>
         <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. Games that have kicked off stay selectable until the final score is published. With no game ticked, every player is included.</p></details>
-      ${m.binary ? '' : `<div class="field"><label>Side</label>${seg('side', [['over', 'Over'], ['under', 'Under']], ui.side)}</div><div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div>`}
+      ${m.binary ? '' : `<div class="linebar"><div class="lt"><b id="lnlab"></b></div>${stepperHtml('ln', 'Line')}</div>`}
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (2021 onwards).</span></div>
       <div class="field"><label>Season type</label>${seg('types', [['R', 'Regular season'], ['RP', 'Include postseason']], ui.types)}</div>
       <div class="field"><label for="nmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="nmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">Games with a recorded ${esc(m.label.toLowerCase())} figure in the <b>${season} season only</b> (1–20). Earlier seasons still count for Last N. Shared with Hiwi's Section.</span></div></div>
-      <details class="hsel hadv"><summary><b>Advanced filters</b> <span class="muted small">snap share ${getNflSnap().on ? getNflSnap().val + '%+' : 'off'}</span></summary><p class="xs muted" style="margin:4px 0"><b>Snap share</b> is the share of his team's plays a player was on the field for. Leave it off unless you want to ignore games where he barely played.</p>${nflFiltersHtml(haveSnaps)}</details>
+      
       <div class="field"><label>Show players at or above</label>${seg('min', [[0, 'Any'], [60, '60%'], [70, '70%'], [80, '80%'], [90, '90%'], [100, '100%']], ui.min, 'grid')}</div>
 <div class="field havail"><label class="hcheck"><input type="checkbox" id="fxout" ${getExcludeOut() ? 'checked' : ''}><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">Questionable, Doubtful and Probable players always stay; a missing or old report never counts as Out.</span></span></label></div>
       <div class="field"><label for="nord">Sort</label><select class="in" id="nord">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
@@ -6342,11 +6623,12 @@ async function viewNflFinder(root) {
       if (eligible < minG || eligible === 0) { if (eligible > 0) hidden.push({ p, n: eligible }); continue; }
       items.push({ p, f, eligible, game: games.find(g => g.home === p.team || g.away === p.team) || null });
     }
-    if (m.binary) { ui.side = 'over'; ui.line = 0.5; } else if (ui.line === null) ui.line = defaultLine(m.key, items.flatMap(x => x.f.map(r => r.value)));
-    const lab = $('#lnlab', ctl), inp = $('#ln', ctl); if (lab) lab.textContent = `${m.label} — ${ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line;
+    if (m.binary) { ui.line = 0.5; } else if (ui.line === null) ui.line = defaultLine(m.key, items.flatMap(x => x.f.map(r => r.value)));
+    const lab = $('#lnlab', ctl), inp = $('#ln', ctl); if (lab) lab.textContent = `${m.label} — ${ui.side === 'both' ? 'Over / Under' : ui.side === 'under' ? 'Under' : 'Over'} ${ui.line}`; if (inp && document.activeElement !== inp) inp.value = ui.line;
     const cmp = { hi: (a, b) => b.hr.hitPct - a.hr.hitPct || b.hr.n - a.hr.n || a.p.name.localeCompare(b.p.name), lo: (a, b) => a.hr.hitPct - b.hr.hitPct || b.hr.n - a.hr.n || a.p.name.localeCompare(b.p.name),
       az: (a, b) => a.p.name.localeCompare(b.p.name), market: (a, b) => ((a.game?.ko_utc || a.game?.date || '~') < (b.game?.ko_utc || b.game?.date || '~') ? -1 : (a.game?.ko_utc || a.game?.date || '~') > (b.game?.ko_utc || b.game?.date || '~') ? 1 : 0) || (a.game && b.game && a.game.id === b.game.id ? (a.p.team === a.game.home ? 0 : 1) - (b.p.team === b.game.home ? 0 : 1) : 0) || a.p.name.localeCompare(b.p.name) };
-    const base0 = items.map(x => ({ ...x, hr: hitRate(x.f.map(r => r.value), ui.line, ui.side) })).filter(x => x.hr.n && x.hr.hitPct >= ui.min);
+    const SIDES = m.binary ? [ui.side === 'under' ? 'under' : 'over'] : ui.side === 'both' ? ['over', 'under'] : [ui.side]; // Both: one row per direction
+    const base0 = items.flatMap(x => SIDES.map(sd => ({ ...x, sd, hr: hitRate(x.f.map(r => r.value), ui.line, sd) }))).filter(x => x.hr.n && x.hr.hitPct >= ui.min);
     const outX = getExcludeOut() ? base0.filter(x => isConfirmedOut(injuryStatus(x.p, x.game?.id))) : []; if (outX.length) { const keep = base0.filter(x => !outX.includes(x)); base0.length = 0; base0.push(...keep); }
     const ranked = rankList(base0, ui.order, x => x.p.name, typeof ui.last === 'number' ? ui.last : null, cmp[ui.order]); base0.length = 0; base0.push(...ranked); const base = base0;
     const res = sortRows(base, ui.sort, (x, k) => (k === 'hit' ? x.hr.hitPct : k === 'avg' ? x.hr.avg : null)); shown = res;
@@ -6354,10 +6636,10 @@ async function viewNflFinder(root) {
     const hid = hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} player${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${minG})</b></summary><ul>${hidden.sort((a, b) => b.n - a.n || a.p.name.localeCompare(b.p.name)).slice(0, 60).map(h => `<li>${esc(h.p.name)} (${esc(h.p.pos)}, ${esc(h.p.team)}): ${h.n} game${h.n === 1 ? '' : 's'} in ${season} with a recorded figure</li>`).join('')}${hidden.length > 60 ? `<li>… and ${hidden.length - 60} more</li>` : ''}</ul></details>` : '';
     const exN = outX.length ? `<p class="xs muted">${outX.length} player${outX.length === 1 ? '' : 's'} left out, confirmed OUT or on a reserve list: ${outX.slice(0, 40).map(x => esc(x.p.name)).join(', ')}${outX.length > 40 ? '…' : ''}. Untick Exclude injured players to list them (marked Unavailable).</p>` : '';
     out.innerHTML = res.length ? `${exN}${hid}<div class="card"><div class="scroll"><table id="tb"><tr><th>Player</th>${sortTh(ui.sort, 'hit', 'Hit rate')}<th>Hits / games</th>${sortTh(ui.sort, 'avg', m.binary ? 'Yes' : 'Avg')}<th>${lastN ? `Last ${lastN}` : 'Season'} (old → new)</th></tr>
-      ${res.slice(0, ui.shown || 100).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && ['hi', 'ev', 'n', 'lo'].includes(ui.order) && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying games: ranked separately below the rest</span></td></tr>` : ''}<tr><td class="w"><a href="#/nfl/player/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a>${isConfirmedOut(injuryStatus(x.p, x.game?.id)) ? ' <span class="outb">Unavailable (OUT)</span>' : ''}${(ij => (ij && ij.cls !== 'none' ? ` <span class="injb inj-${ij.cls}" title="${esc(ij.detail || '')}">${esc(ij.label)}</span>` : ''))(injuryStatus(x.p, x.game?.id))}<br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)} · ${x.eligible} game${x.eligible === 1 ? '' : 's'} in ${season}</span>${ui.order === 'market' && x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td>
-        <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ` <span class="xs muted">(only ${x.hr.n})</span>` : ''}</td><td class="n">${m.binary ? x.hr.hits : fmt(x.hr.avg)}</td>
-        <td><span class="fdots">${dotsFor(x.f.map(r => r.value), ui.line, ui.side).map(h => `<i class="${h ? 'h' : ''}">${h ? '●' : '○'}</i>`).join('')}</span></td></tr>`).join('')}</table></div>${res.length > (ui.shown || 100) ? `<button type="button" class="btn" data-nmore>Show more (${res.length - (ui.shown || 100)} more)</button>` : ''}</div>
-      <p class="xs muted">${res.length} player${res.length === 1 ? '' : 's'}${res.length > (ui.shown || 100) ? ` (showing ${ui.shown || 100})` : ''} · ${gs.map(g => POS[g]).join(', ')}${games.length ? ` · ${games.length} game${games.length === 1 ? '' : 's'}` : ''}. "N games in ${season}" = this season's games with a recorded figure for this market (the Minimum games played count). Current roster players only; a game counts only when the player has a stat line in it. Dots show exactly the games in the sample, oldest first. Tap Hit rate or Avg to re-sort the table.</p>`
+      ${res.slice(0, ui.pop ? res.length : ui.shown || 100).map((x, i) => `${x._lim && !(res[i - 1] || {})._lim && ['hi', 'ev', 'n', 'lo'].includes(ui.order) && !ui.sort.key ? `<tr class="limrow"><td colspan="9"><b>Limited data</b> <span class="xs muted">fewer than ${getMinQual()} qualifying games: ranked separately below the rest</span></td></tr>` : ''}<tr><td class="w"><a class="hplink" href="#/nfl/research/${encodeURIComponent(x.p.id)}"><b>${esc(x.p.name)}</b></a>${isConfirmedOut(injuryStatus(x.p, x.game?.id)) ? ' <span class="outb">Unavailable (OUT)</span>' : ''}${(ij => (ij && ij.cls !== 'none' ? ` <span class="injb inj-${ij.cls}" title="${esc(ij.detail || '')}">${esc(ij.label)}</span>` : ''))(injuryStatus(x.p, x.game?.id))}<br><span class="xs muted">${esc(x.p.pos)} · ${esc(x.p.team)} · ${x.eligible} game${x.eligible === 1 ? '' : 's'} in ${season}</span>${ui.order === 'market' && x.game ? `<br><span class="xs muted">${esc(teamName(x.game.away))} at ${esc(teamName(x.game.home))}</span>` : ''}<br><button type="button" class="linkbtn xs" data-graph="${i}">Graph ›</button></td>
+        <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct <= 40 ? 'miss' : ''}"><b>${x.hr.hitPct}%</b><br><span class="dirb">${m.binary ? (x.sd === 'under' ? 'No' : 'Yes') : x.sd === 'under' ? 'Under' : 'Over'}</span></td><td class="n">${x.hr.hits}/${x.hr.n}${lastN && x.hr.n < lastN ? ` <span class="xs muted">(only ${x.hr.n})</span>` : ''}</td><td class="n">${m.binary ? x.hr.hits : fmt(x.hr.avg)}</td>
+        <td><span class="fdots">${dotsFor(x.f.map(r => r.value), ui.line, x.sd).map(h => `<i class="${h ? 'h' : ''}">${h ? '●' : '○'}</i>`).join('')}</span></td></tr>`).join('')}</table></div>${!ui.pop && res.length > (ui.shown || 100) ? `<button type="button" class="btn" data-nmore>Show more (${res.length - (ui.shown || 100)} more)</button>` : ''}</div>
+      <p class="xs muted">${res.length} player${res.length === 1 ? '' : 's'}${!ui.pop && res.length > (ui.shown || 100) ? ` (showing ${ui.shown || 100})` : ''} · ${gs.map(g => POS[g]).join(', ')}${games.length ? ` · ${games.length} game${games.length === 1 ? '' : 's'}` : ''}. "N games in ${season}" = this season's games with a recorded figure for this market (the Minimum games played count). Current roster players only; a game counts only when the player has a stat line in it. Dots show exactly the games in the sample, oldest first. Tap Hit rate or Avg to re-sort the table.</p>`
       : `${hid}<div class="banner info"><b>No players match these filters.</b> Try other positions, games, a different line, a lower hit-rate minimum or a lower Minimum games played.</div>`;
   };
   out.addEventListener('click', e => {
@@ -6365,7 +6647,7 @@ async function viewNflFinder(root) {
     const sb = e.target.closest('[data-sort]'); if (sb) { ui.sort = nextSort(ui.sort, sb.dataset.sort); draw(); return; }
     const g = e.target.closest('[data-graph]'); if (!g) return; const x = shown[Number(g.dataset.graph)]; if (!x) return; const m = market();
     loadGroup(x.p.group).then(by => openGraphModal({ title: x.p.name, subtitle: `${x.p.pos} · ${teamName(x.p.team)} · ${m.label}`, desc: m.desc, ladder: () => nflLines(m),
-      panel: { key: 'nflf:' + x.p.id, markets: [m], detail: (r, mk) => nflGameDetailHtml(r, mk), rows: by.get(x.p.id) || [], subject: 'player', subjectId: x.p.id, unit: 'game', typesControl: true, noValueLink: true, init: { market: m.key, side: ui.side, line: ui.line, last: ui.last, venue: '', types: ui.types }, lastOptions: [['season', 'Season'], ...SAMPLES.slice(0, 5), [0, 'All seasons']] } }));
+      panel: { key: 'nflf:' + x.p.id, markets: [m], detail: (r, mk) => nflGameDetailHtml(r, mk), rows: by.get(x.p.id) || [], subject: 'player', subjectId: x.p.id, unit: 'game', typesControl: true, noValueLink: true, init: { market: m.key, side: x.sd, line: ui.line, last: ui.last, venue: '', types: ui.types }, lastOptions: [['season', 'Season'], ...SAMPLES.slice(0, 5), [0, 'All seasons']] } }));
   });
   ctl.addEventListener('toggle', e => { if (e.target.id === 'ngsel') ui.gOpen = e.target.open; }, true);
   ctl.addEventListener('click', e => {
@@ -6460,7 +6742,6 @@ const GLOSSARY = [
   ['pra', 'PRA', 'Points + rebounds + assists added together for one player in one game (NBA).'],
   ['hcp', 'Handicap', 'A head start or deficit added to a team\'s score. With −5.5, the team must win by 6 or more to "cover". PropLab uses the handicap you set; it is not a bookmaker spread.'],
   ['min', 'Minutes', 'NBA minutes played in a game. The minimum-minutes filter skips games where he played less, before Last N is taken. A game he did not play (DNP) never counts.'],
-  ['snap', 'Snaps', 'NFL: the share of his team\'s plays a player was on the field for (snap share). Optional, under Advanced filters.'],
   ['avg', 'Average', 'The total of the figure across the games counted, divided by the number of games. A few big games can pull it up.'],
   ['rline', 'Research line', 'A line chosen to explore the data (a typical figure for that player or team, or one you set). It is not a bookmaker line.'],
   ['odds', 'Odds', 'A bookmaker\'s price. Decimal 2.50 returns £2.50 for every £1 staked if it wins (including the stake). Fractional 6/4 is the same as decimal 2.50. PropLab has no odds: you type the ones you see.'],
@@ -6509,53 +6790,93 @@ function viewStart(root, sport) {
 
 return { viewStart };
 })();
-__m['v-nba-value'] = (() => {
-// NBA Value (redesign, 21 Oct 2026): compare a price you can see with a player's past frequency. No NBA model exists, so no EV is shown:
-// only the implied probability of the odds you type next to the card's historical hit rate (rules in pricecheck.js).
-const { nba, nextGameOf, teamName } = __m['nba-data'];
-const { NBA_GROUPS, nbaDef } = __m['nba-markets'];
-const { buildUsPlayerCard } = __m['uscards'];
+__m['v-research'] = (() => {
+// Player research page (owner request 21 Oct, evening): tap a player's name on any result card to see every market PropLab has data for
+// for that player, each as the same card as Hiwi's Section (own line, Over / Under, Games used, NBA minutes, Vs Opponent, NEW TEAM, Compare
+// Price). Only markets with recorded games are shown; nothing is invented. "Back to Plays" (top and bottom) returns to the exact list.
 const { usAdapter } = __m['v-hiwi'];
-const { carryHtml, wireCarry, setCarried, hasCarry } = __m['pricecheck'];
-const { $, esc } = __m['util'];
-const { parseOdds } = __m['analytics'];
-const { startSide } = __m['globalside'];
+const { buildUsPlayerCard } = __m['uscards'];
+const { NBA_GROUPS } = __m['nba-markets'];
+const { FB_GROUPS, NFL_GROUPS, fbDef } = __m['hiwi-markets'];
+const { cardHtml, paintHCard, wireHCards, PER_OPTS } = __m['hiwicard'];
+const { fbPlayers } = __m['fbscan'];
+const { store, leaguesPresent, currentSeason, leagueName } = __m['data'];
+const { startSide, getGlobalSide } = __m['globalside'];
+const { nbaFiltersHtml, getNbaMin, setNbaMin, setNbaTypes } = __m['nbaprefs'];
+const { hooks } = __m['shared'];
+const { $, esc, fmtKick } = __m['util'];
+const { badge } = __m['badge'];
 
-const ui = { pid: '', market: 'pts', token: null };
-async function viewNbaValue(root, r) {
-  const A = usAdapter('nba');
-  const carried = r && r.q && r.q.get('carry');
-  const players = nba.players.filter(p => p.current).sort((a, b) => a.name.localeCompare(b.name));
-  const lab = p => `${p.name} (${p.team})`;
-  const pmk = NBA_GROUPS.flatMap(([, ks]) => ks).map(k => nbaDef(k)).filter(d => d && d.scope === 'player');
-  root.innerHTML = `<h1>Value: compare a price</h1>
-    <div class="banner info"><b>Historical frequency, not a probability.</b> PropLab has no NBA model, so it shows how often the line was beaten in the past next to the chance your odds imply. No expected value (EV) is calculated, and PropLab has no bookmaker odds: you type the ones you see.</div>
-    <div id="nvcarry">${carried ? carryHtml('nba', r) : ''}</div>
-    <div class="card stack" style="margin-top:12px"><h2 style="margin:0">${carried ? 'Or pick another player' : 'Pick a player'}</h2>
-      <div class="field"><label for="nvp">Player</label><input class="in" id="nvp" list="nvpl" placeholder="Type a name" autocomplete="off" value="${esc(ui.pid && nba.playerById.get(ui.pid) ? lab(nba.playerById.get(ui.pid)) : '')}"><datalist id="nvpl">${players.map(p => `<option value="${esc(lab(p))}">`).join('')}</datalist></div>
-      <div class="field"><label for="nvm">Market</label><select class="in" id="nvm">${pmk.map(d => `<option value="${esc(d.key)}" ${d.key === ui.market ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></div>
-      <p class="xs muted" style="margin:0">Team markets: open a team card in Hiwi's Section or Find Plays and tap <b>Compare Price</b>.</p></div>
-    <div id="nvown"></div>
-    <div class="card stack" style="margin-top:12px"><h3>Odds converter</h3><div class="field"><label for="nvcv">Odds (e.g. 1.91, 10/11, evens)</label><input class="in" id="nvcv" inputmode="text"></div><div id="nvcvo" class="small">–</div></div>`;
-  if (carried) wireCarry(root);
-  const own = async () => {
-    const p = nba.playerById.get(ui.pid); const box = $('#nvown', root); if (!p) { box.innerHTML = ''; return; }
-    const def = nbaDef(ui.market); const raw = await A.playerRowsOf(p);
-    const card = buildUsPlayerCard({ sport: 'nba', A, p, def, key: ui.market, raw, game: nextGameOf(p.team), period: () => 10, periodText: () => 'this season', cid: `nv|${p.id}|${ui.market}` });
-    const s0 = { side: startSide(def), userLine: false, persp: 'h' }; Object.assign(card, card.rebuild(s0)); s0.line = card.baseLine != null ? card.baseLine : 0.5;
-    ui.token = setCarried(card, s0, 'nba');
-    box.innerHTML = carryHtml('nba', null, ui.token).replace('Compare a price for this card', `Compare a price: ${esc(p.name)}, ${esc(def.label)}`).replace('The same card you tapped, with the same line, side and games.', `${esc(p.name)}'s card${nextGameOf(p.team) ? ` (next game v ${esc(teamName(nextGameOf(p.team).home === p.team ? nextGameOf(p.team).away : nextGameOf(p.team).home))})` : ''}: starting line from last season's average.`);
-    $('#nvcarry', root).querySelector('#pcbox')?.remove(); // one comparison at a time
-    wireCarry(box);
-  };
-  $('#nvp', root).addEventListener('change', e => { const p = players.find(x => lab(x) === e.target.value); if (p) { ui.pid = p.id; own(); } });
-  $('#nvm', root).addEventListener('change', e => { ui.market = e.target.value; if (ui.pid) own(); });
-  $('#nvcv', root).addEventListener('input', e => { const o = parseOdds(e.target.value); $('#nvcvo', root).textContent = o ? `Decimal ${o.toFixed(2)} · implied probability ${(100 / o).toFixed(1)}%` : '–'; });
-  if (ui.pid && !carried) own(); else ui.token = null;
-  void hasCarry;
+const BACK = { football: '#/hiwi', nfl: '#/nfl/hiwi', nba: '#/nba/hiwi' };
+const st = new Map(); // per player+market card state while the visitor stays on the site
+/** "Back to Plays": the page the visitor came from (exact position restored by app.js), else this sport's Hiwi's Section. */
+const backHref = sport => (hooks.ret && hooks.ret.sport === sport ? hooks.ret.hash : BACK[sport]);
+const backBtn = (sport, where) => `<button type="button" class="btn rsback" data-rsback="${where}"><b>← Back to Plays</b></button>`;
+
+async function viewResearch(root, sport, pid) {
+  const usMode = sport !== 'football';
+  root.innerHTML = `${backBtn(sport, 'top')}<div class="skel" style="margin-top:12px"></div><div class="skel" style="width:70%"></div>`;
+  let p = null, raw = null, markets = [], head = '', game = null, A = null;
+  if (usMode) {
+    A = usAdapter(sport); p = A.d.playerById.get(pid);
+    if (!p) { root.innerHTML = `${backBtn(sport, 'top')}<div class="banner info" style="margin-top:12px"><b>Player not found.</b> He may have left the ${A.name}.</div>`; wireBack(root, sport); return; }
+    raw = await A.playerRowsOf(p);
+    game = A.upcoming(new Date()).find(g => g.home === p.team || g.away === p.team) || null;
+    const groups = sport === 'nba' ? NBA_GROUPS : NFL_GROUPS;
+    markets = groups.flatMap(([g, ks]) => ks.map(k => [g, A.def(k)])).filter(([, d]) => d && d.scope === 'player' && (!d.for || d.for.includes(p.group)) && raw.some(r => !r.dnp && (v => v !== null && v !== undefined)(d.get(r))));
+    const ij = A.injury(p, game);
+    head = `<h1 style="margin:10px 0 2px">${esc(p.name)}</h1><p class="small muted" style="margin:0">${badge(A.teamName(p.team), { abbr: p.team })} ${esc(p.pos || '')} · ${esc(A.teamName(p.team))} · ${A.name}${p.new_team ? ' · <button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM">NEW TEAM</button>' : ''}</p>
+      <p class="small" style="margin:6px 0 0">${game ? `Next: <b>${esc(A.teamName(game.away))} at ${esc(A.teamName(game.home))}</b> · ${esc(fmtKick(game))}` : 'No upcoming game published.'}${ij && ij.cls !== 'none' ? ` · <span class="injb inj-${ij.cls}" title="${esc(ij.detail || '')}">${esc(ij.label)}</span>` : ''}</p>`;
+  } else {
+    if (store.status !== 'ready') { root.innerHTML = `${backBtn(sport, 'top')}<div class="skel"></div>`; return; }
+    for (const lg of leaguesPresent()) { const ps = await fbPlayers(lg); const x = ps.find(q => q.id === pid); if (x) { p = { ...x, league: lg }; break; } }
+    if (!p) { root.innerHTML = `${backBtn(sport, 'top')}<div class="banner info" style="margin-top:12px"><b>No match-by-match statistics are published for this player.</b> PropLab has player match logs for MLS only.</div>`; wireBack(root, sport); return; }
+    raw = p.rows.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    markets = FB_GROUPS.flatMap(([g, ks]) => ks.map(k => [g, fbDef(k)])).filter(([, d]) => d && d.scope === 'player' && raw.some(r => (v => v !== null && v !== undefined)(d.get(r))));
+    head = `<h1 style="margin:10px 0 2px">${esc(p.name)}</h1><p class="small muted" style="margin:0">${badge(p.team)} ${esc(p.team)} · ${esc(leagueName(p.league))} · Football</p>`;
+  }
+  const cards = [];
+  for (const [g, d] of markets) {
+    let c;
+    if (usMode) c = buildUsPlayerCard({ sport, A, p, def: d, key: d.key, raw, game, period: () => 10, periodText: () => 'this season', cid: `rs|${sport}|${p.id}|${d.key}`, noLink: true });
+    else c = fbCard(p, d, raw);
+    c.group = g; c.detailLabel = false; cards.push(c);
+  }
+  const reg = new Map();
+  for (const c of cards) { const k = c.cid; if (!st.has(k)) { const s0 = { side: startSide(c.def), userLine: false, persp: 'h' }; if (c.rebuild) Object.assign(c, c.rebuild(s0)); else Object.assign(c, c.perFn(s0)); s0.line = c.def.binary ? 0.5 : c.baseLine != null ? c.baseLine : half(avg(c.rows.map(r => r.value))); st.set(k, s0); }
+    const s = st.get(k); if (c.rebuild) Object.assign(c, c.rebuild(s)); else Object.assign(c, c.perFn(s)); reg.set(k, { card: c, st: s }); }
+  const groups = [...new Set(cards.map(c => c.group))];
+  root.innerHTML = `${backBtn(sport, 'top')}${head}
+    ${sport === 'nba' ? `<div class="card stack" style="margin-top:10px">${nbaFiltersHtml()}</div>` : ''}
+    <div class="field" style="margin-top:10px"><label for="rsjump">Markets (${cards.length} with recorded games)</label><select class="in" id="rsjump"><option value="">Jump to a market…</option>${groups.map(g => `<optgroup label="${esc(g)}">${cards.filter(c => c.group === g).map(c => `<option value="${esc(c.cid)}">${esc(c.def.label)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+    <p class="xs muted">Every card has its own line, Over / Under and Games used (starting on the last 10 games). Only markets with recorded games for ${esc(p.name)} are shown; missing figures are never counted as 0.</p>
+    ${cards.length ? '' : '<div class="banner info">No market has recorded games for this player.</div>'}
+    <div id="rscards">${groups.map(g => `<h3 class="hmkhead">${esc(g)}</h3>${cards.filter(c => c.group === g).map(c => `<div data-slot="${esc(c.cid)}"></div>`).join('')}`).join('')}</div>
+    ${backBtn(sport, 'bottom')}`;
+  const box = $('#rscards', root);
+  for (const c of cards) { const t = document.createElement('div'); t.innerHTML = cardHtml(c, reg.get(c.cid).st); const el = t.firstElementChild; paintHCard(el, c, reg.get(c.cid).st); box.querySelector(`[data-slot="${CSS.escape(c.cid)}"]`).replaceWith(el); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); }
+  wireHCards(box, reg, () => {});
+  $('#rsjump', root).onchange = e => { const el = box.querySelector(`.hcard[data-cid="${CSS.escape(e.target.value)}"]`); if (el) el.scrollIntoView({ block: 'start' }); };
+  root.onchange = e => { if (e.target.id === 'nbaminon' || e.target.id === 'nbaminval') { setNbaMin(e.target.id === 'nbaminon' ? e.target.checked : true, e.target.id === 'nbaminval' ? parseInt(e.target.value, 10) : getNbaMin().val); for (const s of st.values()) delete s.minMin; viewResearch(root, sport, pid); } };
+  root.onclick = e => { const t = e.target.closest('[data-nbatypes]'); if (t) { setNbaTypes(t.dataset.nbatypes); viewResearch(root, sport, pid); } };
+  wireBack(root, sport);
+  void getGlobalSide; void PER_OPTS; void currentSeason;
 }
+function wireBack(root, sport) {
+  root.querySelectorAll('[data-rsback]').forEach(b => { b.onclick = () => { if (hooks.ret && hooks.ret.sport === sport && history.length > 1 && hooks.ret.viaApp) history.back(); else location.hash = backHref(sport); }; });
+}
+/** Football player card (MLS match logs): the same card as Hiwi's Section, own Games used. */
+function fbCard(p, d, all) {
+  const cs = currentSeason(p.league), cur = all.filter(x => x.season === cs), lab = x => `${x.home ? 'v' : '@'}${String(x.opp || '').split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}`;
+  const mk = rows => rows.map(x => ({ date: x.date, opp: lab(x), value: d.get(x), raw: x })).filter(x => x.value !== null && x.value !== undefined).reverse();
+  const c = { cid: `rs|football|${p.id}|${d.key}`, title: p.name, def: d, unit: 'match', context: p.team, pteam: p.clubSlug, perOk: true, perDefault: '10', detail: { rows: all, subjectId: p.id } };
+  c.perFn = s0 => { const per = s0.per ?? '10', r0 = per === 'season' ? cur : per === 'all' ? all : all.slice(0, Number(per)); const rows = mk(r0); return { rows, m: rows.length, want: per === 'season' || per === 'all' ? null : Number(per), period: per === 'season' ? 'this season' : per === 'all' ? 'every match PropLab holds' : `last ${per} matches`, note: `Each bar: ${d.label} for ${p.name} in one match he played.` }; };
+  return c;
+}
+const avg = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0.5);
+const half = x => Math.max(0.5, Math.round(x - 0.5) + 0.5);
 
-return { viewNbaValue };
+return { backHref, viewResearch };
 })();
 __m['update'] = (() => {
 // Keeping an iPhone Home Screen copy of PropLab up to date.
@@ -6673,6 +6994,7 @@ const { viewNflFinder } = __m['v-nfl-finder'];
 const { viewNflPerformance, viewNflEv } = __m['v-nfl-model'];
 const { viewSports } = __m['v-sports'];
 const { viewStart } = __m['v-start'];
+const { viewResearch } = __m['v-research'];
 const { viewNbaValue } = __m['v-nba-value'];
 const { carryPrice } = __m['pricecheck'];
 const { resetUclScope } = __m['v-hiwi'];
@@ -6690,11 +7012,11 @@ const TABS = {
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
-const FB = { start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', value: 'value', about: 'about' };
+const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', value: '#/value', about: '#/about' };
 const NBA_HREF = { start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', value: '#/nfl/value', about: '#/about' };
-const TITLES = { start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
@@ -6755,8 +7077,14 @@ const OLD_HOME = w => (w.sport === 'football' && w.page === 'football' ? '#/star
 const FP = { football: [['finder', 'Ranked list', '#/finder'], ['plays', 'Match by match', '#/plays']], nba: [['finder', 'Ranked list', '#/nba/finder'], ['plays', 'Match by match', '#/nba/plays']], nfl: [['finder', 'Ranked list', '#/nfl/finder'], ['picks', 'Model picks (experimental)', '#/nfl/picks']] };
 const fpNav = w => { const t = FP[w.sport]; const pg = w.page === 'plays' && w.sport === 'nfl' ? 'picks' : w.page; if (!t || !t.some(([k]) => k === pg)) return '';
   return `<nav class="fpnav" aria-label="Find Plays"><span class="xs muted">Find Plays:</span><div class="seg">${t.map(([k, l, h]) => `<a href="${h}" class="${k === pg ? 'on' : ''}" ${k === pg ? 'aria-current="page"' : ''}>${esc(l)}</a>`).join('')}</div></nav>`; };
+// Back to Plays (owner request 21 Oct, evening): tapping a player's name remembers the page and its scroll position; returning to that page
+// (the Back to Plays button or the browser's Back) restores it. Hiwi's Section also restores its exact card order (see v-hiwi.js).
+document.addEventListener('click', e => { const a = e.target.closest('a[href*="/research/"]'); if (!a || e.defaultPrevented) return; const w0 = where(); if (w0.page === 'research') return;
+  hooks.ret = { hash: location.hash, y: scrollY, sport: w0.sport || 'football', viaApp: true }; }, true);
+const restoreScroll = y => { let n = 0; const go = () => { const max = document.documentElement.scrollHeight - innerHeight; if (max >= y - 2 || n > 40) { scrollTo(0, Math.min(y, Math.max(0, max))); return; } n++; setTimeout(go, 200); }; go(); };
+const finish = () => { if (hooks.restore) { const y = hooks.restore.y; hooks.ret = null; hooks.restore = null; restoreScroll(y); return; } window.scrollTo(0, 0); };
 async function render() {
-  const w = where(); const old = OLD_HOME(w); if (old) { location.replace(location.pathname + location.search + old); return; } const root = $('#view'); root.innerHTML = ''; hooks.redraw = null;
+  const w = where(); hooks.restore = hooks.ret && hooks.ret.hash === location.hash && w.page !== 'research' ? hooks.ret : null; const old = OLD_HOME(w); if (old) { location.replace(location.pathname + location.search + old); return; } const root = $('#view'); root.innerHTML = ''; hooks.redraw = null;
   if (w.sport) setSport(w.sport);
   resetUclScope(); // European clubs: every page opens on All games (owner request 21 Oct)
   chrome(w);
@@ -6772,18 +7100,18 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
-      const V = { start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
-      return void await V(body);
+      const V = { research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => viewNflEv(x, w.r), picks: viewNflRecommended, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
-      return void await V(body);
+      const V = { research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => viewNflEv(x, w.r), picks: viewNflRecommended, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      await V(body); return finish();
     }
-    const V = { start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
+    const V = { research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
     await V(body, w.r);
   } catch (e) { console.error(e); body.innerHTML = `<div class="banner bad"><b>Something went wrong on this page.</b><br>${esc(e.message)}</div>`; }
-  window.scrollTo(0, 0);
+  finish();
 }
 window.addEventListener('hashchange', render);
 // Compare Price on any result card (Hiwi, Find Plays, Plays): carry that card to the sport's Value page. NFL player cards also prefill the
