@@ -1,0 +1,484 @@
+{
+ "schema": 1,
+ "updated": "2026-10-21T09:00:00Z",
+ "current_season": 2027,
+ "seasons": [
+  2021,
+  2022,
+  2023,
+  2024,
+  2025,
+  2026,
+  2027
+ ],
+ "season_label": {
+  "2021": "2020/21",
+  "2022": "2021/22",
+  "2023": "2022/23",
+  "2024": "2023/24",
+  "2025": "2024/25",
+  "2026": "2025/26",
+  "2027": "2026/27"
+ },
+ "teams": [
+  {
+   "abbr": "ATL",
+   "name": "Atlanta Hawks",
+   "conf": "East",
+   "div": "Southeast"
+  },
+  {
+   "abbr": "BKN",
+   "name": "Brooklyn Nets",
+   "conf": "East",
+   "div": "Atlantic"
+  },
+  {
+   "abbr": "BOS",
+   "name": "Boston Celtics",
+   "conf": "East",
+   "div": "Atlantic"
+  },
+  {
+   "abbr": "CHA",
+   "name": "Charlotte Hornets",
+   "conf": "East",
+   "div": "Southeast"
+  },
+  {
+   "abbr": "CHI",
+   "name": "Chicago Bulls",
+   "conf": "East",
+   "div": "Central"
+  },
+  {
+   "abbr": "CLE",
+   "name": "Cleveland Cavaliers",
+   "conf": "East",
+   "div": "Central"
+  },
+  {
+   "abbr": "DAL",
+   "name": "Dallas Mavericks",
+   "conf": "West",
+   "div": "Southwest"
+  },
+  {
+   "abbr": "DEN",
+   "name": "Denver Nuggets",
+   "conf": "West",
+   "div": "Northwest"
+  },
+  {
+   "abbr": "DET",
+   "name": "Detroit Pistons",
+   "conf": "East",
+   "div": "Central"
+  },
+  {
+   "abbr": "GSW",
+   "name": "Golden State Warriors",
+   "conf": "West",
+   "div": "Pacific"
+  },
+  {
+   "abbr": "HOU",
+   "name": "Houston Rockets",
+   "conf": "West",
+   "div": "Southwest"
+  },
+  {
+   "abbr": "IND",
+   "name": "Indiana Pacers",
+   "conf": "East",
+   "div": "Central"
+  },
+  {
+   "abbr": "LAC",
+   "name": "LA Clippers",
+   "conf": "West",
+   "div": "Pacific"
+  },
+  {
+   "abbr": "LAL",
+   "name": "Los Angeles Lakers",
+   "conf": "West",
+   "div": "Pacific"
+  },
+  {
+   "abbr": "MEM",
+   "name": "Memphis Grizzlies",
+   "conf": "West",
+   "div": "Southwest"
+  },
+  {
+   "abbr": "MIA",
+   "name": "Miami Heat",
+   "conf": "East",
+   "div": "Southeast"
+  },
+  {
+   "abbr": "MIL",
+   "name": "Milwaukee Bucks",
+   "conf": "East",
+   "div": "Central"
+  },
+  {
+   "abbr": "MIN",
+   "name": "Minnesota Timberwolves",
+   "conf": "West",
+   "div": "Northwest"
+  },
+  {
+   "abbr": "NOP",
+   "name": "New Orleans Pelicans",
+   "conf": "West",
+   "div": "Southwest"
+  },
+  {
+   "abbr": "NYK",
+   "name": "New York Knicks",
+   "conf": "East",
+   "div": "Atlantic"
+  },
+  {
+   "abbr": "OKC",
+   "name": "Oklahoma City Thunder",
+   "conf": "West",
+   "div": "Northwest"
+  },
+  {
+   "abbr": "ORL",
+   "name": "Orlando Magic",
+   "conf": "East",
+   "div": "Southeast"
+  },
+  {
+   "abbr": "PHI",
+   "name": "Philadelphia 76ers",
+   "conf": "East",
+   "div": "Atlantic"
+  },
+  {
+   "abbr": "PHX",
+   "name": "Phoenix Suns",
+   "conf": "West",
+   "div": "Pacific"
+  },
+  {
+   "abbr": "POR",
+   "name": "Portland Trail Blazers",
+   "conf": "West",
+   "div": "Northwest"
+  },
+  {
+   "abbr": "SAC",
+   "name": "Sacramento Kings",
+   "conf": "West",
+   "div": "Pacific"
+  },
+  {
+   "abbr": "SAS",
+   "name": "San Antonio Spurs",
+   "conf": "West",
+   "div": "Southwest"
+  },
+  {
+   "abbr": "TOR",
+   "name": "Toronto Raptors",
+   "conf": "East",
+   "div": "Atlantic"
+  },
+  {
+   "abbr": "UTA",
+   "name": "Utah Jazz",
+   "conf": "West",
+   "div": "Northwest"
+  },
+  {
+   "abbr": "WAS",
+   "name": "Washington Wizards",
+   "conf": "East",
+   "div": "Southeast"
+  }
+ ],
+ "files": [
+  {
+   "group": "ATL",
+   "file": "data-nba-logs-ATL.json",
+   "players": 18,
+   "rows": 4605
+  },
+  {
+   "group": "BKN",
+   "file": "data-nba-logs-BKN.json",
+   "players": 18,
+   "rows": 3116
+  },
+  {
+   "group": "BOS",
+   "file": "data-nba-logs-BOS.json",
+   "players": 17,
+   "rows": 4499
+  },
+  {
+   "group": "CHA",
+   "file": "data-nba-logs-CHA.json",
+   "players": 17,
+   "rows": 3621
+  },
+  {
+   "group": "CHI",
+   "file": "data-nba-logs-CHI.json",
+   "players": 17,
+   "rows": 4264
+  },
+  {
+   "group": "CLE",
+   "file": "data-nba-logs-CLE.json",
+   "players": 17,
+   "rows": 3478
+  },
+  {
+   "group": "DAL",
+   "file": "data-nba-logs-DAL.json",
+   "players": 17,
+   "rows": 3619
+  },
+  {
+   "group": "DEN",
+   "file": "data-nba-logs-DEN.json",
+   "players": 17,
+   "rows": 4457
+  },
+  {
+   "group": "DET",
+   "file": "data-nba-logs-DET.json",
+   "players": 18,
+   "rows": 4622
+  },
+  {
+   "group": "FA",
+   "file": "data-nba-logs-FA.json",
+   "players": 155,
+   "rows": 27936
+  },
+  {
+   "group": "GSW",
+   "file": "data-nba-logs-GSW.json",
+   "players": 18,
+   "rows": 4695
+  },
+  {
+   "group": "HOU",
+   "file": "data-nba-logs-HOU.json",
+   "players": 17,
+   "rows": 4482
+  },
+  {
+   "group": "IND",
+   "file": "data-nba-logs-IND.json",
+   "players": 17,
+   "rows": 5096
+  },
+  {
+   "group": "LAC",
+   "file": "data-nba-logs-LAC.json",
+   "players": 18,
+   "rows": 4273
+  },
+  {
+   "group": "LAL",
+   "file": "data-nba-logs-LAL.json",
+   "players": 18,
+   "rows": 4665
+  },
+  {
+   "group": "MEM",
+   "file": "data-nba-logs-MEM.json",
+   "players": 18,
+   "rows": 2627
+  },
+  {
+   "group": "MIA",
+   "file": "data-nba-logs-MIA.json",
+   "players": 17,
+   "rows": 4637
+  },
+  {
+   "group": "MIL",
+   "file": "data-nba-logs-MIL.json",
+   "players": 17,
+   "rows": 3833
+  },
+  {
+   "group": "MIN",
+   "file": "data-nba-logs-MIN.json",
+   "players": 16,
+   "rows": 4300
+  },
+  {
+   "group": "NOP",
+   "file": "data-nba-logs-NOP.json",
+   "players": 18,
+   "rows": 4106
+  },
+  {
+   "group": "NYK",
+   "file": "data-nba-logs-NYK.json",
+   "players": 17,
+   "rows": 5174
+  },
+  {
+   "group": "OKC",
+   "file": "data-nba-logs-OKC.json",
+   "players": 17,
+   "rows": 3229
+  },
+  {
+   "group": "ORL",
+   "file": "data-nba-logs-ORL.json",
+   "players": 17,
+   "rows": 4354
+  },
+  {
+   "group": "PHI",
+   "file": "data-nba-logs-PHI.json",
+   "players": 17,
+   "rows": 4445
+  },
+  {
+   "group": "PHX",
+   "file": "data-nba-logs-PHX.json",
+   "players": 17,
+   "rows": 3713
+  },
+  {
+   "group": "POR",
+   "file": "data-nba-logs-POR.json",
+   "players": 17,
+   "rows": 3719
+  },
+  {
+   "group": "SAC",
+   "file": "data-nba-logs-SAC.json",
+   "players": 16,
+   "rows": 2934
+  },
+  {
+   "group": "SAS",
+   "file": "data-nba-logs-SAS.json",
+   "players": 17,
+   "rows": 4140
+  },
+  {
+   "group": "TOR",
+   "file": "data-nba-logs-TOR.json",
+   "players": 16,
+   "rows": 3236
+  },
+  {
+   "group": "UTA",
+   "file": "data-nba-logs-UTA.json",
+   "players": 18,
+   "rows": 4495
+  },
+  {
+   "group": "WAS",
+   "file": "data-nba-logs-WAS.json",
+   "players": 18,
+   "rows": 3610
+  }
+ ],
+ "counts": {
+  "games": 8976,
+  "final": 7776,
+  "players": 1191,
+  "player_games": 204473,
+  "quarter_points_ok": 166030,
+  "quarter_points_dropped": 245
+ },
+ "problems": [],
+ "player_box_all_zero_dropped": [
+  "401326991:LAL",
+  "401326993:WAS",
+  "401326989:WAS",
+  "401326994:MEM",
+  "401326990:MEM",
+  "401326989:BOS",
+  "401326994:GSW",
+  "401326991:GSW",
+  "401326993:IND",
+  "401326988:IND",
+  "401326990:SAS",
+  "401326988:CHA"
+ ],
+ "player_box_short": [
+  {
+   "game": "401810577",
+   "team": "CHI",
+   "date": "2026-02-03",
+   "player_points": 113,
+   "score": 115
+  },
+  {
+   "game": "401810547",
+   "team": "CHI",
+   "date": "2026-01-31",
+   "player_points": 123,
+   "score": 125
+  },
+  {
+   "game": "401810372",
+   "team": "CHI",
+   "date": "2026-01-07",
+   "player_points": 91,
+   "score": 93
+  },
+  {
+   "game": "401810150",
+   "team": "CHI",
+   "date": "2025-11-29",
+   "player_points": 99,
+   "score": 101
+  },
+  {
+   "game": "401267209",
+   "team": "PHI",
+   "date": "2020-12-29",
+   "player_points": 97,
+   "score": 100
+  },
+  {
+   "game": "401810633",
+   "team": "CHI",
+   "date": "2026-02-11",
+   "player_points": 98,
+   "score": 105
+  },
+  {
+   "game": "401810760",
+   "team": "CHI",
+   "date": "2026-03-05",
+   "player_points": 101,
+   "score": 105
+  },
+  {
+   "game": "401810560",
+   "team": "CHI",
+   "date": "2026-02-01",
+   "player_points": 82,
+   "score": 91
+  }
+ ],
+ "sources": [
+  {
+   "name": "sportsdataverse / hoopR NBA data (ESPN), CC BY 4.0",
+   "url": "https://github.com/sportsdataverse/sportsdataverse-data/releases"
+  },
+  {
+   "name": "Official NBA Injury Report",
+   "url": "https://official.nba.com/nba-injury-report-2026-27-season/"
+  }
+ ]
+}
