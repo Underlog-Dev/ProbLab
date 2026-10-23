@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-10-22T22:26:57Z",
+ "updated": "2026-10-23T22:26:42Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -236,8 +236,8 @@
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
-   "players": 17,
-   "rows": 3478
+   "players": 14,
+   "rows": 3386
   },
   {
    "group": "DAL",
@@ -249,7 +249,7 @@
    "group": "DEN",
    "file": "data-nba-logs-DEN.json",
    "players": 17,
-   "rows": 4457
+   "rows": 4471
   },
   {
    "group": "DET",
@@ -260,8 +260,8 @@
   {
    "group": "FA",
    "file": "data-nba-logs-FA.json",
-   "players": 153,
-   "rows": 27750
+   "players": 154,
+   "rows": 27856
   },
   {
    "group": "GSW",
@@ -333,7 +333,7 @@
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 17,
-   "rows": 3242
+   "rows": 3255
   },
   {
    "group": "ORL",
@@ -345,7 +345,7 @@
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4458
+   "rows": 4472
   },
   {
    "group": "PHX",
@@ -392,10 +392,10 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7790,
-  "players": 1191,
-  "player_games": 204858,
-  "quarter_points_ok": 166352,
+  "final": 7792,
+  "players": 1189,
+  "player_games": 204913,
+  "quarter_points_ok": 166397,
   "quarter_points_dropped": 245
  },
  "problems": [],
