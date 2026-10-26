@@ -1,0 +1,488 @@
+{
+ "schema": 1,
+ "note": "Lines tested are PropLab research lines (the automatic line and 1-2 steps either side), not bookmaker lines: PropLab has no odds history, so this measures how well the probabilities are calibrated, not whether betting on them would have made money.",
+ "generated": "2026-10-26T16:05:14.173Z",
+ "method": "site/js/prob.js: recency-weighted (half-life 10 games, last 60), empirical + smooth distribution blend (8-game smoothing), logistic calibration fitted on earlier seasons; scores on the latest complete season, out of sample.",
+ "sports": {
+  "nba": {
+   "a": 0.8913,
+   "b": -0.0111,
+   "train_n": 8244210,
+   "test_season": 2026,
+   "test_n": 2338933,
+   "score": {
+    "calibrated": {
+     "brier": 0.1749,
+     "logloss": 0.5226
+    },
+    "uncalibrated": {
+     "brier": 0.175,
+     "logloss": 0.524
+    },
+    "last10": {
+     "brier": 0.1839,
+     "logloss": 0.5646
+    },
+    "coin": {
+     "brier": 0.25,
+     "logloss": 0.6931
+    }
+   },
+   "at_auto_line": {
+    "n": 609932,
+    "model": 0.2193,
+    "last10": 0.231,
+    "coin": 0.25
+   },
+   "away_from_auto_line": {
+    "n": 1729001,
+    "model": 0.1592,
+    "last10": 0.1673,
+    "coin": 0.25
+   },
+   "bins": [
+    {
+     "from": 0,
+     "to": 0.1,
+     "n": 294020,
+     "predicted": 4.2,
+     "actual": 5
+    },
+    {
+     "from": 0.1,
+     "to": 0.2,
+     "n": 304329,
+     "predicted": 15.3,
+     "actual": 14.8
+    },
+    {
+     "from": 0.2,
+     "to": 0.3,
+     "n": 342895,
+     "predicted": 24.9,
+     "actual": 23.8
+    },
+    {
+     "from": 0.3,
+     "to": 0.4,
+     "n": 295148,
+     "predicted": 34.7,
+     "actual": 33.4
+    },
+    {
+     "from": 0.4,
+     "to": 0.5,
+     "n": 260642,
+     "predicted": 45.6,
+     "actual": 45.1
+    },
+    {
+     "from": 0.5,
+     "to": 0.6,
+     "n": 229873,
+     "predicted": 54.2,
+     "actual": 54.5
+    },
+    {
+     "from": 0.6,
+     "to": 0.7,
+     "n": 212789,
+     "predicted": 65.1,
+     "actual": 65.8
+    },
+    {
+     "from": 0.7,
+     "to": 0.8,
+     "n": 200399,
+     "predicted": 74.8,
+     "actual": 75.3
+    },
+    {
+     "from": 0.8,
+     "to": 0.9,
+     "n": 151043,
+     "predicted": 84.6,
+     "actual": 84.4
+    },
+    {
+     "from": 0.9,
+     "to": 1,
+     "n": 47795,
+     "predicted": 93.3,
+     "actual": 90.7
+    }
+   ],
+   "max_bin_gap_pts": 2.5999999999999943,
+   "venue_experiment": {
+    "n": 2286515,
+    "base_model": 0.1748,
+    "with_venue": 0.1757,
+    "a": 0.9013,
+    "b": -0.0053,
+    "helps": false
+   },
+   "passed": true,
+   "test_label": "2025/26"
+  },
+  "nfl": {
+   "a": 0.9018,
+   "b": -0.1101,
+   "train_n": 1198217,
+   "test_season": 2025,
+   "test_n": 374621,
+   "score": {
+    "calibrated": {
+     "brier": 0.1393,
+     "logloss": 0.4254
+    },
+    "uncalibrated": {
+     "brier": 0.1398,
+     "logloss": 0.4266
+    },
+    "last10": {
+     "brier": 0.1458,
+     "logloss": 0.4565
+    },
+    "coin": {
+     "brier": 0.25,
+     "logloss": 0.6931
+    }
+   },
+   "at_auto_line": {
+    "n": 104424,
+    "model": 0.1799,
+    "last10": 0.1882,
+    "coin": 0.25
+   },
+   "away_from_auto_line": {
+    "n": 270197,
+    "model": 0.1236,
+    "last10": 0.1295,
+    "coin": 0.25
+   },
+   "bins": [
+    {
+     "from": 0,
+     "to": 0.1,
+     "n": 105464,
+     "predicted": 2.9,
+     "actual": 2.9
+    },
+    {
+     "from": 0.1,
+     "to": 0.2,
+     "n": 48636,
+     "predicted": 15.2,
+     "actual": 14.9
+    },
+    {
+     "from": 0.2,
+     "to": 0.3,
+     "n": 48398,
+     "predicted": 24.8,
+     "actual": 23.2
+    },
+    {
+     "from": 0.3,
+     "to": 0.4,
+     "n": 35389,
+     "predicted": 34.6,
+     "actual": 32.6
+    },
+    {
+     "from": 0.4,
+     "to": 0.5,
+     "n": 34933,
+     "predicted": 45.8,
+     "actual": 44.4
+    },
+    {
+     "from": 0.5,
+     "to": 0.6,
+     "n": 24064,
+     "predicted": 54.4,
+     "actual": 54.6
+    },
+    {
+     "from": 0.6,
+     "to": 0.7,
+     "n": 23628,
+     "predicted": 65.1,
+     "actual": 65.4
+    },
+    {
+     "from": 0.7,
+     "to": 0.8,
+     "n": 21932,
+     "predicted": 74.8,
+     "actual": 75
+    },
+    {
+     "from": 0.8,
+     "to": 0.9,
+     "n": 19035,
+     "predicted": 84.9,
+     "actual": 86.2
+    },
+    {
+     "from": 0.9,
+     "to": 1,
+     "n": 13142,
+     "predicted": 94,
+     "actual": 95.5
+    }
+   ],
+   "max_bin_gap_pts": 2,
+   "venue_experiment": {
+    "n": 328179,
+    "base_model": 0.1401,
+    "with_venue": 0.1413,
+    "a": 0.9129,
+    "b": -0.1337,
+    "helps": false
+   },
+   "passed": true,
+   "test_label": "2025"
+  },
+  "football": {
+   "a": 0.8997,
+   "b": -0.0204,
+   "train_n": 1606136,
+   "test_season": 2025,
+   "test_n": 426046,
+   "score": {
+    "calibrated": {
+     "brier": 0.185,
+     "logloss": 0.5494
+    },
+    "uncalibrated": {
+     "brier": 0.1851,
+     "logloss": 0.5502
+    },
+    "last10": {
+     "brier": 0.1967,
+     "logloss": 0.5969
+    },
+    "coin": {
+     "brier": 0.25,
+     "logloss": 0.6931
+    }
+   },
+   "at_auto_line": {
+    "n": 117078,
+    "model": 0.238,
+    "last10": 0.2533,
+    "coin": 0.25
+   },
+   "away_from_auto_line": {
+    "n": 308968,
+    "model": 0.1649,
+    "last10": 0.1752,
+    "coin": 0.25
+   },
+   "bins": [
+    {
+     "from": 0,
+     "to": 0.1,
+     "n": 23921,
+     "predicted": 5.5,
+     "actual": 6.5
+    },
+    {
+     "from": 0.1,
+     "to": 0.2,
+     "n": 50376,
+     "predicted": 15.4,
+     "actual": 14.8
+    },
+    {
+     "from": 0.2,
+     "to": 0.3,
+     "n": 57973,
+     "predicted": 25.1,
+     "actual": 24.6
+    },
+    {
+     "from": 0.3,
+     "to": 0.4,
+     "n": 53575,
+     "predicted": 34.7,
+     "actual": 33.5
+    },
+    {
+     "from": 0.4,
+     "to": 0.5,
+     "n": 49374,
+     "predicted": 45.3,
+     "actual": 45.6
+    },
+    {
+     "from": 0.5,
+     "to": 0.6,
+     "n": 46042,
+     "predicted": 54.6,
+     "actual": 55.4
+    },
+    {
+     "from": 0.6,
+     "to": 0.7,
+     "n": 48824,
+     "predicted": 65.2,
+     "actual": 67.1
+    },
+    {
+     "from": 0.7,
+     "to": 0.8,
+     "n": 47009,
+     "predicted": 74.9,
+     "actual": 75.5
+    },
+    {
+     "from": 0.8,
+     "to": 0.9,
+     "n": 36366,
+     "predicted": 84.5,
+     "actual": 85.1
+    },
+    {
+     "from": 0.9,
+     "to": 1,
+     "n": 12586,
+     "predicted": 93.5,
+     "actual": 92.3
+    }
+   ],
+   "max_bin_gap_pts": 1.8999999999999915,
+   "venue_experiment": {
+    "n": 419349,
+    "base_model": 0.185,
+    "with_venue": 0.1832,
+    "a": 0.9207,
+    "b": -0.0186,
+    "helps": true
+   },
+   "passed": true,
+   "test_label": "2025/26"
+  },
+  "football_players": {
+   "a": 0.9508,
+   "b": -0.1678,
+   "train_n": 743121,
+   "test_season": 2025,
+   "test_n": 213680,
+   "score": {
+    "calibrated": {
+     "brier": 0.0594,
+     "logloss": 0.2036
+    },
+    "uncalibrated": {
+     "brier": 0.0596,
+     "logloss": 0.204
+    },
+    "last10": {
+     "brier": 0.0626,
+     "logloss": 0.2208
+    },
+    "coin": {
+     "brier": 0.25,
+     "logloss": 0.6931
+    }
+   },
+   "at_auto_line": {
+    "n": 69585,
+    "model": 0.117,
+    "last10": 0.1232,
+    "coin": 0.25
+   },
+   "away_from_auto_line": {
+    "n": 144095,
+    "model": 0.0316,
+    "last10": 0.0333,
+    "coin": 0.25
+   },
+   "bins": [
+    {
+     "from": 0,
+     "to": 0.1,
+     "n": 159470,
+     "predicted": 2.2,
+     "actual": 2.1
+    },
+    {
+     "from": 0.1,
+     "to": 0.2,
+     "n": 21869,
+     "predicted": 14.4,
+     "actual": 14.2
+    },
+    {
+     "from": 0.2,
+     "to": 0.3,
+     "n": 11973,
+     "predicted": 24.5,
+     "actual": 24.6
+    },
+    {
+     "from": 0.3,
+     "to": 0.4,
+     "n": 6939,
+     "predicted": 34.6,
+     "actual": 34.8
+    },
+    {
+     "from": 0.4,
+     "to": 0.5,
+     "n": 4709,
+     "predicted": 44.7,
+     "actual": 45.3
+    },
+    {
+     "from": 0.5,
+     "to": 0.6,
+     "n": 3391,
+     "predicted": 54.8,
+     "actual": 55.5
+    },
+    {
+     "from": 0.6,
+     "to": 0.7,
+     "n": 2292,
+     "predicted": 64.7,
+     "actual": 64.7
+    },
+    {
+     "from": 0.7,
+     "to": 0.8,
+     "n": 1594,
+     "predicted": 74.8,
+     "actual": 74.3
+    },
+    {
+     "from": 0.8,
+     "to": 0.9,
+     "n": 1017,
+     "predicted": 84.4,
+     "actual": 82.1
+    },
+    {
+     "from": 0.9,
+     "to": 1,
+     "n": 426,
+     "predicted": 92.9,
+     "actual": 90.4
+    }
+   ],
+   "max_bin_gap_pts": 2.5,
+   "venue_experiment": {
+    "n": 191322,
+    "base_model": 0.0597,
+    "with_venue": 0.0596,
+    "a": 0.9749,
+    "b": -0.1422,
+    "helps": true
+   },
+   "passed": true,
+   "test_label": "2025"
+  }
+ }
+}
