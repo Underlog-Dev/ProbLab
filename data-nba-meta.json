@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-10-25T23:20:30Z",
+ "updated": "2026-10-26T23:26:07Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -213,7 +213,7 @@
    "group": "BKN",
    "file": "data-nba-logs-BKN.json",
    "players": 18,
-   "rows": 3146
+   "rows": 3161
   },
   {
    "group": "BOS",
@@ -255,7 +255,7 @@
    "group": "DET",
    "file": "data-nba-logs-DET.json",
    "players": 18,
-   "rows": 4651
+   "rows": 4666
   },
   {
    "group": "FA",
@@ -279,25 +279,25 @@
    "group": "IND",
    "file": "data-nba-logs-IND.json",
    "players": 17,
-   "rows": 5122
+   "rows": 5134
   },
   {
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
    "players": 18,
-   "rows": 4299
+   "rows": 4312
   },
   {
    "group": "LAL",
    "file": "data-nba-logs-LAL.json",
    "players": 19,
-   "rows": 4869
+   "rows": 4885
   },
   {
    "group": "MEM",
    "file": "data-nba-logs-MEM.json",
    "players": 19,
-   "rows": 2736
+   "rows": 2751
   },
   {
    "group": "MIA",
@@ -315,7 +315,7 @@
    "group": "MIN",
    "file": "data-nba-logs-MIN.json",
    "players": 16,
-   "rows": 4326
+   "rows": 4340
   },
   {
    "group": "NOP",
@@ -327,25 +327,25 @@
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5203
+   "rows": 5218
   },
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 17,
-   "rows": 3255
+   "rows": 3270
   },
   {
    "group": "ORL",
    "file": "data-nba-logs-ORL.json",
    "players": 17,
-   "rows": 4380
+   "rows": 4393
   },
   {
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4485
+   "rows": 4497
   },
   {
    "group": "PHX",
@@ -363,7 +363,7 @@
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
    "players": 17,
-   "rows": 2974
+   "rows": 2986
   },
   {
    "group": "SAS",
@@ -375,13 +375,13 @@
    "group": "TOR",
    "file": "data-nba-logs-TOR.json",
    "players": 16,
-   "rows": 3264
+   "rows": 3278
   },
   {
    "group": "UTA",
    "file": "data-nba-logs-UTA.json",
    "players": 18,
-   "rows": 4524
+   "rows": 4539
   },
   {
    "group": "WAS",
@@ -392,10 +392,10 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7812,
+  "final": 7819,
   "players": 1190,
-  "player_games": 205468,
-  "quarter_points_ok": 166843,
+  "player_games": 205664,
+  "quarter_points_ok": 167000,
   "quarter_points_dropped": 245
  },
  "problems": [],
