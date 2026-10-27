@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="e94fbddb8d22">
+<meta name="proplab-build" content="8b1ae42078fa">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -485,6 +485,12 @@ h1,h2,h3,.small,.xs,p,label,summary,td,th{overflow-wrap:break-word}
    same flat style as the sport switcher: no native chrome, our own arrow, the label clipped with an ellipsis (the iPhone picker still lists
    every option in full). */
 select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239aa4b2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px}
+/* Team badges since Phase 2: an SVG image of the circle and its initials (always inside the circle and centred); no text is added */
+.teamb{background-size:100% 100%;background-repeat:no-repeat}
+.teamb::before{content:none}
+/* NBA / NFL "LIVE by schedule" (Phase 2): outlined red, never filled, never pulsing, so it cannot be mistaken for a verified LIVE */
+.livewin{display:inline-block;font:inherit;font-size:11px;font-weight:800;letter-spacing:.04em;line-height:1.15;color:#ff8a8a;background:transparent;border:1.5px dashed #d92d2d;border-radius:6px;padding:2px 6px;text-align:center;white-space:normal;cursor:pointer}
+.livewin small{display:block;font-weight:600;font-size:9.5px;letter-spacing:0;color:var(--muted)}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -758,11 +764,17 @@ const fxStatus = (f, now = new Date(), liveMs = LIVE_MS) => {
   if (!f.ko_utc) return t < 0 ? 'pre' : t < AWAIT_MAX_MS ? 'awaiting' : t < STALE_MAX_MS ? 'unavailable' : 'old';
   return t < 0 ? 'pre' : t < liveMs ? 'started' : t < AWAIT_MAX_MS ? 'awaiting' : t < STALE_MAX_MS ? 'unavailable' : 'old';
 };
+/** NBA / NFL (owner request, Phase 2): within the usual length of a game after the scheduled tip-off / kick-off (NBA 2 h 30, NFL 3 h 30) a
+ *  game without a verified status shows 'window' = LIVE by schedule, styled apart from a verified LIVE. No live scores are shown or invented;
+ *  after the window it is Awaiting result until the verified final is published. */
+const US_WINDOW_MS = { nba: 2.5 * 3600e3, nfl: 3.5 * 3600e3 };
+const usStatus = (g, sport, now = new Date()) => { const s = fxStatus(g, now, US_WINDOW_MS[sport] || LIVE_MS); return s === 'started' ? 'window' : s; };
 /** Postponed / abandoned fixtures stay listed (with their badge, never as LIVE) until 4 days after the scheduled kick-off, so they do not
  * vanish silently; they are never auto-selected by a status change and no result is invented for them. */
 const recentlyCalledOff = (f, now = new Date()) => ['postponed', 'abandoned'].includes(f.status) && now.getTime() - Date.parse(f.ko_utc || f.date + 'T23:59:00Z') < AWAIT_MAX_MS;
 /** Badge for a status that is not 'pre'. Red LIVE is only used for a confirmed live status. */
 const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live">LIVE</span>'
+  : st === 'window' ? '<button type="button" class="livewin" data-info="livewin" aria-haspopup="dialog">LIVE<small>by schedule</small></button>'
   : st === 'started' ? '<button type="button" class="started" data-info="unconfirmed" aria-haspopup="dialog">Started<small>status unconfirmed</small></button>'
   : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'unavailable' ? '<button type="button" class="await unav" data-info="unavailable" aria-haspopup="dialog">No result yet<small>data unavailable</small></button>'
   : st === 'postponed' ? '<button type="button" class="pp" data-info="postponed" aria-haspopup="dialog">Postponed</button>' : st === 'abandoned' ? '<button type="button" class="pp" data-info="abandoned" aria-haspopup="dialog">Abandoned</button>' : '');
@@ -779,7 +791,7 @@ const keepScrollIn = (root, fn) => {
   const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
 };
 
-return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, recentlyCalledOff, statusBadge, timeHtml, SCROLLERS, keepScrollIn };
+return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, timeHtml, SCROLLERS, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -1337,25 +1349,65 @@ function hue(s) { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCode
 function badge(name, { abbr = '', size = 's' } = {}) {
   const t = initials(name, abbr), c = teamColours(name);
   // the team's own home colours; a team without known colours gets a neutral grey badge (never a made-up colour)
-  const style = c ? `background:${c[0]};color:${c[1]};${c[0] === '#FFFFFF' ? 'box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)' : ''}` : 'background:#4b5563;color:#fff';
-  return `<span class="teamb ${size}" style="${style}" data-i="${esc(t)}" aria-hidden="true"></span>`; // initials drawn by CSS (::before), so the team names read exactly as before
+  // Phase 2 (owner report: letters not fitting / not centred): the badge is drawn as a small SVG image (a background image, so the initials
+  // add no text to the page: names read, copy and search exactly as before). The initials are centred on the circle (capital letters'
+  // optical centre: baseline at the middle plus half the cap height) and sized by how many letters there are, so three wide letters
+  // (WHU, MON) stay inside the circle at every badge size.
+  const bg = c ? c[0] : '#4b5563', fg = c ? c[1] : '#fff', ring = c && c[0] === '#FFFFFF' ? " stroke='rgba(0,0,0,.25)' stroke-width='1'" : '';
+  const fs = t.length >= 3 ? 7.4 : t.length === 2 ? 9.2 : 11, y = 12 + fs * 0.355;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='${ring ? 11.5 : 12}' fill='${bg}'${ring}/><text x='12' y='${y.toFixed(2)}' text-anchor='middle' font-size='${fs}' font-weight='800' fill='${fg}' font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif'>${t.replace(/[<>&'"]/g, '')}</text></svg>`;
+  return `<span class="teamb ${size}" style="background-color:${bg};background-image:url(&quot;data:image/svg+xml,${encodeURIComponent(svg)}&quot;)" data-i="${esc(t)}" aria-hidden="true"></span>`;
 }
 
 return { initials, badge };
+})();
+__m['nightdate'] = (() => {
+// NBA / NFL viewing nights (owner request 21 Oct, evening). US games are scheduled on a US date; a game that tips off at 03:00 UK on Thursday
+// belongs to Wednesday night's schedule. So US games are grouped by their scheduled date in US Eastern time (the leagues' own schedule date),
+// worked out from the exact tip-off instant, and "today" for a UK viewer means tonight's schedule: the UK date, except before 08:00 UK,
+// when last night's games are still the ones being watched. Football is not affected.
+const { koUK, koLocal, tzNow } = __m['util'];
+const ETF = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+const UKF = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+const UKH = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' });
+const NIGHT_CUTOFF_H = 8;
+/** The schedule night of a US game: its date in US Eastern time (from the tip-off instant); without a time, its published date. */
+// Phase 2 (owner request): the official league date. NFL files carry it as local_date; NBA dates are already the US (Eastern) schedule date.
+const nightOf = g => (!g ? null : g.local_date || (g.ko_utc ? ETF.format(new Date(g.ko_utc)) : g.date));
+/** Tonight's schedule for a UK viewer: today's UK date, or yesterday's before 08:00 UK. */
+// Phase 2 (owner request): "today" is the leagues' own (US Eastern) schedule date, the same wherever the viewer is. It rolls over at 03:00
+// Eastern, after the last games of the night have finished (08:00 UK, as before for UK viewers).
+const ROLLOVER_H_ET = 3;
+function viewingNight(now = new Date()) { return ETF.format(new Date(now.getTime() - ROLLOVER_H_ET * 3600e3)); }
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dow = ymd => { const [y, m, d] = ymd.split('-').map(Number); return DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; };
+/** A game's UK tip-off: "23:00", or "Thu 03:30" when it falls on the next UK day. '' when no time is published. */
+/** A game's start in the viewer's chosen time zone: "19:30", or "Thu 01:30" when it falls on another day than its schedule date. */
+function tipLocal(g) { if (!g || !g.ko_utc) return ''; const k = koLocal(g); return k.ymd !== nightOf(g) ? `${dow(k.ymd)} ${k.hm}` : k.hm; }
+const ukTip = tipLocal; // older name kept for the callers (it now uses the chosen time zone, not always UK time)
+/** "UK tip-offs Wed 23:00 – Thu 03:30" for a night's games. */
+function nightSpan(games, night) {
+  const t = games.filter(g => g.ko_utc).sort((a, b) => (a.ko_utc < b.ko_utc ? -1 : 1)); if (!t.length) return 'tip-off times not published';
+  const f = g => { const k = koLocal(g); return `${dow(k.ymd)} ${k.hm}`; };
+  const a = f(t[0]), b = f(t[t.length - 1]); return `starts ${a}${b !== a ? ` – ${b}` : ''} ${tzNow()}${koLocal(t[t.length - 1]).ymd !== night ? ' (after midnight)' : ''}`;
+}
+
+return { NIGHT_CUTOFF_H, nightOf, ROLLOVER_H_ET, viewingNight, tipLocal, ukTip, nightSpan };
 })();
 __m['v-nba'] = (() => {
 // NBA pages: Fixtures (upcoming games with the Official NBA Injury Report for both teams, results with quarter scores, standings),
 // player search and player profiles (current team, previous teams, last season's averages, recent games with minutes).
 const { nba, teamName, latestSeason, seasonLabel, nbaSort, standings, playerRows, TYPE_NAME, loadNbaInjuries } = __m['nba-data'];
 const { badge } = __m['badge'];
-const { $, $$, esc, fmtDay, fmtLong, fmtShort, koLocal, todayLocal, localDayAfter, tzNow, fxStatus, statusBadge, timeHtml, fmtKick, koUK } = __m['util'];
+const { $, $$, esc, fmtDay, fmtLong, fmtShort, koLocal, todayLocal, localDayAfter, tzNow, fxStatus, usStatus, statusBadge, timeHtml, fmtKick, koUK } = __m['util'];
+const { nightOf, viewingNight } = __m['nightdate'];
 
 const nbaBanner = () => (nba.status === 'error' ? `<div class="banner bad"><b>NBA data unavailable.</b> ${esc(nba.error)} <a href="" onclick="location.reload();return false">Try again</a></div>` : '');
 const nbaLoading = root => { if (nba.status !== 'ready') { root.innerHTML = nba.status === 'error' ? nbaBanner() : '<div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div>'; return true; } return false; };
 const nbaCredit = () => `<p class="xs muted">NBA data: <a href="https://github.com/sportsdataverse/sportsdataverse-data/releases" target="_blank" rel="noopener">sportsdataverse / hoopR</a> (CC BY 4.0, from ESPN box scores and play-by-play), ${esc(seasonLabel(nba.meta.seasons[0]))} to ${esc(seasonLabel(latestSeason()))}; injuries: <a href="https://official.nba.com/nba-injury-report-2026-27-season/" target="_blank" rel="noopener">Official NBA Injury Report</a>. Updated nightly; PropLab has no live scores.</p>`;
 const LIVE_NBA = 3 * 3600e3;
 const typeTag = g => (g.type === 'P' ? `<span class="potag">${esc(g.round || 'Playoffs')}</span>` : g.type === 'PI' ? `<span class="pitag">${esc(g.round || 'Play-In')}</span>` : g.type === 'C' ? `<span class="potag">NBA Cup Championship</span>` : '');
-const statusCell = g => { const st = g.final ? 'final' : fxStatus(g, new Date(), LIVE_NBA); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
+const statusCell = g => { const st = g.final ? 'final' : usStatus(g, 'nba'); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
 /** Injury summary for one team in one game, from the Official NBA Injury Report. Never inferred. */
 function teamInjuryHtml(g, team) {
   const I = nba.injuries;
@@ -1370,7 +1422,7 @@ function teamInjuryHtml(g, team) {
 }
 const gameRow = (g, inj) => `<div class="nbagame"><a class="row" href="#/nba/hiwi?fx=${encodeURIComponent(g.id)}"><div class="l"><b class="vsb"><span class="tm">${badge(teamName(g.away), { abbr: g.away })}${esc(teamName(g.away))}</span> at <span class="tm">${badge(teamName(g.home), { abbr: g.home })}${esc(teamName(g.home))}</span></b><span>${esc(fmtKick(g))}${g.neutral ? ' · neutral site' : ''} ${typeTag(g)}</span></div><div class="r">${statusCell(g)}</div></a>
   ${g.final && g.hq ? `<p class="xs muted nbaq">Quarters ${esc(g.away)} ${g.aq.join(' · ')} — ${esc(g.home)} ${g.hq.join(' · ')}${g.hq.length > 4 ? ' (incl. OT)' : ''}</p>` : ''}
-  ${inj && fxStatus(g, new Date(), LIVE_NBA) === 'pre' ? `<div class="xs nbainjrow"><div><b>${esc(g.away)}</b> ${teamInjuryHtml(g, g.away)}</div><div><b>${esc(g.home)}</b> ${teamInjuryHtml(g, g.home)}</div></div>` : ''}</div>`;
+  ${inj && usStatus(g, 'nba') === 'pre' ? `<div class="xs nbainjrow"><div><b>${esc(g.away)}</b> ${teamInjuryHtml(g, g.away)}</div><div><b>${esc(g.home)}</b> ${teamInjuryHtml(g, g.home)}</div></div>` : ''}</div>`;
 const fx = { tab: 'upcoming', when: '7' };
 async function viewNbaFixtures(root) {
   if (nbaLoading(root)) return;
@@ -1385,7 +1437,7 @@ async function viewNbaFixtures(root) {
     const now = new Date(), today = todayLocal(now), in7 = localDayAfter(7, now);
     if (fx.tab === 'standings') { $('#bfx', root).innerHTML = standingsHtml(); return; }
     let list = fx.tab === 'upcoming' ? nba.games.filter(g => !g.final && g.status !== 'canceled' && fxStatus(g, now, LIVE_NBA) !== 'old').sort(nbaSort) : nba.games.filter(g => g.final).sort((a, b) => -nbaSort(a, b)).slice(0, 90);
-    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? d === today : d <= in7; });
+    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? nightOf(g) === viewingNight(now) : d <= in7; }); // Today = the official US schedule date (Phase 2)
     const byDay = new Map(); for (const g of list) { const k = fx.tab === 'results' ? g.date : koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     $('#bfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} · NBA${fx.tab === 'results' ? ' (US date)' : ''}</div><div class="card"><div class="list">${gs.map(g => gameRow(g, fx.tab === 'upcoming')).join('')}</div></div>`).join('') : '<div class="banner info">No NBA games for this filter.</div>';
   };
@@ -1425,36 +1477,6 @@ async function viewNbaPlayer(root, id) {
 }
 
 return { nbaBanner, nbaLoading, nbaCredit, teamInjuryHtml, viewNbaFixtures, viewNbaSearch, viewNbaPlayer };
-})();
-__m['nightdate'] = (() => {
-// NBA / NFL viewing nights (owner request 21 Oct, evening). US games are scheduled on a US date; a game that tips off at 03:00 UK on Thursday
-// belongs to Wednesday night's schedule. So US games are grouped by their scheduled date in US Eastern time (the leagues' own schedule date),
-// worked out from the exact tip-off instant, and "today" for a UK viewer means tonight's schedule: the UK date, except before 08:00 UK,
-// when last night's games are still the ones being watched. Football is not affected.
-const { koUK } = __m['util'];
-const ETF = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
-const UKF = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
-const UKH = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hourCycle: 'h23' });
-const NIGHT_CUTOFF_H = 8;
-/** The schedule night of a US game: its date in US Eastern time (from the tip-off instant); without a time, its published date. */
-const nightOf = g => (g && g.ko_utc ? ETF.format(new Date(g.ko_utc)) : g ? g.date : null);
-/** Tonight's schedule for a UK viewer: today's UK date, or yesterday's before 08:00 UK. */
-function viewingNight(now = new Date()) {
-  const h = Number(UKH.format(now)); const d = h < NIGHT_CUTOFF_H ? new Date(now.getTime() - (h + 1) * 3600e3) : now;
-  return UKF.format(d);
-}
-const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const dow = ymd => { const [y, m, d] = ymd.split('-').map(Number); return DOW[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]; };
-/** A game's UK tip-off: "23:00", or "Thu 03:30" when it falls on the next UK day. '' when no time is published. */
-function ukTip(g) { if (!g || !g.ko_utc) return ''; const k = koUK(g); return k.ymd !== nightOf(g) ? `${dow(k.ymd)} ${k.hm}` : k.hm; }
-/** "UK tip-offs Wed 23:00 – Thu 03:30" for a night's games. */
-function nightSpan(games, night) {
-  const t = games.filter(g => g.ko_utc).sort((a, b) => (a.ko_utc < b.ko_utc ? -1 : 1)); if (!t.length) return 'tip-off times not published';
-  const f = g => { const k = koUK(g); return `${dow(k.ymd)} ${k.hm}`; };
-  const a = f(t[0]), b = f(t[t.length - 1]); return `UK tip-offs ${a}${b !== a ? ` – ${b}` : ''}${koUK(t[t.length - 1]).ymd !== night ? ' (after midnight UK)' : ''}`;
-}
-
-return { NIGHT_CUTOFF_H, nightOf, viewingNight, ukTip, nightSpan };
 })();
 __m['rank'] = (() => {
 // Ranking, evidence labels and plain-English card sentences (redesign, 21 Oct 2026). One set of rules for Hiwi's Section, Finder and Plays.
@@ -1672,8 +1694,8 @@ const TEAM_MARKETS = [
   // Home Win (1) and "Team wins or draws" is 1X; on the away team's card they are Away Win (2) and X2. Known only when both scores are.
   { key: 't.win', label: 'Match Winner: team wins', short: 'Win', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals > r.goalsA ? 1 : 0) },
   { key: 'm.draw', label: 'Match Winner: draw (X)', short: 'Draw', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals === r.goalsA ? 1 : 0) },
-  { key: 't.dc', label: 'Double Chance: team wins or draws', short: 'Win/Draw', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals >= r.goalsA ? 1 : 0) },
-  { key: 'm.12', label: 'Double Chance: either team wins (12)', short: '12', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals !== r.goalsA ? 1 : 0) },
+  { key: 't.dc', label: 'Double Chance: Win or Draw (1X / 2X)', short: 'Win/Draw', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals >= r.goalsA ? 1 : 0) },
+  { key: 'm.12', label: 'Double Chance: Home or Away (H/A)', short: '12', group: 'Match result', binary: true, get: r => (r.goals == null || r.goalsA == null ? null : r.goals !== r.goalsA ? 1 : 0) },
   ...MATCH.slice(2).map(([k, l]) => ({ key: 'm.' + k, label: 'Match ' + l.toLowerCase(), short: l, group: 'Match (both teams combined)', get: r => add(clean(r[k]), clean(r[k + 'A'])) })),
   // Cards = yellow + red, each card counted once as the source records it (data.js row.cards). Known only when both parts are recorded.
   { key: 'm.cards', label: 'Match cards', short: 'Cards', group: 'Match (both teams combined)', get: r => add(clean(r.cards), clean(r.cardsA)) },
@@ -1719,8 +1741,9 @@ const MD = {
   'm.btts': ['Both Teams to Score: Yes', 'A hit when both teams score at least once in the match.'],
   't.win': ['Match Winner: Team Wins', "A hit when the selected team wins in 90 minutes. On the home team's card this is Home Win (1); on the away team's card, Away Win (2). Extra time and penalties never count."],
   'm.draw': ['Match Winner: Draw (X)', 'A hit when the match is level after 90 minutes. Extra time and penalties never count.'],
-  't.dc': ['Double Chance: Team Win or Draw', "A hit when the selected team wins or draws in 90 minutes: 1X on the home team's card, X2 on the away team's card."],
-  'm.12': ['Double Chance: Either Team Wins (12)', 'A hit when the match is not a draw after 90 minutes.'],
+  // Double Chance wording (owner request, Phase 2): Home or Draw (1X) / Away or Draw (2X) on a fixture's home / away card, Home or Away (H/A)
+  't.dc': ['Double Chance: Win or Draw (1X / 2X)', "A hit when the selected team wins or draws in 90 minutes: Home or Draw (1X) on the home team's card, Away or Draw (2X) on the away team's card."],
+  'm.12': ['Double Chance: Home or Away (H/A)', 'A hit when either team wins, i.e. the match is not a draw after 90 minutes (also written 12).'],
   'm.shots': ['Match Shots', 'Shots taken by both teams added together.'],
   'm.sot': ['Match Shots on Target', 'Shots on target by both teams added together.'],
   'm.corners': ['Match Corners', 'Combined number of corners taken by both teams in the match.'],
@@ -1756,6 +1779,8 @@ const MD = {
   red_cards: ['Player Red Cards', 'Red cards shown to the selected player.'],
 };
 const marketName = (key, fallback = '') => MD[key]?.[0] || fallback;
+/** The name for one side of a fixture: Double Chance becomes Home or Draw (1X) / Away or Draw (2X); everything else is unchanged. */
+const sideMarketName = (key, venue, fallback = '') => (key === 't.dc' && (venue === 'home' || venue === 'away') ? `Double Chance: ${venue === 'home' ? 'Home or Draw (1X)' : 'Away or Draw (2X)'}` : marketName(key, fallback));
 const marketDesc = key => MD[key]?.[1] || '';
 
 // Every market object carries the same short name everywhere (cards, graphs, Finder, profiles, Value).
@@ -1809,7 +1834,7 @@ const SPLIT_COLOURS = { gs: ['#7fb2ff', '#08142a'], gc: ['#56627a', '#ffffff'], 
 /** TEAM / MATCH / PLAYER / OPPONENT badge (owner request 26 Oct): text + colour, from the market actually shown. */
 const playBadge = (key, h2h = false) => { const sc = h2h ? 'match' : marketScope(key); const t = { team: 'TEAM', match: 'MATCH', player: 'PLAYER', opp: 'OPPONENT' }[sc] || 'TEAM'; return `<span class="cbbadge cb-${sc}">${t}</span>`; };
 
-return { PLAYER_MARKETS, TEAM_MARKETS, RETIRED_MARKETS, SELECTABLE_TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, lineMin, clampLine, stepLine, syncMinus, marketName, marketDesc, marketScope, OVER_ONLY, splitParts, hasSplit, splitLegend, splitSentence, SPLIT_LEGEND, SPLIT_COLOURS, playBadge };
+return { PLAYER_MARKETS, TEAM_MARKETS, RETIRED_MARKETS, SELECTABLE_TEAM_MARKETS, marketValue, marketRows, marketsWithData, typicalLine, defaultLine, isBinary, lineMin, clampLine, stepLine, syncMinus, marketName, sideMarketName, marketDesc, marketScope, OVER_ONLY, splitParts, hasSplit, splitLegend, splitSentence, SPLIT_LEGEND, SPLIT_COLOURS, playBadge };
 })();
 __m['analytics'] = (() => {
 // Pure maths. No network, no storage, no DOM. Everything here is unit-tested.
@@ -2076,7 +2101,7 @@ const L = (a, b, step = 1) => { const o = []; for (let x = a; x <= b + 1e-9; x +
 const TEAM_PLAY_MARKETS = [
   { key: 'm.goals', label: 'Total match goals' }, { key: 't.goals', label: 'Team goals' }, { key: 'm.htgoals', label: 'First-half match goals' }, { key: 't.htgoals', label: 'Team first-half goals' },
   { key: 'm.btts', label: 'Both teams to score: Yes', binary: true },
-  { key: 't.win', label: 'Match Winner: team wins', binary: true }, { key: 'm.draw', label: 'Match Winner: draw', binary: true }, { key: 't.dc', label: 'Double Chance: team wins or draws', binary: true }, { key: 'm.12', label: 'Double Chance: either team wins', binary: true },
+  { key: 't.win', label: 'Match Winner: team wins', binary: true }, { key: 'm.draw', label: 'Match Winner: draw', binary: true }, { key: 't.dc', label: 'Double Chance: Win or Draw (1X / 2X)', binary: true }, { key: 'm.12', label: 'Double Chance: Home or Away (H/A)', binary: true },
   { key: 'm.shots', label: 'Match shots' }, { key: 't.shots', label: 'Team shots' }, { key: 'm.sot', label: 'Match shots on target' }, { key: 't.sot', label: 'Team shots on target' },
   { key: 'm.corners', label: 'Match corners' }, { key: 't.corners', label: 'Team corners' },
   { key: 'm.fouls', label: 'Match fouls' }, { key: 't.fouls', label: 'Team fouls committed' }, { key: 't.fdrawn', label: 'Team fouls drawn' },
@@ -2624,6 +2649,7 @@ const TEXT = {
   unavailable: () => 'No result yet – data unavailable: this match was due to be played more than four days ago, but none of PropLab\'s sources has published a verified final score. It is not counted anywhere until one does. If it was postponed, the source has not said so yet.',
   postponed: () => 'Postponed: a source (Wikipedia\'s season results table or the fixture list) shows this match was not played on this date. It will reappear when a new date is published.',
   abandoned: () => 'Abandoned: the match started or was due but was not completed. No result or statistics are counted unless the competition confirms a result.',
+  livewin: () => 'LIVE by schedule: the game is within its usual playing time after the scheduled start (NBA about 2 h 30, NFL about 3 h 30). This comes from the schedule only, not a live feed: there are no live scores, and a delayed or suspended game can still show it. A verified LIVE (red, pulsing) is only shown when the data itself confirms the game is in progress. Afterwards it shows Awaiting result until the verified final score is published.',
   unconfirmed: () => 'Started – status unconfirmed: the scheduled kick-off time has passed, but PropLab has no live data feed, so it cannot confirm the match is in play. The final score appears once the verified result is published.',
   tbc: () => 'TBC: the kick-off time has not been confirmed yet. PropLab shows the scheduled date only and never guesses a time.',
   pushbin: n => `Tie: ${n} game${n === 1 ? '' : 's'} in this sample ended level for this market (a tied half or quarter), which counts as neither Yes nor No (a push).`,
@@ -2696,7 +2722,7 @@ __m['hiwicard'] = (() => {
 // on the card; changing the line recolours the bars and recalculates the hit rate in place (no page reload, no re-scan).
 const { esc, fmtShort, fmtLong, sampleKey } = __m['util'];
 const { infoTag } = __m['info'];
-const { clampLine, syncMinus } = __m['markets'];
+const { clampLine, syncMinus, sideMarketName } = __m['markets'];
 const { teamColours } = __m['teamcolors'];
 const { reliability } = __m['plays'];
 const { SCOPE_LABEL, lineBounds } = __m['hiwi-markets'];
@@ -2733,7 +2759,7 @@ function cardHtml(card, st) {
   const unitW = card.h2h ? (n === 1 ? 'meeting' : 'meetings') : `completed ${card.unit === 'game' ? 'game' : 'match'}${n === 1 ? '' : card.unit === 'game' ? 's' : 'es'}`;
   return `<article class="hcard${card.h2h ? ' isH2H' : ''}" data-cid="${esc(card.cid)}">
     <header class="hch"><div class="hct">${card.playerHref ? `<a class="hplink" href="${esc(card.playerHref)}" title="All markets for ${esc(card.title)}"><b>${esc(card.title)}</b></a>` : `<b>${esc(card.title)}</b>`}<span class="hscope s-${esc(card.tagCls || d.scope)}">${esc(card.tag || SCOPE_LABEL[d.scope])}</span>${isConfirmedOut(card.injury) ? `<span class="outb" title="${esc(card.injury.label + (card.injury.detail ? ' · ' + card.injury.detail : ''))}">Unavailable (OUT)</span>` : ''}${card.newTeam ? `<button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM" data-text="${esc(card.newTeam)}" aria-haspopup="dialog">NEW TEAM</button>` : ''}</div><div class="hpct"><span data-h-pct></span><small class="hpdir" data-h-dir></small></div></header>
-    <div class="hcm"><b>${esc(d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
+    <div class="hcm"><b>${esc(d.key === 't.dc' && card.fixture && (card.tagCls === 'home' || card.tagCls === 'away') ? sideMarketName('t.dc', card.tagCls, d.label) : d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
     ${card.tabs ? `<div class="hpersp htabs"><div class="seg" role="tablist" aria-label="Which games">${card.tabs.map(([v, l]) => `<button type="button" role="tab" data-h-tab="${v}" class="${(st.view || 'form') === v ? 'on' : ''}" aria-selected="${(st.view || 'form') === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
     ${card.segs ? card.segs.map(g => `<div class="hpersp hsegsel"><span class="xs muted">${esc(g.label)}:</span><div class="seg" role="group" aria-label="${esc(g.label)}">${g.opts.map(([v, l]) => `<button type="button" data-h-seg="${esc(g.key)}" data-v="${esc(v)}" class="${(st[g.key] || g.opts[0][0]) === v ? 'on' : ''}" aria-pressed="${(st[g.key] || g.opts[0][0]) === v}">${esc(l)}</button>`).join('')}</div></div>`).join('') : ''}
     ${card.minCtl ? `<div class="hminm" data-unit="${esc(card.minCtl.unit || '')}"><label class="xs"><span>${esc(card.minCtl.label || 'Minimum minutes')}${card.minCtl.global != null ? ` <span class="muted">(filter: ${card.minCtl.global}${card.minCtl.unit || ''}+${st.minMin !== undefined && st.minMin !== card.minCtl.global ? ', this card overrides it' : ''})</span>` : ''}</span> <b data-h-minv>${(st.minMin ?? card.minCtl.global) ? `${st.minMin ?? card.minCtl.global}${card.minCtl.unit || ''}+` : 'Off (all games)'}</b></label>
@@ -3406,7 +3432,7 @@ __m['combinedcore'] = (() => {
 //  combined figure. Missing statistics are never 0: a side with no recorded matches says so and gets no combined figure.
 //  The main cards are compact (no bar charts); Detailed analysis shows both teams' bars, game by game, plus head-to-head kept separate.
 const { store, teamSlugOf, leagueName, isCup, currentSeason, teamsOfLeague, COMP_SHORT } = __m['data'];
-const { marketName, lineMin } = __m['markets'];
+const { marketName, lineMin, sideMarketName } = __m['markets'];
 const { getMinQual } = __m['rank'];
 const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
 const { wireBarTaps } = __m['barinfo'];
@@ -3478,7 +3504,7 @@ function buildPlays(fixtures, keys, o) {
     for (const key of keys) {
       const def = def0(key); if (!def) continue;
       const subjects = key.startsWith('m.') ? [{ sel: h, other: a, dA: def, dB: def, vA: vH, vB: vA, kind: 'MATCH', label: marketName(key, def.label) }]
-        : COMP[key] ? [[h, a, vH, vA], [a, h, vA, vH]].map(([s, ot, va, vb]) => ({ sel: s, other: ot, dA: def, dB: COMP[key](), vA: va, vB: vb, kind: 'TEAM', label: `${teamName(s)} ${marketName(key, def.label).replace(/^Team /, '')}` })) : []; // no corresponding statistic: no play
+        : COMP[key] ? [[h, a, vH, vA], [a, h, vA, vH]].map(([s, ot, va, vb]) => ({ sel: s, other: ot, dA: def, dB: COMP[key](), vA: va, vB: vb, kind: 'TEAM', label: `${teamName(s)} ${sideMarketName(key, s === h ? 'home' : 'away', def.label).replace(/^Team /, '')}` })) : []; // no corresponding statistic: no play
       for (const sj of subjects) {
         for (const sd of def.binary ? ['over'] : o.sides) {
           const cid = `cb|${fid}|${key}|${sj.sel}|${sd}`; if (seen.has(cid)) continue; seen.add(cid);
@@ -3887,7 +3913,7 @@ const { NBA_POS: nba_NBA_POS, TYPE_NAME: nba_TYPE_NAME, injuryStatus: nba_injury
 const { NBA_GROUPS, nbaDef, nbaGameDetailHtml, baselineLine } = __m['nba-markets'];
 const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
-const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, statusBadge, SCROLLERS } = __m['util'];
+const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, usStatus, statusBadge, SCROLLERS } = __m['util'];
 const { normName, teamAliases } = __m['teams'];
 const { setLeague, hooks } = __m['shared'];
 const { leagueGameweek, nextLeagueGameweek, nflWeek, nflNextWeek } = __m['gameweek'];
@@ -3919,7 +3945,7 @@ const usAdapter = sport => (sport === 'nba' ? NBA_A : NFL_A);
 const PERIODS = [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20']];
 const SORTS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
 const POP_TEXT = {
-  nba: 'Rule-based, recomputed every night from the box scores (no fixed number, no paid or social-media data): a current-roster player averaging 15+ points, 9+ rebounds or 6+ assists, this season (5+ games) or last season (20+ games), or the season before (40+ games) if he missed most of last season. Every team also has at least its leading scorer. The count follows from the rule (about 100–110).',
+  nba: 'Rule-based, recomputed every night from the box scores (no fixed number, no paid or social-media data): a current-roster player averaging 15+ points, 9+ rebounds or 6+ assists, this season (5+ games) or last season (20+ games), or the season before (40+ games) if he missed most of last season. Since 27 Oct also regular starters (started at least half of his games) and consistent rotation players (10+ minutes in at least 70% of his games and played in at least 60% of his team\'s games): this season once he has 5 games for his current team, otherwise last season (20+ games, his role wherever he played, named). Every team also has at least its leading scorer. The count follows from the rules (about 7–13 a team).',
   nfl: 'Rule-based, recomputed every night from the game logs (no fixed number, no paid or social-media data): a QB with 50%+ of his team\'s pass attempts; an RB with 30%+ of the carries (or 15%+ of carries and 10%+ of targets); a WR or TE with 13%+ of the targets; or anyone producing 12+ fantasy-style points a game. Met this season (2+ games) or last season (6+ games). Kickers and defenders are never included. The count follows from the rules (about 200).',
   football: 'Regular starters and leading scorers / creators of the selected clubs, from the published MLS match logs.',
 };
@@ -4170,13 +4196,13 @@ async function viewHiwi(root, r, sport) {
       <details class="hsel datechk" id="hdts" ${st.dtOpen ? 'open' : ''}><summary><b>Dates (NBA schedule)</b> <span class="muted small" id="hdtsum">${dsum}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="dates">Select all dates</button><button type="button" class="chip" data-none="dates">Clear all dates</button></div>
         <div class="hlist" id="hdates">${days.map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-nbadate="${d}" ${st.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'} · ${esc(nightSpan(gs, d))}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div>
-        <p class="xs muted" style="margin:4px 0 0">Dates are NBA schedule nights (US date): a game at 03:00 UK on Thursday belongs to Wednesday night and is shown with its UK day and time.</p></details>
+        <p class="xs muted" style="margin:4px 0 0">Dates are the NBA's own schedule dates (US date): a game that starts after midnight where you are still belongs to the previous night and shows your local day and time.</p></details>
       <details class="hsel" id="hnbt" ${st.ntOpen ? 'open' : ''}><summary><b>Teams filter</b> <span class="muted small">${st.fteams.size ? `${st.fteams.size} ticked: only their games are listed` : 'none ticked: every team'}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-none="fteams">Clear teams</button></div>
         <div class="hlist hgrid">${[...A.d.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<label class="hcheck"><input type="checkbox" data-nbateam="${t.abbr}" ${st.fteams.has(t.abbr) ? 'checked' : ''}><span>${esc(t.name)}</span></label>`).join('')}</div></details>
       <p class="rulebox">How the filters combine: a game is listed when it is on a ticked date <b>and</b> (if you tick teams) involves a ticked team. Ticking a date ticks its games; untick or tick any game below. Nothing ticked = nothing searched.</p>
       <p class="small hfxcount" id="hfxcount"><b>${nSel}</b> game${nSel === 1 ? '' : 's'} selected</p>
-      <p class="xs muted hiwiweek" style="margin:6px 0">Tip-off times below are UK time (GMT / BST), with the UK day when a game tips off after midnight.</p>
+      <p class="xs muted hiwiweek" style="margin:6px 0">Tip-off times below are in ${esc(tzNow())} (your time-zone setting), with the day shown when a game starts after midnight where you are.</p>
       <details class="hsel" id="hfx" ${st.fxOpen === false ? '' : 'open'}><summary><b>Games</b> <span class="muted small">${nSel ? `${nSel} selected` : 'none selected'}</span></summary>
         ${!st.dates.size ? '<div class="banner info hgwempty"><b>Select a date to list games.</b></div>' : `<div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-all="fx">Select all${vis.length ? ` (${vis.length})` : ''}</button><button type="button" class="chip" data-none="fx">Clear all</button></div>
         <div class="hlist">${vis.length ? listHtml(vis) : '<p class="xs muted">No games on the ticked dates for the ticked teams.</p>'}</div>`}</details>`; };
@@ -4206,12 +4232,12 @@ async function viewHiwi(root, r, sport) {
     const tog = (k, l) => `<label class="${st.gw[k] && !st.today ? 'on' : ''}${st.today ? ' off' : ''}"><input type="checkbox" data-gw="${k}" ${st.gw[k] ? 'checked' : ''} ${st.today ? 'disabled' : ''}><span>${l}</span></label>`;
     // One list in kick-off order across every selected league (not league blocks); league and kick-off beside each fixture; matches that
     // have kicked off stay (with their status); fixtures without a confirmed kick-off time are listed separately, never given a time.
-    const row = (x) => { const f = x.f, k = koLocal(f), stt = fxStatus(f, now); const tag = x.which === 'linked' ? 'Linked' : x.which === 'today' ? 'Today' : (x.w ? x.w.tag : '');
+    const row = (x) => { const f = x.f, k = koLocal(f), stt = usMode ? usStatus(f, sport, now) : fxStatus(f, now); const tag = x.which === 'linked' ? 'Linked' : x.which === 'today' ? 'Today' : (x.w ? x.w.tag : '');
       return `<label class="hcheck hfxrow"><input type="checkbox" data-pick="fx" value="${esc(fxId(f))}" ${st.fx.has(fxId(f)) ? 'checked' : ''}><span><b>${esc(f.ko_utc ? (usMode ? ukTip(f) : k.hm) : 'TBC')}</b> ${esc(fxName(f))}${usMode ? '' : ` <span class="hfxlg">${esc(LEAGUE_NAMES[f.league])}</span>`}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}${tag ? `<span class="hgwtag${x.which === 'next' ? ' next' : ''}">${esc(tag)}</span>` : ''}</span></label>`; };
     const listHtml = items => { const seen = new Set(), uniq = items.filter(x => { const id = fxId(x.f); if (seen.has(id)) return false; seen.add(id); return true; });
       const timed = uniq.filter(x => x.f.ko_utc).sort((a, b) => fxSortLocal(a.f, b.f)), tbc = uniq.filter(x => !x.f.ko_utc).sort((a, b) => (a.f.date < b.f.date ? -1 : a.f.date > b.f.date ? 1 : fxName(a.f).localeCompare(fxName(b.f))));
       const days = new Map(); for (const x of timed) { const d = usMode ? nightOf(x.f) : koLocal(x.f).ymd; if (!days.has(d)) days.set(d, []); days.get(d).push(x); } // NBA / NFL: by schedule night
-      return [...days.entries()].map(([d, xs]) => `<div class="hday">${esc(fmtDay(d))}${usMode ? ' <span class="xs muted">US schedule night · UK times</span>' : ''}</div>${xs.map(row).join('')}`).join('')
+      return [...days.entries()].map(([d, xs]) => `<div class="hday">${esc(fmtDay(d))}${usMode ? ' <span class="xs muted">official US schedule date · times in ${esc(tzNow())}</span>' : ''}</div>${xs.map(row).join('')}`).join('')
         + (tbc.length ? `<div class="hday hdaytbc">Kick-off time not confirmed ${infoTag('tbc', 'TBC', { cls: 'neutral' })}</div>${tbc.map(x => `<div class="xs muted hfxdate">${esc(fmtDay(x.f.date))}</div>${row(x)}`).join('')}` : ''); };
     const gwLabels = () => (st.today ? '' : `<div class="xs muted hgwlabs">${(usMode ? [sport] : lgs).map(lg => ['cur', 'next'].filter(k => st.gw[k]).map(k => `${k === 'cur' ? 'Current' : 'Next'} Gameweek${usMode ? '' : ' · ' + esc(LEAGUE_NAMES[lg])}: ${esc(gameweeks(lg)[k].label)}`).join('<br>')).filter(Boolean).join('<br>')}</div>`);
     const sec = () => { const items = vis.map(x => ({ ...x, w: x.which === 'cur' || x.which === 'next' ? gameweeks(x.lg)[x.which] : null }));
@@ -4219,7 +4245,7 @@ async function viewHiwi(root, r, sport) {
     const empty = () => (!usMode && !lgs.length ? '<p class="xs muted hnolg"><b>Select a league to view fixtures.</b></p>' : st.today ? `<p class="xs muted">No games today in ${esc(usMode ? 'the ' + A.name : leaguesLabel(lgs))} that can still be researched.</p>` : `${gwLabels()}<p class="xs muted">No fixtures in the chosen gameweeks.</p>`); // the gameweek labels explain why (e.g. "no fixtures left")
     if (isNba) return nbaFixturesHtml(vis, nSel, listHtml);
     return `<div class="field"><label>Gameweeks</label><div class="hgwt" id="hgw" role="group" aria-label="Gameweeks">${tog('cur', 'Current Gameweek')}${tog('next', 'Next Gameweek')}</div>
-        ${usMode ? `<label class="hcheck lgtoday" style="margin-top:6px"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}), including games after midnight UK` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
+        ${usMode ? `<label class="hcheck lgtoday" style="margin-top:6px"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}, the official US date), including games that start after midnight where you are` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
         ${st.today ? '<p class="xs muted" style="margin:6px 0 0">Today\'s Games Only is on: the gameweek choice is paused.</p>' : ''}</div>
       <p class="small hfxcount" id="hfxcount"><b>${nSel}</b> fixture${nSel === 1 ? '' : 's'} selected${multi() ? ` across ${lgs.length} leagues` : ''}</p>
       <p class="xs muted hiwiweek" style="margin:6px 0">${usMode ? `Official ${A.name} weeks` : 'Official league rounds where published; otherwise the next match days by date'} · times in ${esc(tzNow())}</p>
@@ -4262,7 +4288,7 @@ async function viewHiwi(root, r, sport) {
       <div class="field"><label>Research</label><div class="seg hmode" id="hmode" role="group" aria-label="Research mode">${[['teams', 'Individual Teams'], ['matches', 'Upcoming Matches']].map(([v, l]) => `<button type="button" data-v="${v}" class="${st.mode === v ? 'on' : ''}" aria-pressed="${st.mode === v}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:6px 0 0">${st.mode === 'teams' ? "Each selected team's own past results. Opponents are not added, and a team does not need a fixture." : "Upcoming fixtures: each team's own history, one card per team. Detailed analysis adds the head-to-head meetings."}</p></div>
       ${st.mode === 'matches' ? fixturesHtml() : `<details class="hsel" id="htm" ${st.tmOpen === false ? '' : 'open'}><summary><b>Teams</b> <span class="muted small">${st.teams.size ? `${st.teams.size} selected` : 'none selected'}</span></summary>
-        ${isNfl ? `<label class="hcheck lgtoday"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}), including games after midnight UK` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
+        ${isNfl ? `<label class="hcheck lgtoday"><input type="checkbox" data-today ${st.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${usMode ? `tonight's ${A.name} schedule (${esc(viewingNight(now))}, the official US date), including games that start after midnight where you are` : `UK date ${esc(todayUK)}`}</span></span></label>` : ''}
         <input class="in" id="htq" type="search" placeholder="Search ${usMode ? A.name : esc(leaguesLabel(lgs))} teams (e.g. ${isNba ? 'BOS, lakers' : usMode ? 'KC, chiefs' : 'spurs, man utd, psg'})" value="${esc(st.tq)}" aria-label="Search teams" autocomplete="off">
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="teams">Select all${st.tq ? ' shown' : ''}</button><button type="button" class="chip" data-none="teams">Clear all</button></div>
         <div class="hlist hgrid">${tms.map(t => `<label class="hcheck"><input type="checkbox" data-pick="teams" value="${esc(t.id)}" ${st.teams.has(t.id) ? 'checked' : ''}><span>${esc(t.name)}${multi() ? ` <span class="xs muted">${esc(LEAGUE_NAMES[t.lg])}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${!usMode && !lgs.length ? '<b>Select a league to view its teams.</b>' : st.today && !st.tq ? `No ${usMode ? A.name : esc(leaguesLabel(lgs))} team plays today.` : `No ${usMode ? A.name : esc(leaguesLabel(lgs))} team matches "${esc(st.tq)}".`}</p>`}</div></details>`}
@@ -4850,7 +4876,7 @@ const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
-const { sampleKey, $, koLocal, koUK, tzNow, fxStatus, statusBadge, esc, fmt, keepScrollIn } = __m['util'];
+const { sampleKey, $, koLocal, koUK, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, keepScrollIn } = __m['util'];
 const { nbaLoading, nbaCredit } = __m['v-nba'];
 const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes } = __m['nbaprefs'];
 const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
@@ -4885,7 +4911,7 @@ async function viewNbaFinder(root) {
   const selGames = () => { const ids = new Set(listed().map(g => g.id)); return [...ui.games].filter(id => ids.has(id)).map(id => nba.gameById.get(id)).filter(Boolean); };
   const drawCtl = () => {
     const m = market(), L = listed(), nSel = selGames().length;
-    const gRow = g => { const stt = fxStatus(g, now, 3 * 3600e3); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? ukTip(g) : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
+    const gRow = g => { const stt = usStatus(g, 'nba', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? ukTip(g) : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     ctl.innerHTML = `${globalSideHtml('fgside')}
       <div class="field"><label>Research</label>${seg('subj', [['player', 'Players'], ['team', 'Teams']], ui.subj)}</div>
       <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${m.key === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${(isT() ? NBA_TEAM_MARKETS : NBA_MARKETS).map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc((x.grp ? x.grp + ': ' : '') + x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}${m.hcp ? ' Research against a handicap you choose: not a bookmaker spread.' : ''}</p></div>
@@ -4894,11 +4920,11 @@ async function viewNbaFinder(root) {
       <div class="ctl"><div class="field"><label for="tm">Team</label><select class="in" id="tm"><option value="">All teams</option>${[...nba.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div></div>
       ${(() => { const tn = viewingNight(now), tg = (days().find(x => x[0] === tn) || [null, []])[1]; return `<label class="hcheck lgtoday nbatoday"><input type="checkbox" id="fnbtoday" ${ui.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">${tg.length ? `tonight's NBA schedule, ${esc(fullDay(tn))}: ${tg.length} game${tg.length === 1 ? '' : 's'}, ${esc(nightSpan(tg, tn))}` : `no NBA games on tonight's schedule (${esc(fullDay(tn))})`}</span></span></label>`; })()}
       <details class="hsel datechk" id="fdts" ${ui.dtOpen ? 'open' : ''}><summary><b>Dates (NBA schedule)</b> <span class="muted small">${(() => { const pk = days().filter(([d]) => ui.dates.has(d)); const n = pk.reduce((t, [, gs]) => t + gs.length, 0); return pk.length ? `${esc(fullDay(pk[0][0]).replace(/^(\w{3})\w*/, '$1'))}${pk.length > 1 ? ` + ${pk.length - 1} more` : ''} · ${n} game${n === 1 ? '' : 's'}` : 'no date selected'; })()}</span></summary><div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-dall>Select all dates</button><button type="button" class="chip" data-dnone>Clear all dates</button></div>
-        <div class="hlist" id="fdates">${days().map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-date="${d}" ${ui.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'} · ${esc(nightSpan(gs, d))}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div><p class="xs muted" style="margin:4px 0 0">Dates are NBA schedule nights (US date); games after midnight UK show their UK day and time.</p></details>
+        <div class="hlist" id="fdates">${days().map(([d, gs]) => `<label class="hcheck"><input type="checkbox" data-date="${d}" ${ui.dates.has(d) ? 'checked' : ''}><span>${esc(fullDay(d))} <span class="xs muted">${gs.length} game${gs.length === 1 ? '' : 's'} · ${esc(nightSpan(gs, d))}</span></span></label>`).join('') || '<p class="xs muted">No NBA games published for the next three weeks.</p>'}</div><p class="xs muted" style="margin:4px 0 0">Dates are the NBA's own schedule dates (US date); a game that starts after midnight where you are shows your local day and time.</p></details>
       <details class="hsel" id="ngsel" ${ui.gOpen ? 'open' : ''}><summary><b>Games</b> <span class="muted small">${nSel ? `${nSel} selected` : 'none ticked: every team'}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-gall>Select all</button><button type="button" class="chip" data-gnone>Clear all</button></div>
         <div class="hlist">${L.length ? L.map(gRow).join('') : '<p class="xs muted">Tick a date to list its games.</p>'}</div>
-        <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. A game is listed when its UK date is ticked; ticking a date ticks its games. With no game ticked, every team's players are included (the Team filter still applies).</p></details>
+        <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. A game is listed when its schedule date is ticked; ticking a date ticks its games. With no game ticked, every team's players are included (the Team filter still applies).</p></details>
       <p class="xs muted" style="margin:0">No shared line: every player and market gets its own suggested line (explained under the table).</p>
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (from ${esc(seasonLabel(nba.meta.seasons[0]))}).</span></div>
       ${nbaFiltersHtml()}
@@ -5069,7 +5095,7 @@ async function viewNbaPlays(root, r) {
   const ensurePicked = g => { if (ui.picked && ui.picked.gid === g.id) return; ui.picked = { gid: g.id, set: new Set() }; ui.removed = new Set(); if (ui.pop) for (const p of playersOf(g)) if (p.notable && !injuryStatus(p, g).unavailable) ui.picked.set.add(p.id); };
   const drawCtl = () => { fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = nightOf(g); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     const g = gameOf(); if (ui.kind === 'game' && g) ensurePicked(g);
-    const picker = ui.kind === 'game' ? (g ? `<div class="field"><label for="gm">Game (NBA schedule nights; UK tip-off times)</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))} (US night)">${list.map(x => `<option value="${esc(x.id)}" ${x.id === ui.game ? 'selected' : ''}>${esc(ukTip(x) || 'TBC')} ${esc(teamName(x.away))} at ${esc(teamName(x.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
+    const picker = ui.kind === 'game' ? (g ? `<div class="field"><label for="gm">Game (official NBA dates; times in ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))} (US night)">${list.map(x => `<option value="${esc(x.id)}" ${x.id === ui.game ? 'selected' : ''}>${esc(ukTip(x) || 'TBC')} ${esc(teamName(x.away))} at ${esc(teamName(x.home))}</option>`).join('')}</optgroup>`).join('')}</select></div>
         <label class="hcheck hpopchk"><input type="checkbox" id="ppop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">ticks every popular player of both teams; add or remove anyone below</span></span></label>
         <details class="hsel" id="pplist"><summary><b>Players</b> <span class="muted small">${ui.picked.set.size} selected</span></summary><div class="hlist hgrid">${playersOf(g).map(p => { const ij = injuryStatus(p, g); return `<label class="hcheck"><input type="checkbox" data-pp value="${esc(p.id)}" ${ui.picked.set.has(p.id) ? 'checked' : ''} ${ij.unavailable ? 'disabled' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.team)}${p.notable ? ' · ★' : ''}</span>${ij.cls !== 'none' ? ` <span class="injb inj-${ij.cls}">${esc(ij.label)}</span>` : ''}</span></label>`; }).join('')}</div></details>` : '<p class="small muted">No upcoming NBA games are published.</p>')
       : ui.kind === 'player' ? `<div class="field"><label for="pfind">Player</label><select class="in" id="pfind">${teams().map(t => `<optgroup label="${esc(t.name)}">${roster(t.abbr).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}${p.notable ? ' ★' : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>`
@@ -6079,8 +6105,10 @@ async function viewTrends(root, r) {
   const isPlayerKey = k => PLAYER_PLAY_MARKETS.some(m => m.key === k);
   const curFixture = () => selFixtures()[0] || null;
   // Several fixtures can be ticked; each is researched separately (never one pooled sample across teams).
-  const selFixtures = () => store.fixtures.filter(x => lgs.includes(x.league) && ui.games.has(fixtureId(x))).sort(fxSort);
-  const period = () => { const seasons = [...new Set(store.teamMatches.filter(m => lgs.includes(m.league)).map(m => m.season))].sort(); return ui.period === 'season' ? { last: 0, season: seasons[seasons.length - 1] || null } : { last: Number(ui.period), season: null }; };
+  let sfMemo = { k: null, v: null }; // Phase 2: the ticked fixtures, recomputed only when the ticks or leagues change
+  const selFixtures = () => { const k = `${lgs.join()}|${store.fixtures.length}|${[...ui.games].join(',')}`; if (sfMemo.k !== k) sfMemo = { k, v: store.fixtures.filter(x => lgs.includes(x.league) && ui.games.has(fixtureId(x))).sort(fxSort) }; return sfMemo.v.slice(); };
+  let seasMemo = { k: null, v: null }; // Phase 2: the seasons of the selected leagues, worked out once per league choice
+  const period = () => { const k = `${lgs.join()}|${store.teamMatches.length}`; if (seasMemo.k !== k) seasMemo = { k, v: [...new Set(store.teamMatches.filter(m => lgs.includes(m.league)).map(m => m.season))].sort() }; const seasons = seasMemo.v; return ui.period === 'season' ? { last: 0, season: seasons[seasons.length - 1] || null } : { last: Number(ui.period), season: null }; };
   const periodWord = () => (ui.period === 'season' ? 'this season\'s' : Number(ui.period) ? `last ${ui.period}` : 'all');
 
   // ---- default exact line: from the real values in the sample being researched (goals markets have fixed defaults) ----
@@ -7546,7 +7574,8 @@ const { nfl, loadGroup, playerRows, teamName, latestSeason, nflUpcoming, nflSort
 const { NFL_TEAM_MARKETS, nflLines, nflGameDetailHtml } = __m['nfl-markets'];
 const { playerMarkets, oppContext, oppContextHtml, defenceTable } = __m['nfl-scan'];
 const { researchPanel } = __m['panel'];
-const { $, $$, esc, fmtDay, fmtLong, fmtShort, koUK, koLocal, todayLocal, localDayAfter, tzNow, fxStatus, statusBadge, timeHtml, fmtKick } = __m['util'];
+const { $, $$, esc, fmtDay, fmtLong, fmtShort, koUK, koLocal, todayLocal, localDayAfter, tzNow, fxStatus, usStatus, statusBadge, timeHtml, fmtKick } = __m['util'];
+const { nightOf, viewingNight } = __m['nightdate'];
 const { hooks } = __m['shared'];
 
 const nflBanner = () => (nfl.status === 'error' ? `<div class="banner bad"><b>NFL data unavailable.</b> ${esc(nfl.error)} <a href="" onclick="location.reload();return false">Try again</a></div>` : '');
@@ -7557,7 +7586,7 @@ const credit = '<p class="xs muted">NFL data: <a href="https://github.com/nflver
 const teamBadge = a => `<span class="tbadge" aria-hidden="true">${esc(a)}</span>`;
 const kick = g => fmtKick(g);
 const LIVE_NFL = 4 * 3600e3; // an NFL game usually takes a little over 3 hours
-const statusCell = g => { const st = g.final ? 'final' : fxStatus(g, new Date(), LIVE_NFL); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
+const statusCell = g => { const st = g.final ? 'final' : usStatus(g, 'nfl'); return st === 'final' ? `<span class="time score">${g.as}–${g.hs}</span>` : st === 'pre' ? `<span class="time">${timeHtml(g)}</span>` : statusBadge(st); };
 const gameRow = g => `<a class="row" href="#/nfl/hiwi?fx=${encodeURIComponent(g.id)}"><div class="l"><b class="vsb"><span class="tm">${badge(teamName(g.away), { abbr: g.away })}${esc(teamName(g.away))}</span> at <span class="tm">${badge(teamName(g.home), { abbr: g.home })}${esc(teamName(g.home))}</span></b><span>${esc(kick(g))} · ${g.type === 'P' ? esc(g.round) + ' (postseason)' : 'Week ' + g.week}${g.neutral ? ' · neutral site' : ''}</span></div><div class="r">${statusCell(g)}</div></a>`;
 
 async function viewNflHome(root) {
@@ -7645,7 +7674,7 @@ async function viewNflFixtures(root) {
   const draw = () => {
     const now = new Date(); const todayUK = todayLocal(now); const in7 = localDayAfter(7, now);
     let list = fx.tab === 'upcoming' ? nfl.games.filter(g => !g.final && fxStatus(g, now, LIVE_NFL) !== 'old').sort(nflSort) : nfl.games.filter(g => g.final).sort((a, b) => -nflSort(a, b)).slice(0, 80);
-    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? d === todayUK : d <= in7; });
+    if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? nightOf(g) === viewingNight(now) : d <= in7; }); // Today = the official US schedule date (Phase 2)
     const byDay = new Map(); for (const g of list) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     $('#nfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} · NFL</div><div class="card"><div class="list">${gs.map(gameRow).join('')}</div></div>`).join('') : '<div class="banner info">No NFL games for this filter.</div>';
   };
@@ -7783,7 +7812,7 @@ const { hitRate, parseOdds } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
-const { sampleKey, $, koLocal, tzNow, fxStatus, statusBadge, esc, fmt, koUK, fmtDay } = __m['util'];
+const { sampleKey, $, koLocal, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, koUK, fmtDay } = __m['util'];
 const { getMinGames, setMinGames, MIN_LO, MIN_HI, usAdapter } = __m['v-hiwi'];
 const { prefs } = __m['shared'];
 const { nflFiltersHtml, nflSnapGlobal, getNflSnap, setNflSnap } = __m['nbaprefs'];
@@ -7819,7 +7848,7 @@ async function viewNflFinder(root) {
     const m = market(), sup = supportedGroups(), gs = groups(), list = gameList();
     const byDay = new Map(); for (const g of list.filter(g => g.ko_utc)) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     const tbc = list.filter(g => !g.ko_utc); const nSel = selGames().length;
-    const gRow = g => { const stt = fxStatus(g, now, 4 * 3600e3); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
+    const gRow = g => { const stt = usStatus(g, 'nfl', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     const haveSnaps = (nfl.meta?.sources || []).some(x => /snap/.test(x.used_for || ''));
     ctl.innerHTML = `${globalSideHtml('nfgside')}<div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${ui.market === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${PLAYER_MKTS().map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
       <div class="field"><label>Positions</label><div class="hgrid nposgrid" id="npos">${sup.map(g => `<label class="hcheck"><input type="checkbox" data-pos value="${g}" ${gs.includes(g) ? 'checked' : ''}><span>${POS[g]}</span></label>`).join('')}</div>
@@ -7828,9 +7857,9 @@ async function viewNflFinder(root) {
       <label class="hcheck hpopchk"><input type="checkbox" id="nfpop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">only the popular players (established starters and main targets) are listed</span></span></label>
       <div class="ctl"><div class="field"><label for="tm">Team</label><select class="in" id="tm"><option value="">All teams</option>${[...nfl.teams.values()].sort((a, b) => a.name.localeCompare(b.name)).map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div></div>
       <details class="hsel" id="ngsel" ${ui.gOpen ? 'open' : ''}><summary><b>Games</b> <span class="muted small">${nSel ? `${nSel} selected` : 'all games (none ticked)'}</span></summary>
-        <label class="hcheck lgtoday"><input type="checkbox" data-today ${ui.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">tonight's NFL games (US Eastern date; before 08:00 UK counts as last night)</span></span></label>
+        <label class="hcheck lgtoday"><input type="checkbox" data-today ${ui.today ? 'checked' : ''}><span><b>Today's Games Only</b> <span class="xs muted">today's NFL games (the official US date; it changes over at 03:00 US Eastern)</span></span></label>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-gall>Select all</button><button type="button" class="chip" data-gnone>Clear all</button></div>
-        <div class="hlist">${[...byDay.entries()].map(([d, gl]) => `<div class="hday">${esc(fmtDay(d))}</div>${gl.map(gRow).join('')}`).join('')}${tbc.length ? `<div class="hday">Kick-off time not confirmed</div>${tbc.map(gRow).join('')}` : ''}${list.length ? '' : `<p class="xs muted">${ui.today ? 'No NFL games today (UK date) that can still be researched.' : 'No upcoming or in-progress NFL games.'}</p>`}</div>
+        <div class="hlist">${[...byDay.entries()].map(([d, gl]) => `<div class="hday">${esc(fmtDay(d))}</div>${gl.map(gRow).join('')}`).join('')}${tbc.length ? `<div class="hday">Kick-off time not confirmed</div>${tbc.map(gRow).join('')}` : ''}${list.length ? '' : `<p class="xs muted">${ui.today ? 'No NFL games on today\'s official US date that can still be researched.' : 'No upcoming or in-progress NFL games.'}</p>`}</div>
         <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. Games that have kicked off stay selectable until the final score is published. With no game ticked, every player is included.</p></details>
       <p class="xs muted" style="margin:0">No shared line: every player and market gets its own suggested line (explained under the table).</p>
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (2021 onwards).</span></div>
