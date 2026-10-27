@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="fe63165dc97c">
+<meta name="proplab-build" content="e94fbddb8d22">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -453,6 +453,38 @@ body{touch-action:manipulation}
 .time{color:#9ecbff}
 .cbbadge.cb-player{color:#c4b5fd;border-color:#5b4a9e;background:#1d1733}.cbbadge.cb-opp{color:#fca5a5;border-color:#7d2f2f;background:#2a1212}
 .hcard .hscope{text-transform:uppercase;letter-spacing:.04em}
+/* Highest Combined % compact matchup cards (Phase 1, 27 Oct): two corresponding percentages with the combined figure prominent in the
+   centre; no bar charts; fits a 320 px screen (every column can shrink, long names wrap) */
+.cbcard{padding:10px 10px 8px}.cbhead{display:flex;flex-wrap:wrap;gap:2px 6px;align-items:baseline;font-size:13px;min-width:0}
+.cbfx{font-weight:700;overflow-wrap:anywhere;min-width:0}.cbko{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.cbmkt{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 8px;margin:6px 0}.cblab{font-size:15px;overflow-wrap:anywhere;min-width:0;flex:1 1 140px}
+.cbside{white-space:nowrap}
+.cbrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(76px,auto) minmax(0,1fr);gap:6px;align-items:stretch}
+.cbt,.cbc{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;border:1px solid var(--line);border-radius:10px;padding:6px 4px}
+.cbt b{font-size:20px;line-height:1.1}.cbc{background:var(--s1);border-color:var(--accent)}.cbc b{font-size:28px;line-height:1.05}
+.cbc.small{border-style:dashed}.cbtn{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;max-width:100%;min-width:0}
+.cbtn span{overflow-wrap:anywhere;min-width:0}.cbtn .teamb{flex:none}.cbnoun{font-size:11px;color:var(--muted);line-height:1.2;overflow-wrap:anywhere;max-width:100%}
+.cbn{font-size:11px;color:var(--muted)}.cbrole{font-size:10px}
+.cbstale{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;justify-content:space-between;background:var(--s1);border:1px solid var(--accent);border-radius:10px;padding:6px 8px;margin:0 0 8px}
+.cbcard .hacts{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:360px){.cbt b{font-size:18px}.cbc b{font-size:24px}.cbrow{grid-template-columns:minmax(0,1fr) minmax(68px,auto) minmax(0,1fr);gap:4px}}
+.cbrow{grid-template-columns:minmax(0,1fr) minmax(72px,92px) minmax(0,1fr)}
+.cbtn{flex-direction:column;gap:2px}.cbtn span{overflow-wrap:break-word;word-break:normal;hyphens:auto;line-height:1.2}
+.cbc .cbn{line-height:1.2}
+@media (max-width:360px){.cbrow{grid-template-columns:minmax(0,1fr) minmax(64px,80px) minmax(0,1fr)}.cbtn{font-size:11px}.cbt{padding:5px 2px}}
+/* No sideways page scrolling (owner Phase 1 request, 27 Oct): every control and text run fits the screen width. Long words wrap, form
+   controls never exceed their container, flex rows can wrap. Inner scrollers (bar charts, wide tables) keep their own horizontal scroll. */
+body{overflow-wrap:break-word}
+select,input,textarea,button,.in{max-width:100%}
+.in{min-width:0}
+img,svg,video,canvas{max-width:100%}
+.row,.hacts,.cbmkt,.cbhead,.hmksum,.hminrow,.hsortbar,.lgbtns{flex-wrap:wrap;min-width:0}
+.card,.field,.hsel,.stack,details,summary{min-width:0}
+h1,h2,h3,.small,.xs,p,label,summary,td,th{overflow-wrap:break-word}
+/* WebKit draws a native select's chosen text past the select's own box (it counted toward the page width at 320 px). Selects use the
+   same flat style as the sport switcher: no native chrome, our own arrow, the label clipped with an ellipsis (the iPhone picker still lists
+   every option in full). */
+select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239aa4b2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -738,18 +770,21 @@ const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live"
 const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : '<button type="button" class="tbcb" data-info="tbc" aria-haspopup="dialog">TBC</button>'; };
 /** Runs fn (which rebuilds part of the page inside root) and puts every scrolled element inside root back where it was: each element is
  *  matched by its place (nearest id, tag, class, index), so ticking a box in a long list never jumps the list to the top. */
+// Only the page's own inner scrollers are remembered (Phase 1 performance: reading scrollTop on every element took over 5 s in Safari's engine
+// with 2,600 fixtures listed). Keep this list in step with the overflow:auto / scroll classes in styles.css.
+const SCROLLERS = '.chips, .scroll, .tlist, .combo-list, .hlist, .hbars-wrap, .datechk, .hsellist, .infobox, .fxsel, [style*="overflow"]';
 const keepScrollIn = (root, fn) => {
-  const keys = () => { const seen = new Map(), out = new Map(); for (const el of root.querySelectorAll('*')) { const host = el.parentElement?.closest('[id]'); const k = `${host ? host.id : ''}|${el.tagName}|${el.className}`; const n = seen.get(k) || 0; seen.set(k, n + 1); out.set(el, `${k}|${n}`); } return out; };
+  const keys = () => { const seen = new Map(), out = new Map(); for (const el of root.querySelectorAll(SCROLLERS)) { const host = el.parentElement?.closest('[id]'); const k = `${host ? host.id : ''}|${el.tagName}|${el.className}`; const n = seen.get(k) || 0; seen.set(k, n + 1); out.set(el, `${k}|${n}`); } return out; };
   const saved = new Map(); for (const [el, k] of keys()) if (el.scrollTop > 0 || el.scrollLeft > 0) saved.set(k, [el.scrollTop, el.scrollLeft]); const wy = scrollY;
   const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
 };
 
-return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, recentlyCalledOff, statusBadge, timeHtml, keepScrollIn };
+return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, recentlyCalledOff, statusBadge, timeHtml, SCROLLERS, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
 const { normName, teamSlug, normTeam, displayTeam } = __m['teams'];
-const { avg, isUpcoming, koUK, koLocal, fxStatus, recentlyCalledOff } = __m['util'];
+const { avg, isUpcoming, koUK, koLocal, fxStatus, recentlyCalledOff, viewTz } = __m['util'];
 
 const LEAGUE_NAMES = { epl: 'Premier League', laliga: 'La Liga', bundesliga: 'Bundesliga', seriea: 'Serie A', ligue1: 'Ligue 1', ligaportugal: 'Liga Portugal', scotprem: 'Scottish Premiership', eredivisie: 'Eredivisie', mls: 'MLS', ucl: 'Champions League', uel: 'Europa League', uecl: 'Conference League',
   championship: 'Championship', leagueone: 'League One', leaguetwo: 'League Two', proleague: 'Belgian Pro League', superlig: 'Süper Lig', eliteserien: 'Eliteserien' }; // 27 Oct 2026: six more leagues
@@ -845,8 +880,10 @@ const domMemo = new WeakMap();
 const teamRowsScoped = (slug, scope) => { const all = store.teamRows.get(slug) || [];
   if (scope === 'all') return all;
   if (scope === 'dom') { let d = domMemo.get(all); if (!d) { d = all.filter(x => !CUPS.has(x.league)); domMemo.set(all, d); } return d; }
-  if (scope === 'eu') return all.filter(x => CUPS.has(x.league)); // its matches in any European competition
-  return CUPS.has(scope) ? all.filter(x => x.league === scope) : teamRowsFor(slug); };
+  if (scope === 'eu' || CUPS.has(scope)) { let m = cupMemo.get(all); if (!m) { m = new Map(); cupMemo.set(all, m); } let d = m.get(scope); // cached (Phase 1)
+    if (!d) { d = scope === 'eu' ? all.filter(x => CUPS.has(x.league)) : all.filter(x => x.league === scope); m.set(scope, d); } return d; } // its matches in any European competition / that one
+  return teamRowsFor(slug); };
+const cupMemo = new WeakMap();
 /** Has this club any European match in PropLab's records? (Clubs without one keep their league history exactly as before.) */
 const euMemo = new WeakMap();
 const hasEuropean = slug => { const all = store.teamRows.get(slug) || []; let v = euMemo.get(all); if (v === undefined) { v = all.some(x => CUPS.has(x.league)); euMemo.set(all, v); } return v; };
@@ -854,10 +891,13 @@ const teamSlugOf = name => teamSlug(name);
 const newsForTeam = name => store.news.filter(n => normTeam(n.team) === normTeam(name));
 // Chronological by UK kick-off: date, then time; a fixture whose time is not set (TBC) goes after the timed games of its day.
 // Equal kick-offs keep a stable order: league order, then home team.
-const fxKey = f => { const k = koUK(f); return `${k.ymd} ${k.hm || '99:99'} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}`; };
+// Performance (Phase 1, 27 Oct): sort keys are cached per fixture object (they were rebuilt with a date conversion on every comparison,
+// thousands of times per tick with All Leagues). A fixture's kick-off never changes within a loaded data set; a new data load = new objects.
+const fkMemo = new WeakMap(), fkLocalMemo = new WeakMap();
+const fxKey = f => { let v = fkMemo.get(f); if (v === undefined) { const k = koUK(f); v = `${k.ymd} ${k.hm || '99:99'} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}`; fkMemo.set(f, v); } return v; };
 const fxSort = (a, b) => { const x = fxKey(a), y = fxKey(b); return x < y ? -1 : x > y ? 1 : 0; };
 /** Display order in the viewer's time zone (same order as fxSort for timed games; TBC games after the timed games of their date). */
-const fxKeyLocal = f => { const k = koLocal(f); return `${k.ymd} ${k.hm || '99:99'} ${f.ko_utc || ''} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}`; };
+const fxKeyLocal = f => { const tz = viewTz(); let v = fkLocalMemo.get(f); if (!v || v.tz !== tz) { const k = koLocal(f); v = { tz, s: `${k.ymd} ${k.hm || '99:99'} ${f.ko_utc || ''} ${String(LEAGUE_ORDER.indexOf(f.league) + 10)} ${f.home}` }; fkLocalMemo.set(f, v); } return v.s; };
 const fxSortLocal = (a, b) => { const x = fxKeyLocal(a), y = fxKeyLocal(b); return x < y ? -1 : x > y ? 1 : 0; };
 const upcomingFixtures = (league = '') => store.fixtures.filter(f => isUpcoming(f) && (!league || f.league === league)).sort(fxSort);
 const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) === normTeam(name) || normTeam(f.away) === normTeam(name));
@@ -889,7 +929,13 @@ function hasFinalResult(f) {
  * (status 'started' / 'live' / 'awaiting'). A fixture leaves the list once its final result is published, after 4 days without one, or when it is postponed or abandoned.
  * Incomplete in-play data is never used: hit rates only use completed, published results.
  */
-const selectableFixtures = (league = '', now = new Date()) => store.fixtures.filter(f => (!league || f.league === league) && (isUpcoming(f, now) || (['started', 'live', 'awaiting'].includes(fxStatus(f, now)) && !hasFinalResult(f)) || recentlyCalledOff(f, now))).sort(fxSort);
+// Performance (Phase 1): one computation per league and minute (Hiwi asked once per club per redraw: thousands of filters and sorts per
+// tick). The cache is keyed on the fixture list and results list themselves, so new data is never served stale. Callers get a copy.
+let sfCache = { fx: null, res: -1, min: -1, map: new Map() };
+const selectableFixtures = (league = '', now = new Date()) => { const min = Math.floor(now.getTime() / 60000);
+  if (sfCache.fx !== store.fixtures || sfCache.res !== store.teamMatches.length || sfCache.min !== min) sfCache = { fx: store.fixtures, res: store.teamMatches.length, min, map: new Map() };
+  let v = sfCache.map.get(league); if (!v) { v = selectableFixturesNow(league, now); sfCache.map.set(league, v); } return v.slice(); };
+const selectableFixturesNow = (league = '', now = new Date()) => store.fixtures.filter(f => (!league || f.league === league) && (isUpcoming(f, now) || (['started', 'live', 'awaiting'].includes(fxStatus(f, now)) && !hasFinalResult(f)) || recentlyCalledOff(f, now))).sort(fxSort);
 
 function refereeProfile(name) {
   const e = store.refs.get(normName(name)); const all = store.teamMatches.filter(r => r.referee);
@@ -1639,7 +1685,14 @@ const TEAM_MARKETS = [
 const RETIRED_MARKETS = new Set(['m.yellows', 'm.reds', 't.yellows', 't.reds', 'o.yellows', 'o.reds']);
 const SELECTABLE_TEAM_MARKETS = TEAM_MARKETS.filter(m => !RETIRED_MARKETS.has(m.key));
 const marketValue = (m, row) => { if (m.positions && !m.positions.includes(row.position)) return null; const v = m.get(row); return v === undefined ? null : v; };
-const marketRows = (rows, m, exposureKey) => rows.map(r => ({ ...r, value: marketValue(m, r), exposure: exposureKey ? r[exposureKey] : 1 }));
+// Performance (Phase 1, owner report of NBA freezes): the per-market copy of a subject's rows is made once per rows array, market and exposure
+// and reused (switching games or players used to copy every game row of every player for every market, twice per market, each time).
+// Callers never modify the returned array (applyFilters, slice, map and filter all make new arrays).
+const mrMemo = new WeakMap();
+const marketRows = (rows, m, exposureKey) => { if (!rows || !m) return []; let byM = mrMemo.get(rows); if (!byM) { byM = new Map(); mrMemo.set(rows, byM); }
+  const k = m; let byE = byM.get(k); if (!byE) { byE = new Map(); byM.set(k, byE); } const ek = exposureKey || ''; let v = byE.get(ek);
+  // each item reads the game's own fields through its prototype (no copy of every field; NBA game rows carry dozens) and adds value / exposure
+  if (!v) { v = rows.map(r => { const o = Object.create(r); o.value = marketValue(m, r); o.exposure = exposureKey ? r[exposureKey] : 1; return o; }); byE.set(ek, v); } return v; };
 /** Markets that have at least one real value in these rows. */
 const marketsWithData = (rows, markets) => markets.filter(m => rows.some(r => marketValue(m, r) !== null));
 
@@ -3230,6 +3283,12 @@ function fbTeamMarkets(lg) {
   return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)).map(m => TEAM_MARKETS.find(x => x.key === m.key));
 }
 const hasPlayerLogs = lg => store.playerIndex.some(p => p.league === lg);
+/** Clubs with GENUINE player statistics now (Phase 1, owner request 27 Oct): at least one player in PropLab's player match logs for that
+ *  club in its league's current season. Decided from the data itself, never from the league's name. Cached per loaded index. */
+let cpCache = { idx: null, set: null };
+const clubsWithPlayerStats = () => {
+  if (cpCache.idx !== store.playerIndex) { const set = new Set(); for (const p of store.playerIndex) { const cs = currentSeason(p.league); if (cs != null && (p.seasons || []).includes(cs)) set.add(teamSlugOf(p.team)); } cpCache = { idx: store.playerIndex, set }; }
+  return cpCache.set; };
 /**
  * Current club (owner reports 26-27 Oct). A player's LAST club in the match logs is NOT proof of his current club, and an old squad list is
  * not proof either. Status, in order:
@@ -3246,7 +3305,11 @@ const hasPlayerLogs = lg => store.playerIndex.some(p => p.league === lg);
 let dirIdx = null;
 const STALE_DAYS = 75;
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
-function membership(p, lg) {
+// cached per player and league for the loaded squad lists (Phase 1: Trends asked again for every fixture)
+const memMemo = new WeakMap();
+function membership(p, lg) { let m = memMemo.get(p); if (m && m.dir === store.directory && m.lg === lg && m.day === new Date().toISOString().slice(0, 10)) return m.v;
+  const v = membershipNow(p, lg); memMemo.set(p, { dir: store.directory, lg, day: new Date().toISOString().slice(0, 10), v }); return v; }
+function membershipNow(p, lg) {
   if (!dirIdx || dirIdx.src !== store.directory) { dirIdx = { src: store.directory, by: new Map(), clubs: new Map() }; for (const d of store.directory) dirIdx.by.set(`${d.league}|${normName(d.name)}`, d);
     for (const c of store.directoryMeta?.clubs || []) dirIdx.clubs.set(`${c.league || 'epl'}|${c.slug || teamSlugOf(c.team)}`, c); }
   const today = new Date().toISOString().slice(0, 10);
@@ -3281,7 +3344,267 @@ const fbLines = def => researchLines(FOOTBALL_RANGES, def.key, def.binary);
 const fbScope = (key, name) => ({ team: `${name} only`, opp: `against ${name}`, match: `both teams, in ${name}'s matches`, player: '' }[marketScope(key)]);
 const fbSeason = lg => currentSeason(lg);
 
-return { fbTeamMarkets, hasPlayerLogs, membership, fbPlayers, fbPlayerMarkets, fbLines, fbScope, fbSeason };
+return { fbTeamMarkets, hasPlayerLogs, clubsWithPlayerStats, membership, fbPlayers, fbPlayerMarkets, fbLines, fbScope, fbSeason };
+})();
+__m['matchup'] = (() => {
+// Two-team matchup comparison (owner requirement 27 Oct 2026), shared by Best Combined % (v-combined.js) and Hiwi's Detailed analysis.
+//
+//  TEAM markets: the selected team's statistic against the opponent's COMPLEMENTARY statistic, e.g. Team Goals Over 1.5 =
+//    "Man United scored 2+" (goals scored) next to "Arsenal conceded 2+" (goals conceded). Combined Historical Matchup % =
+//    (selected team's hit rate + opponent's complementary hit rate) / 2, each over its own qualifying matches.
+//  MATCH markets: each team's own matches with the same match total (e.g. 3+ goals in United's matches, 3+ in Arsenal's matches), averaged.
+//  A complementary statistic is used only where the source records it for the same matches (goals conceded = the opponent's goals,
+//  corners conceded = the opponent's corners, ...). Nothing is derived from an incomplete feed; missing figures are left out of the
+//  denominator, never counted as 0. The Combined figure is a historical matchup score, not a probability, fair price or EV.
+const { TEAM_MARKETS } = __m['markets'];
+const { CARD_MARKETS } = __m['hiwi-markets'];
+
+const mdef = k => TEAM_MARKETS.find(m => m.key === k) || CARD_MARKETS.find(m => m.key === k) || null;
+const inl = (key, label, get) => ({ key, label, get });
+/** The opponent's complementary statistic for a TEAM market (null: none recorded, or a match market). */
+const COMP = {
+  't.goals': () => mdef('o.goals'), 't.htgoals': () => inl('o.htgoals', 'First-half goals conceded', r => r.htgoalsA ?? null), 't.corners': () => mdef('o.corners'),
+  't.shots': () => mdef('o.shots'), 't.sot': () => mdef('o.sot'), 't.fouls': () => mdef('t.fdrawn'), 't.cards': () => inl('o.cards', 'Cards shown to their opponents', r => r.cardsA ?? null),
+  't.win': () => ({ ...inl('t.lose', 'Lost', r => (r.goals == null || r.goalsA == null ? null : r.goals < r.goalsA ? 1 : 0)), binary: true }),
+  't.dc': () => ({ ...inl('t.nowin', 'Did not win (lost or drew)', r => (r.goals == null || r.goalsA == null ? null : r.goals <= r.goalsA ? 1 : 0)), binary: true }),
+  // Opponent markets (owner Phase 1 fix, 27 Oct): the selected team's figure AGAINST it is compared with the other team's OWN figure, e.g.
+  // Man United Opponent Corners (corners conceded) v Arsenal Team Corners (corners won). Works in both directions with the entries above.
+  'o.goals': () => mdef('t.goals'), 'o.corners': () => mdef('t.corners'), 'o.shots': () => mdef('t.shots'), 'o.sot': () => mdef('t.sot'), 't.fdrawn': () => mdef('t.fouls'),
+};
+const compDef = key => (COMP[key] ? COMP[key]() : null);
+/** [selected team's statistic, opponent's complementary statistic], in words, for the labels ("goals scored" / "goals conceded"). */
+const NOUNS = {
+  't.goals': ['goals scored', 'goals conceded'], 't.htgoals': ['first-half goals scored', 'first-half goals conceded'], 't.corners': ['corners won', 'corners conceded'],
+  't.shots': ['shots taken', 'shots allowed'], 't.sot': ['shots on target', 'shots on target allowed'], 't.fouls': ['fouls committed', 'fouls drawn'],
+  't.cards': ['cards received', 'cards shown to their opponents'], 't.win': ['won', 'lost'], 't.dc': ['won or drew', 'did not win'],
+  'o.goals': ['goals conceded', 'goals scored'], 'o.corners': ['corners conceded', 'corners won'], 'o.shots': ['shots allowed', 'shots taken'], 'o.sot': ['shots on target allowed', 'shots on target'], 't.fdrawn': ['fouls drawn', 'fouls committed'],
+};
+/** Role words for the two percentages of a TEAM play: which one is the "for" side (scoring, winning corners...) and which the "against". */
+const ROLES = { 't.goals': ['SCORING', 'CONCEDING'], 't.htgoals': ['SCORING', 'CONCEDING'], 't.corners': ['WON', 'CONCEDED'], 't.shots': ['FOR', 'AGAINST'], 't.sot': ['FOR', 'AGAINST'],
+  't.fouls': ['COMMITTED', 'DRAWN'], 't.cards': ['RECEIVED', 'OPPONENTS'], 't.win': ['WINS', 'LOSSES'], 't.dc': ['WIN OR DRAW', 'NO WIN'],
+  'o.goals': ['CONCEDING', 'SCORING'], 'o.corners': ['CONCEDED', 'WON'], 'o.shots': ['AGAINST', 'FOR'], 'o.sot': ['AGAINST', 'FOR'], 't.fdrawn': ['DRAWN', 'COMMITTED'] };
+const isMatchKey = k => String(k).startsWith('m.');
+/** Hits of a sample at a line: missing values are not in the sample at all (callers pass recorded values only). */
+function hitsAt(values, L, side) {
+  let h = 0, n = 0; for (const v of values) { if (v === null || v === undefined) continue; n++; if (side === 'under' ? v < L : v > L) h++; }
+  return { hits: h, n, pct: n ? Math.round(h / n * 1000) / 10 : null };
+}
+/** Combined Historical Matchup % of two hit rates (null when either side has no recorded match). */
+const combinedPct = (a, b) => (a.pct == null || b.pct == null ? null : Math.round((a.pct + b.pct) / 2 * 10) / 10);
+
+return { mdef, COMP, compDef, NOUNS, ROLES, isMatchKey, hitsAt, combinedPct };
+})();
+__m['combinedcore'] = (() => {
+// Highest Combined % (owner Phase 1 request, 27 Oct 2026): the shared matchup engine used by Find Plays and Hiwi's Section.
+//
+//  TEAM markets: the selected team's statistic against the opponent's CORRESPONDING statistic (matchup.js COMP): goals scored v goals
+//    conceded, first-half goals v first-half goals conceded, corners won v corners conceded, shots v shots allowed, shots on target v shots
+//    on target allowed, fouls committed v fouls drawn, cards v cards shown to opponents, win v loss, win-or-draw v did not win. Nothing else.
+//  MATCH markets: each team's own matches with the same match total, averaged.
+//  Combined % = (selected % + opponent's corresponding %) / 2: a DESCRIPTIVE historical matchup figure, never a probability or an edge.
+//  Both samples must have the Minimum Qualifying Games (Advanced, default 10), otherwise the play is listed under Limited data without a
+//  combined figure. Missing statistics are never 0: a side with no recorded matches says so and gets no combined figure.
+//  The main cards are compact (no bar charts); Detailed analysis shows both teams' bars, game by game, plus head-to-head kept separate.
+const { store, teamSlugOf, leagueName, isCup, currentSeason, teamsOfLeague, COMP_SHORT } = __m['data'];
+const { marketName, lineMin } = __m['markets'];
+const { getMinQual } = __m['rank'];
+const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
+const { wireBarTaps } = __m['barinfo'];
+const { esc, fmtKick, fixtureId, sampleKey } = __m['util'];
+const { badge } = __m['badge'];
+const { mdef: def0, COMP, NOUNS, ROLES, hitsAt, combinedPct } = __m['matchup'];
+
+// clubRows (Hiwi's competition-scope rules) is handed in by v-hiwi.js, which imports this module (the bundle allows no import cycles)
+let clubRows = () => [];
+const setClubRows = fn => { clubRows = fn; };
+const MATCH_KEYS = ['m.goals', 'm.htgoals', 'm.btts', 'm.corners', 'm.cards', 'm.shots', 'm.sot', 'm.fouls', 'm.draw', 'm.12'];
+const TEAM_KEYS = ['t.goals', 'o.goals', 't.htgoals', 't.corners', 'o.corners', 't.shots', 'o.shots', 't.sot', 'o.sot', 't.fouls', 't.fdrawn', 't.cards', 't.win', 't.dc'];
+const COMBINED_KEYS = [...MATCH_KEYS, ...TEAM_KEYS];
+const PERS = [['season', 'Season'], ['5', 'Last 5'], ['10', 'Last 10'], ['15', 'Last 15'], ['20', 'Last 20'], ['all', 'All']];
+const perTxt = per => (per === 'season' ? 'this season' : per === 'all' ? 'every recorded match' : `last ${per} matches`);
+const sideW = (def, sd) => (def.binary ? (sd === 'under' ? 'No' : 'Yes') : sd === 'under' ? 'Under' : 'Over');
+const teamName = slug => store.teams.get(slug)?.name || slug;
+const SMALL_N = 10; // fewer matches than this on either side (possible when the Minimum Qualifying Games is lowered): "small sample"
+
+// ---- samples, cached (Phase 1 performance: every play asked for the same few teams' rows, copied and re-sorted each time) ----
+let rowsMemo = new Map(), memoKey = null;
+const memoCheck = () => { const k = `${store.teamMatches.length}|${store.fixtures.length}`; if (k !== memoKey) { memoKey = k; rowsMemo = new Map(); sampMemo = new Map(); } };
+/** A team's rows for this fixture's competition context (Hiwi's scope rules), newest first, venue-filtered. */
+const rowsOf = (slug, lg, ven) => { memoCheck(); const base = clubRows(slug, lg); const k = `${slug}|${lg}|${ven || ''}`; let e = rowsMemo.get(k);
+  if (!e || e.base !== base) { const r = base.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)); e = { base, rows: ven ? r.filter(x => (ven === 'home' ? x.home : !x.home)) : r }; rowsMemo.set(k, e); }
+  return e.rows; };
+let sampMemo = new Map();
+/** The sample (newest first, value set) for def and per (Season / Last N of the matches that record this statistic / All). */
+function sample(slug, lg, def, ven, per) {
+  const src = rowsOf(slug, lg, ven), k = `${slug}|${lg}|${def.key}|${ven || ''}|${per}`; const e = sampMemo.get(k); if (e && e.src === src) return e.rows;
+  const all = []; for (const r of src) { const v = def.get(r); if (v !== null && v !== undefined) all.push({ ...r, value: v }); }
+  let out;
+  if (per === 'season') { const cs = isCup(lg) ? Math.max(0, ...all.map(r => r.season)) : currentSeason(lg); out = all.filter(r => r.season === cs); }
+  else if (per === 'all') out = all; // 27 Oct fix: 'all' = every qualifying match (Value asks for this)
+  else out = all.slice(0, Number(per));
+  sampMemo.set(k, { src, rows: out }); return out;
+}
+const hit = (rows, L, sd) => hitsAt(rows.map(r => r.value), L, sd);
+// starting line per competition and market: the half-point nearest the league's median (all its teams, this season and last) that splits
+// those matches closest to 50 / 50 (a typical line for the competition, not tuned to the two teams). Adjustable per play.
+const lineCache = new Map();
+function startLine(lg, def) {
+  if (def.binary) return 0.5; const k = `${lg}|${def.key}|${store.teamMatches.length}`; if (lineCache.has(k)) return lineCache.get(k);
+  const cs = currentSeason(lg), vals = []; for (const t of teamsOfLeague(lg)) for (const r of clubRows(t.slug, lg)) if (r.league === lg && r.season >= cs - 1) { const v = def.get(r); if (v != null) vals.push(v); }
+  let L = 0.5; if (vals.length) { vals.sort((a, b) => a - b); const m = vals[Math.floor(vals.length / 2)]; let best = null; for (const l of [Math.floor(m) - 0.5, Math.floor(m) + 0.5, Math.floor(m) + 1.5]) { if (l < 0.5) continue; const o = vals.filter(v => v > l).length / vals.length, d = Math.abs(o - 0.5); if (!best || d < best.d) best = { l, d }; } L = best ? best.l : 0.5; }
+  lineCache.set(k, L); return L;
+}
+/** Markets that the fixtures' clubs record (either team), in catalogue order. */
+function supportedKeys(fixtures) {
+  const s = new Set();
+  for (const f of fixtures) for (const k of COMBINED_KEYS) { if (s.has(k)) continue; const d = def0(k); if (d && [f.home, f.away].some(t => clubRows(teamSlugOf(t), f.league).some(r => d.get(r) != null))) s.add(k); }
+  return COMBINED_KEYS.filter(k => s.has(k));
+}
+/** Recalculates one play at line L (both percentages and the combined figure). */
+function evalPlay(x, L, o) {
+  const minQ = getMinQual(); x.L = L; x.hA = hit(x.A, L, x.sd); x.hB = hit(x.B, L, x.sd); x.ok = x.hA.n >= minQ && x.hB.n >= minQ;
+  x.comb = x.ok ? combinedPct(x.hA, x.hB) : null; x.small = x.ok && Math.min(x.hA.n, x.hB.n) < SMALL_N;
+  x.pass = !x.ok || ((!o.minEach || (x.hA.pct >= o.minEach && x.hB.pct >= o.minEach)) && (!o.minComb || x.comb >= o.minComb)); return x;
+}
+/**
+ * All plays for the fixtures and markets. o = { per, venue: 'all' | 'same', sides: ['over'] | ['under'] | both, lines: Map(cid -> line),
+ * minEach, minComb }. One play per fixture, market, team (TEAM markets: each side) and Over/Under; never duplicated.
+ */
+function buildPlays(fixtures, keys, o) {
+  const out = [], seen = new Set();
+  for (const f of fixtures) {
+    const h = teamSlugOf(f.home), a = teamSlugOf(f.away), lg = f.league, fid = fixtureId(f);
+    const vH = o.venue === 'same' ? 'home' : null, vA = o.venue === 'same' ? 'away' : null;
+    for (const key of keys) {
+      const def = def0(key); if (!def) continue;
+      const subjects = key.startsWith('m.') ? [{ sel: h, other: a, dA: def, dB: def, vA: vH, vB: vA, kind: 'MATCH', label: marketName(key, def.label) }]
+        : COMP[key] ? [[h, a, vH, vA], [a, h, vA, vH]].map(([s, ot, va, vb]) => ({ sel: s, other: ot, dA: def, dB: COMP[key](), vA: va, vB: vb, kind: 'TEAM', label: `${teamName(s)} ${marketName(key, def.label).replace(/^Team /, '')}` })) : []; // no corresponding statistic: no play
+      for (const sj of subjects) {
+        for (const sd of def.binary ? ['over'] : o.sides) {
+          const cid = `cb|${fid}|${key}|${sj.sel}|${sd}`; if (seen.has(cid)) continue; seen.add(cid);
+          const A = sample(sj.sel, lg, sj.dA, sj.vA, o.per), B = sample(sj.other, lg, sj.dB, sj.vB, o.per);
+          if (!A.length && !B.length) continue; // not recorded for either team's matches: no play (never 0%)
+          const x = evalPlay({ cid, f, fid, lg, key, def, sd, sj, A, B, kind: sj.kind, label: sj.label }, o.lines.get(cid) ?? startLine(lg, def), o);
+          if (x.pass) out.push(x);
+        }
+      }
+    }
+  }
+  return out;
+}
+const ko = x => x.f.ko_utc || `${x.f.date}T23:59`;
+const CMP = { combined: (a, b) => b.comb - a.comb || Math.min(b.hA.n, b.hB.n) - Math.min(a.hA.n, a.hB.n) || a.label.localeCompare(b.label),
+  weakest: (a, b) => Math.min(b.hA.pct, b.hB.pct) - Math.min(a.hA.pct, a.hB.pct) || b.comb - a.comb,
+  fixture: (a, b) => (ko(a) < ko(b) ? -1 : ko(a) > ko(b) ? 1 : 0) || a.label.localeCompare(b.label), az: (a, b) => a.label.localeCompare(b.label) || (ko(a) < ko(b) ? -1 : 1) };
+/** Ranked by the combined % (never by either team's own %); plays without a combined figure follow under Limited data. */
+const sortPlays = (list, how = 'combined') => [...list.filter(x => x.ok).sort(CMP[how] || CMP.combined), ...list.filter(x => !x.ok).sort(CMP.fixture)];
+
+// ---- the compact matchup card (no bar charts) ----
+const nounOf = (x, w) => (x.kind === 'MATCH' ? 'in their own matches' : x.key === '__same' ? `${x.def.label.toLowerCase()}${w === 'B' ? ' (same statistic)' : ''}` : (NOUNS[x.key] || [x.sj.dA.label, x.sj.dB.label])[w === 'A' ? 0 : 1]);
+const roleOf = (x, w) => (x.kind === 'MATCH' ? (w === 'A' ? 'HOME' : 'AWAY') : x.key === '__same' ? (w === 'A' ? 'SELECTED' : 'OPPONENT') : (ROLES[x.key] || ['SELECTED', 'OPPONENT'])[w === 'A' ? 0 : 1]);
+const sideBox = (x, w) => { const h = w === 'A' ? x.hA : x.hB, slug = w === 'A' ? x.sj.sel : x.sj.other;
+  return `<div class="cbt" data-side="${w}"><span class="cbrole">${roleOf(x, w)}</span><span class="cbtn">${badge(teamName(slug))}<span>${esc(teamName(slug))}</span></span><span class="cbnoun">${esc(nounOf(x, w))}</span><b data-cb${w.toLowerCase()}>${h.pct == null ? '–' : h.pct + '%'}</b><span class="cbn">${h.n ? `${h.hits}/${h.n}` : 'not recorded'}</span></div>`; };
+/** One compact matchup card. i: index in the current list. */
+function playHtml(x, i) {
+  const lineCtl = x.def.binary ? `<b class="cbside">${esc(sideW(x.def, x.sd))}</b>` : `<span class="cbline"><button type="button" class="hstep" data-cbstep="-1" aria-label="Lower the line" ${x.L <= lineMin(x.def) ? 'disabled' : ''}>−</button><b class="cbside">${sideW(x.def, x.sd)} ${x.L}</b><button type="button" class="hstep" data-cbstep="1" aria-label="Raise the line">+</button></span>`;
+  const why = !x.ok ? (!x.hA.n || !x.hB.n ? 'one side not recorded' : `needs ${getMinQual()}+ each`) : x.small ? 'small sample' : 'average';
+  return `<article class="card cbcard" data-i="${i}" data-cid="${esc(x.cid)}" data-sa="${esc(sampleKey(x.A))}" data-sb="${esc(sampleKey(x.B))}">
+    <div class="cbhead"><span class="cbbadge cb-${x.kind.toLowerCase()}">${x.kind}</span><span class="cbfx">${esc(x.f.home)} v ${esc(x.f.away)}</span><span class="cbko">${esc(fmtKick(x.f))} · ${esc(leagueName(x.lg))}</span></div>
+    <div class="cbmkt"><b class="cblab">${esc(x.label)}</b>${lineCtl}</div>
+    <div class="cbrow">${sideBox(x, 'A')}<div class="cbc${x.small ? ' small' : ''}"><span class="cbrole">COMBINED</span><b data-cbc class="${x.comb == null ? '' : x.comb >= 70 ? 'hit' : x.comb <= 40 ? 'miss' : ''}">${x.comb == null ? '–' : x.comb + '%'}</b><span class="cbn">${esc(why)}</span></div>${sideBox(x, 'B')}</div>
+    <div class="hacts"><button type="button" class="chip hdetail" data-cbdetail>Detailed analysis ›</button><button type="button" class="chip hprice" data-cbprice>Compare Price</button></div></article>`;
+}
+/** Repaints one card in place after its line changed (order stays put until Re-sort). */
+function paintPlay(el, x, i) { const t = document.createElement('div'); t.innerHTML = playHtml(x, i); const n = t.firstElementChild; el.replaceWith(n); return n; }
+const NOTE = 'Combined % = the average of the two percentages shown: a descriptive historical hit rate, not a probability, a prediction or a betting edge. Each team\'s own matches (not head-to-head).';
+
+/** A hiwi-style card for one team's side of a play (Detailed analysis and Compare Price). */
+function teamCard(x, which, per, defOverride = null) {
+  const slug = which === 'A' ? x.sj.sel : x.sj.other, def = defOverride || (which === 'A' ? x.sj.dA : x.sj.dB), ven = which === 'A' ? x.sj.vA : x.sj.vB;
+  const mk = rows => rows.map(r => ({ date: r.date, opp: `${r.home ? 'v' : '@'}${String(r.opp || '').split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}`, value: r.value, raw: r, comp: COMP_SHORT[r.league] || '' })).reverse();
+  const c = { cid: `cbd|${which}|${x.cid}|${def.key}`, title: teamName(slug), def: { ...def, scope: x.kind === 'MATCH' ? 'match' : which === 'A' ? 'team' : 'opp' }, unit: 'match', tag: which === 'A' ? (x.kind === 'MATCH' ? 'Home team' : 'Selected team') : (x.kind === 'MATCH' ? 'Away team' : 'Opponent (corresponding statistic)'), tagCls: ven === 'home' ? 'home' : ven === 'away' ? 'away' : (which === 'A' ? 'home' : 'away'),
+    perOk: true, perDefault: per, team: slug, lg: store.teams.get(slug)?.league, note: `Each bar: ${def.label} in one ${teamName(slug)} match${ven ? ` (${ven} matches only)` : ''}.`, detailLabel: false };
+  c.perFn = s0 => { const p = s0.per ?? per, r = sample(slug, x.lg, def, ven, p); return { rows: mk(r), m: r.length, period: `${perTxt(p)}${ven ? `, ${ven} only` : ''}`, want: p === 'season' || p === 'all' ? null : Number(p) }; };
+  Object.assign(c, c.perFn({})); return c;
+}
+/** Detailed analysis: ONE view with both teams' bars (shared line), exact dates and results, sample sizes; head-to-head separate. */
+function openDetail(x, per, venueSame, onLine = null) {
+  const reg = new Map(); let L = x.L;
+  const st0 = () => ({ line: x.def.binary ? 0.5 : L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h', per });
+  let bDef = x.sj.dB;
+  const h2hRows = which => { const me = which === 'A' ? x.sj.sel : x.sj.other, opp = which === 'A' ? x.sj.other : x.sj.sel, def = x.sj.dA;
+    return rowsOf(me, x.lg, null).filter(r => r.oppSlug === opp).map(r => ({ ...r, value: def.get(r) })).filter(r => r.value != null); };
+  let persp = 'A';
+  const modal = document.createElement('div'); modal.className = 'modal hcmpmodal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'Detailed analysis');
+  // the summary uses the statistics actually displayed: the corresponding one (the play) by default, the same statistic when that view is chosen
+  const summary = () => { const own = bDef.key !== x.sj.dB.key, B2 = own ? sample(x.sj.other, x.lg, bDef, x.sj.vB, per) : x.B; const a = hit(x.A, L, x.sd), b = hit(B2, L, x.sd), c = a.n >= getMinQual() && b.n >= getMinQual() ? combinedPct(a, b) : null; const y = { ...x, hA: a, hB: b, L, ...(own ? { kind: x.kind, key: '__same', sj: { ...x.sj, dB: bDef } } : {}) };
+    return `<div class="card cbsum" data-cbsum><div class="cbrow">${sideBox(y, 'A').replace('data-cba', 'data-dsa')}<div class="cbc"><span class="cbrole">COMBINED</span><b data-dsc>${c == null ? '–' : c + '%'}</b><span class="cbn">${esc(perTxt(per))}</span></div>${sideBox(y, 'B').replace('data-cbb', 'data-dsb')}</div>
+      <p class="xs muted" style="margin:6px 0 0">${esc(perTxt(per).replace(/^./, s => s.toUpperCase()))} each${venueSame ? ', home team at home, away team away' : ''}. ${esc(NOTE)} Head-to-head below is separate and never part of it.</p></div>`; };
+  const render = () => {
+    const cA = teamCard(x, 'A', per), cB = teamCard(x, 'B', per, bDef);
+    const hr = h2hRows(persp), hN = teamName(persp === 'A' ? x.sj.sel : x.sj.other);
+    const cH = { cid: `cbd|H|${x.cid}`, title: `Head-to-head: ${teamName(x.sj.sel)} v ${teamName(x.sj.other)}`, def: { ...x.def, scope: x.kind === 'MATCH' ? 'match' : 'team' }, unit: 'match', tag: 'Head-to-head', tagCls: 'h2h', h2h: true, rows: hr.map(r => ({ date: r.date, opp: r.home ? 'H' : 'A', value: r.value, raw: r })).reverse(), m: hr.length, period: 'every meeting PropLab holds', note: `${hN}'s ${x.def.label} in each genuine meeting (all competitions PropLab holds).`, perOk: false, detailLabel: false };
+    for (const c of [cA, cB]) { const e = reg.get(c.cid); if (!e) reg.set(c.cid, { card: c, st: st0() }); else { e.card = c; Object.assign(e.st, { line: st0().line }); } }
+    if (!reg.has(cH.cid)) reg.set(cH.cid, { card: cH, st: st0() }); else reg.get(cH.cid).card = cH;
+    const altKey = x.kind === 'TEAM' ? x.key : null;
+    const lineCtl = x.def.binary ? '' : `<div class="field"><label>Line for both bars</label><span class="cbline"><button type="button" class="hstep" data-dstep="-1" aria-label="Lower the line for both teams" ${L <= lineMin(x.def) ? 'disabled' : ''}>−</button><b data-dline>${sideW(x.def, x.sd)} ${L}</b><button type="button" class="hstep" data-dstep="1" aria-label="Raise the line for both teams">+</button></span></div>`;
+    modal.innerHTML = `<div class="sheet"><button type="button" class="btn" data-close><b>← Back to results</b></button>
+      <h2 style="margin:12px 0 2px;overflow-wrap:anywhere">${esc(x.label)}</h2><div class="small muted">${esc(x.f.home)} v ${esc(x.f.away)} · ${esc(fmtKick(x.f))} · <span class="cbbadge cb-${x.kind.toLowerCase()}">${x.kind}</span></div>
+      ${lineCtl}${summary()}
+      <h3 class="cmph">Bar 1 · ${esc(teamName(x.sj.sel))} — ${x.kind === 'MATCH' ? esc(x.def.label) : esc((NOUNS[x.key] || [x.def.label])[0])}</h3><div data-slot="A"></div>
+      <h3 class="cmph">Bar 2 · ${esc(teamName(x.sj.other))} — ${x.kind === 'MATCH' ? esc(x.def.label) : esc(bDef.key === x.sj.dB.key ? (NOUNS[x.key] || ['', x.sj.dB.label])[1] : x.def.label + ' (same statistic)')}</h3>${altKey ? `<div class="seg wrap" data-cbalt role="group" aria-label="Opponent statistic"><button type="button" data-v="comp" class="${bDef.key === x.sj.dB.key ? 'on' : ''}">${esc(x.sj.dB.label)} (corresponding, default)</button><button type="button" data-v="own" class="${bDef.key !== x.sj.dB.key ? 'on' : ''}">${esc(x.def.label)} (same statistic for both)</button></div>` : ''}<div data-slot="B"></div>
+      <h3 class="cmph">Head-to-head (separate)</h3><div class="seg wrap" data-cbpersp role="group" aria-label="Whose figures"><button type="button" data-v="A" class="${persp === 'A' ? 'on' : ''}">${esc(teamName(x.sj.sel))}'s side</button><button type="button" data-v="B" class="${persp === 'B' ? 'on' : ''}">${esc(teamName(x.sj.other))}'s side</button></div><div data-slot="H"></div></div>`;
+    for (const [k, c] of [['A', cA], ['B', cB], ['H', cH]]) { const e = reg.get(c.cid); const t = document.createElement('div'); t.innerHTML = cardHtml(c, e.st); const el = t.firstElementChild; paintHCard(el, c, e.st); modal.querySelector(`[data-slot="${k}"]`).appendChild(el); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); }
+    wireHCards(modal.querySelector('.sheet'), reg, () => {}); wireBarTaps(modal.querySelector('.sheet'), e => reg.get(e.dataset.cid), 'football', null);
+  };
+  document.body.appendChild(modal); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'; render();
+  modal.addEventListener('click', e => {
+    if (e.target.closest('[data-close]')) { modal.remove(); document.body.style.overflow = prev; if (onLine && L !== x.L) onLine(L); return; }
+    const ds = e.target.closest('[data-dstep]'); if (ds) { const sh = modal.querySelector('.sheet'), sy = sh ? sh.scrollTop : 0; L = Math.max(lineMin(x.def), Math.round((L + Number(ds.dataset.dstep)) * 2) / 2); render(); const sh2 = modal.querySelector('.sheet'); if (sh2) sh2.scrollTop = sy; return; }
+    const alt = e.target.closest('[data-cbalt] button'); if (alt) { bDef = alt.dataset.v === 'own' ? x.def : x.sj.dB; reg.delete(`cbd|B|${x.cid}|${x.def.key}`); reg.delete(`cbd|B|${x.cid}|${x.sj.dB.key}`); render(); return; }
+    const pp = e.target.closest('[data-cbpersp] button'); if (pp) { persp = pp.dataset.v; render(); }
+  });
+}
+/** Compare Price for a play: the selected team's own record goes to Value; the opponent is shown beside it as research. */
+function priceEvent(x, per) {
+  const c = teamCard(x, 'A', per), cb = teamCard(x, 'B', per); c.pair = { title: cb.title, def: cb.def, perFn: cb.perFn, label: x.kind === 'MATCH' ? `${teamName(x.sj.other)}'s matches` : `${teamName(x.sj.other)}: ${x.sj.dB.label}` }; c.title = x.label; c.noPrice = false;
+  const st0 = { line: x.def.binary ? 0.5 : x.L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h', per };
+  return new CustomEvent('hprice', { bubbles: true, detail: { cid: c.cid, card: c, st: st0 } });
+}
+/**
+ * Renders a list of plays into box with paging, in-place line changes and a Re-sort button (owner Phase 1: the order and the scroll position
+ * stay put while lines change; Re-sort applies the new figures). ctx = { per, venueSame, lines: Map, get: () => plays (already filtered and
+ * sorted), resort: () => void }. Returns { draw }.
+ */
+function mountPlays(box, ctx) {
+  let plays = [], shown = 30, stale = false;
+  const draw = (keep = false) => {
+    if (!keep) shown = 30; plays = ctx.get(); stale = false;
+    const okN = plays.filter(x => x.ok).length;
+    box.innerHTML = !plays.length ? `<div class="banner info"><b>No matchups.</b> ${esc(ctx.empty || 'The selected markets are not recorded for these fixtures, or the minimums leave nothing.')}</div>`
+      : `<p class="xs muted cbsumline" style="margin:0 0 8px">${okN} matchup${okN === 1 ? '' : 's'} ranked by <b>Highest Combined %</b>${plays.length > okN ? `; ${plays.length - okN} without enough matches under Limited data (each side needs ${getMinQual()}: choose a longer history such as Last 10 or Last 20, or lower the minimum in Advanced filters)` : ''}. ${esc(NOTE)}</p>
+        <div class="cbstale" data-cbstale hidden><span class="xs">A line changed: figures are updated, the order is not.</span> <button type="button" class="chip" data-cbresort>⇅ Re-sort</button></div>
+        <div data-cblist>${plays.slice(0, shown).map((x, i) => `${!x.ok && (i === 0 || plays[i - 1].ok) ? `<h3 class="limhead">Limited data <span class="xs muted">fewer than ${getMinQual()} matches for a team, or a side not recorded: no combined figure</span></h3>` : ''}${playHtml(x, i)}`).join('')}</div>
+        ${plays.length > shown ? `<button type="button" class="btn" data-cbmore>Show more (${plays.length - shown} more)</button>` : ''}`;
+  };
+  box.addEventListener('click', e => {
+    if (e.target.closest('[data-cbmore]')) { const y = scrollY; shown += 30; const list = box.querySelector('[data-cblist]'); const more = e.target.closest('[data-cbmore]');
+      list.insertAdjacentHTML('beforeend', plays.slice(shown - 30, shown).map((x, j) => { const i = shown - 30 + j; return `${!x.ok && (i === 0 || plays[i - 1].ok) ? `<h3 class="limhead">Limited data</h3>` : ''}${playHtml(x, i)}`; }).join(''));
+      if (plays.length > shown) more.textContent = `Show more (${plays.length - shown} more)`; else more.remove(); scrollTo(0, y); return; }
+    if (e.target.closest('[data-cbresort]')) { ctx.resort(); return; }
+    const art = e.target.closest('.cbcard'); if (!art) return; const i = Number(art.dataset.i), x = plays[i]; if (!x) return;
+    const stp = e.target.closest('[data-cbstep]');
+    if (stp) { const n = Math.max(lineMin(x.def), Math.round((x.L + Number(stp.dataset.cbstep)) * 2) / 2); ctx.lines.set(x.cid, n); evalPlay(x, n, {});
+      const top = art.getBoundingClientRect().top; const el = paintPlay(art, x, i);
+      if (!stale) { stale = true; const s = box.querySelector('[data-cbstale]'); if (s) s.hidden = false; }
+      const dy = el.getBoundingClientRect().top - top; if (dy) scrollBy({ top: dy, behavior: 'instant' }); return; } // the card stays exactly where it was
+    if (e.target.closest('[data-cbdetail]')) { openDetail(x, ctx.per(), ctx.venueSame(), L => { ctx.lines.set(x.cid, L); evalPlay(x, L, {}); paintPlay(art, x, i); }); return; }
+    if (e.target.closest('[data-cbprice]')) box.dispatchEvent(priceEvent(x, ctx.per()));
+  });
+  return { draw };
+}
+
+return { setClubRows, MATCH_KEYS, TEAM_KEYS, COMBINED_KEYS, PERS, perTxt, sideW, teamName, SMALL_N, rowsOf, sample, hit, startLine, supportedKeys, evalPlay, buildPlays, CMP, sortPlays, playHtml, paintPlay, NOTE, teamCard, openDetail, priceEvent, mountPlays };
 })();
 __m['icons'] = (() => {
 const s = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
@@ -3479,49 +3802,6 @@ function mlsProminence(players, season) {
 
 return { getPopular, setPopular, getPlayerSort, setPlayerSort, nflHasProminence, mlsProminence };
 })();
-__m['matchup'] = (() => {
-// Two-team matchup comparison (owner requirement 27 Oct 2026), shared by Best Combined % (v-combined.js) and Hiwi's Detailed analysis.
-//
-//  TEAM markets: the selected team's statistic against the opponent's COMPLEMENTARY statistic, e.g. Team Goals Over 1.5 =
-//    "Man United scored 2+" (goals scored) next to "Arsenal conceded 2+" (goals conceded). Combined Historical Matchup % =
-//    (selected team's hit rate + opponent's complementary hit rate) / 2, each over its own qualifying matches.
-//  MATCH markets: each team's own matches with the same match total (e.g. 3+ goals in United's matches, 3+ in Arsenal's matches), averaged.
-//  A complementary statistic is used only where the source records it for the same matches (goals conceded = the opponent's goals,
-//  corners conceded = the opponent's corners, ...). Nothing is derived from an incomplete feed; missing figures are left out of the
-//  denominator, never counted as 0. The Combined figure is a historical matchup score, not a probability, fair price or EV.
-const { TEAM_MARKETS } = __m['markets'];
-const { CARD_MARKETS } = __m['hiwi-markets'];
-
-const mdef = k => TEAM_MARKETS.find(m => m.key === k) || CARD_MARKETS.find(m => m.key === k) || null;
-const inl = (key, label, get) => ({ key, label, get });
-/** The opponent's complementary statistic for a TEAM market (null: none recorded, or a match market). */
-const COMP = {
-  't.goals': () => mdef('o.goals'), 't.htgoals': () => inl('o.htgoals', 'First-half goals conceded', r => r.htgoalsA ?? null), 't.corners': () => mdef('o.corners'),
-  't.shots': () => mdef('o.shots'), 't.sot': () => mdef('o.sot'), 't.fouls': () => mdef('t.fdrawn'), 't.cards': () => inl('o.cards', 'Cards shown to their opponents', r => r.cardsA ?? null),
-  't.win': () => ({ ...inl('t.lose', 'Lost', r => (r.goals == null || r.goalsA == null ? null : r.goals < r.goalsA ? 1 : 0)), binary: true }),
-  't.dc': () => ({ ...inl('t.nowin', 'Did not win (lost or drew)', r => (r.goals == null || r.goalsA == null ? null : r.goals <= r.goalsA ? 1 : 0)), binary: true }),
-};
-const compDef = key => (COMP[key] ? COMP[key]() : null);
-/** [selected team's statistic, opponent's complementary statistic], in words, for the labels ("goals scored" / "goals conceded"). */
-const NOUNS = {
-  't.goals': ['goals scored', 'goals conceded'], 't.htgoals': ['first-half goals scored', 'first-half goals conceded'], 't.corners': ['corners won', 'corners conceded'],
-  't.shots': ['shots taken', 'shots allowed'], 't.sot': ['shots on target', 'shots on target allowed'], 't.fouls': ['fouls committed', 'fouls drawn'],
-  't.cards': ['cards received', 'cards shown to their opponents'], 't.win': ['won', 'lost'], 't.dc': ['won or drew', 'did not win'],
-};
-/** Role words for the two percentages of a TEAM play: which one is the "for" side (scoring, winning corners...) and which the "against". */
-const ROLES = { 't.goals': ['SCORING', 'CONCEDING'], 't.htgoals': ['SCORING', 'CONCEDING'], 't.corners': ['WON', 'CONCEDED'], 't.shots': ['FOR', 'AGAINST'], 't.sot': ['FOR', 'AGAINST'],
-  't.fouls': ['COMMITTED', 'DRAWN'], 't.cards': ['RECEIVED', 'OPPONENTS'], 't.win': ['WINS', 'LOSSES'], 't.dc': ['WIN OR DRAW', 'NO WIN'] };
-const isMatchKey = k => String(k).startsWith('m.');
-/** Hits of a sample at a line: missing values are not in the sample at all (callers pass recorded values only). */
-function hitsAt(values, L, side) {
-  let h = 0, n = 0; for (const v of values) { if (v === null || v === undefined) continue; n++; if (side === 'under' ? v < L : v > L) h++; }
-  return { hits: h, n, pct: n ? Math.round(h / n * 1000) / 10 : null };
-}
-/** Combined Historical Matchup % of two hit rates (null when either side has no recorded match). */
-const combinedPct = (a, b) => (a.pct == null || b.pct == null ? null : Math.round((a.pct + b.pct) / 2 * 10) / 10);
-
-return { mdef, COMP, compDef, NOUNS, ROLES, isMatchKey, hitsAt, combinedPct };
-})();
 __m['leaguepick'] = (() => {
 // Football league multi-selection shared by Hiwi's Section and the Hit Rate Finder: one checkbox per league, "All Leagues", and
 // "Today's Games Only" (today = the UK calendar date, from each fixture's UTC kick-off, so British Summer Time is handled). Football only:
@@ -3600,13 +3880,14 @@ __m['v-hiwi'] = (() => {
 // Football can research several leagues at once (league checkboxes, All Leagues, Today's Games Only = UK date). NFL is never mixed in.
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
 const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT, hasEuropean } = __m['data'];
-const { fbPlayers, hasPlayerLogs } = __m['fbscan'];
+const { fbPlayers, hasPlayerLogs, clubsWithPlayerStats } = __m['fbscan'];
+const { setClubRows, buildPlays: cbBuild, sortPlays: cbSort, mountPlays, COMBINED_KEYS, supportedKeys: cbSupported } = __m['combinedcore'];
 const { nflSeasonGames: nfl_nflSeasonGames, injuryStatus: nfl_injuryStatus, latestSeason: nfl_latestSeason, loadGroup: nfl_loadGroup, nfl: nfl_nfl, nflSelectable: nfl_nflSelectable, nflUpcoming: nfl_nflUpcoming, teamGameRows: nfl_teamGameRows, teamName: nfl_teamName } = __m['nfl-data'];
 const { NBA_POS: nba_NBA_POS, TYPE_NAME: nba_TYPE_NAME, injuryStatus: nba_injuryStatus, latestSeason: nba_latestSeason, nba: nba_nba, nbaSelectable: nba_nbaSelectable, nbaUpcoming: nba_nbaUpcoming, nextGameOf: nba_nextGameOf, playerRows: nba_playerRows, seasonLabel: nba_seasonLabel, teamGameRows: nba_teamGameRows, teamName: nba_teamName } = __m['nba-data'];
 const { NBA_GROUPS, nbaDef, nbaGameDetailHtml, baselineLine } = __m['nba-markets'];
 const { openGraphModal } = __m['panel'];
 const { BEAR_ART } = __m['icons'];
-const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, statusBadge } = __m['util'];
+const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, statusBadge, SCROLLERS } = __m['util'];
 const { normName, teamAliases } = __m['teams'];
 const { setLeague, hooks } = __m['shared'];
 const { leagueGameweek, nextLeagueGameweek, nflWeek, nflNextWeek } = __m['gameweek'];
@@ -3644,7 +3925,7 @@ const POP_TEXT = {
 };
 const RANK_TEXT = 'Highest % First ranks cards by the hit rate of the side shown on each card. Only cards with at least the minimum number of qualifying games are ranked together; cards with fewer follow under Limited data. Ties go to the larger sample, then A–Z. Strongest Evidence ranks by the 95% lower bound of the hit rate, which rewards a high rate and a large sample together. The order is fixed until you sort again: changing a line, side or Games used on a card updates that card where it is.';
 const MODE_SCOPES = { teams: ['match', 'team', 'opp', 'player'], matches: ['match', 'team', 'opp', 'player'] };
-const mk = () => ({ dates: null, fteams: new Set(), popAuto: new Set(), popRemoved: new Set(), untick: new Set(), mode: 'teams', gw: { cur: true, next: false }, today: false, fx: new Set(), linked: null, teams: new Set(), players: { teams: new Set(), matches: new Set() }, markets: { teams: new Set(), matches: new Set() }, period: 'season', sort: 'hi', tq: '', pq: '', ppos: '' });
+const mk = () => ({ dates: null, fteams: new Set(), popAuto: new Set(), popRemoved: new Set(), untick: new Set(), mode: 'teams', gw: { cur: true, next: false }, today: false, fx: new Set(), linked: null, teams: new Set(), players: { teams: new Set(), matches: new Set() }, markets: { teams: new Set(), matches: new Set() }, period: 'season', sort: 'hi', rank: 'hi', cbLines: new Map(), minComb: 0, minEach: 0, tq: '', pq: '', ppos: '' });
 const S = { football: mk(), nfl: mk(), nba: { ...mk(), period: 10 } }; // NBA starts on Last 10: early in a season 'Season' has few games
 const SNAP = {}; // sport -> { order: [cid], shown } of the last results list, to restore it exactly after Back to Plays
 const cardState = new Map(); // `${sport}|${cid}` -> { line, side, userLine } kept while the visitor stays on the site
@@ -3676,6 +3957,7 @@ const isEuScope = v => v === 'eu' || isCup(v);
 /** The rows a page uses for club slug, seen in competition ctxLg (owner request 20 Oct: a club with European matches uses the remembered
  *  All games / Domestic league only / European choice everywhere, All games by default; clubs without European matches: league rows as before). */
 const clubRows = (slug, ctxLg) => (isCup(ctxLg) ? teamRowsScoped(slug, scopeFor(ctxLg)) : hasEuropean(slug) ? teamRowsScoped(slug, clubScopeFor()) : teamRowsFor(slug));
+setClubRows(clubRows); // the shared matchup engine (combinedcore.js) uses Hiwi's competition-scope rules
 /** The scope a page shows for slug in ctxLg, or null when the club has no European matches (no switch needed). */
 const clubScopeIn = (slug, ctxLg) => (isCup(ctxLg) ? scopeFor(ctxLg) : hasEuropean(slug) ? clubScopeFor() : null);
 /** The three choices on a card of competition lg ('eu' = a club's European matches in any competition). */
@@ -3766,7 +4048,8 @@ async function viewHiwi(root, r, sport) {
     }
     const g = { cur, next }; gwCache.set(lg, g); return g;
   };
-  const fxById = id => (usMode ? A.d.gameById.get(id) : store.fixtures.find(x => fixtureId(x) === id));
+  let fxIdx = { arr: null, map: null };
+  const fxById = id => { if (usMode) return A.d.gameById.get(id); if (fxIdx.arr !== store.fixtures) fxIdx = { arr: store.fixtures, map: new Map(store.fixtures.map(x => [fixtureId(x), x])) }; return fxIdx.map.get(id); };
   /** Today's fixtures (UK date) in the selected leagues that can still be researched (not finished, postponed or abandoned). */
   const todayFx = () => (usMode ? A.selectable(now).filter(g => nightOf(g) === viewingNight(now)) // tonight's US schedule, incl. games after midnight UK
      : lgs.flatMap(lg => selectableFixtures(lg, now)).filter(f => isTodayUK(f, now))).sort(fxSortLocal);
@@ -3779,10 +4062,18 @@ async function viewHiwi(root, r, sport) {
     if (st.linked && !outFx.some(x => fxId(x.f) === st.linked)) { const f = fxById(st.linked); if (f) outFx.push({ f, which: 'linked', lg: usMode ? sport : f.league }); }
     return outFx;
   };
-  const playsToday = id => todayFx().some(f => homeAway(f).includes(id));
+  // Performance (Phase 1): one set of today's clubs per redraw instead of re-reading every fixture for every club
+  let ptCache = { key: null, set: null };
+  const playsToday = id => { const key = `${lgs.join()}|${Math.floor(Date.now() / 60000)}|${st.today}`; if (ptCache.key !== key) ptCache = { key, set: new Set(todayFx().flatMap(homeAway)) }; return ptCache.set.has(id); };
   const allTeams = () => (usMode ? [...A.d.teams.values()].map(t => ({ id: t.abbr, name: t.name, lg: sport, terms: A.searchTerms(t.abbr, t.name) }))
     : lgs.flatMap(lg => teamsOfLeague(lg).map(t => ({ id: t.slug, name: t.name, lg, terms: fbSearchTerms(t.name, teamAliases(t.name)) })))).filter(t => !st.today || playsToday(t.id)).sort((a, b) => a.name.localeCompare(b.name));
-  const lgsWithPlayers = () => (usMode ? [sport] : lgs.filter(hasPlayerLogs));
+  // Player section (Phase 1, owner request 27 Oct): football shows it only when a SELECTED fixture (Upcoming Matches) or selected team has
+  // genuine player statistics this season (clubsWithPlayerStats: from the player match logs, never from the league's name). With no team
+  // ticked in Individual Teams, the leagues decide, so players can still be searched by name. Player data is only loaded for those leagues.
+  const subjClubs = () => (st.mode === 'teams' ? [...st.teams] : selFx().flatMap(id => { const f = fxById(id); return f ? homeAway(f) : []; }));
+  const lgsWithPlayers = () => { if (usMode) return [sport]; const cov = clubsWithPlayerStats(), subj = subjClubs();
+    if (st.mode === 'teams' && !subj.length) return lgs.filter(hasPlayerLogs);
+    return [...new Set(subj.filter(id => cov.has(id)).map(id => store.teams.get(id)?.league).filter(Boolean))]; };
   const hasPlayers = () => usMode || lgsWithPlayers().length > 0;
   let plLoading = null; // one download at a time, shared by every caller
   const ensurePlayers = () => { if (usMode) return Promise.resolve(); if (plLoading) return plLoading.then(() => ensurePlayers()); if (!lgsWithPlayers().some(lg => !playersBy.has(lg))) return Promise.resolve();
@@ -3939,10 +4230,15 @@ async function viewHiwi(root, r, sport) {
   };
   // Owner report 20 Oct: ticking a fixture redrew the filter and the fixture list inside it jumped back to the top. Every scrolled element in
   // the filter (fixture, team, player lists...) is remembered by its place (nearest id + class + index) and restored after a redraw.
-  const scrollKeys = () => { const seen = new Map(), out = new Map(); for (const el of hf.querySelectorAll('*')) { const host = el.parentElement?.closest('[id]'); const k = `${host ? host.id : ''}|${el.tagName}|${el.className}`; const n = seen.get(k) || 0; seen.set(k, n + 1); out.set(el, `${k}|${n}`); } return out; };
+  const scrollKeys = () => { const seen = new Map(), out = new Map(); for (const el of hf.querySelectorAll(SCROLLERS)) { const host = el.parentElement?.closest('[id]'); const k = `${host ? host.id : ''}|${el.tagName}|${el.className}`; const n = seen.get(k) || 0; seen.set(k, n + 1); out.set(el, `${k}|${n}`); } return out; };
   const keepScroll = fn => { const saved = new Map(); for (const [el, k] of scrollKeys()) if (el.scrollTop > 0 || el.scrollLeft > 0) saved.set(k, [el.scrollTop, el.scrollLeft]); const wy = scrollY;
     fn(); if (saved.size) for (const [el, k] of scrollKeys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); };
-  const draw = () => keepScroll(drawNow);
+  const draw = () => { clearTimeout(laterT); keepScroll(drawNow); };
+  let laterT = null;
+  const later = (ms = 140) => { clearTimeout(laterT); globalThis.__plPending = 1; laterT = setTimeout(() => { laterT = null; if (hf.isConnected) { draw(); refresh(); } }, ms); };
+  const quickCounts = () => { const n = selFx().length; const c = $('#hfxcount', hf); if (c) c.innerHTML = `<b>${n}</b> ${isNba || usMode ? 'game' : 'fixture'}${n === 1 ? '' : 's'} selected${multi() ? ` across ${lgs.length} leagues` : ''}`;
+    const sm = $('#hfx > summary .muted', hf); if (sm) sm.textContent = n ? `${n} selected` : 'none selected'; const tm = $('#htm > summary .muted', hf); if (tm) tm.textContent = st.teams.size ? `${st.teams.size} selected` : 'none selected';
+    const pm = $('#hpl > summary .muted', hf); if (pm && st.players) pm.textContent = pls().size ? `${pls().size} selected` : pm.textContent; };
   /** Exclude injured players (OUT only), with the injury report and its freshness. Football: no injury feed, so the box is off and greyed. */
   const availHtml = () => (usMode ? `<div class="field havail"><label class="hcheck"><input type="checkbox" id="hxout" ${getExcludeOut() ? 'checked' : ''}><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">${getExcludeOut() ? 'On: players confirmed Out for that game get no card' : 'Off: Out players get a card marked Unavailable'}. Questionable, Doubtful and Probable players always stay; a missing or old report never counts as Out.</span></span></label>${injNote()}</div>`
     : ''); // football: no box at all until a reliable football injury feed exists (owner request 21 Oct, evening)
@@ -3953,7 +4249,7 @@ async function viewHiwi(root, r, sport) {
     return `<div class="hpsel" id="hpsel"><div class="row" style="border:0;padding:0;gap:8px;align-items:center"><b class="small">${P.size} player${P.size === 1 ? '' : 's'} selected</b><button type="button" class="chip" data-selshow aria-expanded="${!!st.selOpen}">${st.selOpen ? 'Hide' : 'Show / remove'}</button>${st.popAuto.size ? `<span class="xs muted">${st.popAuto.size} added by Popular Players</span>` : ''}</div>
       ${st.selOpen ? `<input class="in" id="hsq" type="search" placeholder="Search selected players" value="${esc(st.sq || '')}" aria-label="Search selected players" autocomplete="off" style="margin-top:6px"><div class="hlist hsellist">${sh.map(([id, n]) => `<div class="hselrow"><span>${esc(n)}${st.popAuto.has(id) ? ' <span class="xs muted">Popular</span>' : ''}</span><button type="button" class="chip" data-unpick="${esc(id)}" aria-label="Remove ${esc(n)}">Remove</button></div>`).join('') || '<p class="xs muted">No selected player matches.</p>'}</div>` : ''}</div>`; };
   const drawNow = () => {
-    const tms = rankTeams(st.tq, allTeams());
+    const tms = st.mode === 'teams' ? rankTeams(st.tq, allTeams()) : []; // Upcoming Matches shows no team list (Phase 1: it was built on every tick)
     const pool = hasPlayers() ? playerPool() : []; const shownP = pool.filter(p => match(st.pq, [p.name])); const popOn = getPopular() && promAvailable(); const nShow = popOn ? Infinity : st.pshow || 100; // Popular on: every popular player is listed (no page of 100)
     const sup = supported(); const ms = mkts(); for (const k of [...ms]) if (!sup.has(k)) ms.delete(k);
     const P = pls();
@@ -3975,7 +4271,7 @@ async function viewHiwi(root, r, sport) {
         ${usMode ? `<div class="seg wrap" id="hpos">${(isNba ? nba_NBA_POS : [['', 'All'], ['qb', 'QB'], ['rb', 'RB'], ['wr', 'WR'], ['te', 'TE'], ['k', 'K'], ['def', 'Defence']]).map(([v, l]) => `<button type="button" data-v="${v}" class="${st.ppos === v ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
         ${P.size ? selectedHtml(P) : ''}
         <label class="hcheck hpopchk"><input type="checkbox" id="hpop" ${popOn ? 'checked' : ''} ${promAvailable() ? '' : 'disabled'}><span><b>${usMode ? 'Popular Players' : 'Popular Players Only'}</b> <span class="xs muted">${promAvailable() ? (usMode ? 'ticks every popular player of the selected teams / games' : 'regular starters and leading scorers / creators of the selected clubs') : 'prominence data unavailable today: every player is listed'}</span> ${infoTag('pop', 'How they are chosen', { cls: 'neutral' }).replace('data-info="pop"', `data-info="pop" data-title="Popular Players" data-text="${esc(POP_TEXT[sport])}"`)}</span></span></label>
-        <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px;align-items:center"><label class="xs muted" for="hpsort">Order</label><select class="in" id="hpsort" style="max-width:220px"><option value="prom" ${getPlayerSort() === 'prom' ? 'selected' : ''}>Player Prominence (biggest first)</option><option value="az" ${getPlayerSort() === 'az' ? 'selected' : ''}>A–Z</option></select></div>
+        <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap"><label class="xs muted" for="hpsort">Order</label><select class="in" id="hpsort" style="max-width:220px;min-width:0;flex:1 1 160px"><option value="prom" ${getPlayerSort() === 'prom' ? 'selected' : ''}>Player Prominence (biggest first)</option><option value="az" ${getPlayerSort() === 'az' ? 'selected' : ''}>A–Z</option></select></div>
         <input class="in" id="hpq" type="search" placeholder="Search players" value="${esc(st.pq)}" aria-label="Search players" autocomplete="off" style="margin-top:6px">
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-all="players">Select all shown</button><button type="button" class="chip" data-none="players">Clear all</button></div>
         <p class="xs muted hpcount" id="hpcount" style="margin:4px 0">Showing ${Math.min(nShow, shownP.length)} of ${shownP.length} ${popOn ? 'popular ' : ''}player${shownP.length === 1 ? '' : 's'}${st.pq ? ` matching "${esc(st.pq)}"` : ''}.${popOn ? ' Prominence decides who appears here; Minimum games played still decides who gets a result card.' : ''}</p>
@@ -3992,7 +4288,11 @@ async function viewHiwi(root, r, sport) {
         ${isNfl ? `        <div class="field"><label for="hmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="hmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}" aria-label="Minimum games played">
         <span class="xs muted">1–20. Players need this many games, teams this many matches, <b>this season</b>, with a recorded figure for the market. Earlier seasons do not count here (they are still used for Last 5 / 10 / 20 and H2H). Below it a card is hidden and listed with its count.</span></div></div>` : ''}
       </details>
-      <div class="hsortbar"><button type="button" class="chip" id="hsort" aria-haspopup="dialog">⇅ Sort: ${esc(SORTS.find(x => x[0] === st.sort)[1])}</button></div>`;
+      ${usMode ? '' : `<div class="field"><label>Rank by</label><div class="seg wrap" id="hrank" role="group" aria-label="Rank by">${[['hi', 'Highest %'], ['combined', 'Highest Combined %']].map(([v, l]) => `<button type="button" data-hrank="${v}" class="${st.rank === v ? 'on' : ''}" aria-pressed="${st.rank === v}">${l}</button>`).join('')}</div>
+        <p class="xs muted" style="margin:4px 0 0">${st.rank === 'combined' ? 'Matchups: each team\'s statistic next to the opponent\'s corresponding one (goals scored v goals conceded, corners won v corners conceded...), ranked by their average. Compact cards; bars in Detailed analysis.' : 'Individual plays ranked by their own hit rate, each with its bars.'}</p></div>
+        ${st.rank === 'combined' ? `<div class="field"><label>Minimum combined %</label><div class="seg wrap" id="hmincomb">${[[0, 'Any'], [60, '60%'], [65, '65%'], [70, '70%'], [75, '75%'], [80, '80%']].map(([v, l]) => `<button type="button" data-hmc="${v}" class="${st.minComb === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="field"><label>Minimum each team %</label><div class="seg wrap" id="hmineach">${[[0, 'Any'], [50, '50%'], [60, '60%'], [70, '70%'], [80, '80%']].map(([v, l]) => `<button type="button" data-hme="${v}" class="${st.minEach === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}`}
+      ${!usMode && st.rank === 'combined' ? '' : `<div class="hsortbar"><button type="button" class="chip" id="hsort" aria-haspopup="dialog">⇅ Sort: ${esc(SORTS.find(x => x[0] === st.sort)[1])}</button></div>`}`;
   };
 
   // ---------- result cards ----------
@@ -4077,7 +4377,7 @@ async function viewHiwi(root, r, sport) {
   };
   let hidden = [], excluded = [];
   async function build() {
-    trCache.clear(); gwCache.clear(); if (pls().size || [...mkts()].some(k => defOf(k)?.scope === 'player')) await ensurePlayers(); // player logs (MLS: ~17 MB) only when players are used
+    { const k = `${isNba ? getNbaTypes() : ''}|${lgs.join()}|${store.teamMatches.length}`; if (trCache.get('__key') !== k) { trCache.clear(); trCache.set('__key', k); } } gwCache.clear(); // rows are reused between ticks (Phase 1) if (pls().size || [...mkts()].some(k => defOf(k)?.scope === 'player')) await ensurePlayers(); // player logs (MLS: ~17 MB) only when players are used
     const outc = []; notes = []; hidden = []; excluded = []; const mo = marketOrder(); const minG = isNfl ? Math.min(getMinGames(), nfl_nflSeasonGames() || getMinGames()) : 0; // football: no Minimum Games Played (NFL only); capped at the games played so far
     const valid = (rows, def) => rows.reduce((n, x) => { const v = def.get(x); return n + (v !== null && v !== undefined ? 1 : 0); }, 0);
     // rows = the subject's CURRENT-SEASON rows only; returns the eligible count, or (NFL only) null when below the minimum (0 games is always excluded)
@@ -4095,6 +4395,7 @@ async function viewHiwi(root, r, sport) {
       if (!mkts().has(k)) continue; const def = defOf(k); if (!def || !MODE_SCOPES[st.mode].includes(def.scope)) continue;
       const mi = mo.get(k) ?? 0;
       if (def.scope === 'player') {
+        if (!hasPlayers()) continue; // no selected fixture or team has player statistics: player markets are not processed at all
         if (!pls().size) { notes.push(`${def.label}: choose players to see this market.`); continue; }
         const pool = new Map(playerPool().concat(usMode ? [] : fbPlayerList().map(p => ({ id: p.id, name: p.name, team: p.clubSlug, sub: p.team, p }))).map(p => [p.id, p]));
         for (const id of pls()) {
@@ -4183,18 +4484,37 @@ async function viewHiwi(root, r, sport) {
   };
   // A line or side change only repaints its own card. The order is fixed until the sort, the markets, the selection or the period changes.
   const onCommit = () => {};
-  let io = null;
-  const refresh = async () => {
+  // ---------- Highest Combined % (owner Phase 1, 27 Oct): compact matchup cards for the selected fixtures (Upcoming Matches) or the selected
+  // teams' next fixtures (Individual Teams), using the page's markets, Over / Under, form period, venue and competition choice ----------
+  const nextFxOf = slug => { const f = lgs.flatMap(lg => selectableFixtures(lg, now)).find(x => fxStatus(x, now) === 'pre' && (teamSlugOf(x.home) === slug || teamSlugOf(x.away) === slug)); return f || null; };
+  let cbList = null;
+  const refreshCombined = () => {
+    const fixtures = st.mode === 'matches' ? selFx().map(fxById).filter(Boolean).sort(fxSortLocal) : [...new Map([...st.teams].map(nextFxOf).filter(Boolean).map(f => [fixtureId(f), f])).values()].sort(fxSortLocal);
+    const keys = mkts().size ? [...mkts()].filter(k => COMBINED_KEYS.includes(k)) : cbSupported(fixtures), skipped = [...mkts()].filter(k => !COMBINED_KEYS.includes(k)).map(k => defOf(k)?.label).filter(Boolean);
+    const noFx = st.mode === 'teams' ? [...st.teams].filter(t => !nextFxOf(t)).map(teamLabel) : [];
+    const sides = getGlobalSide() === 'both' ? ['over', 'under'] : [getGlobalSide() === 'under' ? 'under' : 'over'];
+    out.innerHTML = `${seasonNote()}<div class="xs muted">${st.mode === 'teams' ? 'Individual Teams: each selected team\'s next fixture. ' : ''}${mkts().size ? '' : 'No market chosen, so every matchup market the fixtures record is used. '}${skipped.length ? `Not ranked here (no corresponding opponent statistic): ${esc([...new Set(skipped)].slice(0, 8).join(', '))}${skipped.length > 8 ? '…' : ''}. Choose Highest % to see them. ` : ''}${noFx.length ? `No upcoming fixture for ${esc(noFx.join(', '))}. ` : ''}</div><div id="hcb"></div>`;
+    const box = $('#hcb', out);
+    if (!fixtures.length || !keys.length) { box.innerHTML = `<div class="banner info"><b>${!fixtures.length ? 'No fixture to compare.' : 'No matchup markets selected.'}</b> ${!fixtures.length ? 'Tick fixtures (or teams with an upcoming fixture).' : 'Choose team or match markets such as Team Goals, Team Corners or Match Goals.'}</div>`; return; }
+    const o = { per: String(st.period), venue: st.venue === 'same' ? 'same' : 'all', sides, lines: st.cbLines, minEach: st.minEach, minComb: st.minComb };
+    cbList = mountPlays(box, { lines: st.cbLines, per: () => String(st.period), venueSame: () => st.venue === 'same', get: () => cbSort(cbBuild(fixtures, keys, o)), resort: () => { const y = scrollY; cbList.draw(true); scrollTo(0, y); } });
+    cbList.draw();
+  };
+  let io = null, refreshGen = 0;
+  const refresh = async () => { const gen = ++refreshGen; clearTimeout(laterT); laterT = null; globalThis.__plPending = 1;
+    try { await refreshNow(gen); } finally { if (gen === refreshGen && !laterT) globalThis.__plPending = 0; } };
+  const refreshNow = async (gen) => {
     // zero leagues ticked (allowed since 20 Oct): nothing to search or calculate until one is chosen
     if (!usMode && !lgs.length) { out.innerHTML = '<div class="banner info"><b>Select a league to view fixtures.</b> Tick one or more leagues or competitions above.</div>'; return; }
     const subj = st.mode === 'teams' ? st.teams.size : selFx().length;
-    const nothing = !mkts().size || (!subj && !pls().size);
+    const nothing = (!mkts().size && !(st.rank === 'combined' && !usMode)) || (!subj && !pls().size); // Highest Combined % with no market chosen: every matchup market
     if (nothing) {
       const what = st.mode === 'teams' ? 'teams' : 'fixtures';
       out.innerHTML = `${seasonNote()}<div class="banner info"><b>${!mkts().size ? 'Choose at least one market' : `Choose ${what}${hasPlayers() ? ' or players' : ''}`}.</b> ${!mkts().size ? 'Tap Select Markets.' : st.mode === 'matches' && !st.today && !st.gw.cur && !st.gw.next ? 'Turn on a gameweek, then tick fixtures.' : 'Tick them above.'} Every choice gets its own card with an adjustable line and bar chart.</div>`; return;
     }
+    if (!usMode && st.rank === 'combined') { refreshCombined(); return; }
     out.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>';
-    const built0 = await build();
+    const built0 = await build(); if (gen !== refreshGen) return; // a newer selection superseded this build
     // Over / Under / Both at the top (owner request 21 Oct, evening): Both makes each card twice, an Over card and an Under card, each with its
     // own percentage and clearly labelled; nothing is merged into one figure. A card's own switch is Over / Under only.
     const built = getGlobalSide() === 'both' ? built0.flatMap(c => [{ ...c, forceSide: 'over' }, { ...c, cid: c.cid + '|u', forceSide: 'under' }]) : built0;
@@ -4302,7 +4622,7 @@ async function viewHiwi(root, r, sport) {
     // Two-team matchup (owner requirement 27 Oct): for a football TEAM market the opponent section shows the opponent's COMPLEMENTARY
     // statistic by default (goals scored v goals conceded...), a toggle shows its own statistic for research; MATCH markets keep each team's
     // own match totals. One line drives both team bars; the matchup summary uses the play's definition only (head-to-head stays separate).
-    const cd = !usMode && d.scope === 'team' ? compDef(d.key) : null; let oppMode = cd ? 'comp' : 'own'; let shared = s0.line;
+    const cd = !usMode && (d.scope === 'team' || d.scope === 'opp') ? compDef(d.key) : null; /* Opponent markets compare with the other team's own figure (Phase 1 fix) */ let oppMode = cd ? 'comp' : 'own'; let shared = s0.line;
     const meVen = s0.venue === 'same' ? (c.tagCls === 'away' ? 'away' : 'home') : (s0.venue === 'home' || s0.venue === 'away' ? s0.venue : 'all');
     const oppVen = meVen === 'home' ? 'away' : meVen === 'away' ? 'home' : 'all';
     const sections = () => {
@@ -4312,7 +4632,7 @@ async function viewHiwi(root, r, sport) {
       const tc = (id, cidp, tag, tagCls, def = d, ven = 'all') => { const b = teamCard(id, def, {}, sc), pv = b.perFn({ per, scope: sc || undefined, venue: ven });
         return { ...b, ...pv, cid: cidp, tag, tagCls, showComp: !!sc, perOk: false, perFn: null, detailLabel: 'Full chart and filters ›' }; };
       secs.push(['Selected team', tc(me, 'cmp|me', 'Selected team', 'home', d, meVen)]);
-      if (opp) { secs.push(['Opponent', oppMode === 'comp' ? tc(opp, 'cmp|oppc', 'Opponent (complementary)', 'away', { ...cd, scope: 'opp', group: d.group }, oppVen) : tc(opp, 'cmp|opp', 'Opponent', 'away', d, oppVen)]); const hc = h2hCard(me, opp, d, 'cmp|h2h', sc); hc.showComp = !!sc; hc.detailLabel = 'Full chart and filters ›'; secs.push(['Head-to-head', hc]); }
+      if (opp) { secs.push(['Opponent', oppMode === 'comp' ? tc(opp, 'cmp|oppc', 'Opponent (corresponding statistic)', 'away', { ...cd, scope: d.scope === 'opp' ? 'team' : 'opp', group: d.group }, oppVen) : tc(opp, 'cmp|opp', 'Opponent', 'away', d, oppVen)]); const hc = h2hCard(me, opp, d, 'cmp|h2h', sc); hc.showComp = !!sc; hc.detailLabel = 'Full chart and filters ›'; secs.push(['Head-to-head', hc]); }
       return secs;
     };
     const modal = document.createElement('div'); modal.className = 'modal hcmpmodal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'Detailed analysis');
@@ -4321,13 +4641,14 @@ async function viewHiwi(root, r, sport) {
     // shared line, over the two team views' own games; the toggle below changes the research view only, never this figure
     const matchupSummary = secs => {
       const me0 = secs.find(([h]) => h === 'Selected team'), L = Number(shared), sd = s0.side === 'under' || s0.side === 'no' ? 'under' : 'over';
-      const oc = (() => { if (!cd) return secs.find(([h]) => h === 'Opponent')?.[1]; const b = teamCard(opp, { ...cd, scope: 'opp', group: d.group }, {}, c.sc || null); return { ...b, ...b.perFn({ per, scope: c.sc || undefined, venue: oppVen }) }; })();
+      const same = !cd || oppMode === 'own'; // the summary uses the statistics actually displayed (corresponding by default; the same one when chosen)
+      const oc = (() => { if (same) return secs.find(([h]) => h === 'Opponent')?.[1]; const b = teamCard(opp, { ...cd, scope: d.scope === 'opp' ? 'team' : 'opp', group: d.group }, {}, c.sc || null); return { ...b, ...b.perFn({ per, scope: c.sc || undefined, venue: oppVen }) }; })();
       const vals = cc => (cc?.rows || []).map(r => r.value); const a = hitsAt(vals(me0?.[1]), L, sd), b = hitsAt(vals(oc), L, sd), comb = combinedPct(a, b);
-      const nouns = cd ? (NOUNS[d.key] || [d.label, cd.label]) : [d.label.toLowerCase(), d.label.toLowerCase()], roles = cd ? (ROLES[d.key] || ['SELECTED', 'OPPONENT']) : ['SELECTED TEAM', 'OPPONENT'];
+      const nouns = !same ? (NOUNS[d.key] || [d.label, cd.label]) : [d.label.toLowerCase(), d.label.toLowerCase() + (cd ? ' (same statistic)' : '')], roles = !same ? (ROLES[d.key] || ['SELECTED', 'OPPONENT']) : ['SELECTED TEAM', 'OPPONENT'];
       const tile = (role, name, noun, h) => `<div class="cbt"><span class="cbrole">${role}</span><span class="xs muted">${esc(name)}: ${esc(noun)}${d.binary ? '' : `, ${sd === 'under' ? 'Under' : 'Over'} ${L}`}</span><b>${h.pct == null ? '–' : h.pct + '%'}</b><span class="xs muted">${h.n ? `${h.hits} of ${h.n} matches` : 'no recorded matches'}</span></div>`;
       return `<div class="card cbsum" data-hmatchup><p class="small" style="margin:0 0 6px"><b>Two-team matchup</b> <span class="cbbadge cb-${d.scope === 'match' ? 'match' : 'team'}">${d.scope === 'match' ? 'MATCH' : 'TEAM'}</span></p><div class="cbrow">${tile(roles[0], teamLabel(me), nouns[0], a)}<div class="cbc"><span class="xs muted">Combined matchup</span><b data-hcomb>${comb == null ? '–' : comb + '%'}</b></div>${tile(roles[1], teamLabel(opp), nouns[1], b)}</div>
         <p class="xs muted" style="margin:6px 0 0">${d.scope === 'match' ? "Each team's own matches with this match total" : `${esc(teamLabel(me))}'s ${esc(nouns[0])} against ${esc(teamLabel(opp))}'s ${esc(nouns[1])}`}${meVen !== 'all' ? ` (${esc(teamLabel(me))} ${meVen} matches, ${esc(teamLabel(opp))} ${oppVen} matches)` : ''}. Combined = average of the two: a historical matchup score, not a probability. Head-to-head is separate.</p>
-        ${cd ? `<div class="seg wrap" data-oppmode role="group" aria-label="Opponent view below" style="margin-top:6px"><button type="button" data-v="comp" class="${oppMode === 'comp' ? 'on' : ''}">Opponent below: ${esc(cd.label)}</button><button type="button" data-v="own" class="${oppMode === 'own' ? 'on' : ''}">Opponent below: its own ${esc(d.label)} (research)</button></div>` : ''}</div>`;
+        ${cd ? `<div class="seg wrap" data-oppmode role="group" aria-label="Opponent view below" style="margin-top:6px"><button type="button" data-v="comp" class="${oppMode === 'comp' ? 'on' : ''}">Corresponding (default): ${esc(cd.label)}</button><button type="button" data-v="own" class="${oppMode === 'own' ? 'on' : ''}">Same statistic for both: ${esc(d.label)}</button></div>` : ''}</div>`;
     };
     const render = () => {
       const secs = sections();
@@ -4452,7 +4773,9 @@ async function viewHiwi(root, r, sport) {
     if (t.dataset.pick) { const set = t.dataset.pick === 'players' ? pls() : st[t.dataset.pick]; t.checked ? set.add(t.value) : set.delete(t.value);
       if (t.dataset.pick === 'players') { if (t.checked) st.popRemoved.delete(t.value); else if (st.popAuto.has(t.value)) { st.popAuto.delete(t.value); st.popRemoved.add(t.value); } } else popApply();
       if (t.dataset.pick === 'fx') t.checked ? st.untick.delete(t.value) : st.untick.add(t.value); // an explicit untick is never silently re-ticked
-      remember(); draw(); refresh(); }
+      // Performance (Phase 1, owner report 27 Oct: ticks took seconds to register): the tick shows at once (the browser has already drawn
+      // it); counts update immediately; the filter redraw and the results rebuild run once, shortly after the last tick of a quick series.
+      remember(); quickCounts(); later(); }
   });
   hf.addEventListener('click', e => {
     const t = e.target;
@@ -4462,6 +4785,8 @@ async function viewHiwi(root, r, sport) {
       if (need) ensurePlayers().then(() => { const m0 = document.querySelector('.hmkmodal'); if (m0 && m0.dataset.waiting) openMarkets(false, m0); }); return; }
     if (t.closest('#hpl > summary')) bgPlayers(); // the Players list loads player data when first opened
     if (t.closest('#hsort')) { openSort(); return; }
+    const rk = t.closest('[data-hrank]'); if (rk) { if (st.rank !== rk.dataset.hrank) { st.rank = rk.dataset.hrank; remember(); draw(); refresh(); } return; }
+    const mc = t.closest('[data-hmc]'), me = t.closest('[data-hme]'); if (mc || me) { if (mc) st.minComb = Number(mc.dataset.hmc); else st.minEach = Number(me.dataset.hme); remember(); draw(); refresh(); return; }
     const hv = t.closest('[data-hven]'); if (hv) { st.venue = hv.dataset.hven; resetOverrides(['venue']); remember(); draw(); refresh(); return; }
     const hs = t.closest('[data-hscope]'); if (hs) { setUclScope(hs.dataset.hscope === 'eu' ? 'cup' : hs.dataset.hscope); resetOverrides(['scope']); remember(); draw(); refresh(); return; } // a new search: every card starts on this choice
     // Global filters (owner report 26 Oct): a global change reaches EVERY card, including cards whose own control was changed before;
@@ -4659,11 +4984,12 @@ const { hitRate } = __m['analytics'];
 function scanOne(rows, markets, o) {
   const results = [], misses = []; let scanned = 0;
   markets.forEach((def, order) => {
-    const f = applyFilters(marketRows(rows, def, o.exposureKey || null), { last: o.last || null, season: o.season || null, venue: o.venue || '', types: o.types || null });
+    const mr = marketRows(rows, def, o.exposureKey || null);
+    const f = applyFilters(mr, { last: o.last || null, season: o.season || null, venue: o.venue || '', types: o.types || null });
     if (!f.length) return; // no recorded value for this statistic in this sample: the market is simply not offered
     const values = f.map(r => r.value);
     if (o.suggest) { // one line per market from earlier games (see lineFromEarlier); no line-hunting
-      const all = applyFilters(marketRows(rows, def, o.exposureKey || null), { venue: o.venue || '', types: o.types || null });
+      const all = applyFilters(mr, { venue: o.venue || '', types: o.types || null });
       const L = o.suggestRows ? (def.binary ? 0.5 : suggestFrom(applyFilters(marketRows(o.suggestRows, def), {}), f[0].season, methodFor(o.suggest, def.key), def)) : lineFromEarlier(all, f, o.suggest, def);
       scanned++; if (L == null) return;
       for (const side of (def.binary || def.overOnly) ? o.sides.filter(x => x === 'over') : o.sides) {
@@ -4716,6 +5042,7 @@ const { openGraphModal } = __m['panel'];
 
 const PCTS = [60, 65, 70, 75, 80, 85, 90, 95, 100];
 const SAMPLES = [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
+const poolMemo = new WeakMap(); // a player's game log -> his qualifying games for the current minutes / game-type filters
 const ui = { kind: 'game', game: '', player: '', team: '', last: 10, side: null, pop: true, picked: null, removed: new Set() };
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
 
@@ -4756,7 +5083,8 @@ async function viewNbaPlays(root, r) {
   const per = () => ui.last;
   const playerCards = async (p, g) => {
     const raw = (await loadLogs(p.logs_file)).get(p.id) || [], minM = nbaMinGlobal() || 0;
-    const pool = raw.filter(x => !x.dnp && nbaTypeOk(x.type) && (!minM || (x.min != null && x.min >= minM))); // minutes BEFORE Last N
+    const pk = `${minM}|${getNbaTypes()}`; let pc = poolMemo.get(raw); if (!pc || pc.k !== pk) { pc = { k: pk, pool: raw.filter(x => !x.dnp && nbaTypeOk(x.type) && (!minM || (x.min != null && x.min >= minM))) }; poolMemo.set(raw, pc); } // minutes BEFORE Last N; reused while the filters are unchanged (Phase 1)
+    const pool = pc.pool;
     const res = scanOne(pool, NBA_MARKETS, { lines: nbaLines, suggest: 'nba', sides: sides(), minPct: prefs.minPct, last: ui.last === 'season' ? 0 : ui.last, season: ui.last === 'season' ? cs : null });
     return { res, cards: res.results.map(x => { const def = nbaDef(x.def.key);
       const c = buildUsPlayerCard({ sport: 'nba', A, p, def, key: def.key, raw, game: g, period: per, periodText: () => `${seasonLabel(cs)} season`, startLine: x.line, cid: `pp|${p.id}|${def.key}|${x.side}`, extraContext: ` · line ${x.def.binary ? 'Yes / No' : x.line} set from his games before these (not tuned to them)` });
@@ -4772,7 +5100,8 @@ async function viewNbaPlays(root, r) {
       return { c, st: { line: x.line, side: def.binary ? 'yes' : x.side, userLine: true, persp: 'h' } }; }); };
   const section = (title, items, empty) => `<section class="sec"><h2>${title}</h2>${items.length ? '<div class="hcards" data-sec></div>' : `<div class="banner info">${empty}</div>`}</section>`;
   if (!out._xo) { out._xo = true; out.addEventListener('change', e => { if (e.target.id === 'fxout') { setExcludeOut(e.target.checked); draw(); } }); }
-  const draw = async () => {
+  let gen = 0;
+  const draw = async () => { const my = ++gen; globalThis.__plPending = 1; // a newer choice supersedes an unfinished one (rapid switching no longer stacks up work)
     reg = new Map(); out.innerHTML = '<div class="skel"></div>'; const blocks = [];
     if (ui.kind === 'game') {
       const g = gameOf(); if (!g) { out.innerHTML = '<div class="banner info">No upcoming NBA game to choose.</div>'; return; }
@@ -4783,7 +5112,7 @@ async function viewNbaPlays(root, r) {
         <label class="hcheck" style="margin-top:6px"><input type="checkbox" id="fxout" ${getExcludeOut() ? 'checked' : ''}><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">Questionable, Doubtful and Probable players always stay; a missing or old report never counts as Out.</span></span></label></div>`;
       const ps = playersOf(g).filter(p => ui.picked.set.has(p.id) && !(getExcludeOut() && isConfirmedOut(injuryStatus(p, g))));
       const items = [];
-      for (const p of ps) { const { cards } = await playerCards(p, g); items.push(...cards); }
+      for (const p of ps) { const { cards } = await playerCards(p, g); if (my !== gen) return; items.push(...cards); }
       { const r0 = rankList(items.map(x => ({ ...x, hr: x.c.hr })), 'hi', x => x.c.title, typeof ui.last === 'number' ? ui.last : null); items.length = 0; items.push(...r0); } // shared rule: Highest % first, Limited data after
       blocks.push([head + section('Player props', items, ps.length ? `No selected player reached ${prefs.minPct}% in this sample.` : 'Tick players above (or Popular Players).'), items]);
       const t = [...teamCards(g.away, g), ...teamCards(g.home, g)];
@@ -4791,10 +5120,11 @@ async function viewNbaPlays(root, r) {
     } else if (ui.kind === 'player') {
       const p = nba.playerById.get(ui.player); if (!p) { out.innerHTML = '<div class="banner info">Choose a player.</div>'; return; }
       const g = nbaUpcoming(now).find(x => x.home === p.team || x.away === p.team) || null; const ij = injuryStatus(p, g);
-      const { cards, res } = await playerCards(p, g);
+      const { cards, res } = await playerCards(p, g); if (my !== gen) return;
       blocks.push([`${g ? `<div class="card gamehead"><b>Next: ${esc(teamName(g.away))} at ${esc(teamName(g.home))}</b><div class="small muted">${esc(fmtKick(g))}${ij && ij.cls !== 'none' ? ` · <span class="injb inj-${ij.cls}">${esc(ij.label)}</span>` : ''}</div></div>` : ''}${ij && ij.unavailable ? `<div class="banner bad"><b>${esc(p.name)} is ${esc(ij.label)}</b> on the Official NBA Injury Report for this game, so his props are not active plays. The research below is history only.</div>` : ''}
         <p class="xs muted">${res.scanned} markets with data scanned · minimum ${prefs.minPct}% · ${cards.length} result${cards.length === 1 ? '' : 's'}.</p>${section(esc(p.name), cards, `No market reached ${prefs.minPct}% in this sample.`)}`, cards]);
     } else { const t = teamCards(ui.team, nbaUpcoming(now).find(x => x.home === ui.team || x.away === ui.team)); blocks.push([section(`${esc(teamName(ui.team))} team markets`, t, `No team market reached ${prefs.minPct}% in this sample.`), t]); }
+    if (my !== gen) return; globalThis.__plPending = 0;
     out.innerHTML = blocks.map(b => b[0]).join('') + `<p class="xs muted">How a result is chosen: for each market, ONE line is set from his (or the team's) matches BEFORE the ones shown, by the method that matched the next game best in past seasons (half-point lines; a research line, not a bookmaker line). The matches shown never set their own line, so no line is lowered until a high % appears; the minimum hit rate only filters the results. ${nbaMinGlobal() ? `Only games with ${nbaMinGlobal()}+ minutes count (applied before Last N). ` : ''}A DNP is never a game. Handicap research is in Hiwi's Section and Finder.</p>`;
     const secs = [...out.querySelectorAll('[data-sec]')];
     blocks.filter(b => b[1].length).forEach((b, i) => { const box = secs[i]; for (const { c, st } of b[1]) { reg.set(c.cid, { card: c, st }); const t = document.createElement('div'); t.innerHTML = cardHtml(c, st); const el = t.firstElementChild; paintHCard(el, c, st); box.appendChild(el); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); }
@@ -5642,13 +5972,26 @@ async function viewMatch(root, r) {
 
 return { viewMatch };
 })();
+__m['fxsel'] = (() => {
+// The football fixture selection shared by Find Plays' two ranking modes (Highest % and Highest Combined %), so switching between them keeps
+// the same leagues (leaguepick.js), Today's Games choice and ticked fixtures (owner Phase 1 request, 27 Oct 2026).
+const SEL = { today: false, games: new Set(), untick: new Set(), auto: true };
+/** Makes ui.today / ui.games / ui.untick read and write the shared selection. */
+function shareSelection(ui) {
+  for (const k of ['today', 'games', 'untick']) Object.defineProperty(ui, k, { get: () => SEL[k], set: v => { SEL[k] = v; }, enumerable: true, configurable: true });
+  return ui;
+}
+
+return { SEL, shareSelection };
+})();
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
 const { infoTag } = __m['info'];
-const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped, COMP_SHORT, hasEuropean } = __m['data'];
+const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped, COMP_SHORT, hasEuropean, fxSort } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope, syncMinus, playBadge } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
-const { membership } = __m['fbscan'];
+const { membership, clubsWithPlayerStats } = __m['fbscan'];
+const { shareSelection } = __m['fxsel'];
 const { applyFilters } = __m['research'];
 const { FOOTBALL_RANGES, researchLines } = __m['lines'];
 const { stepperHtml, venueWord, hitsLine, haFormHtml, haFormClick, researchPanel } = __m['panel'];
@@ -5661,7 +6004,7 @@ const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
 const { evidence, plainSentence, qualMin, getMinQual, wilson } = __m['rank'];
 
 // minN is internal only (no on-screen control): every result shows its real number of matches instead.
-const ui = { today: false, lgOpen: false, gOpen: true, games: new Set(), untick: new Set(), order: 'hi', mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' };
+const ui = shareSelection({ lgOpen: false, gOpen: true, order: 'hi', mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' });
 const PCTS = [70, 75, 80, 85, 90, 95, 100];
 const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']];
 const ORDERS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
@@ -5704,12 +6047,13 @@ async function viewTrends(root, r) {
     <p class="muted">Discover trends across many teams or several fixtures at once. Every figure is a <b>historical hit rate</b> from completed matches: not the chance of it happening next time, not a tip.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root);
+  let tickT = null;
 
   // Several leagues can be researched together (league checkboxes, All Leagues). Results are ranked across all of them together.
   let lgs = getLeagues();
   const multi = () => lgs.length > 1;
   const now = new Date();
-  const lgFixtures = () => lgs.flatMap(l => selectableFixtures(l, now)).filter(f => !ui.today || isTodayUK(f, now)).sort((a, b) => (koUK(a).ymd + koUK(a).hm < koUK(b).ymd + koUK(b).hm ? -1 : 1));
+  const lgFixtures = () => lgs.flatMap(l => selectableFixtures(l, now)).filter(f => !ui.today || isTodayUK(f, now)).sort(fxSort); // cached sort keys (Phase 1)
   const playingToday = () => { const s2 = new Set(); for (const f of lgFixtures()) { s2.add(teamSlugOf(f.home)); s2.add(teamSlugOf(f.away)); } return s2; };
   const leagueTeams = () => { const tod = ui.today ? playingToday() : null; const both = lgs.some(x => !isCup(x)) && lgs.some(isCup); // a club in its league and in a European competition is listed once per competition: domestic, and (UCL) / (UEL) / (UECL)
     return lgs.flatMap(l => teamsOfLeague(l).map(t => ({ ...t, lg: l, key: isCup(l) ? `${l}:${t.slug}` : t.slug, name: isCup(l) && (both || lgs.filter(isCup).length > 1) ? `${t.name} (${COMP_SHORT[l]})` : t.name }))).filter(t => !tod || tod.has(t.slug)).sort((a, b) => a.name.localeCompare(b.name)); };
@@ -5717,9 +6061,16 @@ async function viewTrends(root, r) {
   const rowsOfT = t => clubRows(t.slug, t.lg); // European clubs: All games / Domestic / European choice everywhere (20 Oct)
   const selSet = () => { const k = lgs.join(',') + (ui.today ? '|today' : ''); if (!ui.sel[k]) ui.sel[k] = new Set(leagueTeams().map(t => t.key)); return ui.sel[k]; };
   const lgLabel = () => leaguesLabel(lgs);
-  const teamMarkets = () => { const rows = leagueTeams().flatMap(t => rowsOfT(t)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); return TEAM_PLAY_MARKETS.filter(m => has.has(m.key)); };
-  const hasPlayers = () => store.playerIndex.some(p => lgs.includes(p.league));
-  const playerMarkets = () => (hasPlayers() ? PLAYER_PLAY_MARKETS.filter(m => playerAll ? [...playerAll.values()].some(p => lgs.includes(p.league) && marketsWithData(p.rows, PLAYER_MARKETS).some(x => x.key === m.key)) : ['shots', 'shots_on_target', 'goals', 'assists', 'goal_contrib'].includes(m.key)) : []);
+  // Performance (Phase 1): which markets have data is worked out once per league / Today choice (it re-read every row of every club on each redraw)
+  let tmMemo = { k: null, v: null }, pmMemo = { k: null, v: null };
+  const teamMarkets = () => { const k = `${lgs.join()}|${ui.today}|${getUclScope()}`; if (tmMemo.k === k) return tmMemo.v; const rows = leagueTeams().flatMap(t => rowsOfT(t)); const has = new Set(marketsWithData(rows, TEAM_MARKETS).map(m => m.key)); tmMemo = { k, v: TEAM_PLAY_MARKETS.filter(m => has.has(m.key)) }; return tmMemo.v; };
+  const playerKeysWithData = () => { const k = `${lgs.join()}|${playerAll ? playerAll.size : 0}`; if (pmMemo.k === k) return pmMemo.v; const has = new Set(); if (playerAll) for (const p of playerAll.values()) if (lgs.includes(p.league)) for (const m of marketsWithData(p.rows, PLAYER_MARKETS)) has.add(m.key); pmMemo = { k, v: has }; return has; };
+  // Phase 1 (owner request 27 Oct): the Player choice appears only when a selected fixture (or selected team) has genuine player statistics
+  // this season, decided from the player match logs (clubsWithPlayerStats), never from the league's name.
+  const hasPlayers = () => { const cov = clubsWithPlayerStats(); if (!cov.size) return false;
+    const clubs = ui.mode === 'game' ? selFixtures().flatMap(f => [teamSlugOf(f.home), teamSlugOf(f.away)]) : [...selSet()].map(k => (k.includes(':') ? k.split(':')[1] : k));
+    return clubs.some(c => cov.has(c)); };
+  const playerMarkets = () => (hasPlayers() ? PLAYER_PLAY_MARKETS.filter(m => playerAll ? playerKeysWithData().has(m.key) : ['shots', 'shots_on_target', 'goals', 'assists', 'goal_contrib'].includes(m.key)) : []);
   const allMarkets = () => [...teamMarkets(), ...playerMarkets()];
   // The Market list follows Show: Teams = team and match markets, Players = player markets, All = both.
   const kindMarkets = () => (ui.kind === 'team' ? teamMarkets() : ui.kind === 'player' ? playerMarkets() : allMarkets());
@@ -5728,7 +6079,7 @@ async function viewTrends(root, r) {
   const isPlayerKey = k => PLAYER_PLAY_MARKETS.some(m => m.key === k);
   const curFixture = () => selFixtures()[0] || null;
   // Several fixtures can be ticked; each is researched separately (never one pooled sample across teams).
-  const selFixtures = () => store.fixtures.filter(x => lgs.includes(x.league) && ui.games.has(fixtureId(x))).sort((a, b) => (koUK(a).ymd + koUK(a).hm < koUK(b).ymd + koUK(b).hm ? -1 : 1));
+  const selFixtures = () => store.fixtures.filter(x => lgs.includes(x.league) && ui.games.has(fixtureId(x))).sort(fxSort);
   const period = () => { const seasons = [...new Set(store.teamMatches.filter(m => lgs.includes(m.league)).map(m => m.season))].sort(); return ui.period === 'season' ? { last: 0, season: seasons[seasons.length - 1] || null } : { last: Number(ui.period), season: null }; };
   const periodWord = () => (ui.period === 'season' ? 'this season\'s' : Number(ui.period) ? `last ${ui.period}` : 'all');
 
@@ -5786,7 +6137,7 @@ async function viewTrends(root, r) {
         <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="">All markets</option>${mk.map(m => `<option value="${esc(m.key)}" ${ui.market === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(ui.market ? marketDesc(ui.market) : 'Every market below is scanned; pick one to see what it counts.')}</p></div></div>`}
       <div class="field"><label>Minimum historical hit rate</label>${seg('minPct', PCTS.map(p => [p, p + '%']), ui.minPct, 'grid')}</div>
       <div class="field"><label>Sample (completed matches)</label>${seg('period', PERIODS, ui.period, 'grid')}<span class="xs muted">Season = the current league season only. Last N = the last N matches after Home/Away Form.</span></div>
-      <div class="field"><label for="ford">Sort</label><select class="in" id="ford">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+      <div class="field"><label for="ford">Sort</label><select class="in" id="ford">${ORDERS.map(([v, l]) => `<option value="${v}" ${ui.order === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}<option value="__comb">Highest Combined % (matchups) ›</option>${''}</select></div>`;
   };
   const showLine = () => { const exDef = allMarkets().find(m => m.key === ui.exKey); syncMinus(ctl, ui.exLine, exDef); const lab = $('#exlab', ctl), inp = $('#exl', ctl), note = $('#exnote', ctl); if (lab && exDef) lab.textContent = `${exDef.label} — ${sideWord(ui.exSide)} ${ui.exLine}`; if (inp && document.activeElement !== inp) inp.value = ui.exLine; if (note) note.innerHTML = defNote; };
 
@@ -5813,7 +6164,10 @@ async function viewTrends(root, r) {
   const baseOpts = () => ({ suggest: true, lines: (def) => researchLines(FOOTBALL_RANGES, def.key, def.binary), minPct: ui.minPct, minN: ui.minN, sides: ui.side === 'both' ? ['over', 'under'] : [ui.side], marketKey: ui.market, exact: ui.lineMode === 'exact' ? { key: ui.exKey, side: ui.exSide, line: ui.exLine } : null, ...period() });
   const what = () => { if (ui.lineMode !== 'exact') return 'any market'; const d = allMarkets().find(m => m.key === ui.exKey) || { label: '' }; return d.binary ? 'both teams to score: Yes' : `${sideWord(ui.exSide)} ${ui.exLine} ${mLabel(d)}`; };
   const defsFor = () => ({ team: teamMarkets(), player: playerMarkets() });
-  const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); return [...playerAll.values()].filter(p => lgs.includes(p.league)).map(p => ({ ...membership(p, p.league), p })).filter(x => x.currentClub).map(({ p, currentClub, currentTeam }) => ({ id: p.id, type: 'player', name: p.name, club: currentTeam, clubSlug: currentClub, lg: p.league, href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
+  // Performance (Phase 1): the player list (with each player's current-club check) is built once per league selection, not once per game
+  let psMemo = { k: null, v: null };
+  const playerSubjects = async () => { if (!hasPlayers()) return []; if (!playerAll) playerAll = await loadAllPlayerRows(); const k = lgs.join(); if (psMemo.k === k && psMemo.src === playerAll) return psMemo.v; psMemo = { k, src: playerAll, v: playerSubjectsNow() }; return psMemo.v; };
+  const playerSubjectsNow = () => { return [...playerAll.values()].filter(p => lgs.includes(p.league)).map(p => ({ ...membership(p, p.league), p })).filter(x => x.currentClub).map(({ p, currentClub, currentTeam }) => ({ id: p.id, type: 'player', name: p.name, club: currentTeam, clubSlug: currentClub, lg: p.league, href: `#/player/${encodeURIComponent(p.id)}`, rows: p.rows })); };
   const noPlayersNote = () => `<div class="banner info"><b>Player statistics are not available for ${esc(lgLabel())}.</b> No free source licenses these leagues' player match statistics for public display (PropLab has player logs for MLS only), so no player results are shown. Team trends and head to head work as normal. Nothing is estimated.</div>`;
   const foot = '<p class="xs muted">Every result shows how many matches it is based on; a high hit rate over a small sample often fades. Home/Away is applied before the sample, so "Last 10 + Home" means the last 10 home matches. Team lines do not adjust for the opponent. Missing statistics are left out, never counted as zero. Total match goals = both teams\' full-time goals (Over 2.5 needs 3 or more). First-half goals use the recorded half-time score. Match cards and Team cards = yellow cards + red cards as recorded (a second yellow counts as recorded by the source); no bookmaker card-points rules are assumed.</p>';
 
@@ -5929,9 +6283,12 @@ async function viewTrends(root, r) {
       if (ui.today && ui.mode === 'game') for (const f of lgFixtures()) if (!ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); // never re-ticks a game the user unticked
       ui.market = ''; ui.exLine = null; ui.shown = 40; ui.gShown = 12; redrawCtl(); draw(); return; }
     if (t.matches('.tcheck input')) { t.checked ? selSet().add(t.value) : selSet().delete(t.value); updCount(); ui.shown = 40; ui.exLine = null; draw(); return; }
-    if (t.matches('[data-g]')) { ui.gShown = 12; t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value)); redrawCtl(); draw(); return; }
+    if (t.matches('[data-g]')) { ui.gShown = 12; t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value));
+      // Phase 1: the tick shows at once; the count updates now; one redraw runs shortly after the last tick of a quick series
+      const gc = $('#gcount', ctl); if (gc) gc.textContent = `${selFixtures().length} selected`; clearTimeout(tickT); globalThis.__plPending = 1;
+      tickT = setTimeout(async () => { tickT = null; redrawCtl(); try { await draw(); } finally { if (!tickT) globalThis.__plPending = 0; } }, 140); return; }
     if (t.id === 'mk') { ui.market = t.value; ui.shown = 40; redrawCtl(); draw(); return; }
-    if (t.id === 'ford') { ui.order = t.value; ui.shown = 40; draw(); return; }
+    if (t.id === 'ford') { if (t.value === '__comb') { location.hash = '#/finder?m=combined'; return; } ui.order = t.value; ui.shown = 40; draw(); return; }
     if (t.id === 'exk') { ui.exKey = t.value; ui.exLine = null; redrawCtl(); draw(); }
   });
   ctl.addEventListener('input', e => {
@@ -6086,244 +6443,81 @@ async function viewTable(root) {
 return { viewTable };
 })();
 __m['v-combined'] = (() => {
-// Best Combined % (owner request 26 Oct, Phase 2): the default Football Find Plays view. For every selected fixture and market it puts the
-// two teams' OWN recent histories side by side (this is not head-to-head) and ranks fixtures where both point the same way.
-//
-//  MATCH markets (both teams combined: goals, first-half goals, corners, cards, shots, BTTS, draw...): each team's own matches, "did the market
-//    happen in that team's match?"; Combined Historical % = (home team % + away team %) / 2.
-//  TEAM markets: the selected team's statistic against the opponent's COMPLEMENTARY statistic: goals scored v goals conceded, corners won v
-//    corners conceded, shots v shots conceded, shots on target v shots on target conceded, fouls committed v fouls drawn, cards v cards
-//    shown to opponents, first-half goals v first-half goals conceded, win v loss, win-or-draw v did-not-win. Never mixed with anything else.
-//  Venue "Home team at home, away team away" uses the home team's home matches and the away team's away matches (before Last N).
-//  Both samples must have at least the Minimum Qualifying Games (Advanced, default 10); otherwise the play is listed under Limited data
-//  without a combined figure. Missing statistics are never 0: a market a team's matches do not record is not offered for that fixture.
-//  Combined Historical % is an average of two past frequencies, NOT a probability of the next match.
-const { store, selectableFixtures, teamSlugOf, leagueName, isCup, hasEuropean, currentSeason, teamsOfLeague, COMP_SHORT } = __m['data'];
-const { marketName, marketDesc, lineMin } = __m['markets'];
-const { clubRows, getUclScope, setUclScope, finderScopeOpts } = __m['v-hiwi'];
+// Find Plays · Highest Combined % (owner requests 26-27 Oct; Phase 1 redesign 27 Oct evening). For every selected fixture and market it
+// compares one team's statistic with the opponent's CORRESPONDING statistic (goals scored v goals conceded, corners won v corners conceded,
+// shots on target v shots on target allowed, fouls committed v fouls drawn...; MATCH markets: each team's own match totals) and ranks the
+// matchups by Combined % = (team % + opponent %) / 2, a descriptive historical figure, not a probability. Compact cards, no bar charts;
+// Detailed analysis has both teams' bars. Engine: combinedcore.js (shared with Hiwi's Section). Fixture selection: fxsel.js (shared with
+// Highest %).
+const { store, selectableFixtures, teamSlugOf, leagueName, isCup, hasEuropean, fxSort } = __m['data'];
+const { marketName } = __m['markets'];
+const { getUclScope, setUclScope, finderScopeOpts } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
 const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
-const { getMinQual } = __m['rank'];
-const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
-const { wireBarTaps } = __m['barinfo'];
-const { $, esc, koLocal, fmtDay, fmtKick, fixtureId, keepScrollIn, sampleKey, tzNow } = __m['util'];
+const { $, esc, koLocal, fmtDay, fixtureId, keepScrollIn, tzNow } = __m['util'];
 const { dataBanner, problemsBanner, setLeague } = __m['shared'];
-const { badge } = __m['badge'];
-const { mdef: def0, COMP, NOUNS, ROLES, hitsAt, combinedPct } = __m['matchup'];
+const { mdef: def0 } = __m['matchup'];
+const { PERS, buildPlays, sortPlays, supportedKeys, mountPlays } = __m['combinedcore'];
+const { shareSelection, SEL } = __m['fxsel'];
 
-const inl = (key, label, get) => ({ key, label, get });
-const MATCH_KEYS = ['m.goals', 'm.htgoals', 'm.btts', 'm.corners', 'm.cards', 'm.shots', 'm.sot', 'm.fouls', 'm.draw', 'm.12'];
-const TEAM_KEYS = ['t.goals', 't.htgoals', 't.corners', 't.shots', 't.sot', 't.fouls', 't.cards', 't.win', 't.dc'];
-const SORTS = [['combined', 'Best Combined %'], ['weakest', 'Strongest weaker team'], ['single', 'Highest single team %'], ['fixture', 'By fixture (kick-off)'], ['az', 'A–Z']];
-const PERS = [['season', 'Season'], ['5', 'Last 5'], ['10', 'Last 10'], ['15', 'Last 15'], ['20', 'Last 20'], ['all', 'All']];
-const perTxt = per => (per === 'season' ? 'this season' : per === 'all' ? 'every recorded match' : `last ${per} matches`);
-const ui = { sort: 'combined', per: '10', venue: 'all', minEach: 0, games: new Set(), untick: new Set(), today: false, lgOpen: false, gOpen: false, mkOpen: false, markets: null, shown: 30, lines: new Map(), sides: new Map(), auto: true };
+const SORTS = [['combined', 'Highest Combined %'], ['weakest', 'Strongest weaker team'], ['fixture', 'By fixture (kick-off)'], ['az', 'A–Z']];
+const ui = shareSelection({ sort: 'combined', per: '10', venue: 'all', minEach: 0, minComb: 0, lgOpen: false, gOpen: false, mkOpen: false, markets: null, lines: new Map() });
 const seg = (name, items, cur) => `<div class="seg wrap" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
-const sideW = (def, sd) => (def.binary ? (sd === 'under' ? 'No' : 'Yes') : sd === 'under' ? 'Under' : 'Over');
 
-/** A team's rows for this fixture's competition context (scope rules of Hiwi), newest first, venue-filtered. */
-const rowsOf = (slug, lg, ven) => { const r = clubRows(slug, lg).slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)); return ven ? r.filter(x => (ven === 'home' ? x.home : !x.home)) : r; };
-/** The sample: { rows (newest first, value set), n } for def, per (Season / Last N of the matches that record this statistic). */
-function sample(slug, lg, def, ven, per) {
-  const all = []; for (const r of rowsOf(slug, lg, ven)) { const v = def.get(r); if (v !== null && v !== undefined) all.push({ ...r, value: v }); }
-  if (per === 'season') { const cs = isCup(lg) ? Math.max(0, ...all.map(r => r.season)) : currentSeason(lg); return all.filter(r => r.season === cs); }
-  // 'all' (27 Oct fix): every qualifying match. Value asks for this; slice(0, Number('all')) used to return NOTHING, which is why a
-  // Best Combined % play reached Value as "only 0 qualifying games on record" (a software fault, not missing data).
-  if (per === 'all') return all;
-  return all.slice(0, Number(per));
-}
-const hit = (rows, L, sd) => hitsAt(rows.map(r => r.value), L, sd);
-// starting line per competition and market: the half-point nearest the league's median (all its teams, this season and last) that splits
-// those matches closest to 50 / 50, i.e. a typical line for the competition, not tuned to the two teams' own games. Adjustable per play.
-const lineCache = new Map();
-function startLine(lg, def) {
-  if (def.binary) return 0.5; const k = `${lg}|${def.key}`; if (lineCache.has(k)) return lineCache.get(k);
-  const cs = currentSeason(lg), vals = []; for (const t of teamsOfLeague(lg)) for (const r of clubRows(t.slug, lg)) if (r.league === lg && r.season >= cs - 1) { const v = def.get(r); if (v != null) vals.push(v); }
-  let L = 0.5; if (vals.length) { vals.sort((a, b) => a - b); const m = vals[Math.floor(vals.length / 2)]; let best = null; for (const l of [Math.floor(m) - 0.5, Math.floor(m) + 0.5, Math.floor(m) + 1.5]) { if (l < 0.5) continue; const o = vals.filter(v => v > l).length / vals.length, d = Math.abs(o - 0.5); if (!best || d < best.d) best = { l, d }; } L = best ? best.l : 0.5; }
-  lineCache.set(k, L); return L;
-}
-/** All plays for the selected fixtures and markets. */
-function buildPlays(fixtures, keys, sides) {
-  const out = [], minQ = getMinQual();
-  for (const f of fixtures) {
-    const h = teamSlugOf(f.home), a = teamSlugOf(f.away), lg = f.league, fid = fixtureId(f);
-    const vH = ui.venue === 'same' ? 'home' : null, vA = ui.venue === 'same' ? 'away' : null;
-    for (const key of keys) {
-      const def = def0(key); if (!def) continue;
-      const subjects = key.startsWith('m.') ? [{ sel: h, other: a, dA: def, dB: def, vA: vH, vB: vA, kind: 'MATCH', label: marketName(key, def.label) }]
-        : [[h, a, vH, vA], [a, h, vA, vH]].map(([s, o, va, vb]) => ({ sel: s, other: o, dA: def, dB: COMP[key](), vA: va, vB: vb, kind: 'TEAM', label: `${store.teams.get(s)?.name || s} ${marketName(key, def.label).replace(/^Team /, '')}` }));
-      for (const sj of subjects) {
-        for (const sd of def.binary ? ['over'] : sides) {
-          const cid = `cb|${fid}|${key}|${sj.sel}|${sd}`, L = ui.lines.get(cid) ?? startLine(lg, def);
-          const A = sample(sj.sel, lg, sj.dA, sj.vA, ui.per), B = sample(sj.other, lg, sj.dB, sj.vB, ui.per);
-          if (!A.length && !B.length) continue; // the statistic is not recorded for these teams' matches: no play (never 0%)
-          // one side missing (e.g. a club whose league's source has no corners): the play is listed under Limited data with 'no recorded matches'
-          const hA = hit(A, L, sd), hB = hit(B, L, sd), ok = hA.n >= minQ && hB.n >= minQ;
-          const comb = ok ? combinedPct(hA, hB) : null;
-          if (ok && ui.minEach && (hA.pct < ui.minEach || hB.pct < ui.minEach)) continue;
-          out.push({ cid, f, fid, lg, key, def, sd, L, sj, A, B, hA, hB, comb, ok, kind: sj.kind, label: sj.label });
-        }
-      }
-    }
-  }
-  return out;
-}
-const sortPlays = list => {
-  const ko = x => x.f.ko_utc || `${x.f.date}T23:59`;
-  const cmp = { combined: (a, b) => b.comb - a.comb || Math.min(b.hA.n, b.hB.n) - Math.min(a.hA.n, a.hB.n), weakest: (a, b) => Math.min(b.hA.pct, b.hB.pct) - Math.min(a.hA.pct, a.hB.pct) || b.comb - a.comb, single: (a, b) => Math.max(b.hA.pct, b.hB.pct) - Math.max(a.hA.pct, a.hB.pct) || b.comb - a.comb,
-    fixture: (a, b) => (ko(a) < ko(b) ? -1 : ko(a) > ko(b) ? 1 : 0) || a.label.localeCompare(b.label), az: (a, b) => a.label.localeCompare(b.label) || (ko(a) < ko(b) ? -1 : 1) };
-  const okL = list.filter(x => x.ok).sort(cmp[ui.sort]), lim = list.filter(x => !x.ok).sort(cmp.fixture);
-  return [...okL, ...lim];
-};
-const teamName = slug => store.teams.get(slug)?.name || slug;
-const statText = (x, side) => { // whose statistic each % is: "Man United: goals scored, Over 1.5" / "Arsenal: goals conceded, Over 1.5"
-  const isA = side === 'A', slug = isA ? x.sj.sel : x.sj.other, def = isA ? x.sj.dA : x.sj.dB;
-  if (x.kind === 'MATCH') return `${esc(teamName(slug))}'s matches: ${esc(x.def.label.toLowerCase())}${def.binary ? '' : `, ${sideW(def, x.sd)} ${x.L}`}`;
-  const v = NOUNS[x.key] || [x.sj.dA.label, x.sj.dB.label]; return `${esc(teamName(slug))}: ${esc(v[isA ? 0 : 1])}${def.binary ? '' : `, ${sideW(def, x.sd)} ${x.L}`}`;
-};
-const roleOf = (x, side) => (x.kind === 'MATCH' ? (side === 'A' ? 'HOME TEAM' : 'AWAY TEAM') : (ROLES[x.key] || ['SELECTED', 'OPPONENT'])[side === 'A' ? 0 : 1]);
-const side = (x, w) => { const h = w === 'A' ? x.hA : x.hB, slug = w === 'A' ? x.sj.sel : x.sj.other;
-  return `<div class="cbt" data-side="${w}"><span class="cbrole">${roleOf(x, w)}</span><span class="xs muted">${badge(teamName(slug))} ${statText(x, w)}</span><b data-cb${w.toLowerCase()}>${h.pct == null ? '–' : h.pct + '%'}</b><span class="xs muted">${h.n ? `${h.hits} of ${h.n} matches` : 'no recorded matches'}</span></div>`; };
-function playHtml(x, i) {
-  const venueTxt = ui.venue === 'same' ? ' · home team at home, away team away' : '';
-  const lineCtl = x.def.binary ? `<b>${esc(sideW(x.def, x.sd))}</b>` : `<span class="cbline"><button type="button" class="hstep" data-cbstep="-1" aria-label="Lower the line" ${x.L <= lineMin(x.def) ? 'disabled' : ''}>−</button><b>${sideW(x.def, x.sd)} ${x.L}</b><button type="button" class="hstep" data-cbstep="1" aria-label="Raise the line">+</button></span>`;
-  return `<article class="card cbcard" data-i="${i}" data-cid="${esc(x.cid)}" data-sa="${esc(sampleKey(x.A))}" data-sb="${esc(sampleKey(x.B))}">
-    <div class="cbhead"><span class="cbbadge cb-${x.kind.toLowerCase()}">${x.kind}</span> <span class="small"><b>${esc(x.f.home)} v ${esc(x.f.away)}</b> <span class="muted">· ${esc(fmtKick(x.f))} · ${esc(leagueName(x.lg))}</span></span></div>
-    <div class="cbmkt"><b>${esc(x.label)}</b> ${lineCtl}</div>
-    <div class="cbrow">${side(x, 'A')}
-      <div class="cbc"><span class="xs muted">Combined matchup</span><b data-cbc class="${x.comb == null ? '' : x.comb >= 70 ? 'hit' : x.comb <= 40 ? 'miss' : ''}">${x.comb == null ? '–' : x.comb + '%'}</b>${x.ok ? '' : `<span class="xs muted">${!x.hA.n || !x.hB.n ? 'one side has no recorded matches' : `needs ${getMinQual()}+ matches each`}</span>`}</div>
-      ${side(x, 'B')}</div>
-    <p class="xs muted" style="margin:4px 0 0">${esc(perTxt(ui.per).replace(/^./, c => c.toUpperCase()))} each${venueTxt}. Each team's own matches (not head-to-head). Combined = (${x.hA.pct ?? '–'}% + ${x.hB.pct ?? '–'}%) ÷ 2: a historical matchup score, not a probability.</p>
-    <div class="hacts"><button type="button" class="chip hdetail" data-cbdetail>Detailed analysis ›</button><button type="button" class="chip hprice" data-cbprice>Compare Price</button></div></article>`;
-}
-/** A hiwi-style card for one team's side of a play (Detailed Analysis and Compare Price). */
-function teamCard(x, which, defOverride = null) {
-  const slug = which === 'A' ? x.sj.sel : x.sj.other, def = defOverride || (which === 'A' ? x.sj.dA : x.sj.dB), ven = which === 'A' ? x.sj.vA : x.sj.vB;
-  const mk = rows => rows.map(r => ({ date: r.date, opp: `${r.home ? 'v' : '@'}${String(r.opp || '').split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}`, value: r.value, raw: r, comp: COMP_SHORT[r.league] || '' })).reverse();
-  const c = { cid: `cbd|${which}|${x.cid}|${def.key}`, title: teamName(slug), def: { ...def, scope: x.kind === 'MATCH' ? 'match' : which === 'A' ? 'team' : 'opp' }, unit: 'match', tag: which === 'A' ? (x.kind === 'MATCH' ? 'Home team' : 'Selected team') : (x.kind === 'MATCH' ? 'Away team' : 'Opponent (complementary)'), tagCls: ven === 'home' ? 'home' : ven === 'away' ? 'away' : (which === 'A' ? 'home' : 'away'),
-    perOk: true, perDefault: ui.per, team: slug, lg: store.teams.get(slug)?.league, note: `Each bar: ${def.label} in one ${teamName(slug)} match${ven ? ` (${ven} matches only)` : ''}.`, detailLabel: false };
-  c.perFn = s0 => { const per = s0.per ?? ui.per, r = sample(slug, x.lg, def, ven, per); return { rows: mk(r), m: r.length, want: per === 'season' ? null : Number(per), period: `${perTxt(per)}${ven ? `, ${ven} only` : ''}`, want: per === 'season' || per === 'all' ? null : Number(per) }; };
-  Object.assign(c, c.perFn({})); return c;
-}
-function openDetail(x) {
-  // ONE analysis view with BOTH teams (owner requirement 27 Oct): bar 1 = the selected team's statistic, bar 2 = the opponent's
-  // complementary statistic (MATCH markets: each team's own match totals). One line control drives both bars; the matchup summary at the
-  // top always uses the PLAY's own definition, so the research toggle below never redefines the play or its Combined %.
-  const reg = new Map(); let L = x.L;
-  const st0 = () => ({ line: x.def.binary ? 0.5 : L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h', per: ui.per });
-  let bDef = x.sj.dB; // the opponent panel's statistic: the complementary one by default, switchable to its own (research only)
-  const h2hRows = which => { const me = which === 'A' ? x.sj.sel : x.sj.other, opp = which === 'A' ? x.sj.other : x.sj.sel, def = x.sj.dA;
-    return rowsOf(me, x.lg, null).filter(r => r.oppSlug === opp).map(r => ({ ...r, value: def.get(r) })).filter(r => r.value != null); };
-  let persp = 'A';
-  const modal = document.createElement('div'); modal.className = 'modal hcmpmodal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'Detailed analysis');
-  const summary = () => { const a = hit(x.A, L, x.sd), b = hit(x.B, L, x.sd), c = a.n >= getMinQual() && b.n >= getMinQual() ? combinedPct(a, b) : null; const lab = w => statText({ ...x, L }, w);
-    return `<div class="card cbsum" data-cbsum><div class="cbrow">
-      <div class="cbt"><span class="cbrole">${roleOf(x, 'A')}</span><span class="xs muted">${lab('A')}</span><b data-dsa>${a.pct == null ? '–' : a.pct + '%'}</b><span class="xs muted">${a.n ? `${a.hits} of ${a.n} matches` : 'no recorded matches'}</span></div>
-      <div class="cbc"><span class="xs muted">Combined matchup</span><b data-dsc>${c == null ? '–' : c + '%'}</b></div>
-      <div class="cbt"><span class="cbrole">${roleOf(x, 'B')}</span><span class="xs muted">${lab('B')}</span><b data-dsb>${b.pct == null ? '–' : b.pct + '%'}</b><span class="xs muted">${b.n ? `${b.hits} of ${b.n} matches` : 'no recorded matches'}</span></div></div>
-      <p class="xs muted" style="margin:6px 0 0">The play: ${esc(perTxt(ui.per))} each${ui.venue === 'same' ? ', home team at home, away team away' : ''}. Combined = average of the two (a historical matchup score, not a probability). Head-to-head below is separate and never part of it.</p></div>`; };
-  const render = () => {
-    const cA = teamCard(x, 'A'), cB = teamCard(x, 'B', bDef);
-    const hr = h2hRows(persp), hN = teamName(persp === 'A' ? x.sj.sel : x.sj.other);
-    const cH = { cid: `cbd|H|${x.cid}`, title: `Head-to-head: ${teamName(x.sj.sel)} v ${teamName(x.sj.other)}`, def: { ...x.def, scope: x.kind === 'MATCH' ? 'match' : 'team' }, unit: 'match', tag: 'Head-to-head', tagCls: 'h2h', h2h: true, rows: hr.map(r => ({ date: r.date, opp: r.home ? 'H' : 'A', value: r.value, raw: r })).reverse(), m: hr.length, period: 'every meeting PropLab holds', note: `${hN}'s ${x.def.label} in each genuine meeting (all competitions PropLab holds).`, perOk: false, detailLabel: false };
-    for (const c of [cA, cB]) { const e = reg.get(c.cid); if (!e) reg.set(c.cid, { card: c, st: st0() }); else { e.card = c; Object.assign(e.st, { line: st0().line }); } }
-    if (!reg.has(cH.cid)) reg.set(cH.cid, { card: cH, st: st0() }); else reg.get(cH.cid).card = cH;
-    const altKey = x.kind === 'TEAM' ? x.key : null;
-    const lineCtl = x.def.binary ? '' : `<div class="field"><label>Line for both bars</label><span class="cbline"><button type="button" class="hstep" data-dstep="-1" aria-label="Lower the line for both teams" ${L <= lineMin(x.def) ? 'disabled' : ''}>−</button><b data-dline>${sideW(x.def, x.sd)} ${L}</b><button type="button" class="hstep" data-dstep="1" aria-label="Raise the line for both teams">+</button></span></div>`;
-    modal.innerHTML = `<div class="sheet"><button type="button" class="btn" data-close><b>← Back to results</b></button>
-      <h2 style="margin:12px 0 2px">${esc(x.label)}</h2><div class="small muted">${esc(x.f.home)} v ${esc(x.f.away)} · ${esc(fmtKick(x.f))} · <span class="cbbadge cb-${x.kind.toLowerCase()}">${x.kind}</span></div>
-      ${lineCtl}${summary()}
-      <h3 class="cmph">Bar 1 · ${esc(teamName(x.sj.sel))} — ${x.kind === 'MATCH' ? esc(x.def.label) : esc((NOUNS[x.key] || [x.def.label])[0])}</h3><div data-slot="A"></div>
-      <h3 class="cmph">Bar 2 · ${esc(teamName(x.sj.other))} — ${x.kind === 'MATCH' ? esc(x.def.label) : esc(bDef.key === x.sj.dB.key ? (NOUNS[x.key] || ['', x.sj.dB.label])[1] : x.def.label + ' (its own, research view)')}</h3>${altKey ? `<div class="seg wrap" data-cbalt role="group" aria-label="Opponent statistic"><button type="button" data-v="comp" class="${bDef.key === x.sj.dB.key ? 'on' : ''}">${esc(x.sj.dB.label)} (complementary, the play)</button><button type="button" data-v="own" class="${bDef.key !== x.sj.dB.key ? 'on' : ''}">${esc(x.def.label)} (its own, research only)</button></div>` : ''}<div data-slot="B"></div>
-      <h3 class="cmph">Head-to-head (separate)</h3><div class="seg wrap" data-cbpersp role="group" aria-label="Whose figures"><button type="button" data-v="A" class="${persp === 'A' ? 'on' : ''}">${esc(teamName(x.sj.sel))}'s side</button><button type="button" data-v="B" class="${persp === 'B' ? 'on' : ''}">${esc(teamName(x.sj.other))}'s side</button></div><div data-slot="H"></div></div>`;
-    for (const [k, c] of [['A', cA], ['B', cB], ['H', cH]]) { const e = reg.get(c.cid); const t = document.createElement('div'); t.innerHTML = cardHtml(c, e.st); const el = t.firstElementChild; paintHCard(el, c, e.st); modal.querySelector(`[data-slot="${k}"]`).appendChild(el); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); }
-    wireHCards(modal.querySelector('.sheet'), reg, () => {}); wireBarTaps(modal.querySelector('.sheet'), e => reg.get(e.dataset.cid), 'football', null);
-  };
-  document.body.appendChild(modal); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'; render();
-  modal.addEventListener('click', e => {
-    if (e.target.closest('[data-close]')) { modal.remove(); document.body.style.overflow = prev; return; }
-    const ds = e.target.closest('[data-dstep]'); if (ds) { const y = scrollY, sh = modal.querySelector('.sheet'), sy = sh ? sh.scrollTop : 0; L = Math.max(lineMin(x.def), Math.round((L + Number(ds.dataset.dstep)) * 2) / 2); render(); const sh2 = modal.querySelector('.sheet'); if (sh2) sh2.scrollTop = sy; scrollTo(0, y); return; }
-    const alt = e.target.closest('[data-cbalt] button'); if (alt) { bDef = alt.dataset.v === 'own' ? { ...x.def } : x.sj.dB; reg.delete(`cbd|B|${x.cid}|${x.def.key}`); reg.delete(`cbd|B|${x.cid}|${x.sj.dB.key}`); render(); return; }
-    const pp = e.target.closest('[data-cbpersp] button'); if (pp) { persp = pp.dataset.v; render(); }
-  });
-}
 async function viewCombined(root) {
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<div class="skel"></div>`; return; }
   let lgs = getLeagues(); const now = new Date();
   root.innerHTML = `${problemsBanner()}<div class="card stack" id="cbctl"></div><div id="cbout" style="margin-top:12px"></div>`;
-  const ctl = $('#cbctl', root), out = $('#cbout', root); let plays = [];
-  const lgFixtures = () => lgs.flatMap(l => selectableFixtures(l, now)).filter(f => !ui.today || isTodayUK(f, now)).sort((a, b) => ((a.ko_utc || a.date) < (b.ko_utc || b.date) ? -1 : 1));
+  const ctl = $('#cbctl', root), out = $('#cbout', root);
+  const lgFixtures = () => lgs.flatMap(l => selectableFixtures(l, now)).filter(f => !ui.today || isTodayUK(f, now)).sort(fxSort);
   // first visit (and a newly added league): each league's next round is ticked = its fixtures within 3 days of its next match day
-  const autoPick = list => { for (const l of list) { const fs = lgFixtures().filter(f => f.league === l); if (!fs.length) continue; const d0 = new Date(fs[0].date + 'T12:00:00Z'), lim = new Date(d0.getTime() + 3 * 864e5).toISOString().slice(0, 10); for (const f of fs) if (f.date <= lim && !ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); } };
-  if (ui.auto) { autoPick(lgs); ui.auto = false; }
+  const autoPick = list => { const all = lgFixtures(); for (const l of list) { const fs = all.filter(f => f.league === l); if (!fs.length) continue; const d0 = new Date(fs[0].date + 'T12:00:00Z'), lim = new Date(d0.getTime() + 3 * 864e5).toISOString().slice(0, 10); for (const f of fs) if (f.date <= lim && !ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); } };
+  if (SEL.auto && !ui.games.size) { autoPick(lgs); SEL.auto = false; }
   const selFx = () => lgFixtures().filter(f => ui.games.has(fixtureId(f)));
-  const supported = () => { const fs = selFx(); const s = new Set(); for (const f of fs) for (const k of [...MATCH_KEYS, ...TEAM_KEYS]) { const d = def0(k); if (d && [f.home, f.away].some(t => clubRows(teamSlugOf(t), f.league).some(r => d.get(r) != null))) s.add(k); /* either team records it: the other side then says 'no recorded matches' */ } return [...MATCH_KEYS, ...TEAM_KEYS].filter(k => s.has(k)); };
-  const keysNow = () => { const sup = supported(); if (!ui.markets) return sup; return sup.filter(k => ui.markets.has(k)); };
+  let supMemo = { k: null, v: [] };
+  const supported = () => { const fs = selFx(), k = fs.map(fixtureId).join(','); if (supMemo.k !== k) supMemo = { k, v: supportedKeys(fs) }; return supMemo.v; };
+  const keysNow = () => { const sup = supported(); return ui.markets ? sup.filter(k => ui.markets.has(k)) : sup; };
+  const opts = () => ({ per: ui.per, venue: ui.venue, sides: getGlobalSide() === 'both' ? ['over', 'under'] : [getGlobalSide() === 'under' ? 'under' : 'over'], lines: ui.lines, minEach: ui.minEach, minComb: ui.minComb });
   const drawCtl = () => keepScrollIn(ctl, () => {
     const fx = lgFixtures(), byDay = new Map(); for (const f of fx) { const d = koLocal(f).ymd; if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(f); }
-    const sup = supported(), on = new Set(keysNow());
+    const sup = supported(), on = new Set(keysNow()), nSel = selFx().length;
     ctl.innerHTML = `${globalSideHtml('cbgside')}${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'cblg' })}
-      <details class="hsel" id="cbfx" ${ui.gOpen ? 'open' : ''}><summary><b>Fixtures</b> <span class="muted small">${selFx().length} selected · ${esc(leaguesLabel(lgs))}</span></summary>
+      <details class="hsel" id="cbfx" ${ui.gOpen ? 'open' : ''}><summary><b>Fixtures</b> <span class="muted small" data-cbfxn>${nSel} selected · ${esc(leaguesLabel(lgs))}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-cball>Select all</button><button type="button" class="chip" data-cbnone>Clear all</button></div>
         <div class="hlist">${[...byDay.entries()].map(([d, fs]) => `<div class="hday">${esc(fmtDay(d))}</div>${fs.map(f => `<label class="hcheck hfxrow"><input type="checkbox" data-cbg value="${esc(fixtureId(f))}" ${ui.games.has(fixtureId(f)) ? 'checked' : ''}><span><b>${esc(koLocal(f).hm || 'TBC')}</b> ${esc(f.home)} v ${esc(f.away)} <span class="xs muted">${esc(leagueName(f.league))}</span></span></label>`).join('')}`).join('') || '<p class="xs muted">No fixtures in the selected leagues.</p>'}</div>
-        <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. Each league's next round is ticked on a first visit.</p></details>
-      <details class="hsel" id="cbmk" ${ui.mkOpen ? 'open' : ''}><summary><b>Markets</b> <span class="muted small">${on.size} of ${sup.length}</span></summary>
+        <p class="xs muted" style="margin:4px 0 0">Times in ${esc(tzNow())}. Each league's next round is ticked on a first visit. The same fixtures are used by Highest %.</p></details>
+      <details class="hsel" id="cbmk" ${ui.mkOpen ? 'open' : ''}><summary><b>Markets</b> <span class="muted small" data-cbmkn>${on.size} of ${sup.length}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-cbmall>Select all</button><button type="button" class="chip" data-cbmnone>Clear all</button></div>
         <div class="hgrid">${sup.map(k => `<label class="hcheck"><input type="checkbox" data-cbm value="${k}" ${on.has(k) ? 'checked' : ''}><span>${esc(marketName(k, def0(k).label))} <span class="hscope s-${k.startsWith('m.') ? 'match' : 'team'}">${k.startsWith('m.') ? 'MATCH' : 'TEAM'}</span></span></label>`).join('')}</div>
-        <p class="xs muted" style="margin:4px 0 0">Only markets the selected fixtures' matches record are listed. MATCH = did it happen in each team's matches; TEAM = the team's statistic v the opponent's complementary one (e.g. goals scored v goals conceded).</p></details>
+        <p class="xs muted" style="margin:4px 0 0">Only markets the selected fixtures' matches record are listed. MATCH = did it happen in each team's matches; TEAM = the team's statistic v the opponent's corresponding one (e.g. goals scored v goals conceded).</p></details>
       <div class="field"><label>Matches used</label>${seg('per', PERS, ui.per)}</div>
       <div class="field"><label>Venue</label>${seg('venue', [['all', 'All matches'], ['same', 'Home team at home, away team away']], ui.venue)}</div>
       ${lgs.some(isCup) || selFx().some(f => hasEuropean(teamSlugOf(f.home)) || hasEuropean(teamSlugOf(f.away))) ? `<div class="field"><label>Competitions used (clubs with European matches)</label>${seg('uscope', finderScopeOpts(lgs.filter(isCup).length ? lgs.filter(isCup) : ['eu']), getUclScope())}</div>` : ''}
-      <div class="field"><label>Minimum each team %</label>${seg('minEach', [[0, 'Any'], [50, '50%'], [60, '60%'], [70, '70%'], [80, '80%']], ui.minEach)}<span class="xs muted">Leaves out plays where one team is weak even if the average looks good.</span></div>
-      <div class="field"><label for="cbsort">Sort</label><select class="in" id="cbsort">${SORTS.map(([v, l]) => `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+      <div class="field"><label>Minimum combined %</label>${seg('minComb', [[0, 'Any'], [60, '60%'], [65, '65%'], [70, '70%'], [75, '75%'], [80, '80%']], ui.minComb)}</div>
+      <div class="field"><label>Minimum each team %</label>${seg('minEach', [[0, 'Any'], [50, '50%'], [60, '60%'], [70, '70%'], [80, '80%']], ui.minEach)}<span class="xs muted">Leaves out matchups where one side is weak even if the average looks good.</span></div>
+      <div class="field"><label for="cbsort">Sort</label><select class="in" id="cbsort">${SORTS.map(([v, l]) => `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}<option value="__hi">Highest % (individual plays) ›</option></select></div>`;
   });
-  let focusCid = null, focusLabel = '';
-  const draw = (keepY = false) => {
-    const y = scrollY; const sides = getGlobalSide() === 'both' ? ['over', 'under'] : [getGlobalSide() === 'under' ? 'under' : 'over'];
-    plays = sortPlays(buildPlays(selFx(), keysNow(), sides));
-    // the play whose line was just changed stays on the page even if it now ranks below the plays shown (owner: never lose the play)
-    let gone = null; if (focusCid) { const k = plays.findIndex(x => x.cid === focusCid); if (k >= ui.shown) ui.shown = k + 1; else if (k < 0) gone = focusLabel; focusCid = null; }
-    const okN = plays.filter(x => x.ok).length;
-    out.innerHTML = !selFx().length ? '<div class="banner info"><b>No fixtures selected.</b> Tick fixtures above.</div>' : !plays.length ? '<div class="banner info"><b>No plays.</b> The selected markets are not recorded for these fixtures, or the Minimum each team % leaves nothing.</div>'
-      : `<p class="xs muted" style="margin:0 0 8px">${okN} play${okN === 1 ? '' : 's'} ranked by ${esc(SORTS.find(s => s[0] === ui.sort)[1])}${plays.length > okN ? `; ${plays.length - okN} with too few matches listed under Limited data` : ''}. <b>Combined Historical %</b> = the average of the two teams' own hit rates; a past frequency, not the chance of the next match. Lines start at a typical line for the competition; − / + changes a play's line.</p>`
-        + plays.slice(0, ui.shown).map((x, i) => `${!x.ok && (i === 0 || plays[i - 1].ok) ? `<h3 class="limhead">Limited data <span class="xs muted">fewer than ${getMinQual()} matches for a team: no combined figure</span></h3>` : ''}${playHtml(x, i)}`).join('')
-        + (plays.length > ui.shown ? `<button type="button" class="btn" data-cbmore>Show more (${plays.length - ui.shown} more)</button>` : '');
-    if (gone) out.insertAdjacentHTML('afterbegin', `<div class="banner info" data-cbgone><b>${esc(gone)}</b> no longer meets the Minimum each team % at this line, so it has left the list. Lower the minimum to see it again.</div>`);
-    if (keepY) scrollTo(0, y);
-  };
+  const list = mountPlays(out, { lines: ui.lines, per: () => ui.per, venueSame: () => ui.venue === 'same', get: () => sortPlays(buildPlays(selFx(), keysNow(), opts()), ui.sort),
+    resort: () => list.draw(true), empty: !selFx().length ? 'Tick fixtures above.' : undefined });
+  const draw = (keep = false) => { if (!selFx().length) { out.innerHTML = '<div class="banner info"><b>No fixtures selected.</b> Tick fixtures above.</div>'; globalThis.__plPending = 0; return; } const y = scrollY; list.draw(keep); if (keep) scrollTo(0, y); globalThis.__plPending = 0; };
+  // Performance (Phase 1): a fixture or market tick shows at once; counts update immediately; the redraw runs once after a quick series
+  let laterT = null; const later = () => { clearTimeout(laterT); globalThis.__plPending = 1; laterT = setTimeout(() => { laterT = null; drawCtl(); draw(true); }, 140); };
+  const counts = () => { const n = selFx().length, a = ctl.querySelector('[data-cbfxn]'); if (a) a.textContent = `${n} selected · ${leaguesLabel(lgs)}`; };
   ctl.addEventListener('toggle', e => { if (e.target.id === 'cblg') ui.lgOpen = e.target.open; if (e.target.id === 'cbfx') ui.gOpen = e.target.open; if (e.target.id === 'cbmk') ui.mkOpen = e.target.open; }, true);
   ctl.addEventListener('change', e => { const t = e.target;
-    const lp = leaguePickChange(t, lgs, ui.today); if (lp) { const added = lp.leagues.filter(l => !lgs.includes(l)); lgs = lp.leagues; autoPick(added); setLeagues(lgs); if (lgs[0]) setLeague(lgs[0]); ui.today = lp.today; const ids = new Set(lgFixtures().map(fixtureId)); for (const id of [...ui.games]) if (!ids.has(id)) ui.games.delete(id); if (ui.today) for (const f of lgFixtures()) ui.games.add(fixtureId(f)); drawCtl(); draw(); return; }
-    if (t.matches('[data-cbg]')) { t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value)); drawCtl(); draw(true); return; }
-    if (t.matches('[data-cbm]')) { if (!ui.markets) ui.markets = new Set(supported()); t.checked ? ui.markets.add(t.value) : ui.markets.delete(t.value); drawCtl(); draw(true); return; }
-    if (t.id === 'cbsort') { ui.sort = t.value; draw(); } });
+    const lp = leaguePickChange(t, lgs, ui.today); if (lp) { const added = lp.leagues.filter(l => !lgs.includes(l)); lgs = lp.leagues; autoPick(added); setLeagues(lgs); if (lgs[0]) setLeague(lgs[0]); ui.today = lp.today; const ids = new Set(lgFixtures().map(fixtureId)); for (const id of [...ui.games]) if (!ids.has(id)) ui.games.delete(id); if (ui.today) for (const f of lgFixtures()) if (!ui.untick.has(fixtureId(f))) ui.games.add(fixtureId(f)); drawCtl(); draw(); return; }
+    if (t.matches('[data-cbg]')) { t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value)); counts(); later(); return; }
+    if (t.matches('[data-cbm]')) { if (!ui.markets) ui.markets = new Set(supported()); t.checked ? ui.markets.add(t.value) : ui.markets.delete(t.value); const m = ctl.querySelector('[data-cbmkn]'); if (m) m.textContent = `${keysNow().length} of ${supported().length}`; later(); return; }
+    if (t.id === 'cbsort') { if (t.value === '__hi') { location.hash = '#/finder?m=trends'; return; } ui.sort = t.value; draw(); } });
   ctl.addEventListener('click', e => {
     const gs = e.target.closest('[data-gside]'); if (gs) { setGlobalSide(gs.dataset.gside); drawCtl(); draw(); return; }
-    if (e.target.closest('[data-cball]')) { for (const f of lgFixtures()) ui.games.add(fixtureId(f)); drawCtl(); draw(); return; }
-    if (e.target.closest('[data-cbnone]')) { ui.games.clear(); drawCtl(); draw(); return; }
+    if (e.target.closest('[data-cball]')) { for (const f of lgFixtures()) { ui.games.add(fixtureId(f)); ui.untick.delete(fixtureId(f)); } drawCtl(); draw(); return; }
+    if (e.target.closest('[data-cbnone]')) { for (const f of lgFixtures()) { ui.games.delete(fixtureId(f)); ui.untick.add(fixtureId(f)); } drawCtl(); draw(); return; }
     if (e.target.closest('[data-cbmall]')) { ui.markets = null; drawCtl(); draw(); return; }
     if (e.target.closest('[data-cbmnone]')) { ui.markets = new Set(); drawCtl(); draw(); return; }
     const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg, v = b.dataset.v;
-    if (k === 'uscope') setUclScope(v); else if (k === 'minEach') ui.minEach = Number(v); else ui[k] = v;
-    ui.lines.clear(); /* a global change reaches every play */ drawCtl(); draw(); });
-  out.addEventListener('click', e => {
-    if (e.target.closest('[data-cbmore]')) { ui.shown += 30; draw(true); return; }
-    const art = e.target.closest('.cbcard'); if (!art) return; const x = plays[Number(art.dataset.i)]; if (!x) return;
-    const st = e.target.closest('[data-cbstep]'); if (st) { const n = Math.max(lineMin(x.def), Math.round((x.L + Number(st.dataset.cbstep)) * 2) / 2); ui.lines.set(x.cid, n);
-      // owner requirement 27 Oct: a line change recalculates both percentages and the combined score AND re-sorts at once; the changed play
-      // is then scrolled back into view so it is never lost
-      const top = art.getBoundingClientRect().top; focusCid = x.cid; focusLabel = `${x.label} (line ${n})`; draw(true);
-      const moved = out.querySelector(`.cbcard[data-cid="${CSS.escape(x.cid)}"]`); if (moved) { moved.classList.add('cbflash'); const jump = dy => dy && scrollBy({ top: dy, behavior: 'instant' }); jump(moved.getBoundingClientRect().top - top);
-        // keep the whole card clear of the bottom tab bar (and the top of the screen) so the next tap lands on the same button
-        const nr = document.getElementById('nav')?.getBoundingClientRect(), navTop = nr && nr.height && nr.top > innerHeight / 2 ? nr.top : innerHeight;
-        const r = moved.getBoundingClientRect(), bottom = navTop - 8; if (r.bottom > bottom) jump(Math.min(r.bottom - bottom, r.top - 60)); else if (r.top < 0) jump(r.top - 60);
-        setTimeout(() => moved.classList.remove('cbflash'), 1200); } else out.querySelector('[data-cbgone]')?.scrollIntoView({ block: 'center', behavior: 'instant' });
-      return; }
-    if (e.target.closest('[data-cbdetail]')) { openDetail(x); return; }
-    if (e.target.closest('[data-cbprice]')) { const c = teamCard(x, 'A'), cb = teamCard(x, 'B'); c.pair = { title: cb.title, def: cb.def, perFn: cb.perFn, label: x.kind === 'MATCH' ? `${teamName(x.sj.other)}'s matches` : `${teamName(x.sj.other)}: ${x.sj.dB.label}` }; c.title = x.label; c.noPrice = false;
-      const st0 = { line: x.def.binary ? 0.5 : x.L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h', per: ui.per };
-      out.dispatchEvent(new CustomEvent('hprice', { bubbles: true, detail: { cid: c.cid, card: c, st: st0 } })); }
-  });
+    if (k === 'uscope') setUclScope(v); else if (k === 'minEach' || k === 'minComb') ui[k] = Number(v); else ui[k] = v;
+    if (k !== 'minEach' && k !== 'minComb') ui.lines.clear(); /* a global change reaches every play */ drawCtl(); draw(); });
   drawCtl(); draw();
 }
 
@@ -6338,13 +6532,15 @@ const { viewTrends } = __m['v-trends'];
 const { viewTable } = __m['v-table'];
 const { viewCombined } = __m['v-combined'];
 
-// Best Combined % is the default (owner request 26 Oct); an explicit choice stays for this visit.
-const MODES = [['combined', 'Best Combined %'], ['trends', 'Trends'], ['table', 'Table']];
+// Two ranking modes (owner Phase 1 request, 27 Oct): Highest % ranks individual plays by their own hit rate (normal cards with bars);
+// Highest Combined % ranks team-v-opponent matchups by the combined figure (compact cards). Both share the leagues and ticked fixtures.
+// Highest Combined % stays the default (owner request 26 Oct); an explicit choice stays for this visit. Table: one market, every team.
+const MODES = [['trends', 'Highest %'], ['combined', 'Highest Combined %'], ['table', 'Table']];
 let lastMode = 'combined';
 async function viewFinder(root, r) {
   const m = MODES.some(([k]) => k === r.q.get('m')) ? r.q.get('m') : (r.q.get('tgame') ? 'trends' : lastMode); lastMode = m;
   root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover trends across a whole league or several fixtures. For one team, match or player, use <a href="#/hiwi">Hiwi's Section</a>.</p>
-    <div class="seg" id="fmode" role="tablist">${MODES.map(([k, l]) => `<a role="tab" href="#/finder?m=${k}" class="${k === m ? 'on' : ''}" aria-selected="${k === m}">${esc(l)}</a>`).join('')}</div><div id="fbody" style="margin-top:12px"></div>`;
+    <p class="xs muted" style="margin:0 0 4px">Rank by</p><div class="seg wrap" id="fmode" role="tablist">${MODES.map(([k, l]) => `<a role="tab" href="#/finder?m=${k}" class="${k === m ? 'on' : ''}" aria-selected="${k === m}">${esc(l)}</a>`).join('')}</div><div id="fbody" style="margin-top:12px"></div>`;
   const body = $('#fbody', root);
   return m === 'table' ? viewTable(body, r) : m === 'combined' ? viewCombined(body, r) : viewTrends(body, r);
 }
