@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="a89f2aa85fa8">
+<meta name="proplab-build" content="494c523881ab">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -519,6 +519,7 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 .tile.tunits{grid-column:span 2;display:flex;flex-direction:column;justify-content:center;border:2px solid transparent}.tile.tunits b{font-size:18px;overflow-wrap:anywhere}
 .tile.tunits.pos{border-color:var(--hit)}.tile.tunits.pos b{color:var(--hit)}.tile.tunits.neg{border-color:var(--miss)}.tile.tunits.neg b{color:var(--miss)}
 .kinfo{margin:0 0 10px;font-size:13px;line-height:1.45}.kinfo summary{cursor:pointer;font-weight:700}.kinfo p{margin:6px 0 0}
+.mfhide{display:none!important}.mfbox .in{max-width:220px;font-size:16px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1505,6 +1506,136 @@ async function viewNbaPlayer(root, id) {
 }
 
 return { nbaBanner, nbaLoading, nbaCredit, teamInjuryHtml, viewNbaFixtures, viewNbaSearch, viewNbaPlayer };
+})();
+__m['oddsfmt'] = (() => {
+// Odds display format (owner request 28 Oct 2026): Decimal | Fractional | American, one shared choice for the whole site (footer, next to the
+// time zone). Only the DISPLAY changes: every calculation keeps the full-precision decimal price, so EV, fair odds and units never move
+// when the format changes. Fractions use the usual bookmaker ladder; a price with no exact ladder fraction is shown with "≈".
+const ODDS_FORMATS = [['dec', 'Decimal'], ['frac', 'Fractional'], ['amer', 'American']];
+const KEY = 'proplab.oddsfmt.v1';
+let mem = null;
+function oddsFmt() {
+  if (mem) return mem;
+  try { const v = localStorage.getItem(KEY); if (ODDS_FORMATS.some(f => f[0] === v)) return (mem = v); } catch { /* storage blocked: decimal for this visit */ }
+  return (mem = 'dec');
+}
+function setOddsFmt(v) {
+  if (!ODDS_FORMATS.some(f => f[0] === v)) return; const old = oddsFmt(); mem = v;
+  try { localStorage.setItem(KEY, v); } catch { /* private mode: this visit only */ }
+  if (typeof document !== 'undefined' && old !== v) document.dispatchEvent(new CustomEvent('oddsfmt', { detail: { from: old, to: v } }));
+}
+const fmtName = (f = oddsFmt()) => (ODDS_FORMATS.find(x => x[0] === f) || ODDS_FORMATS[0])[1];
+// UK bookmaker ladder (fractional odds against)
+const LADDER = [[1, 100], [1, 66], [1, 50], [1, 40], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8], [2, 15], [1, 7], [2, 13], [1, 6], [2, 11], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6], [8, 11], [4, 5], [5, 6], [10, 11], [1, 1],
+  [21, 20], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [85, 40], [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2], [8, 1], [17, 2], [9, 1], [10, 1], [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1],
+  [22, 1], [25, 1], [28, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1], [150, 1], [200, 1], [250, 1], [500, 1], [1000, 1]];
+/** { txt, exact } fraction for a decimal price: exact when the ladder fraction is the same price to two decimals. */
+function toFrac(dec) {
+  const v = dec - 1; let best = LADDER[0], bd = Infinity;
+  for (const f of LADDER) { const d = Math.abs(f[0] / f[1] - v); if (d < bd) { bd = d; best = f; } }
+  const exact = Math.abs((1 + best[0] / best[1]) - dec) < 0.005 || Math.round((1 + best[0] / best[1]) * 100) === Math.round(dec * 100);
+  return { txt: `${best[0]}/${best[1]}`, exact };
+}
+/** American odds for a decimal price (standard: +100 or more, or -100 or less). */
+function toAmer(dec) {
+  const a = dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1));
+  const back = a > 0 ? 1 + a / 100 : 1 + 100 / -a;
+  return { txt: a > 0 ? `+${a}` : String(a), exact: Math.abs(back - dec) < 0.005 };
+}
+/** Display a decimal price in the chosen format. Approximate fractions / American figures get "≈". */
+function fmtOdds(dec, f = oddsFmt()) {
+  if (!Number.isFinite(dec) || dec <= 1) return '–';
+  if (f === 'frac') { const r = toFrac(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
+  if (f === 'amer') { const r = toAmer(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
+  return dec.toFixed(2);
+}
+/** The text to put in an input for a price (no "≈"; the page keeps the exact price while the text is unchanged). */
+function inputText(dec, f = oddsFmt()) { if (!Number.isFinite(dec) || dec <= 1) return ''; return f === 'frac' ? toFrac(dec).txt : f === 'amer' ? toAmer(dec).txt : String(Math.round(dec * 1000) / 1000); }
+const PLACEHOLDER = { dec: 'e.g. 2.10', frac: 'e.g. 11/10 or evens', amer: 'e.g. +110 or -150' };
+const KIND = { dec: 'decimal', frac: 'fractional', amer: 'American' };
+/**
+ * Parse odds typed in ANY format, whatever "Odds shown as" says (owner, 28 Oct): 11/10 or evens = fractional; +110 / -150 = American;
+ * 2.10 or 3 = decimal; a whole number of 100 or more without a sign = American (+), since decimal odds that long are not realistic.
+ * Returns { dec (3 dp, display), exact (full precision), kind } or { dec:null, error }. `kind` says how it was read.
+ */
+function parseIn(text, f = oddsFmt()) {
+  void f;
+  const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
+  const ok = (x, kind) => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
+  if (s === 'evens' || s === 'evs' || s === 'even' || s === 'ev') return ok(2, 'fractional');
+  let m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s);
+  if (m) { const a = Number(m[1]), b = Number(m[2]); return a > 0 && b > 0 ? ok(1 + a / b, 'fractional') : { dec: null, error: 'Both numbers of a fraction must be above 0 (e.g. 11/10)' }; }
+  m = /^([+-])(\d+(?:\.\d+)?)$/.exec(s);
+  if (m) { const a = Number(m[2]) * (m[1] === '-' ? -1 : 1); return Math.abs(a) < 100 ? { dec: null, error: 'American odds are +100 or more, or -100 or less' } : ok(a > 0 ? 1 + a / 100 : 1 + 100 / -a, 'American'); }
+  if (/^\d+$/.test(s) && Number(s) >= 100) return ok(1 + Number(s) / 100, 'American');
+  if (/^\d+(\.\d+)?$/.test(s) || /^\.\d+$/.test(s)) { const d = Number(s); return d <= 1 ? { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 2.10)' } : ok(d, 'decimal'); }
+  return { dec: null, error: 'Not a price: type it as 2.10, 11/10, evens, +110 or -150' };
+}
+const kindOf = (f = oddsFmt()) => KIND[f];
+/**
+ * An odds input that survives format changes without drift: st = { text, exact, auto } where `auto` is the text PropLab wrote when
+ * converting. While the visitor has not edited it, the exact price is used; once they type, their text is parsed.
+ */
+function readInput(st, f = oddsFmt()) {
+  if (st.exact != null && st.auto != null && st.text === st.auto) return { dec: Math.round(st.exact * 1000) / 1000, exact: st.exact, kind: KIND[f], converted: true };
+  return parseIn(st.text, f);
+}
+function convertInput(st, from, to) {
+  const r = readInput(st, from); if (!r.dec) return st;
+  const t = inputText(r.exact, to); return { text: t, exact: r.exact, auto: t };
+}
+
+return { ODDS_FORMATS, oddsFmt, setOddsFmt, fmtName, toFrac, toAmer, fmtOdds, inputText, PLACEHOLDER, parseIn, kindOf, readInput, convertInput };
+})();
+__m['minfair'] = (() => {
+// Minimum fair odds filter (owner request 28 Oct 2026, evening): one box on Hiwi and every Find Plays page. Plays whose model fair odds are
+// below the minimum are hidden, and so are plays with no estimate (they have no fair odds to compare). Only the display changes: sorting,
+// ticked players and the other filters are untouched, and clearing the box shows everything again. Any odds format can be typed.
+const { parseIn } = __m['oddsfmt'];
+const { esc } = __m['util'];
+const KEY = 'proplab.minfair.v1';
+let mem; // { text, dec } or null
+function minFair() {
+  if (mem !== undefined) return mem;
+  try { const t = localStorage.getItem(KEY); const r = t ? parseIn(t) : null; mem = r && r.dec ? { text: t, dec: r.exact } : null; } catch { mem = null; }
+  return mem;
+}
+function setMinFair(text) {
+  const t = String(text || '').trim(), r = t ? parseIn(t) : null;
+  mem = r && r.dec ? { text: t, dec: r.exact } : null;
+  try { if (mem) localStorage.setItem(KEY, t); else localStorage.removeItem(KEY); } catch { /* private mode: this visit only */ }
+  document.dispatchEvent(new CustomEvent('minfair')); return r;
+}
+const minFairHtml = () => { const m = minFair(); return `<div class="field mfbox"><label for="mfin">Minimum fair odds <span class="xs muted">(hides plays below it)</span></label>
+  <div class="psbox"><input class="in" id="mfin" data-minfair type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 1.80, 4/5 or -125" value="${esc(m ? m.text : '')}"><button type="button" class="psx" data-mfclear aria-label="Clear the minimum fair odds" ${m ? '' : 'hidden'}>×</button></div>
+  <span class="xs muted" data-mfnote>${m ? '' : 'Empty = every play shown.'}</span></div>`; };
+/** The element to hide for a box: its card, or for a Find Plays table the row and the box row under it. */
+const holders = box => { const tr = box.closest('tr.hytr'); if (tr) return [tr, tr.previousElementSibling].filter(Boolean); const c = box.closest('.hcard, .cbcard, .card.play'); return c ? [c] : []; };
+/** Show / hide the play of one box (called after every fill). */
+function applyMinFair(box) {
+  const m = minFair(), fair = Number(box.dataset.hyFair), wait = box.classList.contains('hy-wait');
+  const hide = !!m && !wait && !(Number.isFinite(fair) && fair >= m.dec - 1e-9);
+  for (const h of holders(box)) h.classList.toggle('mfhide', hide);
+}
+function note() {
+  const m = minFair(), n = new Set([...document.querySelectorAll('.mfhide')].map(x => (x.matches('tr') ? x.closest('tr.hytr') || x.nextElementSibling : x))).size;
+  document.querySelectorAll('[data-mfnote]').forEach(el => { el.textContent = m ? `Showing plays with fair odds of ${m.dec.toFixed(2)} or more: ${n} hidden${n ? '' : ''} (plays with no estimate are hidden too).` : 'Empty = every play shown.'; });
+  document.querySelectorAll('[data-mfclear]').forEach(b => { b.hidden = !m; });
+}
+let noteT = 0;
+const scheduleNote = () => { clearTimeout(noteT); noteT = setTimeout(note, 120); };
+if (typeof document !== 'undefined') {
+  let t = 0;
+  document.addEventListener('input', ev => { const i = ev.target.closest && ev.target.closest('[data-minfair]'); if (!i) return; ev.stopPropagation();
+    clearTimeout(t); t = setTimeout(() => { const r = setMinFair(i.value); document.querySelectorAll('[data-minfair]').forEach(x => { if (x !== i) x.value = i.value; });
+      const n = document.querySelector('[data-mfnote]'); if (i.value.trim() && r && !r.dec && n) n.textContent = r.error || 'Not a price'; }, 250); }, true);
+  document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('[data-minfair]')) ev.stopPropagation(); }, true);
+  document.addEventListener('keydown', ev => { if (ev.target.closest && ev.target.closest('[data-minfair]')) { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); } }, true);
+  document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-mfclear]'); if (!b) return; ev.stopPropagation(); setMinFair(''); document.querySelectorAll('[data-minfair]').forEach(x => { x.value = ''; }); }, true);
+  document.addEventListener('minfair', () => { document.querySelectorAll('[data-hypo]').forEach(applyMinFair); scheduleNote(); });
+}
+
+return { minFair, minFairHtml, applyMinFair, scheduleNote };
 })();
 __m['rank'] = (() => {
 // Ranking, evidence labels and plain-English card sentences (redesign, 21 Oct 2026). One set of rules for Hiwi's Section, Finder and Plays.
@@ -3378,86 +3509,6 @@ const evPct = (win, odds, push = 0) => Math.round((win * odds + push - 1) * 1000
 
 return { HALF_LIFE, normCdf, countCdf, weigh, smooth, empirical, estimate, evPct };
 })();
-__m['oddsfmt'] = (() => {
-// Odds display format (owner request 28 Oct 2026): Decimal | Fractional | American, one shared choice for the whole site (footer, next to the
-// time zone). Only the DISPLAY changes: every calculation keeps the full-precision decimal price, so EV, fair odds and units never move
-// when the format changes. Fractions use the usual bookmaker ladder; a price with no exact ladder fraction is shown with "≈".
-const ODDS_FORMATS = [['dec', 'Decimal'], ['frac', 'Fractional'], ['amer', 'American']];
-const KEY = 'proplab.oddsfmt.v1';
-let mem = null;
-function oddsFmt() {
-  if (mem) return mem;
-  try { const v = localStorage.getItem(KEY); if (ODDS_FORMATS.some(f => f[0] === v)) return (mem = v); } catch { /* storage blocked: decimal for this visit */ }
-  return (mem = 'dec');
-}
-function setOddsFmt(v) {
-  if (!ODDS_FORMATS.some(f => f[0] === v)) return; const old = oddsFmt(); mem = v;
-  try { localStorage.setItem(KEY, v); } catch { /* private mode: this visit only */ }
-  if (typeof document !== 'undefined' && old !== v) document.dispatchEvent(new CustomEvent('oddsfmt', { detail: { from: old, to: v } }));
-}
-const fmtName = (f = oddsFmt()) => (ODDS_FORMATS.find(x => x[0] === f) || ODDS_FORMATS[0])[1];
-// UK bookmaker ladder (fractional odds against)
-const LADDER = [[1, 100], [1, 66], [1, 50], [1, 40], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8], [2, 15], [1, 7], [2, 13], [1, 6], [2, 11], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6], [8, 11], [4, 5], [5, 6], [10, 11], [1, 1],
-  [21, 20], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [85, 40], [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2], [8, 1], [17, 2], [9, 1], [10, 1], [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1],
-  [22, 1], [25, 1], [28, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1], [150, 1], [200, 1], [250, 1], [500, 1], [1000, 1]];
-/** { txt, exact } fraction for a decimal price: exact when the ladder fraction is the same price to two decimals. */
-function toFrac(dec) {
-  const v = dec - 1; let best = LADDER[0], bd = Infinity;
-  for (const f of LADDER) { const d = Math.abs(f[0] / f[1] - v); if (d < bd) { bd = d; best = f; } }
-  const exact = Math.abs((1 + best[0] / best[1]) - dec) < 0.005 || Math.round((1 + best[0] / best[1]) * 100) === Math.round(dec * 100);
-  return { txt: `${best[0]}/${best[1]}`, exact };
-}
-/** American odds for a decimal price (standard: +100 or more, or -100 or less). */
-function toAmer(dec) {
-  const a = dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1));
-  const back = a > 0 ? 1 + a / 100 : 1 + 100 / -a;
-  return { txt: a > 0 ? `+${a}` : String(a), exact: Math.abs(back - dec) < 0.005 };
-}
-/** Display a decimal price in the chosen format. Approximate fractions / American figures get "≈". */
-function fmtOdds(dec, f = oddsFmt()) {
-  if (!Number.isFinite(dec) || dec <= 1) return '–';
-  if (f === 'frac') { const r = toFrac(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
-  if (f === 'amer') { const r = toAmer(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
-  return dec.toFixed(2);
-}
-/** The text to put in an input for a price (no "≈"; the page keeps the exact price while the text is unchanged). */
-function inputText(dec, f = oddsFmt()) { if (!Number.isFinite(dec) || dec <= 1) return ''; return f === 'frac' ? toFrac(dec).txt : f === 'amer' ? toAmer(dec).txt : String(Math.round(dec * 1000) / 1000); }
-const PLACEHOLDER = { dec: 'e.g. 2.10', frac: 'e.g. 11/10 or evens', amer: 'e.g. +110 or -150' };
-const KIND = { dec: 'decimal', frac: 'fractional', amer: 'American' };
-/**
- * Parse odds typed in ANY format, whatever "Odds shown as" says (owner, 28 Oct): 11/10 or evens = fractional; +110 / -150 = American;
- * 2.10 or 3 = decimal; a whole number of 100 or more without a sign = American (+), since decimal odds that long are not realistic.
- * Returns { dec (3 dp, display), exact (full precision), kind } or { dec:null, error }. `kind` says how it was read.
- */
-function parseIn(text, f = oddsFmt()) {
-  void f;
-  const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
-  const ok = (x, kind) => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
-  if (s === 'evens' || s === 'evs' || s === 'even' || s === 'ev') return ok(2, 'fractional');
-  let m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s);
-  if (m) { const a = Number(m[1]), b = Number(m[2]); return a > 0 && b > 0 ? ok(1 + a / b, 'fractional') : { dec: null, error: 'Both numbers of a fraction must be above 0 (e.g. 11/10)' }; }
-  m = /^([+-])(\d+(?:\.\d+)?)$/.exec(s);
-  if (m) { const a = Number(m[2]) * (m[1] === '-' ? -1 : 1); return Math.abs(a) < 100 ? { dec: null, error: 'American odds are +100 or more, or -100 or less' } : ok(a > 0 ? 1 + a / 100 : 1 + 100 / -a, 'American'); }
-  if (/^\d+$/.test(s) && Number(s) >= 100) return ok(1 + Number(s) / 100, 'American');
-  if (/^\d+(\.\d+)?$/.test(s) || /^\.\d+$/.test(s)) { const d = Number(s); return d <= 1 ? { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 2.10)' } : ok(d, 'decimal'); }
-  return { dec: null, error: 'Not a price: type it as 2.10, 11/10, evens, +110 or -150' };
-}
-const kindOf = (f = oddsFmt()) => KIND[f];
-/**
- * An odds input that survives format changes without drift: st = { text, exact, auto } where `auto` is the text PropLab wrote when
- * converting. While the visitor has not edited it, the exact price is used; once they type, their text is parsed.
- */
-function readInput(st, f = oddsFmt()) {
-  if (st.exact != null && st.auto != null && st.text === st.auto) return { dec: Math.round(st.exact * 1000) / 1000, exact: st.exact, kind: KIND[f], converted: true };
-  return parseIn(st.text, f);
-}
-function convertInput(st, from, to) {
-  const r = readInput(st, from); if (!r.dec) return st;
-  const t = inputText(r.exact, to); return { text: t, exact: r.exact, auto: t };
-}
-
-return { ODDS_FORMATS, oddsFmt, setOddsFmt, fmtName, toFrac, toAmer, fmtOdds, inputText, PLACEHOLDER, parseIn, kindOf, readInput, convertInput };
-})();
 __m['kelly'] = (() => {
 // Units (owner request 27 Oct 2026; changed to 1/10 Kelly with stakes rounded DOWN to 2 decimals on 28 Oct): 1 unit = 1% of bankroll, capped at
 // 2.00 units per selection.
@@ -3642,6 +3693,7 @@ const { cardEstimate, loadCalib } = __m['valueev'];
 const { kellyUnits, fmtU } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
+const { applyMinFair, scheduleNote } = __m['minfair'];
 const { fmtOdds, oddsFmt, fmtName, PLACEHOLDER, readInput, convertInput, kindOf } = __m['oddsfmt'];
 
 const HYPO_UPLIFT = 0.05;
@@ -3717,6 +3769,7 @@ function fillHypo(box, m) {
   box.className = `hypo hy-${s.cls}`; box.dataset.hyKey = m.key; box.dataset.hyEv = s.ev; box.dataset.hyUnits = s.u; box.dataset.hyUncapped = s.un || '';
   box.dataset.hyP = m.ok ? String(m.e.win) : ''; box.dataset.hyOdds = m.ok ? m.dflt.toFixed(2) : ''; box.dataset.hyFair = m.ok ? String(m.fair) : '';
   box.innerHTML = inner(m);
+  applyMinFair(box); scheduleNote(); // the minimum fair odds filter (minfair.js)
 }
 /** An empty placeholder box; filled by queueHypo (never shows the previous line's figures). */
 const hypoSlot = (extra = '') => `<aside class="hypo hy-wait" data-hypo${extra} aria-live="polite"><span class="hyt">Hypothetical price — not a live bookmaker offer</span><span class="hys">Calculating…</span></aside>`;
@@ -4587,6 +4640,7 @@ __m['v-hiwi'] = (() => {
 // Football can research several leagues at once (league checkboxes, All Leagues, Today's Games Only = UK date). NFL is never mixed in.
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
 const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT, hasEuropean } = __m['data'];
+const { minFairHtml } = __m['minfair'];
 const { fbPlayers, hasPlayerLogs, clubsWithPlayerStats } = __m['fbscan'];
 const { nameMatches, psearchHtml, SEARCH_MAX, attachSuggest } = __m['psearch'];
 const { setClubRows, buildPlays: cbBuild, sortPlays: cbSort, mountPlays, COMBINED_KEYS, supportedKeys: cbSupported } = __m['combinedcore'];
@@ -4997,7 +5051,7 @@ async function viewHiwi(root, r, sport) {
         <div class="hlist">${shownP.slice(0, nShow).map(p => `<label class="hcheck"><input type="checkbox" data-pick="players" value="${esc(p.id)}" ${P.has(p.id) ? 'checked' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.sub)}${p.notable ? ` · <span title="${esc(p.why)}">★ ${esc(p.why)}</span>` : ''}</span>${p.inj && p.inj.cls !== 'none' ? ` <span class="injb inj-${p.inj.cls}" title="${esc(p.inj.detail || '')}">${esc(p.inj.label)}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${popOn ? 'No popular players for this selection. Untick Popular Players Only to see everyone.' : 'No players match.'}</p>`}${shownP.length > nShow ? `<button type="button" class="btn" id="hpmore">Show more (${shownP.length - nShow} more)</button>` : ''}</div>
         ${outLeft.length ? `<p class="xs muted" style="margin:4px 0">Not listed because confirmed unavailable: ${outLeft.map(x => `${esc(x.name)} (${esc(x.inj.label)}${x.inj.rec && x.inj.rec.injury ? ' – ' + esc(x.inj.rec.injury) : ''})`).join(', ')}. ${usMode ? 'Tick them in the list to research them anyway.' : 'Untick Popular Players Only to research them anyway.'}</p>` : ''}
         ${usMode ? `<p class="xs muted" style="margin:4px 0">${getPopular() && !popSel() ? 'Popular Players is on: select teams or games and their popular players are ticked automatically.' : getPopular() ? 'Popular Players is on: every popular player of the selected teams / games is ticked. Untick anyone, or tick others; untick Popular Players to remove the ones it added (your own ticks stay).' : 'Tick Popular Players to select every popular player of the selected teams / games at once.'}</p>` : `<p class="xs muted" style="margin:4px 0">Injury status unavailable for MLS players: no legitimate free availability feed is used (nothing is assumed about fitness).</p>`}</details>${availHtml()}` : availHtml()}
-      ${hasPlayers() ? psearchHtml('hpfind', st.pfind) : ''}
+      ${hasPlayers() ? psearchHtml('hpfind', st.pfind) : ''}${minFairHtml()}
       <div class="field"><label>Markets</label><p class="hmksum" id="hmksum" style="margin:0"><span>Markets: <b>${ms.size}</b> selected</span> — <button type="button" class="btn hmkbtn" id="hmkbtn"><b>${ms.size ? 'Edit Markets' : 'Select Markets'}</b></button></p></div>
       <div class="field"><label>Form period</label><div class="seg" id="hper" role="group" aria-label="Form period">${PERIODS.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(st.period) === String(v) ? 'on' : ''}" aria-pressed="${String(st.period) === String(v)}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:4px 0 0">Season: this season only. Last 5 / 10 / 20: the latest completed ${isNba ? 'games (regular season, NBA Cup final, Play-In and playoffs unless you choose Regular season only)' : usMode ? 'regular-season games' : 'league matches'}, going back into earlier seasons when needed.</p></div>
@@ -5568,6 +5622,7 @@ __m['v-nba-finder'] = (() => {
 // confirmed OUT on the Official NBA Injury Report are marked. Graph opens the same result card as Hiwi (Recent Form / Vs Opponent,
 // minutes slider, playoff labels).
 const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, loadLogs, teamGameRows, injuryStatus, NBA_POS, loadNbaInjuries } = __m['nba-data'];
+const { minFairHtml } = __m['minfair'];
 const { nightOf, viewingNight, ukTip, nightSpan } = __m['nightdate'];
 const { rankList, RANK_ORDERS, getExcludeOut, setExcludeOut, isConfirmedOut, getMinQual } = __m['rank'];
 const { NBA_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef, nbaGameDetailHtml } = __m['nba-markets'];
@@ -5615,7 +5670,7 @@ async function viewNbaFinder(root) {
     const gRow = g => { const stt = usStatus(g, 'nba', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? ukTip(g) : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     ctl.innerHTML = `${globalSideHtml('fgside')}
       <div class="field"><label>Research</label>${seg('subj', [['player', 'Players'], ['team', 'Teams']], ui.subj)}</div>
-      ${isT() ? '' : psearchHtml('fpfind', ui.find)}
+      ${isT() ? '' : psearchHtml('fpfind', ui.find)}${minFairHtml()}
       <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${m.key === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${(isT() ? NBA_TEAM_MARKETS : NBA_MARKETS).map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc((x.grp ? x.grp + ': ' : '') + x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}${m.hcp ? ' Research against a handicap you choose: not a bookmaker spread.' : ''}</p></div>
       ${isT() ? '' : `<div class="field"><label>Positions</label><div class="hgrid nposgrid">${NBA_POS.slice(1).map(([v, l]) => `<label class="hcheck"><input type="checkbox" data-pos value="${v}" ${ui.pos.has(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
       <label class="hcheck hpopchk"><input type="checkbox" id="fpop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">only the popular players (stars and regular scorers / rebounders / passers) are listed</span></span></label>`}
@@ -5759,6 +5814,7 @@ __m['v-nba-plays'] = (() => {
 // Players confirmed OUT (or otherwise unavailable) on the Official NBA Injury Report for that game are never in the active results;
 // Doubtful / Questionable players stay, clearly marked. A game not yet on the report is flagged, and nobody is removed for it.
 const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, nbaUpcoming, loadLogs, teamGameRows, injuryStatus, loadNbaInjuries } = __m['nba-data'];
+const { minFairHtml } = __m['minfair'];
 const { nightOf, ukTip } = __m['nightdate'];
 const { rankList, getExcludeOut, setExcludeOut, isConfirmedOut } = __m['rank'];
 const { NBA_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef } = __m['nba-markets'];
@@ -5808,7 +5864,7 @@ async function viewNbaPlays(root, r) {
         <details class="hsel" id="pplist"><summary><b>Players</b> <span class="muted small">${ui.picked.set.size} selected</span></summary><div class="hlist hgrid">${playersOf(g).map(p => { const ij = injuryStatus(p, g); return `<label class="hcheck"><input type="checkbox" data-pp value="${esc(p.id)}" ${ui.picked.set.has(p.id) ? 'checked' : ''} ${ij.unavailable ? 'disabled' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.team)}${p.notable ? ' · ★' : ''}</span>${ij.cls !== 'none' ? ` <span class="injb inj-${ij.cls}">${esc(ij.label)}</span>` : ''}</span></label>`; }).join('')}</div></details>` : '<p class="small muted">No upcoming NBA games are published.</p>')
       : ui.kind === 'player' ? `<div class="field"><label for="pfind">Player</label><select class="in" id="pfind">${teams().map(t => `<optgroup label="${esc(t.name)}">${roster(t.abbr).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}${p.notable ? ' ★' : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>`
       : `<div class="field"><label for="tt">Team</label><select class="in" id="tt">${teams().map(t => `<option value="${t.abbr}" ${t.abbr === ui.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>`;
-    ctl.innerHTML = `${globalSideHtml('pgside')}<div class="field"><label>Research</label>${seg('kind', [['game', 'Game'], ['player', 'Player'], ['team', 'Team']], ui.kind)}</div>${picker}
+    ctl.innerHTML = `${globalSideHtml('pgside')}${minFairHtml()}<div class="field"><label>Research</label>${seg('kind', [['game', 'Game'], ['player', 'Player'], ['team', 'Team']], ui.kind)}</div>${picker}
       
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = ${esc(seasonLabel(cs))} only.</span></div>
       ${nbaFiltersHtml()}
@@ -6721,6 +6777,7 @@ return { SEL, shareSelection };
 __m['v-trends'] = (() => {
 // Hit Rate Finder, Trends mode: broad discovery across many teams or several fixtures (the targeted one-subject scanner is Plays). Historical hit rates only.
 const { infoTag } = __m['info'];
+const { minFairHtml } = __m['minfair'];
 const { store, loadAllPlayerRows, teamRowsFor, upcomingFixtures, selectableFixtures, teamsOfLeague, leagueName, teamSlugOf, currentSeason, isCup, teamRowsScoped, COMP_SHORT, hasEuropean, fxSort } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketRows, defaultLine, stepLine, marketDesc, marketScope, syncMinus, playBadge } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS, scan, reliability, h2hSample } = __m['plays'];
@@ -6856,7 +6913,7 @@ async function viewTrends(root, r) {
     const exDef = mk.find(m => m.key === ui.exKey);
     const byDay = new Map(), tbcFx = fx.filter(f => !f.ko_utc); for (const f of fx.filter(f => f.ko_utc)) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const f = ui.mode === 'game' ? curFixture() : null;
-    ctl.innerHTML = `${globalSideHtml('tgside')}${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'flg' })}
+    ctl.innerHTML = `${globalSideHtml('tgside')}${minFairHtml()}${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'flg' })}
       ${lgs.some(isCup) || leagueTeams().some(t => hasEuropean(t.slug)) ? `<div class="field"><label>Matches used (clubs with European matches)</label>${seg('uscope', finderScopeOpts(lgs.filter(isCup).length ? lgs.filter(isCup) : ['eu']), getUclScope())}<span class="xs muted">All games (default) = each club's matches in every competition PropLab holds (league, Champions League, Europa League, Conference League), in date order, competition shown on every match. Domestic league only = its league matches (e.g. Porto: Liga Portugal); clubs whose league PropLab does not cover have none. ${lgs.filter(isCup).length === 1 ? `${leagueName(lgs.find(isCup))} only` : 'European competition only'} = only that competition's matches, across seasons (goals markets only). Each market uses only the matches that record it; missing statistics never count as 0.</span></div>` : ''}
       <div class="field"><label>Research mode</label>${seg('mode', [['browse', 'Browse teams'], ['game', 'Select game']], ui.mode)}</div>
       ${ui.mode === 'browse' ? `<details class="teamsel" id="tsel"><summary><b>Teams</b> <span id="tcount">${set.size === tms.length ? `All ${tms.length} teams selected` : `${set.size} team${set.size === 1 ? '' : 's'} selected`}</span></summary>
@@ -7195,6 +7252,7 @@ __m['v-combined'] = (() => {
 // Detailed analysis has both teams' bars. Engine: combinedcore.js (shared with Hiwi's Section). Fixture selection: fxsel.js (shared with
 // Highest %).
 const { store, selectableFixtures, teamSlugOf, leagueName, isCup, hasEuropean, fxSort } = __m['data'];
+const { minFairHtml } = __m['minfair'];
 const { marketName } = __m['markets'];
 const { getUclScope, setUclScope, finderScopeOpts } = __m['v-hiwi'];
 const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, leaguesLabel } = __m['leaguepick'];
@@ -7226,7 +7284,7 @@ async function viewCombined(root) {
   const drawCtl = () => keepScrollIn(ctl, () => {
     const fx = lgFixtures(), byDay = new Map(); for (const f of fx) { const d = koLocal(f).ymd; if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(f); }
     const sup = supported(), on = new Set(keysNow()), nSel = selFx().length;
-    ctl.innerHTML = `${globalSideHtml('cbgside')}${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'cblg' })}
+    ctl.innerHTML = `${globalSideHtml('cbgside')}${minFairHtml()}${leaguePickHtml(lgs, ui.today, { open: ui.lgOpen, id: 'cblg' })}
       <details class="hsel" id="cbfx" ${ui.gOpen ? 'open' : ''}><summary><b>Fixtures</b> <span class="muted small" data-cbfxn>${nSel} selected · ${esc(leaguesLabel(lgs))}</span></summary>
         <div class="row" style="border:0;padding:0;gap:8px;margin:6px 0"><button type="button" class="chip" data-cball>Select all</button><button type="button" class="chip" data-cbnone>Clear all</button></div>
         <div class="hlist">${[...byDay.entries()].map(([d, fs]) => `<div class="hday">${esc(fmtDay(d))}</div>${fs.map(f => `<label class="hcheck hfxrow"><input type="checkbox" data-cbg value="${esc(fixtureId(f))}" ${ui.games.has(fixtureId(f)) ? 'checked' : ''}><span><b>${esc(koLocal(f).hm || 'TBC')}</b> ${esc(f.home)} v ${esc(f.away)} <span class="xs muted">${esc(leagueName(f.league))}</span></span></label>`).join('')}`).join('') || '<p class="xs muted">No fixtures in the selected leagues.</p>'}</div>
@@ -8640,6 +8698,7 @@ __m['v-nfl-finder'] = (() => {
 // NFL Finder: broad player discovery. One prop market and line across many players, filtered by position, team or upcoming game,
 // with a minimum hit rate filter, three-state sorting on Hit rate and Avg, and form dots that follow the chosen sample.
 const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, nflSelectable, GROUP_NAMES, injuryStatus, nextGameOf, nflSeasonGames } = __m['nfl-data'];
+const { minFairHtml } = __m['minfair'];
 const { rankList, RANK_ORDERS, getExcludeOut, setExcludeOut, isConfirmedOut, getMinQual } = __m['rank'];
 const { marketsForGroup, nflLines, nflGameDetailHtml } = __m['nfl-markets'];
 const { TYPES } = __m['nfl-scan'];
@@ -8688,7 +8747,7 @@ async function viewNflFinder(root) {
     const tbc = list.filter(g => !g.ko_utc); const nSel = selGames().length;
     const gRow = g => { const stt = usStatus(g, 'nfl', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     const haveSnaps = (nfl.meta?.sources || []).some(x => /snap/.test(x.used_for || ''));
-    ctl.innerHTML = `${globalSideHtml('nfgside')}${psearchHtml('fpfind', ui.find)}<div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${ui.market === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${PLAYER_MKTS().map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
+    ctl.innerHTML = `${globalSideHtml('nfgside')}${psearchHtml('fpfind', ui.find)}${minFairHtml()}<div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${ui.market === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${PLAYER_MKTS().map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
       <div class="field"><label>Positions</label><div class="hgrid nposgrid" id="npos">${sup.map(g => `<label class="hcheck"><input type="checkbox" data-pos value="${g}" ${gs.includes(g) ? 'checked' : ''}><span>${POS[g]}</span></label>`).join('')}</div>
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-posall>Select all</button><button type="button" class="chip" data-posnone>Clear all</button></div>
         <p class="xs muted" style="margin:4px 0 0">Only positions with ${esc(m.label.toLowerCase())} statistics are offered.</p></div>
