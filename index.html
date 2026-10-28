@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="8b1ae42078fa">
+<meta name="proplab-build" content="101b83c3c8ef">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -491,6 +491,24 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 /* NBA / NFL "LIVE by schedule" (Phase 2): outlined red, never filled, never pulsing, so it cannot be mistaken for a verified LIVE */
 .livewin{display:inline-block;font:inherit;font-size:11px;font-weight:800;letter-spacing:.04em;line-height:1.15;color:#ff8a8a;background:transparent;border:1.5px dashed #d92d2d;border-radius:6px;padding:2px 6px;text-align:center;white-space:normal;cursor:pointer}
 .livewin small{display:block;font-weight:600;font-size:9.5px;letter-spacing:0;color:var(--muted)}
+/* Recommended Units on the EV page (1/8 Kelly) */
+.evunits{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--s1)}
+.evunits .evul{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.evunits b{font-size:22px;overflow-wrap:anywhere}.evunits.pos b{color:var(--green,#22c55e)}
+/* temporary player search */
+.psbox{position:relative;display:flex;align-items:center;min-width:0}.psbox .in{padding-right:44px}
+.psx{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:var(--s2);color:var(--text);font-size:20px;line-height:1;cursor:pointer}
+.psx[hidden]{display:none}
+/* Hypothetical odds & units box (27 Oct, late): right-hand side of each play on wider screens, stacked full width on a phone */
+.hyrow{display:flex;flex-direction:column;gap:8px;min-width:0}.hyl{min-width:0;flex:1 1 auto}
+@media (min-width:640px){.hyrow{flex-direction:row;align-items:flex-start}.hyrow>.hypo{flex:0 0 250px;width:250px;margin-left:auto}}
+.cbhy{margin-top:8px}.hytr td{border-top:0;padding-top:0}
+.hypo{border:1px solid var(--line);border-radius:10px;padding:6px 9px;background:var(--s2);font-size:12.5px;line-height:1.35;display:flex;flex-direction:column;gap:3px;min-width:0;max-width:100%;box-sizing:border-box}
+.hypo .hyt{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.hypo .hym{overflow-wrap:anywhere}.hypo .hys{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.hypo .hyodds{width:4.2em;padding:1px 4px;font:inherit;font-size:16px;font-weight:800;border:1px dashed var(--accent);border-radius:6px;background:transparent;color:var(--text);text-align:center;vertical-align:baseline}
+.hypo.hy-pos .hyu,.hypo.hy-pos .hyev{color:var(--hit)}.hypo.hy-neg .hyno{color:var(--miss)}.hypo .hybad{color:var(--amber)}.hypo .hyna{font-size:13px}
+.hypo .linkbtn{background:none;border:0;color:var(--accent);padding:0;font:inherit;text-decoration:underline}
+.evstake{display:block;font-size:13px;line-height:1.4;margin:2px 0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -2581,6 +2599,24 @@ const sortTh = (st, key, label) => {
 
 return { nextSort, sortRows, sortTh };
 })();
+__m['psearch'] = (() => {
+// Temporary player search (owner request 27 Oct 2026, evening). Typing a name temporarily replaces the player-selection filter (ticked
+// players, Popular Players, positions) with the players whose names match, inside the page's other filters (games, teams, markets, sample,
+// sides, sort). The ticked selection itself is never changed: clearing the search brings back exactly the players that were ticked.
+const { esc } = __m['util'];
+const { normName } = __m['teams'];
+/** Case- and accent-insensitive: every word typed must start a word of the name ("jay tat" → Jayson Tatum), or the text appears inside the name. */
+function nameMatches(q, name) {
+  const n = normName(q || ''); if (!n) return false; const nm = normName(name || ''); if (nm.includes(n)) return true;
+  const words = nm.split(' '); return n.split(' ').every(t => words.some(w => w.startsWith(t)));
+}
+/** The search box with its clear (X) button. id: the input id. */
+const psearchHtml = (id, value, label = 'Find a player (temporary)') => `<div class="field psearch"><label for="${id}">${esc(label)}</label><div class="psbox"><input class="in" id="${id}" type="search" inputmode="search" autocomplete="off" placeholder="Type a name, e.g. Tatum" value="${esc(value || '')}" aria-describedby="${id}-h"><button type="button" class="psx" data-psclear="${id}" aria-label="Clear the player search" ${value ? '' : 'hidden'}>×</button></div>
+  <span class="xs muted" id="${id}-h">${value ? '<b>Search on:</b> showing the matching players only; your ticked players are unchanged and come back when you clear it.' : 'Shows one player\'s plays without changing the players you have ticked.'}</span></div>`;
+const SEARCH_MAX = 12; // at most this many matching players are researched at once (keeps typing fast)
+
+return { nameMatches, psearchHtml, SEARCH_MAX };
+})();
 __m['nbaprefs'] = (() => {
 // NBA research settings shared by Hiwi, Finder and Plays, remembered on this device (owner request 21 Oct).
 //  * Minimum Minutes Filter: off, or a minimum (1-48). Applied to every NBA player-prop search BEFORE Last 5 / 10 / 20 is taken.
@@ -2749,6 +2785,8 @@ const cmpLine = (def, line) => (def.binary ? 0.5 : def.hcp ? -line : line);
 const signed = v => (typeof v === 'number' && v > 0 ? '+' + v : String(v).replace('-', '−'));
 /** Bar label under a bar: opponent (gold = playoff game, teal = Play-In), minutes when the card shows them. */
 const oppCls = r => (r.raw && r.raw.type === 'P' ? ' po' : r.raw && r.raw.type === 'PI' ? ' pi' : '');
+/** Functions run after every card paint (registered by hypo.js; kept as a hook so this module has no import cycle). */
+const paintHooks = [];
 function cardHtml(card, st) {
   const d = card.def, bin = !!d.binary, vals = card.rows.map(r => r.value), b = d.hcp ? { min: Math.min(d.range[0], st.line) - 0.5, max: Math.max(d.range[1], st.line) + 0.5 } : lineBounds(d, vals, st.line);
   const sMin = Math.floor(b.min - 0.5) + 0.5, sMax = Math.max(sMin + 1, b.max);
@@ -2773,8 +2811,8 @@ function cardHtml(card, st) {
     ${card.perOk && !card.h2h ? `<div class="hperc"><label class="xs muted" for="hper-${esc(card.cid)}">Games used</label><select class="in hpersel" id="hper-${esc(card.cid)}" data-h-per aria-label="Games used on this card">${PER_OPTS.map(([v, l]) => `<option value="${v}" ${String(st.per ?? card.perDefault ?? 'season') === v ? 'selected' : ''}>${l}${v === String(card.perDefault ?? '') ? ' (page)' : ''}</option>`).join('')}</select></div>` : ''}
     <div class="hctl"><div class="seg hsides" role="group" aria-label="${bin ? 'Outcome' : 'Over, Under or Both'}">${sides.map(([v, l]) => `<button type="button" data-h-side="${v}" class="${st.side === v ? 'on' : ''}" aria-pressed="${st.side === v}">${l}</button>`).join('')}</div>
       ${bin ? '' : `<div class="hline"><button type="button" class="hstep" data-h-step="-1" aria-label="Lower line">−</button><input type="range" data-h-range min="${sMin}" max="${sMax}" step="1" value="${st.line}" aria-label="Line for ${esc(d.label)}"><button type="button" class="hstep" data-h-step="1" aria-label="Raise line">+</button><input type="number" inputmode="decimal" class="in hnum" data-h-num step="0.5" value="${st.line}" aria-label="Type a line"></div>`}</div>
-    <div class="hstat" data-h-stat></div>
-    <p class="hsent" data-h-sent></p>
+    <div class="hyrow"><div class="hyl"><div class="hstat" data-h-stat></div>
+    <p class="hsent" data-h-sent></p></div>${card.noPrice ? '' : '<aside class="hypo hy-wait" data-hypo aria-live="polite"><span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span></aside>'}</div>
     <div class="hmeta xs muted">${n} ${unitW} · ${esc(card.h2h ? (card.cover || '') : card.period)} ${n ? infoTag(rel.k, rel.t, { n, cls: 'rel ' + rel.k }) : ''}${card.m > n ? ' ' + infoTag('limited', 'Limited data', { n, m: card.m, cls: 'warnt' }) : ''}${bin ? '' : ' ' + infoTag('research', 'Research line', { cls: 'neutral' })}${d.key.endsWith('cards') ? ' ' + infoTag('cards', 'How cards count', { cls: 'neutral' }) : ''}<span data-h-push></span></div>
     ${n ? `<div class="hbars-wrap"><div class="hbars${card.h2h || spansYears(card.rows) ? ' years' : ''}" data-h-bars>${barsHtml(card, card.rows, 0, !!card.h2h || spansYears(card.rows))}</div></div>
     ${po || pi || card.showMin ? `<p class="xs muted hlegend">${po ? '<span class="lgpo">Gold opponent</span> = playoff game' : ''}${po && pi ? ' · ' : ''}${pi ? '<span class="lgpi">Teal opponent</span> = Play-In game' : ''}${(po || pi) && card.showMin ? ' · ' : ''}${card.showMin ? (card.partUnit === '%' ? `Under each bar: ${esc(card.partLabel)} (nflverse snap counts)` : 'Under each bar: minutes played (DNPs are never counted)') : ''}</p>` : ''}
@@ -2854,6 +2892,7 @@ function paintHCard(el, card, st) {
   if (rg) { if (shown < Number(rg.min)) rg.min = Math.floor(shown - 0.5) + 0.5; if (shown > Number(rg.max)) rg.max = Math.ceil(shown); rg.value = shown; }
   if (num && Number(num.value) !== shown && !st._typing) num.value = shown;
   el.querySelectorAll('[data-h-side]').forEach(x => { const on = x.dataset.hSide === st.side; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+  for (const f of paintHooks) f(el, card, st); // hypo.js: the hypothetical-odds box for this exact line and side
 }
 /** Re-selects a card's games after its own minutes filter or Recent Form / Vs Opponent tab changes (line and side are kept). */
 function rebuildCard(c, e) {
@@ -2901,7 +2940,7 @@ function wireHCards(root, reg, onDetail, onCommit = () => {}) {
   });
 }
 
-return { PER_OPTS, lineStats, cmpLine, cardHtml, headRate, paintHCard, wireHCards };
+return { PER_OPTS, lineStats, cmpLine, paintHooks, cardHtml, headRate, paintHCard, wireHCards };
 })();
 __m['aliases'] = (() => {
 // Nicknames, abbreviations and common alternative spellings for team SEARCH only (typing "Spurs" finds Tottenham Hotspur). They never
@@ -3131,6 +3170,530 @@ const half = x => Math.max(0.5, Math.round(x - 0.5) + 0.5);
 
 return { usSubjectIndex, usMarketsFor, usPriceCard };
 })();
+__m['prob'] = (() => {
+// Estimated probability for one side of a line, for the Value page's EV (owner request 21 Oct, late evening). Pure: no DOM, tested
+// in Node and backtested by owner-tools/prob-backtest.mjs on past seasons.
+//
+// METHOD (shown on the Value page in plain English)
+//  1. Recent games count more: each earlier qualifying game gets weight 0.5^(age / 10), so a game 10 games ago counts half as much as
+//     the latest one (at most the last 60 games). n_eff = (sum w)^2 / sum w^2 is the effective number of games.
+//  2. Two views of the same games:
+//     * empirical: the weighted share of games over / under / exactly on the line;
+//     * smooth: a distribution fitted to the weighted mean and spread (normal for big numbers or margins that can be negative; Poisson
+//       or negative binomial for small counts; a simple rate for Yes / No markets). It stops one odd result from swinging the estimate
+//       and gives sensible answers for lines far from his usual level.
+//  3. Blend: (n_eff x empirical + 8 x smooth) / (n_eff + 8). Few games => the smooth view dominates; many games => his own record does.
+//  4. Calibration: the blended chance is passed through a straight-line correction on the log-odds scale fitted on earlier seasons and
+//     checked on a later season it never saw (data-prob-calibration.json). If that file is missing, the estimate is marked uncalibrated.
+//  5. Insufficient evidence: fewer than 8 qualifying games, or no game in the last 400 days. No number is shown then.
+//  6. Football team markets also give half weight to the same-venue games (home / away) as the next one: the backtest showed it helps
+//     there, and not for NBA or NFL players.
+//  A historical hit rate is never used as the probability by itself.
+const HALF_LIFE = 10, MAX_GAMES = 60, K_SMOOTH = 8, MIN_GAMES = 8, STALE_DAYS = 400;
+
+const erf = x => { // Abramowitz-Stegun 7.1.26
+  const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; };
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+const lgamma = z => { // Lanczos
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+  z -= 1; let x = c[0]; for (let i = 1; i < g + 2; i++) x += c[i] / (z + i); const t = z + g + 0.5; return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x); };
+/** P(X <= k) for a count with mean mu and variance v (Poisson when v <= mu, negative binomial otherwise). */
+function countCdf(k, mu, v) {
+  if (k < 0) return 0; if (mu <= 0) return 1;
+  let s = 0;
+  if (v <= mu * 1.05) { let p = Math.exp(-mu); for (let i = 0; i <= k; i++) { s += p; p *= mu / (i + 1); } return Math.min(1, s); }
+  const r = mu * mu / (v - mu), q = r / (r + mu);
+  for (let i = 0; i <= k; i++) s += Math.exp(lgamma(i + r) - lgamma(r) - lgamma(i + 1) + r * Math.log(q) + i * Math.log(1 - q));
+  return Math.min(1, s);
+}
+const logit = p => Math.log(p / (1 - p)), sig = x => 1 / (1 + Math.exp(-x));
+const clamp = (p, lo = 0.01, hi = 0.99) => Math.min(hi, Math.max(lo, p));
+
+/** Weighted summary of the qualifying values (newest first). */
+function weigh(values) {
+  const v = values.slice(0, MAX_GAMES); let sw = 0, sw2 = 0, m = 0;
+  const w = v.map((_, i) => 0.5 ** (i / HALF_LIFE));
+  for (let i = 0; i < v.length; i++) { sw += w[i]; sw2 += w[i] * w[i]; m += w[i] * v[i]; }
+  m = sw ? m / sw : 0; let s2 = 0; for (let i = 0; i < v.length; i++) s2 += w[i] * (v[i] - m) ** 2;
+  const nEff = sw2 ? (sw * sw) / sw2 : 0, varW = sw ? (s2 / sw) * (nEff > 1 ? nEff / (nEff - 1) : 1) : 0;
+  return { v, w, sw, nEff, mean: m, var: varW };
+}
+/** { over, under, push } from the smooth distribution. */
+function smooth(S, line, { binary = false } = {}) {
+  if (binary) { const p = clamp(S.mean, 0.02, 0.98); return { over: p, under: 1 - p, push: 0 }; }
+  const ints = S.v.every(x => Number.isInteger(x)), neg = S.v.some(x => x < 0);
+  if (ints && !neg && S.mean < 10) {
+    const v = Math.max(S.var, S.mean * 0.5, 0.05); const lo = Math.ceil(line) - 1, hi = Math.floor(line); // under: X <= lo; over: X > hi
+    const under = countCdf(lo, S.mean, v), over = 1 - countCdf(hi, S.mean, v); return { over, under, push: Math.max(0, 1 - over - under) };
+  }
+  const sd = Math.max(Math.sqrt(Math.max(S.var, 0)), 0.5 + Math.abs(S.mean) * 0.05);
+  if (ints) { const over = 1 - normCdf((Math.floor(line) + 0.5 - S.mean) / sd), under = normCdf((Math.ceil(line) - 0.5 - S.mean) / sd); return { over, under, push: Math.max(0, 1 - over - under) }; }
+  const over = 1 - normCdf((line - S.mean) / sd); return { over, under: 1 - over, push: 0 };
+}
+/** { over, under, push } weighted shares of the games themselves. */
+function empirical(S, line) {
+  let o = 0, u = 0; for (let i = 0; i < S.v.length; i++) { if (S.v[i] > line) o += S.w[i]; else if (S.v[i] < line) u += S.w[i]; }
+  return { over: o / S.sw, under: u / S.sw, push: Math.max(0, 1 - (o + u) / S.sw) };
+}
+/**
+ * values: qualifying values, newest first. lastDate: 'YYYY-MM-DD' of the newest (for staleness). now: Date. calib: { a, b } or null.
+ * Returns { ok, reason } or { ok, win, lose, push, q (win | not push), lo, hi, nEff, n, emp, smooth, calibrated }.
+ */
+function estimate(values, line, side, { binary = false, calib = null, lastDate = null, now = new Date(), venueValues = null, venueCalib = null } = {}) {
+  const vals = values.filter(x => typeof x === 'number' && Number.isFinite(x));
+  if (vals.length < MIN_GAMES) return { ok: false, n: vals.length, reason: `only ${vals.length} qualifying game${vals.length === 1 ? '' : 's'} on record (at least ${MIN_GAMES} are needed)` };
+  if (lastDate && (now - new Date(lastDate + 'T12:00:00Z')) / 864e5 > STALE_DAYS) return { ok: false, n: vals.length, reason: 'no game in the last 400 days' };
+  const S = weigh(vals), E = empirical(S, line), P = smooth(S, line, { binary }), k = K_SMOOTH, t = S.nEff + k;
+  let over = (S.nEff * E.over + k * P.over) / t, under = (S.nEff * E.under + k * P.under) / t;
+  const push = Math.max(0, 1 - over - under), dec = over + under;
+  let q = dec > 0 ? over / dec : 0.5; // chance of Over given no push
+  // Football team markets only (it helped in the backtest there, not in the NBA or NFL): half-weight on an estimate from his earlier games
+  // at the same venue (home / away) as the next game, when there are at least 8 of them; it then uses its own calibration.
+  let venueUsed = false;
+  if (venueValues && venueCalib) { const vv = venueValues.filter(x => typeof x === 'number' && Number.isFinite(x));
+    if (vv.length >= MIN_GAMES) { const ev = estimate(vv, line, 'over', { binary }); if (ev.ok) { q = 0.5 * q + 0.5 * ev.qRaw; calib = venueCalib; venueUsed = true; } } }
+  const raw = q;
+  if (calib && Number.isFinite(calib.a) && Number.isFinite(calib.b)) q = sig(calib.a * logit(clamp(q)) + calib.b);
+  q = clamp(q);
+  over = q * (1 - push); under = (1 - q) * (1 - push);
+  const qs = side === 'under' ? 1 - q : q, se = Math.sqrt(qs * (1 - qs) / t);
+  const win = side === 'under' ? under : over, lose = side === 'under' ? over : under;
+  return { ok: true, win, lose, push, q: qs, qRaw: side === 'under' ? 1 - raw : raw, lo: Math.max(0, qs - 1.96 * se) * (1 - push), hi: Math.min(1, qs + 1.96 * se) * (1 - push),
+    nEff: Math.round(S.nEff * 10) / 10, n: vals.length, used: S.v.length, mean: S.mean, emp: side === 'under' ? E.under : E.over, smooth: side === 'under' ? P.under : P.over, calibrated: !!calib, venueUsed };
+}
+/** EV per unit staked, in %: 100 x (p_win x odds + p_push - 1). */
+const evPct = (win, odds, push = 0) => Math.round((win * odds + push - 1) * 1000) / 10;
+
+return { HALF_LIFE, normCdf, countCdf, weigh, smooth, empirical, estimate, evPct };
+})();
+__m['nfl-model'] = (() => {
+// Experimental NFL model data in the browser. The model itself is trained offline (owner-tools/nfl_model.py); the site only reads its
+// published output (data-nfl-model.json) and turns each prediction's distribution into a probability for ANY line the visitor sets.
+// A historical hit rate is never used as a model probability. Markets that failed the out-of-sample test are marked inactive.
+const model = { status: 'idle', data: null, backtest: null, log: null, byKey: new Map() };
+const RQ = Array.from({ length: 81 }, (_, i) => i / 80);
+const getFresh = async f => { const r = await fetch(`${f}?t=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); };
+async function loadModel(getJson = getFresh) {
+  if (model.status === 'ready' || model.status === 'loading') return model;
+  model.status = 'loading';
+  try {
+    model.data = await getJson('data-nfl-model.json', { fresh: true });
+    model.byKey = new Map(model.data.predictions.map(p => [`${p.player_id}|${p.market}`, p]));
+    model.status = 'ready';
+  } catch { model.status = 'missing'; }
+  return model;
+}
+async function loadBacktest(getJson = getFresh) { if (!model.backtest) { try { model.backtest = await getJson('data-nfl-model-backtest.json', { fresh: true }); } catch { model.backtest = null; } } return model.backtest; }
+async function loadForward(getJson = getFresh) { if (!model.log) { try { model.log = await getJson('data-nfl-model-forward.json', { fresh: true }); } catch { model.log = null; } } return model.log; }
+
+// ---- distributions (same maths as owner-tools/nfl_model.py) ----
+function lgamma(x) { // Lanczos
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function nbPmf(k, mu, alpha) {
+  if (k < 0) return 0;
+  if (alpha < 1e-6) return Math.exp(k * Math.log(mu) - mu - lgamma(k + 1));
+  const r = 1 / alpha, p = r / (r + mu);
+  return Math.exp(lgamma(k + r) - lgamma(r) - lgamma(k + 1) + r * Math.log(p) + k * Math.log(1 - p));
+}
+const nbCdf = (k, mu, a) => { let s = 0; for (let i = 0; i <= k; i++) s += nbPmf(i, mu, a); return Math.min(1, s); };
+// Same rule as numpy.interp (ties in the quantiles, e.g. many zero-yard games, resolve to the last equal point).
+const interp = (t, xs, ys) => {
+  const n = xs.length; if (t < xs[0]) return ys[0]; if (t >= xs[n - 1]) return ys[n - 1];
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
+  const x0 = xs[lo], x1 = xs[hi]; return x1 === x0 ? ys[lo] : ys[lo] + (ys[hi] - ys[lo]) * (t - x0) / (x1 - x0);
+};
+/** P(Y <= y) for a continuous-approximated whole-number outcome described by quantiles of actual/projection (ratio) or actual-projection (shift). */
+function cdfAt(y, mu, mk, pos) {
+  if (mk.dist === 'ratio') { const tab = (mk.ratio_by_pos && mk.ratio_by_pos[pos]) || mk.ratio; const b = tab.find(x => x.mu_max === null || mu <= x.mu_max); return interp(y / Math.max(mu, 1e-3), b.q, RQ); }
+  return interp(y - mu, mk.q, RQ); // 'shift' (team points)
+}
+/** Calibration map learned from earlier out-of-sample seasons: p' = sigmoid(a logit p + b). */
+function calibrate(p, cal) { if (!cal) return p; const q = Math.min(0.995, Math.max(0.005, p)); return 1 / (1 + Math.exp(-(cal.a * Math.log(q / (1 - q)) + cal.b))); }
+/** Raw (uncalibrated) P(Y > L). */
+function rawOver(L, mu, mk, pos) {
+  if (mk.dist === 'nb') return 1 - nbCdf(Math.floor(L), mu, mk.alpha || 0);
+  return 1 - cdfAt(Math.floor(L) + 0.5, mu, mk, pos);
+}
+/** Probabilities for a line: { over, under, push } (push only for whole-number lines). */
+function lineProbs(pred, line, mk) {
+  const mu = pred.proj, L = Number(line);
+  if (!Number.isFinite(L) || !mk || !(mu >= 0)) return null;
+  const whole = Math.abs(L - Math.round(L)) < 1e-9, cal = mk.calibration, pos = pred.position;
+  const over = calibrate(rawOver(L, mu, mk, pos), cal);
+  if (!whole) return { over: clamp(over), under: clamp(1 - over), push: 0 };
+  // whole-number line: Under = not (Y >= L) = 1 - P(Y > L - 0.5); the rest is the push
+  const under = 1 - calibrate(rawOver(L - 0.5, mu, mk, pos), cal);
+  return { over: clamp(over), under: clamp(under), push: clamp(1 - over - under) };
+}
+const clamp = p => Math.max(0, Math.min(1, p));
+const marketInfo = key => model.data?.markets?.[key] || null;
+/** The prediction for a player and market; with gameId, the one for that game (a player can have predictions for two weeks). */
+const predictionFor = (playerId, market, gameId) => (gameId ? (model.data?.predictions || []).find(p => p.player_id === playerId && p.market === market && p.game_id === gameId) || null : model.byKey.get(`${playerId}|${market}`) || null);
+
+// ---- uncertainty and EV classification ----
+/** Margin of error for the probability, from what the backtest measured for this kind of prediction (calibration gap and the 95% interval
+ *  of the observed rate). Wider when the cell had few cases. */
+function probMargin(pred) {
+  const c = pred?.cell; if (!c || !c.n) return 0.12;
+  const [lo, hi] = c.observed_ci95 || [null, null];
+  const half = lo != null && hi != null ? (hi - lo) / 2 : 0.1;
+  return Math.min(0.2, Math.max(0.02, Math.abs(c.observed_side_rate - c.predicted_side_prob) + half / 2));
+}
+/** EV % = (p x decimal odds - 1) x 100. Classified with the probability's margin: an edge only counts when it survives the margin. */
+function evVerdict(p, odds, pred) {
+  if (!(odds > 1) || p == null) return null;
+  if (!pred || pred.confidence === 'Insufficient Data' || !pred.active_market) return { label: 'Insufficient Data', cls: 'insufficient' };
+  const m = probMargin(pred), ev = (p * odds - 1) * 100, lo = ((p - m) * odds - 1) * 100, hi = ((p + m) * odds - 1) * 100;
+  const label = lo > 0 ? 'Positive Estimated EV' : hi < 0 ? 'Negative Estimated EV' : 'Uncertain – No Clear Edge';
+  return { ev: Math.round(ev * 10) / 10, lo: Math.round(lo * 10) / 10, hi: Math.round(hi * 10) / 10, margin: m, label, cls: lo > 0 ? 'pos' : hi < 0 ? 'neg' : 'unc' };
+}
+/** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
+function parseAnyOdds(t) {
+  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
+  if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, exact: 2, kind: 'fractional' };
+  // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
+  if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
+    const a = Number(s);
+    if (a >= 100) return { dec: Math.round((1 + a / 100) * 1000) / 1000, exact: 1 + a / 100, kind: 'American' };
+    if (a <= -100) return { dec: Math.round((1 + 100 / -a) * 1000) / 1000, exact: 1 + 100 / -a, kind: 'American' };
+    return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
+  }
+  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a > 0 && b > 0 ? { dec: Math.round((a / b + 1) * 1000) / 1000, exact: a / b + 1, kind: 'fractional' } : { dec: null, error: 'Fractional odds look like 6/4' }; }
+  const d = Number(s); return Number.isFinite(d) && d > 1 ? { dec: d, exact: d, kind: 'decimal' } : { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 1.91)' };
+}
+
+// ---- plain-English reasons, built only from the model's own inputs ----
+const LBL = { usage: { pass_yds: 'pass attempts', att: 'pass attempts', cmp: 'pass attempts', pass_td: 'pass attempts', int: 'pass attempts', rush_yds: 'carries', car: 'carries', rec_yds: 'targets', rec: 'targets', tgt: 'targets', rec_td: 'targets' } };
+function explain(pred, side, line) {
+  const f = pred.factors || {}, out = [];
+  if (pred.market === 'pts') { out.push(`The betting market's point spread and total imply about ${f.implied_team_points} points for ${pred.team}. The model starts from that number, so it adds little beyond the market.`); return out; }
+  if (f.season_avg != null) out.push(`${pred.player} has averaged ${f.season_avg} ${pred.label.toLowerCase()} this season${f.last5_avg != null ? ` (${f.last5_avg} over the last five games)` : ''}.`);
+  if (f.usage != null && LBL.usage[pred.market]) out.push(`Recent workload: about ${f.usage} ${LBL.usage[pred.market]} per game, weighted towards the latest games.`);
+  if (f.opp_factor != null) { const pc = Math.round((f.opp_factor - 1) * 100); out.push(Math.abs(pc) < 4 ? `${pred.opp}'s defence has allowed about a league-average amount to this position.` : `${pred.opp}'s defence has allowed ${Math.abs(pc)}% ${pc > 0 ? 'more' : 'less'} than average to this position in its recent games (shrunk towards average).`); }
+  if (f.implied_team_points != null) out.push(`The betting market implies about ${f.implied_team_points} points for ${pred.team}${pred.home ? ' at home' : ' away'}.`);
+  out.push(`Projection: ${pred.proj}. For ${side === 'under' ? 'Under' : 'Over'} ${line}, the model's distribution gives the probability shown.`);
+  if (pred.injury_status) out.push(`Injury report: ${pred.injury_status}.`);
+  return out;
+}
+const CONF_TEXT = {
+  'Very High': 'In testing on past seasons, predictions like this (same market, similar sample and edge) came true at about the predicted rate, with many cases.',
+  High: 'Predictions like this were reliable in testing, with a good number of cases.', Medium: 'Predictions like this were roughly right in testing, but with fewer cases or a slightly wider error.',
+  Low: 'Predictions like this were only loosely right in testing.', 'Very Low': 'Predictions like this were poorly calibrated in testing.',
+  'Insufficient Data': 'Not enough earlier games, or this market did not pass the model\'s tests, so no reliable probability can be given.',
+};
+
+// ---- minimum odds ("price to look for") ----
+// Minimum decimal odds for an EV target: (1 + target - P(push)) / P(win). Rounded UP so the stated target is really reached at the shown price.
+const FRAC_DEN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 25, 30, 40, 50, 100];
+function minOdds(pWin, target = 0, pPush = 0) {
+  if (!(pWin > 0)) return null;
+  const req = (1 + target - (pPush || 0)) / pWin; if (!Number.isFinite(req) || req <= 1) return req > 0 && req <= 1 ? { dec: 1.01, frac: '1/100', amer: '-10000', exact: req } : null;
+  const dec = Math.ceil(req * 100 - 1e-9) / 100;                               // up to the next 0.01
+  let best = null; for (const d of FRAC_DEN) { const n = Math.ceil((req - 1) * d - 1e-9); const v = 1 + n / d; if (!best || v < best.v - 1e-12) best = { n, d, v }; } // smallest common fraction >= req
+  const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d);
+  const amer = req >= 2 ? `+${Math.ceil((req - 1) * 100 - 1e-9)}` : `-${Math.floor(100 / (req - 1) + 1e-9)}`;   // American: the shown price is never worse than required
+  return { dec, frac: best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`, amer, exact: req };
+}
+/** Odds shown in the visitor's chosen format. dec: decimal odds. */
+function fmtOdds(dec, fmt = 'decimal') {
+  if (!(dec > 1)) return '–';
+  if (fmt === 'american') return dec >= 2 ? `+${Math.round((dec - 1) * 100)}` : `-${Math.round(100 / (dec - 1))}`;
+  if (fmt === 'fractional') { let best = null; for (const d of FRAC_DEN) { const n = Math.round((dec - 1) * d); if (n < 1) continue; const e = Math.abs(1 + n / d - dec); if (!best || e < best.e - 1e-9) best = { n, d, e }; } const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d); return best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`; }
+  return String(Math.round(dec * 100) / 100);
+}
+
+return { model, loadModel, loadBacktest, loadForward, nbPmf, calibrate, lineProbs, marketInfo, predictionFor, probMargin, evVerdict, parseAnyOdds, explain, CONF_TEXT, minOdds, fmtOdds };
+})();
+__m['kelly'] = (() => {
+// Recommended Units on the EV page (owner request 27 Oct 2026, evening): 1/8 Kelly, 1 unit = 1% of bankroll, capped at 2.00 units per selection.
+//   full Kelly f* = (b·p − q) / b with b = decimal odds − 1, p = the estimated win probability, q = the estimated loss probability. With no
+//   push (q = 1 − p) this is exactly (p × odds − 1) / (odds − 1), the owner's formula; on a whole-number line a push returns the stake, so it
+//   is neither a win nor a loss. fractional = max(0, f*) / 8; uncapped units = fractional × 100; units = min(uncapped, 2).
+//   The cap is applied before display rounding; only the shown figures are rounded (2 decimals, no quarter / half-unit steps).
+//   Odds of 1.00 or below, or a missing / invalid probability, give no units at all (never NaN, Infinity or an invented figure).
+const KELLY_FRACTION = 1 / 8, UNIT_PCT = 1, MAX_UNITS = 2;
+function kellyUnits(p, dec, push = 0) {
+  if (![p, dec, push].every(Number.isFinite) || dec <= 1 || p < 0 || p > 1 || push < 0 || p + push > 1 + 1e-12) return null;
+  const b = dec - 1, q = Math.max(0, 1 - p - push), full = (b * p - q) / b;
+  const uncapped = Math.max(0, full) * KELLY_FRACTION * 100 / UNIT_PCT;
+  if (!Number.isFinite(uncapped)) return null;
+  return { full, uncapped, units: Math.min(uncapped, MAX_UNITS), capped: uncapped > MAX_UNITS };
+}
+/** "0.93u", "2.00u (2.75u uncapped)", "0.00u", or "Units unavailable". */
+const unitsText = k => (!k ? 'Units unavailable' : k.capped ? `${k.units.toFixed(2)}u (${k.uncapped.toFixed(2)}u uncapped)` : `${k.units.toFixed(2)}u`);
+const KELLY_NOTE = 'Calculated using 1/8 Kelly, capped at 2.00u. Results depend on the accuracy of the estimated probability.';
+const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.00u selections together are not automatically safe or within a daily bankroll budget.';
+
+return { KELLY_FRACTION, kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE };
+})();
+__m['valueev'] = (() => {
+// Value page EV (owner request 21 Oct, late: "bring back the large green / red EV figure"). For any play carried to Value (all three
+// sports, every market the research cards support) it shows PropLab's ESTIMATED probability (prob.js: recency-weighted, smoothed,
+// calibrated on earlier seasons and checked on a later one), the bookmaker's implied probability, and EV = 100 x (p x odds + p_push - 1).
+// Rules: a historical hit rate is never used as the probability; with too little evidence the page says "Insufficient evidence" and shows
+// no EV; the estimate is labelled experimental; nothing here is a bookmaker price PropLab has seen.
+const { estimate, evPct } = __m['prob'];
+const { parseAnyOdds } = __m['nfl-model'];
+const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { cmpLine } = __m['hiwicard'];
+const { isConfirmedOut } = __m['rank'];
+const { esc } = __m['util'];
+
+let calib = null, calibP = null;
+/** data-prob-calibration.json (written by owner-tools/prob-backtest.mjs); null when it cannot be loaded (the estimate is then uncalibrated). */
+function loadCalib() {
+  if (calibP) return calibP;
+  calibP = fetch(`data-prob-calibration.json?v=${Date.now() >> 26}`, { cache: 'default' }).then(r => (r.ok ? r.json() : null)).then(j => { calib = j && j.schema === 1 ? j : null; return calib; }).catch(() => (calib = null));
+  return calibP;
+}
+const calibFor = key => (calib && calib.sports && calib.sports[key]) || null;
+const sportKey = (sport, def) => (sport === 'football' ? (def.scope === 'player' ? 'football_players' : 'football') : sport);
+const sideOf = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over');
+const pct = p => `${(p * 100).toFixed(1)}%`;
+
+/** Every qualifying game behind the card (newest first), with the card's own filters (minutes, game types, scope, team split), NOT cut to
+ *  its Games used: the estimate uses the whole record, weighting recent games more. */
+function historyOf(card, st) {
+  const s = { ...st, per: 'all', view: 'form' };
+  const rows = card.rebuild ? card.rebuild(s).rows : card.perFn ? card.perFn(s).rows : card.rows;
+  return (rows || []).slice().reverse(); // card rows are oldest -> newest
+}
+/** Same-venue history (football team markets): the venue of this card's next game, if known. */
+function venueOf(card) { return card.tagCls === 'home' ? true : card.tagCls === 'away' ? false : null; }
+
+/** { ok, ... } estimate for the card at its current line and side. */
+function cardEstimate(card, st, sport) {
+  const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
+  if (card.injury && isConfirmedOut(card.injury)) return { ok: false, reason: `${card.title} is confirmed OUT for this game` };
+  const hist = historyOf(card, st), vals = hist.map(r => r.value);
+  // Three different situations must never share one message (owner review 27 Oct):
+  //  'nodata'  - no recorded match for this market (the source does not record it, or the team has none);
+  //  'handoff' - the card shows games but none reached this estimate: a software fault, reported as such;
+  //  'nomodel' - the research exists but no defensible probability can be given (too few games, stale, OUT, not validated).
+  const shown = (card.rows || []).filter(r => r.value !== null && r.value !== undefined).length;
+  if (!vals.length) return shown ? { ok: false, kind: 'handoff', reason: `the card shows ${shown} game${shown === 1 ? '' : 's'}, but none reached the estimate` } : { ok: false, kind: 'nodata', reason: `no recorded ${card.def.label.toLowerCase()} figures for ${card.title}` };
+  const h = venueOf(card), vv = key === 'football' && h !== null && cb && cb.venue_experiment && cb.venue_experiment.helps ? hist.filter(r => r.raw && r.raw.home === h).map(r => r.value) : null;
+  const e = estimate(vals, line, side, { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
+    venueValues: vv, venueCalib: vv && cb.venue_experiment ? { a: cb.venue_experiment.a, b: cb.venue_experiment.b } : null });
+  if (!e.ok) return { ...e, kind: 'nomodel', key, cb, side, line };
+  // Best Combined % (27 Oct): the probability uses the SELECTED team's own record only, the series the calibration was checked on. The
+  // opponent's complementary record is shown as research beside it; an average of two teams' estimates has never been validated, and the
+  // Combined Historical % is a matchup score, not a probability, so neither is turned into EV.
+  if (card.pair) return { ...e, key, cb, side, line, pairNote: `${card.title}'s own record only; ${card.pair.title}'s record is shown as research, not used in the estimate` };
+  return { ...e, key, cb, side, line };
+}
+/** Best Combined % plays: both teams' research at the current line and the Combined Historical % (labelled as a matchup score, not a probability). */
+function pairResearch(card, st) {
+  if (!card.pair) return '';
+  const line = Number(st.line), side = sideOf(st), cnt = rows => { const v = rows.map(r => r.value).filter(x => x !== null && x !== undefined); const h = v.filter(x => (side === 'under' ? x < line : x > line)).length; return { h, n: v.length, p: v.length ? Math.round(h / v.length * 1000) / 10 : null }; };
+  const a = cnt(card.rows || []), b = cnt(card.pair.perFn ? card.pair.perFn(st).rows : []);
+  const comb = a.p != null && b.p != null ? Math.round((a.p + b.p) / 2 * 10) / 10 : null;
+  const t = (name, x) => `<div class="tile"><b>${x.p == null ? '–' : x.p + '%'}</b><span>${esc(name)}: ${x.n ? `${x.h}/${x.n}` : 'no recorded matches'}</span></div>`;
+  return `<div class="card stack evpair" data-evpair><p class="small" style="margin:0"><b>Matchup research</b> (each team's own matches; not head-to-head)</p>
+    <div class="tiles evtiles">${t(card.title + (card.pair.labelA ? ' ' + card.pair.labelA : ''), a)}${t(card.pair.label || card.pair.title, b)}<div class="tile"><b data-evcomb>${comb == null ? '–' : comb + '%'}</b><span>Combined Historical Matchup % (average of the two; a matchup score, not a probability)</span></div></div></div>`;
+}
+/** The staking method, always visible on the EV page (owner request 27 Oct: no settings menu needed to see it). */
+const STAKING_HTML = '<span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>';
+const UNITS_NA = `<div class="evunits na" data-evunits=""><span class="evul">Recommended Units:</span> <b>Units unavailable</b>${STAKING_HTML}<span class="xs muted">No defensible probability for this line, so no stake is calculated (never an invented figure).</span></div>`;
+/** The EV block for a card and the odds text the visitor typed. */
+function evBlock(card, st, sport, oddsText) {
+  const e = cardEstimate(card, st, sport), od = parseAnyOdds(oddsText);
+  const sideName = card.def.binary ? (e.side === 'over' ? 'Yes' : 'No') : card.def.hcp ? `${e.side === 'over' ? 'Cover' : 'Fail'} ${st.line}` : `${e.side === 'over' ? 'Over' : 'Under'} ${st.line}`;
+  const research = pairResearch(card, st);
+  if (!e.ok && e.kind === 'nodata') return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="nodata"><b>No Historical Data</b><span>${esc(e.reason)}: PropLab's source has not recorded this statistic for these matches (never counted as 0). No probability, fair odds or EV.</span></div>${UNITS_NA}`;
+  if (!e.ok && e.kind === 'handoff') return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="handoff"><b>Software Problem</b><span>The research did not reach Value correctly (${esc(e.reason)}). This is a PropLab fault, not missing data: please report it. No EV is shown.</span></div>${UNITS_NA}`;
+  if (!e.ok) return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="nomodel"><b>Insufficient Evidence for a Probability</b><span>The historical research on the card is real, but PropLab cannot estimate a fair probability here: ${esc(e.reason)}. No fair odds or EV rather than a misleading figure.</span></div>${UNITS_NA}`;
+  const imp = od.dec ? 1 / od.dec : null;
+  const D = od.dec ? (od.exact ?? od.dec) : null; // full-precision odds for the calculations (the 3-decimal figure is for display)
+  const ev = D ? evPct(e.win, D, e.push) : null, lo = D ? evPct(e.lo, D, e.push) : null, hi = D ? evPct(e.hi, D, e.push) : null;
+  // Recommended Units (1/8 Kelly, 1u = 1% of bankroll, max 2.00u per selection) from the SAME probability as the EV, never the hit rate
+  const ku = D ? kellyUnits(e.win, D, e.push) : null, validated = !!(e.cb && e.cb.passed && e.calibrated);
+  const unitsLabel = validated ? 'Recommended Units' : 'Theoretical Units — Unvalidated Estimate', evRaw = D ? (e.win * D + e.push - 1) * 100 : null;
+  const cls = ev == null ? 'ev-wait' : ev > 0 ? 'ev-pos' : ev < 0 ? 'ev-neg' : 'ev-zero';
+  const fair = e.win > 0 ? (1 - e.push) / e.win : null;
+  const status = !e.cb ? '<b>Uncalibrated:</b> the calibration file could not be loaded, so this is the raw estimate.' : e.cb.passed ? `Experimental estimate, calibrated on earlier seasons and checked on the ${esc(String(e.cb.test_label || e.cb.test_season))} season (it beat a 50 / 50 guess and the last-10 hit rate there).` : '<b>Experimental and not validated</b> for this sport: treat it with extra caution.';
+  return `${research}<div class="evbig ${cls}" data-ev="${ev == null ? '' : ev}" data-evkind="model" role="status">${ev == null ? '<b>Enter the odds</b><span>Type the bookmaker\'s price for this side to see the EV.</span>' : `<b>${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b><span>Expected return per £1 staked: ${ev >= 0 ? '+' : '−'}£${Math.abs(ev / 100).toFixed(2)} · range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the estimate's uncertainty${lo < 0 && hi > 0 ? ' (it crosses 0: no clear edge)' : ''}</span>`}</div>
+    <div class="tiles evtiles"><div class="tile"><b data-evp>${pct(e.win)}</b><span>Estimated probability (${esc(sideName)})${e.push > 0.0005 ? `, push ${pct(e.push)}` : ''}</span></div>
+      <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds${od.dec ? ` (decimal ${od.dec})` : ''}</span></div>
+      <div class="tile"><b>${fair ? fair.toFixed(2) : '–'}</b><span>Fair odds (estimate)</span></div>
+      <div class="tile"><b>${e.n}</b><span>Games behind it (effective ${e.nEff}; recent games count more)</span></div></div>
+    <div class="evunits${ku && ku.units > 0 && evRaw > 0 ? ' pos' : ''}" data-evunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">${esc(unitsLabel)}:</span> <b>${!D ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>
+      ${STAKING_HTML}
+      <span class="xs muted">${esc(KELLY_NOTE)}${validated ? ' The probability is calibrated and was checked on a past season, but PropLab has no bookmaker odds history, so this staking has not been proven to make money.' : ' The probability behind it has not been validated for this market, so treat this as a theoretical figure only.'} ${esc(CAP_NOTE)}</span></div>
+    ${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : od.dec ? `<p class="xs muted" style="margin:0">Read as ${esc(od.kind)} odds → decimal ${od.dec}. Entered by you; PropLab has no bookmaker odds.</p>` : ''}
+    <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
+}
+
+return { loadCalib, calibFor, sportKey, historyOf, cardEstimate, STAKING_HTML, evBlock };
+})();
+__m['hypo'] = (() => {
+// Hypothetical odds & units box on every eligible play card (owner request 27 Oct 2026, late evening).
+// PropLab has NO bookmaker prices. The box answers one question: "if you were offered THESE odds, what would PropLab's estimate say?"
+//
+// Probability: the SAME calibrated estimate as the Value / EV page (valueev.js cardEstimate) for the card's CURRENT subject, market,
+//   line and side, recomputed whenever the line or side changes (never carried over from another line). A historical hit rate is never
+//   used as the probability. Where the model cannot give a defensible probability the box says "Estimate unavailable".
+// Example price (documented rule, the same everywhere): HYPO_RULE.
+//   fair odds        = (1 − push) / p            (= 1 / p when the line cannot push, the owner's formula)
+//   example odds     = fair odds × 1.05, rounded DOWN to 2 decimals (a modest 5% above fair; never below fair + 0.01)
+//   By construction the example price is above fair, so it shows a small positive edge: it illustrates the stake IF such a price were
+//   found. It is labelled "Hypothetical odds — not a live price", and the visitor can type any other odds (then ≤ fair → Do not bet).
+// EV and units: EV = (p × odds + push − 1) × 100; units = min(2, max(0, full Kelly) / 8 × 100) (kelly.js, the EV page's own function).
+const { cardEstimate, loadCalib } = __m['valueev'];
+const { kellyUnits } = __m['kelly'];
+const { paintHooks } = __m['hiwicard'];
+const { esc } = __m['util'];
+
+const HYPO_UPLIFT = 0.05;
+const HYPO_RULE = 'Example odds = PropLab\'s fair odds (1 ÷ estimated probability) + 5%, rounded down to 2 decimals. A modest illustration above fair, never a bookmaker price.';
+
+/** The example price for a probability (with push). null when no price can be formed. */
+function hypoOdds(win, push = 0) {
+  if (!Number.isFinite(win) || !Number.isFinite(push) || win <= 0 || win + push > 1 + 1e-12) return null;
+  const fair = (1 - push) / win;
+  if (!Number.isFinite(fair) || fair <= 1) return null;
+  const ex = Math.max(Math.floor(fair * (1 + HYPO_UPLIFT) * 100 + 1e-9) / 100, Math.ceil(fair * 100 + 1e-9) / 100);
+  return { fair, odds: ex };
+}
+/** EV and units at decimal odds d (full precision; display rounding only in the HTML). */
+function hypoCalc(win, push, d) {
+  if (!Number.isFinite(d) || d <= 1) return null;
+  const evRaw = (win * d + push - 1) * 100, ku = kellyUnits(win, d, push);
+  if (!ku || !Number.isFinite(evRaw)) return null;
+  return { ev: evRaw, ku, positive: evRaw > 1e-9 && ku.uncapped > 0 };
+}
+/** Decimal odds typed in the box: plain decimal only (e.g. 2.1 or 2,10). null if unreadable. */
+const readOdds = s => { const t = String(s ?? '').trim().replace(',', '.'); if (!/^\d+(\.\d+)?$/.test(t)) return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
+
+const edits = new Map(); // `${cid}|${line}|${side}` -> odds the visitor typed (a new line or side starts from the example price again)
+const sideKey = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over');
+const sportNow = () => { const m = /^#\/(nba|nfl)(\/|$)/.exec(location.hash || ''); return m ? m[1] : 'football'; };
+const signedPct = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}%`;
+
+/** The model for a card at its current line / side: { ok, key, e, fair, dflt, validated } or { ok:false, reason }. */
+function hypoModel(card, st, sport = sportNow()) {
+  const key = `${card.cid || card.title}|${st.line}|${sideKey(st)}`;
+  if (card.h2h) return { ok: false, key, reason: 'head-to-head meetings are research only, not an estimate' };
+  let e;
+  try { e = cardEstimate(card, st, sport); } catch { e = { ok: false, reason: 'the estimate could not be computed' }; }
+  if (!e || !e.ok || !Number.isFinite(e.win)) return { ok: false, key, reason: (e && e.reason) || 'no defensible probability for this line' };
+  const h = hypoOdds(e.win, e.push || 0);
+  if (!h) return { ok: false, key, reason: 'no fair price can be formed from the estimate' };
+  return { ok: true, key, e, fair: h.fair, dflt: h.odds, validated: !!(e.cb && e.cb.passed && e.calibrated), pair: !!card.pair };
+}
+/** Inner HTML of the box. */
+function inner(m) {
+  if (!m.ok) return `<span class="hyt">Hypothetical odds — not a live price</span><b class="hyna">Estimate unavailable</b><span class="hys">${esc(m.reason)}. Insufficient data is not the same as negative EV.</span>`;
+  const typed = edits.has(m.key) ? edits.get(m.key) : null, txt = typed ?? m.dflt.toFixed(2), d = readOdds(txt), c = d != null ? hypoCalc(m.e.win, m.e.push || 0, d) : null;
+  const unitWord = m.validated ? '1/8 Kelly' : 'Theoretical units — unvalidated';
+  const inp = `<input class="hyodds" data-hy-odds type="text" inputmode="decimal" autocomplete="off" value="${esc(txt)}" aria-label="Hypothetical decimal odds (tap to change)">`;
+  let main;
+  if (!c) main = `If odds are ${inp} → <b class="hybad">Enter decimal odds above 1.00</b>`;
+  else if (!c.positive) main = `If odds are ${inp} → <b class="hyno">Do not bet — No positive estimated EV</b> <span class="hyu">0.00u · ${esc(signedPct(c.ev))} EV</span>`;
+  else main = `If odds are ${inp} → <b class="hyu">${c.ku.units.toFixed(2)}u${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b> at <b class="hyev">${esc(signedPct(c.ev))} EV</b>`;
+  const p = (m.e.win * 100).toFixed(1);
+  return `<span class="hyt">Hypothetical odds — not a live price</span><span class="hym">${main}</span>
+    <span class="hys">Model estimate ${p}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''} · fair ${m.fair.toFixed(2)} · ${typed == null ? 'example = fair + 5%' : '<button type="button" class="linkbtn" data-hy-reset>reset example</button>'} · ${esc(unitWord)}, max 2.00u per play</span>`;
+}
+function state(m) {
+  if (!m.ok) return { cls: 'na', ev: '', u: '' };
+  const typed = edits.has(m.key) ? edits.get(m.key) : null, d = readOdds(typed ?? m.dflt.toFixed(2)), c = d != null ? hypoCalc(m.e.win, m.e.push || 0, d) : null;
+  return !c ? { cls: 'bad', ev: '', u: '' } : { cls: c.positive ? 'pos' : 'neg', ev: c.ev.toFixed(4), u: (c.positive ? c.ku.units : 0).toFixed(2), un: c.ku.uncapped.toFixed(2) };
+}
+/** Fills (or refreshes) a box element from a model. */
+function fillHypo(box, m) {
+  box._hm = m; const s = state(m);
+  box.className = `hypo hy-${s.cls}`; box.dataset.hyKey = m.key; box.dataset.hyEv = s.ev; box.dataset.hyUnits = s.u; box.dataset.hyUncapped = s.un || '';
+  box.dataset.hyP = m.ok ? String(m.e.win) : ''; box.dataset.hyOdds = m.ok ? String(edits.get(m.key) ?? m.dflt.toFixed(2)) : '';
+  box.innerHTML = inner(m);
+}
+/** An empty placeholder box; filled by queueHypo (never shows the previous line's figures). */
+const hypoSlot = (extra = '') => `<aside class="hypo hy-wait" data-hypo${extra} aria-live="polite"><span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span></aside>`;
+
+// ---- scheduling: a single card (a line or side change) is filled at once; a page of new cards is filled in small time-boxed batches so
+// rendering, filtering and scrolling stay as fast as before. The calibration file is loaded once before the first fill.
+let calibReady = false; const calibP = loadCalib().then(() => { calibReady = true; }, () => { calibReady = true; });
+const queue = []; let spent = 0, frameT = 0, pumping = false;
+const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+function pump() {
+  pumping = false; const t0 = now();
+  while (queue.length && now() - t0 < 8) { const j = queue.shift(); if (j.box.isConnected && j.box.dataset.hyJob === j.id) run(j); }
+  if (queue.length) schedule();
+  else if (globalThis.__plHypoPending) globalThis.__plHypoPending = 0;
+}
+function schedule() { if (pumping) return; pumping = true; globalThis.__plHypoPending = 1; (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : f => setTimeout(f, 16))(() => setTimeout(pump, 0)); }
+function run(j) {
+  let m; try { m = j.model(); } catch { m = { ok: false, key: '', reason: 'the estimate could not be computed' }; }
+  if (m && typeof m.then === 'function') { m.then(x => { if (j.box.isConnected && j.box.dataset.hyJob === j.id) fillHypo(j.box, x || { ok: false, key: '', reason: 'no defensible probability for this line' }); }, () => { if (j.box.dataset.hyJob === j.id) fillHypo(j.box, { ok: false, key: '', reason: 'the estimate could not be computed' }); }); return; }
+  fillHypo(j.box, m);
+}
+let jobN = 0;
+/** Queue a box: model() returns the hypoModel. Runs synchronously while this frame's budget allows (one-card changes are instant). */
+function queueHypo(box, model) {
+  if (!box) return; const id = String(++jobN); box.dataset.hyJob = id;
+  const j = { box, model, id };
+  const t = now(); if (t - frameT > 16) { frameT = t; spent = 0; }
+  if (calibReady && spent < 6 && !queue.length) { const a = now(); run(j); spent += now() - a; return; }
+  box.className = 'hypo hy-wait'; delete box.dataset.hyKey; box.dataset.hyEv = ''; box.dataset.hyUnits = '';
+  box.innerHTML = '<span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span>';
+  queue.push(j);
+  if (!calibReady) { globalThis.__plHypoPending = 1; calibP.then(schedule); } else schedule();
+}
+
+// ---- Hiwi-style cards (Hiwi, NBA / NFL Plays, combined Detailed analysis, Finder card pop-ups): the box is part of every paint, so a line,
+// side, Games-used or venue change recomputes it for that exact line.
+paintHooks.push((el, card, st) => {
+  if (card.noPrice) return; // the card shown on the Value page itself: the full EV block is right below it
+  let box = el.querySelector('[data-hypo]');
+  if (!box) { const anchor = el.querySelector('.hstat'); if (!anchor) return; const w = document.createElement('div'); w.innerHTML = hypoSlot(); box = w.firstElementChild; el.querySelector('.hyrow')?.appendChild(box); if (!box.isConnected) return; }
+  const sport = sportNow(), snap = { ...st };
+  queueHypo(box, () => hypoModel(card, snap, sport));
+});
+
+// ---- boxes on other cards (football Finder cards, Highest Combined % cards, NBA / NFL Finder rows): the page renders a placeholder with
+// data-hy-src="<source>:<index>" and registers a resolver; any such box added to the page is filled (the page re-renders a card when its
+// line changes, so the new box is computed for the new line).
+const sources = new Map();
+/** name -> (index) => hypoModel (or a promise of one). Re-registered by the page on every render. */
+function setHypoSource(name, fn) { sources.set(name, fn); if (typeof document !== 'undefined') for (const b of document.querySelectorAll(`[data-hy-src^="${name}:"]:not([data-hy-job])`)) scan(b); }
+const hypoFor = (card, st, sport) => hypoModel(card, st, sport);
+function scan(root) {
+  const list = root.matches && root.matches('[data-hy-src]') ? [root] : root.querySelectorAll ? root.querySelectorAll('[data-hy-src]') : [];
+  for (const box of list) { if (box.dataset.hyJob) continue; const [name, i] = box.dataset.hySrc.split(':'); const fn = sources.get(name); if (!fn) continue; queueHypo(box, () => fn(Number(i))); }
+}
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+  const mo = new MutationObserver(recs => { for (const r of recs) for (const n of r.addedNodes) if (n.nodeType === 1) scan(n); });
+  const start = () => mo.observe(document.body, { childList: true, subtree: true });
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+}
+
+// ---- typing odds in any box (one delegated listener for the whole app): EV and units update at once, on the card itself
+if (typeof document !== 'undefined') {
+  const onType = ev => {
+    const inp = ev.target.closest && ev.target.closest('[data-hy-odds]'); if (!inp) return; const box = inp.closest('[data-hypo]'); if (!box || !box._hm || !box._hm.ok) return;
+    ev.stopPropagation(); // the page's own filter handlers never see these keystrokes
+    edits.set(box._hm.key, inp.value);
+    const pos = inp.selectionStart; fillHypo(box, box._hm); const n = box.querySelector('[data-hy-odds]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* not a text input */ } }
+  };
+  document.addEventListener('input', onType, true);
+  document.addEventListener('click', ev => {
+    const t = ev.target.closest && ev.target.closest('[data-hypo]'); if (!t) return;
+    ev.stopPropagation(); // tapping the box never opens the card's graph or pop-up
+    if (ev.target.closest('[data-hy-reset]') && t._hm) { edits.delete(t._hm.key); fillHypo(t, t._hm); }
+  }, true);
+  // keys and change events in the box never reach the page's own shortcuts, filters or card handlers
+  document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('[data-hy-odds]')) ev.stopPropagation(); }, true);
+  document.addEventListener('keydown', ev => { if (ev.target.closest && ev.target.closest('[data-hy-odds]')) { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); } }, true);
+}
+
+return { HYPO_UPLIFT, HYPO_RULE, hypoOdds, hypoCalc, readOdds, hypoModel, fillHypo, hypoSlot, queueHypo, setHypoSource, hypoFor };
+})();
 __m['barinfo'] = (() => {
 // The "tap a bar" game sheet (Milestone 5), shared by Hiwi's Section and any other place a result card is shown on its own
 // (the NBA / NFL Find Plays row card, 26 Oct). Recorded figures only; a dash means the source did not record it (never 0).
@@ -3182,6 +3745,7 @@ const { hitRate } = __m['analytics'];
 const { rankList, getMinQual } = __m['rank'];
 const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
 const { usPriceCard } = __m['usprice'];
+const { hypoSlot, setHypoSource, hypoFor } = __m['hypo'];
 const { wireBarTaps } = __m['barinfo'];
 const { esc, fmt, sampleKey } = __m['util'];
 const { lineMin } = __m['markets'];
@@ -3254,7 +3818,8 @@ function rowHtml(x, i, prevLim, opp = true) {
       <td class="n ${x.hr.hitPct >= 60 ? 'hit' : x.hr.hitPct != null && x.hr.hitPct <= 40 ? 'miss' : ''}">${hrTxt}</td>
       <td class="n opt">${m.binary ? '–' : m.hcp ? signed(fmt(x.hr.avg)) : fmt(x.hr.avg)}</td>
       ${opp ? `<td class="n opt">${x.vs && x.vs.n ? `${x.vs.hits}/${x.vs.n} <span class="xs muted">v ${esc(x.opp)}</span>` : x.opp ? `<span class="xs muted">none v ${esc(x.opp)}</span>` : '–'}</td>` : ''}
-      <td class="opt">${dotHtml(x.dots)}</td></tr>`;
+      <td class="opt">${dotHtml(x.dots)}</td></tr>
+      <tr class="hytr" data-hyfor="${i}"><td colspan="6"><div class="hyrow">${hypoSlot(` data-hy-src="usf:${i}"`)}</div></td></tr>`;
 }
 function tableHtml(rows, { shown = 100, sampleText = '', subjWord = 'Player', opp = true } = {}) {
   const body = rows.slice(0, shown).map((x, i) => rowHtml(x, i, i > 0 && rows[i - 1]._lim, opp)).join('');
@@ -3266,6 +3831,13 @@ function tableHtml(rows, { shown = 100, sampleText = '', subjWord = 'Player', op
  * Wires a rendered table. ctx: { sport, A, get: () => rows, override (Map), last, redraw(), shownMore() }
  */
 function wireTable(out, ctx) {
+  // Hypothetical odds box under each row: the Value page's estimate for this player / team, market, line and side (row's own line)
+  setHypoSource('usf', async i => { const c = (out._sug || { ctx }).ctx, x = c.get()[i]; if (!x) return { ok: false, key: '', reason: 'row not found' };
+    if (x.L == null) return { ok: false, key: `usf|${x.rk}`, reason: 'no research line for this row yet' };
+    const { card, st: s0 } = await usPriceCard(c.A, c.sport, { type: x.type, id: x.id }, x.def.key);
+    const st2 = { ...s0, line: x.def.binary ? 0.5 : x.def.hcp ? -x.L : x.L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, per: String(c.last) };
+    Object.assign(card, card.rebuild ? card.rebuild(st2) : card.perFn(st2)); if (x.unavailable) card.injury = card.injury || x.injury;
+    return hypoFor(card, st2, c.sport); });
   if (out._sug) { out._sug.ctx = ctx; return; } out._sug = { ctx };
   out.addEventListener('click', async e => {
     const c = out._sug.ctx; const tr = e.target.closest('tr[data-ri]'); const x = tr ? c.get()[Number(tr.dataset.ri)] : null;
@@ -3273,7 +3845,7 @@ function wireTable(out, ctx) {
     if (!x) return;
     const st = e.target.closest('[data-rstep]');
     // a row's own line: recounted at once, IN PLACE (the row never moves until the visitor re-sorts or changes a filter)
-    const swap = y => { const i = Number(tr.dataset.ri); c.get()[i] = y; const prev = c.get()[i - 1]; const t = document.createElement('tbody'); t.innerHTML = rowHtml(y, i, !!(prev && prev._lim), true); const nr = t.querySelector('tr[data-ri]'); tr.replaceWith(nr); };
+    const swap = y => { const i = Number(tr.dataset.ri); c.get()[i] = y; const prev = c.get()[i - 1]; const t = document.createElement('tbody'); t.innerHTML = rowHtml(y, i, !!(prev && prev._lim), true); const nr = t.querySelector('tr[data-ri]'), hy = t.querySelector('tr.hytr'); const old = tr.nextElementSibling; tr.replaceWith(nr); if (hy && old && old.classList.contains('hytr')) old.replaceWith(hy); };
     if (st) { const cur = x.L, n0 = Math.round((cur + Number(st.dataset.rstep) * (x.def.hcp ? -1 : 1)) * 2) / 2, n = x.def.hcp ? n0 : Math.max(lineMin(x.def), n0); /* handicap: + raises the handicap shown */ c.override.set(x.rk, n); swap(atLine(x, n)); return; }
     if (e.target.closest('[data-rreset]')) { c.override.delete(x.rk); c.redraw(true); return; }
     const wantCard = e.target.closest('[data-rcard]'), wantPrice = e.target.closest('[data-rprice]');
@@ -3435,6 +4007,7 @@ const { store, teamSlugOf, leagueName, isCup, currentSeason, teamsOfLeague, COMP
 const { marketName, lineMin, sideMarketName } = __m['markets'];
 const { getMinQual } = __m['rank'];
 const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
+const { hypoSlot, setHypoSource, hypoFor } = __m['hypo'];
 const { wireBarTaps } = __m['barinfo'];
 const { esc, fmtKick, fixtureId, sampleKey } = __m['util'];
 const { badge } = __m['badge'];
@@ -3538,6 +4111,7 @@ function playHtml(x, i) {
     <div class="cbhead"><span class="cbbadge cb-${x.kind.toLowerCase()}">${x.kind}</span><span class="cbfx">${esc(x.f.home)} v ${esc(x.f.away)}</span><span class="cbko">${esc(fmtKick(x.f))} · ${esc(leagueName(x.lg))}</span></div>
     <div class="cbmkt"><b class="cblab">${esc(x.label)}</b>${lineCtl}</div>
     <div class="cbrow">${sideBox(x, 'A')}<div class="cbc${x.small ? ' small' : ''}"><span class="cbrole">COMBINED</span><b data-cbc class="${x.comb == null ? '' : x.comb >= 70 ? 'hit' : x.comb <= 40 ? 'miss' : ''}">${x.comb == null ? '–' : x.comb + '%'}</b><span class="cbn">${esc(why)}</span></div>${sideBox(x, 'B')}</div>
+    <div class="hyrow cbhy">${hypoSlot(` data-hy-src="cb:${i}"`)}</div>
     <div class="hacts"><button type="button" class="chip hdetail" data-cbdetail>Detailed analysis ›</button><button type="button" class="chip hprice" data-cbprice>Compare Price</button></div></article>`;
 }
 /** Repaints one card in place after its line changed (order stays put until Re-sort). */
@@ -3592,10 +4166,12 @@ function openDetail(x, per, venueSame, onLine = null) {
   });
 }
 /** Compare Price for a play: the selected team's own record goes to Value; the opponent is shown beside it as research. */
-function priceEvent(x, per) {
+function priceEvent(x, per) { const { c, st0 } = priceCard(x, per); return new CustomEvent('hprice', { bubbles: true, detail: { cid: c.cid, card: c, st: st0 } }); }
+/** The card carried to Value for a play (selected team's own record, opponent as research) and its line / side. */
+function priceCard(x, per) {
   const c = teamCard(x, 'A', per), cb = teamCard(x, 'B', per); c.pair = { title: cb.title, def: cb.def, perFn: cb.perFn, label: x.kind === 'MATCH' ? `${teamName(x.sj.other)}'s matches` : `${teamName(x.sj.other)}: ${x.sj.dB.label}` }; c.title = x.label; c.noPrice = false;
   const st0 = { line: x.def.binary ? 0.5 : x.L, side: x.def.binary ? (x.sd === 'under' ? 'no' : 'yes') : x.sd, userLine: true, persp: 'h', per };
-  return new CustomEvent('hprice', { bubbles: true, detail: { cid: c.cid, card: c, st: st0 } });
+  return { c, st0 };
 }
 /**
  * Renders a list of plays into box with paging, in-place line changes and a Re-sort button (owner Phase 1: the order and the scroll position
@@ -3606,6 +4182,8 @@ function mountPlays(box, ctx) {
   let plays = [], shown = 30, stale = false;
   const draw = (keep = false) => {
     if (!keep) shown = 30; plays = ctx.get(); stale = false;
+    // Hypothetical odds box: the Value page's estimate for the SELECTED team's own record at this play's current line and side
+    setHypoSource('cb', i => { const x = plays[i]; if (!x) return { ok: false, key: '', reason: 'card not found' }; const { c, st0 } = priceCard(x, ctx.per()); return hypoFor(c, st0, 'football'); });
     const okN = plays.filter(x => x.ok).length;
     box.innerHTML = !plays.length ? `<div class="banner info"><b>No matchups.</b> ${esc(ctx.empty || 'The selected markets are not recorded for these fixtures, or the minimums leave nothing.')}</div>`
       : `<p class="xs muted cbsumline" style="margin:0 0 8px">${okN} matchup${okN === 1 ? '' : 's'} ranked by <b>Highest Combined %</b>${plays.length > okN ? `; ${plays.length - okN} without enough matches under Limited data (each side needs ${getMinQual()}: choose a longer history such as Last 10 or Last 20, or lower the minimum in Advanced filters)` : ''}. ${esc(NOTE)}</p>
@@ -3630,7 +4208,7 @@ function mountPlays(box, ctx) {
   return { draw };
 }
 
-return { setClubRows, MATCH_KEYS, TEAM_KEYS, COMBINED_KEYS, PERS, perTxt, sideW, teamName, SMALL_N, rowsOf, sample, hit, startLine, supportedKeys, evalPlay, buildPlays, CMP, sortPlays, playHtml, paintPlay, NOTE, teamCard, openDetail, priceEvent, mountPlays };
+return { setClubRows, MATCH_KEYS, TEAM_KEYS, COMBINED_KEYS, PERS, perTxt, sideW, teamName, SMALL_N, rowsOf, sample, hit, startLine, supportedKeys, evalPlay, buildPlays, CMP, sortPlays, playHtml, paintPlay, NOTE, teamCard, openDetail, priceEvent, priceCard, mountPlays };
 })();
 __m['icons'] = (() => {
 const s = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
@@ -3907,6 +4485,7 @@ __m['v-hiwi'] = (() => {
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
 const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT, hasEuropean } = __m['data'];
 const { fbPlayers, hasPlayerLogs, clubsWithPlayerStats } = __m['fbscan'];
+const { nameMatches, psearchHtml, SEARCH_MAX } = __m['psearch'];
 const { setClubRows, buildPlays: cbBuild, sortPlays: cbSort, mountPlays, COMBINED_KEYS, supportedKeys: cbSupported } = __m['combinedcore'];
 const { nflSeasonGames: nfl_nflSeasonGames, injuryStatus: nfl_injuryStatus, latestSeason: nfl_latestSeason, loadGroup: nfl_loadGroup, nfl: nfl_nfl, nflSelectable: nfl_nflSelectable, nflUpcoming: nfl_nflUpcoming, teamGameRows: nfl_teamGameRows, teamName: nfl_teamName } = __m['nfl-data'];
 const { NBA_POS: nba_NBA_POS, TYPE_NAME: nba_TYPE_NAME, injuryStatus: nba_injuryStatus, latestSeason: nba_latestSeason, nba: nba_nba, nbaSelectable: nba_nbaSelectable, nbaUpcoming: nba_nbaUpcoming, nextGameOf: nba_nextGameOf, playerRows: nba_playerRows, seasonLabel: nba_seasonLabel, teamGameRows: nba_teamGameRows, teamName: nba_teamName } = __m['nba-data'];
@@ -3951,7 +4530,7 @@ const POP_TEXT = {
 };
 const RANK_TEXT = 'Highest % First ranks cards by the hit rate of the side shown on each card. Only cards with at least the minimum number of qualifying games are ranked together; cards with fewer follow under Limited data. Ties go to the larger sample, then A–Z. Strongest Evidence ranks by the 95% lower bound of the hit rate, which rewards a high rate and a large sample together. The order is fixed until you sort again: changing a line, side or Games used on a card updates that card where it is.';
 const MODE_SCOPES = { teams: ['match', 'team', 'opp', 'player'], matches: ['match', 'team', 'opp', 'player'] };
-const mk = () => ({ dates: null, fteams: new Set(), popAuto: new Set(), popRemoved: new Set(), untick: new Set(), mode: 'teams', gw: { cur: true, next: false }, today: false, fx: new Set(), linked: null, teams: new Set(), players: { teams: new Set(), matches: new Set() }, markets: { teams: new Set(), matches: new Set() }, period: 'season', sort: 'hi', rank: 'hi', cbLines: new Map(), minComb: 0, minEach: 0, tq: '', pq: '', ppos: '' });
+const mk = () => ({ dates: null, fteams: new Set(), popAuto: new Set(), popRemoved: new Set(), untick: new Set(), mode: 'teams', gw: { cur: true, next: false }, today: false, fx: new Set(), linked: null, teams: new Set(), players: { teams: new Set(), matches: new Set() }, markets: { teams: new Set(), matches: new Set() }, period: 'season', sort: 'hi', rank: 'hi', cbLines: new Map(), minComb: 0, minEach: 0, pfind: '', tq: '', pq: '', ppos: '' });
 const S = { football: mk(), nfl: mk(), nba: { ...mk(), period: 10 } }; // NBA starts on Last 10: early in a season 'Season' has few games
 const SNAP = {}; // sport -> { order: [cid], shown } of the last results list, to restore it exactly after Back to Plays
 const cardState = new Map(); // `${sport}|${cid}` -> { line, side, userLine } kept while the visitor stays on the site
@@ -4171,6 +4750,15 @@ async function viewHiwi(root, r, sport) {
     const list = pop ? all.filter(x => x.notable && !(x.inj && x.inj.unavailable)) : all;
     return getPlayerSort() === 'prom' && promAvailable() ? list.sort((a, b) => (b.prom ?? -1) - (a.prom ?? -1) || a.name.localeCompare(b.name)) : list.sort((a, b) => a.name.localeCompare(b.name)); };
 
+  // ---------- temporary player search (owner request 27 Oct, evening) ----------
+  // The players of the selected games / teams (any position, popular or not) whose names match. Never ticks or unticks anyone: while a search
+  // is typed it replaces the ticked players in the results only; clearing it brings the ticked players back unchanged.
+  const searchHits = () => { const q = (st.pfind || '').trim(); if (!q) return null;
+    const sel = new Set(subjClubsAll()); const all = usMode ? A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (!sel.size || sel.has(p.team))).map(p => ({ id: p.id, name: p.name }))
+      : fbPlayerList().filter(p => p.currentClub && (!sel.size || sel.has(p.currentClub))).map(p => ({ id: p.id, name: p.name }));
+    const hits = all.filter(p => nameMatches(q, p.name)).sort((a, b) => a.name.localeCompare(b.name)); return { q, hits: hits.slice(0, SEARCH_MAX), more: Math.max(0, hits.length - SEARCH_MAX) }; };
+  const subjClubsAll = () => (st.mode === 'teams' ? [...st.teams] : selFx().flatMap(id => { const f = fxById(id); return f ? homeAway(f) : []; }));
+  const effPls = () => { const h = searchHits(); return h ? new Set(h.hits.map(p => p.id)) : pls(); };
   // ---------- NBA: fixtures by UK date (owner request 21 Oct) ----------
   // Rule (shown on the page): a game is listed when its UK date is ticked AND, if any team is ticked in the Teams filter, one of its teams is
   // ticked (intersection). Ticking a date ticks all its listed games; any game can then be unticked (or ticked) on its own. Zero dates is
@@ -4304,6 +4892,7 @@ async function viewHiwi(root, r, sport) {
         <div class="hlist">${shownP.slice(0, nShow).map(p => `<label class="hcheck"><input type="checkbox" data-pick="players" value="${esc(p.id)}" ${P.has(p.id) ? 'checked' : ''}><span>${esc(p.name)} <span class="xs muted">${esc(p.sub)}${p.notable ? ` · <span title="${esc(p.why)}">★ ${esc(p.why)}</span>` : ''}</span>${p.inj && p.inj.cls !== 'none' ? ` <span class="injb inj-${p.inj.cls}" title="${esc(p.inj.detail || '')}">${esc(p.inj.label)}</span>` : ''}</span></label>`).join('') || `<p class="xs muted">${popOn ? 'No popular players for this selection. Untick Popular Players Only to see everyone.' : 'No players match.'}</p>`}${shownP.length > nShow ? `<button type="button" class="btn" id="hpmore">Show more (${shownP.length - nShow} more)</button>` : ''}</div>
         ${outLeft.length ? `<p class="xs muted" style="margin:4px 0">Not listed because confirmed unavailable: ${outLeft.map(x => `${esc(x.name)} (${esc(x.inj.label)}${x.inj.rec && x.inj.rec.injury ? ' – ' + esc(x.inj.rec.injury) : ''})`).join(', ')}. ${usMode ? 'Tick them in the list to research them anyway.' : 'Untick Popular Players Only to research them anyway.'}</p>` : ''}
         ${usMode ? `<p class="xs muted" style="margin:4px 0">${getPopular() && !popSel() ? 'Popular Players is on: select teams or games and their popular players are ticked automatically.' : getPopular() ? 'Popular Players is on: every popular player of the selected teams / games is ticked. Untick anyone, or tick others; untick Popular Players to remove the ones it added (your own ticks stay).' : 'Tick Popular Players to select every popular player of the selected teams / games at once.'}</p>` : `<p class="xs muted" style="margin:4px 0">Injury status unavailable for MLS players: no legitimate free availability feed is used (nothing is assumed about fitness).</p>`}</details>${availHtml()}` : availHtml()}
+      ${hasPlayers() ? psearchHtml('hpfind', st.pfind) : ''}
       <div class="field"><label>Markets</label><p class="hmksum" id="hmksum" style="margin:0"><span>Markets: <b>${ms.size}</b> selected</span> — <button type="button" class="btn hmkbtn" id="hmkbtn"><b>${ms.size ? 'Edit Markets' : 'Select Markets'}</b></button></p></div>
       <div class="field"><label>Form period</label><div class="seg" id="hper" role="group" aria-label="Form period">${PERIODS.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(st.period) === String(v) ? 'on' : ''}" aria-pressed="${String(st.period) === String(v)}">${l}</button>`).join('')}</div>
         <p class="xs muted" style="margin:4px 0 0">Season: this season only. Last 5 / 10 / 20: the latest completed ${isNba ? 'games (regular season, NBA Cup final, Play-In and playoffs unless you choose Regular season only)' : usMode ? 'regular-season games' : 'league matches'}, going back into earlier seasons when needed.</p></div>
@@ -4422,9 +5011,9 @@ async function viewHiwi(root, r, sport) {
       const mi = mo.get(k) ?? 0;
       if (def.scope === 'player') {
         if (!hasPlayers()) continue; // no selected fixture or team has player statistics: player markets are not processed at all
-        if (!pls().size) { notes.push(`${def.label}: choose players to see this market.`); continue; }
-        const pool = new Map(playerPool().concat(usMode ? [] : fbPlayerList().map(p => ({ id: p.id, name: p.name, team: p.clubSlug, sub: p.team, p }))).map(p => [p.id, p]));
-        for (const id of pls()) {
+        if (!effPls().size) { notes.push(st.pfind ? `${def.label}: no player of the selected ${st.mode === 'teams' ? 'teams' : 'games'} matches "${st.pfind}".` : `${def.label}: choose players to see this market.`); continue; }
+        const pool = new Map((st.pfind ? playerPoolAll() : playerPool()).concat(usMode ? [] : fbPlayerList().map(p => ({ id: p.id, name: p.name, team: p.clubSlug, sub: p.team, p }))).map(p => [p.id, p]));
+        for (const id of effPls()) {
           const pl = pool.get(id) || (usMode ? (x => x && { id, name: x.name, team: x.team, sub: `${x.pos}, ${x.team}`, p: x })(A.d.playerById.get(id)) : null); if (!pl) continue;
           if (isNfl && def.for && !def.for.includes(pl.p.group)) continue; // e.g. no passing yards card for a receiver
           if (usMode && getExcludeOut()) { const ij = A.injury(pl.p, gameOfTeam(pl.team)); if (isConfirmedOut(ij)) { if (!excluded.some(x => x.id === id)) excluded.push({ id, name: pl.name, label: ij.label, why: ij.rec && (ij.rec.injury || ij.rec.reason) || '' }); continue; } }
@@ -4533,7 +5122,7 @@ async function viewHiwi(root, r, sport) {
     // zero leagues ticked (allowed since 20 Oct): nothing to search or calculate until one is chosen
     if (!usMode && !lgs.length) { out.innerHTML = '<div class="banner info"><b>Select a league to view fixtures.</b> Tick one or more leagues or competitions above.</div>'; return; }
     const subj = st.mode === 'teams' ? st.teams.size : selFx().length;
-    const nothing = (!mkts().size && !(st.rank === 'combined' && !usMode)) || (!subj && !pls().size); // Highest Combined % with no market chosen: every matchup market
+    const nothing = (!mkts().size && !(st.rank === 'combined' && !usMode)) || (!subj && !pls().size && !st.pfind); // Highest Combined % with no market chosen: every matchup market
     if (nothing) {
       const what = st.mode === 'teams' ? 'teams' : 'fixtures';
       out.innerHTML = `${seasonNote()}<div class="banner info"><b>${!mkts().size ? 'Choose at least one market' : `Choose ${what}${hasPlayers() ? ' or players' : ''}`}.</b> ${!mkts().size ? 'Tap Select Markets.' : st.mode === 'matches' && !st.today && !st.gw.cur && !st.gw.next ? 'Turn on a gameweek, then tick fixtures.' : 'Tick them above.'} Every choice gets its own card with an adjustable line and bar chart.</div>`; return;
@@ -4549,7 +5138,8 @@ async function viewHiwi(root, r, sport) {
     let want = 0;
     if (restoring) { const snap = SNAP[sport], pos = new Map(snap.order.map((cid, i) => [cid, i])); restoring = false;
       if (built.every(c => pos.has(c.cid))) { const lim = new Map(cards.map(c => [c.cid, c._lim])); cards = built.slice().sort((a, b) => pos.get(a.cid) - pos.get(b.cid)); cards.forEach(c => { c._lim = lim.get(c.cid); }); want = snap.shown; } }
-    out.innerHTML = `${seasonNote()}<p class="small muted" id="hcount">${cards.length} result card${cards.length === 1 ? '' : 's'}: one per ${[...new Set(cards.map(c => (c.def.scope === 'player' ? 'player' : 'team')))].join(' / ')} and market${multi() ? `, ${lgs.length} leagues together` : ''} · ${sortText()}. Bars: green = hit, red = miss for the side you choose.</p>
+    const sh = searchHits();
+    out.innerHTML = `${seasonNote()}${sh ? `<div class="banner info" data-psbanner><b>Player search "${esc(sh.q)}":</b> ${sh.hits.length ? `${sh.hits.map(p => esc(p.name)).join(', ')}${sh.more ? ` and ${sh.more} more (type more of the name)` : ''}. Their plays are shown instead of your ${pls().size} ticked player${pls().size === 1 ? '' : 's'}, which are unchanged.` : `no player of the selected ${st.mode === 'teams' ? 'teams' : 'games'} matches. Your ${pls().size} ticked player${pls().size === 1 ? '' : 's'} are unchanged.`}${[...mkts()].some(k => defOf(k)?.scope === 'player') ? '' : ' Choose at least one player market to see player plays.'} Clear the search to go back.</div>` : ''}<p class="small muted" id="hcount">${cards.length} result card${cards.length === 1 ? '' : 's'}: one per ${[...new Set(cards.map(c => (c.def.scope === 'player' ? 'player' : 'team')))].join(' / ')} and market${multi() ? `, ${lgs.length} leagues together` : ''} · ${sortText()}. Bars: green = hit, red = miss for the side you choose.</p>
       ${st.mode === 'matches' && cards.some(c => c.fixture) ? '<p class="xs muted">Each fixture shows the home team\'s and the away team\'s own history for every market. Tap <b>Detailed analysis</b> on either card to compare both teams with their head-to-head meetings.</p>' : ''}
       ${hidden.length ? `<details class="xs hhidden"><summary><b>${hidden.length} card${hidden.length === 1 ? '' : 's'} hidden by Minimum games played (${getMinGames()})</b></summary><ul>${hidden.map(h => `<li>${esc(h.name)} · ${esc(h.market)}: ${h.n} ${h.unit}${h.n === 1 ? '' : 'es'.slice(h.unit === 'game' ? 1 : 0)} this season with a recorded figure</li>`).join('')}</ul><p style="margin:4px 0 0">Lower the minimum above to show them.</p></details>` : ''}
       ${excluded.length ? `<details class="xs hhidden hexcl"><summary><b>${excluded.length} player${excluded.length === 1 ? '' : 's'} left out: confirmed OUT</b> (Exclude injured players is on)</summary><ul>${excluded.map(x => `<li>${esc(x.name)}: ${esc(x.label)}${x.why ? ' – ' + esc(x.why) : ''}</li>`).join('')}</ul><p style="margin:4px 0 0">Only players confirmed Out on the current report are left out. Questionable, Doubtful or Probable players, and players with no report or an old report, always stay. Untick the box above to see their cards (marked Unavailable).</p></details>` : ''}
@@ -4810,6 +5400,7 @@ async function viewHiwi(root, r, sport) {
     if (t.closest('#hmkbtn')) { const need = !usMode && lgsWithPlayers().some(lg => !playersBy.has(lg)); openMarkets(need);
       if (need) ensurePlayers().then(() => { const m0 = document.querySelector('.hmkmodal'); if (m0 && m0.dataset.waiting) openMarkets(false, m0); }); return; }
     if (t.closest('#hpl > summary')) bgPlayers(); // the Players list loads player data when first opened
+    if (t.closest('[data-psclear="hpfind"]')) { st.pfind = ''; const i = $('#hpfind', hf); if (i) { i.value = ''; i.focus(); } psHelp(); clearTimeout(psT); refresh(); return; }
     if (t.closest('#hsort')) { openSort(); return; }
     const rk = t.closest('[data-hrank]'); if (rk) { if (st.rank !== rk.dataset.hrank) { st.rank = rk.dataset.hrank; remember(); draw(); refresh(); } return; }
     const mc = t.closest('[data-hmc]'), me = t.closest('[data-hme]'); if (mc || me) { if (mc) st.minComb = Number(mc.dataset.hmc); else st.minEach = Number(me.dataset.hme); remember(); draw(); refresh(); return; }
@@ -4838,8 +5429,11 @@ async function viewHiwi(root, r, sport) {
       draw(); refresh();
     }
   });
+  let psT = null; // a short pause after typing before the results rebuild (no rebuild per keystroke)
+  const psHelp = () => { const x = hf.querySelector('[data-psclear="hpfind"]'); if (x) x.hidden = !st.pfind; const h = hf.querySelector('#hpfind-h'); if (h) h.innerHTML = st.pfind ? '<b>Search on:</b> showing the matching players only; your ticked players are unchanged and come back when you clear it.' : 'Shows one player\'s plays without changing the players you have ticked.'; };
   hf.addEventListener('input', e => {
     const t = e.target;
+    if (t.id === 'hpfind') { st.pfind = t.value; psHelp(); clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(() => { psT = null; refresh(); }, 250); return; }
     if (t.id === 'hmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) t.value = MIN_HI; refresh(); } return; }
     if (t.id === 'hqmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= QMIN) { setMinQual(n); if (n > QMAX) t.value = QMAX; if (cards.length) { resort(); } } return; }
     if (t.id === 'hsq') { st.sq = t.value; const pos = t.selectionStart; remember(); draw(); const n = $('#hsq', hf); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* */ } } return; }
@@ -4876,6 +5470,7 @@ const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
+const { nameMatches, psearchHtml } = __m['psearch'];
 const { sampleKey, $, koLocal, koUK, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, keepScrollIn } = __m['util'];
 const { nbaLoading, nbaCredit } = __m['v-nba'];
 const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes } = __m['nbaprefs'];
@@ -4884,7 +5479,7 @@ const { suggestRows, rankRows, tableHtml, wireTable } = __m['usfinder'];
 const { buildUsPlayerCard } = __m['uscards'];
 const { usAdapter } = __m['v-hiwi'];
 
-const ui = { subj: 'player', market: '__all', tmarket: '__all', lines: new Map(), pos: new Set(['G', 'F', 'C']), team: '', pop: false, dates: null, games: new Set(), untick: new Set(), gOpen: false, side: null, line: null, last: 10, min: 0, order: 'hi', sort: { key: null, dir: null }, shown: 100 };
+const ui = { find: '', subj: 'player', market: '__all', tmarket: '__all', lines: new Map(), pos: new Set(['G', 'F', 'C']), team: '', pop: false, dates: null, games: new Set(), untick: new Set(), gOpen: false, side: null, line: null, last: 10, min: 0, order: 'hi', sort: { key: null, dir: null }, shown: 100 };
 const SAMPLES = [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
 const ORDERS = [...RANK_ORDERS, ['market', 'By game']];
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
@@ -4914,6 +5509,7 @@ async function viewNbaFinder(root) {
     const gRow = g => { const stt = usStatus(g, 'nba', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? ukTip(g) : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     ctl.innerHTML = `${globalSideHtml('fgside')}
       <div class="field"><label>Research</label>${seg('subj', [['player', 'Players'], ['team', 'Teams']], ui.subj)}</div>
+      ${isT() ? '' : psearchHtml('fpfind', ui.find)}
       <div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${m.key === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${(isT() ? NBA_TEAM_MARKETS : NBA_MARKETS).map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc((x.grp ? x.grp + ': ' : '') + x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}${m.hcp ? ' Research against a handicap you choose: not a bookmaker spread.' : ''}</p></div>
       ${isT() ? '' : `<div class="field"><label>Positions</label><div class="hgrid nposgrid">${NBA_POS.slice(1).map(([v, l]) => `<label class="hcheck"><input type="checkbox" data-pos value="${v}" ${ui.pos.has(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
       <label class="hcheck hpopchk"><input type="checkbox" id="fpop" ${ui.pop ? 'checked' : ''}><span><b>Popular Players</b> <span class="xs muted">only the popular players (stars and regular scorers / rebounders / passers) are listed</span></span></label>`}
@@ -4945,7 +5541,8 @@ async function viewNbaFinder(root) {
       const files = [...new Set(nba.players.filter(p => p.current && p.logs_file && (!ui.team || p.team === ui.team) && (!gTeams || gTeams.has(p.team))).map(p => p.logs_file))];
       const bys = new Map(await Promise.all(files.map(async t => [t, await loadLogs(t)])));
       for (const p of nba.players) {
-        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || !ui.pos.has(p.group || 'F') || (ui.pop && !p.notable)) continue;
+        // temporary player search (owner request 27 Oct): replaces the player filters (positions, Popular) only while text is typed; nothing is ticked or unticked
+        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.find ? !nameMatches(ui.find, p.name) : (!ui.pos.has(p.group || 'F') || (ui.pop && !p.notable)))) continue;
         const raw = bys.get(p.logs_file).get(p.id) || [], game = games.find(g => g.home === p.team || g.away === p.team) || null, inj = injuryStatus(p, game);
         if (getExcludeOut() && isConfirmedOut(inj)) continue;
         subjects.push({ key: p.id, id: p.id, type: 'player', name: p.name, sub: `${p.pos || ''} · ${p.team}`, href: `#/nba/research/${encodeURIComponent(p.id)}`, game, opp: game ? (game.home === p.team ? game.away : game.home) : null, inj, unavailable: isConfirmedOut(inj), newTeam: !!p.new_team,
@@ -4973,7 +5570,10 @@ async function viewNbaFinder(root) {
     if (k === 'last') ui.last = v === 'season' ? 'season' : Number(v); else if (k === 'min') ui.min = Number(v); else if (k === 'subj') { ui.subj = v; ui.sort = { key: null, dir: null }; } else ui[k] = v;
     redraw(); draw();
   });
-  ctl.addEventListener('change', e => { const t = e.target; ui.shown = 100;
+  let psT = null;
+  ctl.addEventListener('input', e => { if (e.target.id !== 'fpfind') return; ui.find = e.target.value; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); });
+  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
+  ctl.addEventListener('change', e => { const t = e.target; if (t.id === 'fpfind') return; ui.shown = 100;
     if (t.id === 'fxout') { setExcludeOut(t.checked); draw(); return; }
     if (t.id === 'mk') { if (isT()) ui.tmarket = t.value; else ui.market = t.value; ui.sort = { key: null, dir: null }; }
     else if (t.matches('[data-pos]')) t.checked ? ui.pos.add(t.value) : ui.pos.delete(t.value);
@@ -6028,6 +6628,7 @@ const { getLeagues, setLeagues, leaguePickHtml, leaguePickChange, isTodayUK, lea
 const { LEAGUE_NAMES } = __m['data'];
 const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
 const { evidence, plainSentence, qualMin, getMinQual, wilson } = __m['rank'];
+const { hypoSlot, setHypoSource, hypoFor } = __m['hypo'];
 
 // minN is internal only (no on-screen control): every result shows its real number of matches instead.
 const ui = shareSelection({ lgOpen: false, gOpen: true, order: 'hi', mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' });
@@ -6051,9 +6652,9 @@ function cardHtml(r, ctx = {}) {
   const sample = ctx.h2h ? `last ${r.nUsed} meetings${ctx.h2hVenue ? ' at this venue' : ''}` : `${r.requested ? `last ${r.requested}` : 'this season\'s'} ${venueWord(r.venue)}matches${short ? ` (only ${r.nUsed} available)` : ''}`;
   return `<div class="card play tap" style="margin-bottom:10px" data-sample="${esc(sampleKey(r.rowsUsed))}"${ctx.ri != null ? ` data-ri="${ctx.ri}"` : ''}><div class="row" style="border:0;padding:0"><div class="l"><b><a href="${s.type === 'player' ? `#/research/${encodeURIComponent(s.id)}` : s.href}">${esc(s.name)}</a></b><span>${s.type === 'player' ? esc(s.club) + ' · Player' : (ctx.tag || 'Team')}</span></div><div class="r"><b class="${r.hr.hitPct >= 80 ? 'hit' : ''}" style="font-size:20px">${r.hr.hitPct}%</b></div></div>${ctx.below ? `<div class="xs warn">Below your ${ctx.below}% minimum</div>` : ''}
     <div style="margin:6px 0 2px">${playBadge(r.def.key, ctx.h2h)} ${playText(r.def, r.side, r.line)} <span class="xs muted">· ${esc(ctx.h2h ? 'both teams combined' : SCOPE[marketScope(r.def.key)](s.name))}</span></div>
-    <div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span>${r.validN != null && !ctx.h2h ? ` <span class="xs muted vn">· ${r.validN} ${s.type === 'player' ? (r.validN === 1 ? 'game' : 'games') : (r.validN === 1 ? 'match' : 'matches')} this season with this statistic</span>` : ''}</div>
+    <div class="hyrow"><div class="hyl"><div class="hitn"><b>${hitsLine(r.hr)}</b> <span class="muted">· ${esc(sample)}</span>${r.validN != null && !ctx.h2h ? ` <span class="xs muted vn">· ${r.validN} ${s.type === 'player' ? (r.validN === 1 ? 'game' : 'games') : (r.validN === 1 ? 'match' : 'matches')} this season with this statistic</span>` : ''}</div>
     ${(() => { const ev = evidence(r.hr.n, r.hr.hits), sd = r.side === 'under' ? 'under' : 'over', st0 = { n: r.hr.n, [sd]: r.hr.hits, [sd + 'Pct']: r.hr.hitPct };
-      return `<p class="hsent"><button type="button" class="evid ev-${ev.k}" data-info="ev" data-title="${esc(ev.label)}" data-text="${esc(ev.text)}" aria-haspopup="dialog">${esc(ev.label)}</button> ${esc(plainSentence({ def: r.def, title: ctx.h2h ? 'both teams' : s.name, unit: s.type === 'player' ? 'game' : 'match', h2h: false }, st0, sd, r.line))}</p>`; })()}
+      return `<p class="hsent"><button type="button" class="evid ev-${ev.k}" data-info="ev" data-title="${esc(ev.label)}" data-text="${esc(ev.text)}" aria-haspopup="dialog">${esc(ev.label)}</button> ${esc(plainSentence({ def: r.def, title: ctx.h2h ? 'both teams' : s.name, unit: s.type === 'player' ? 'game' : 'match', h2h: false }, st0, sd, r.line))}</p>`; })()}</div>${ctx.ri != null ? hypoSlot(` data-hy-src="trends:${ctx.ri}"`) : ''}</div>
     <div class="dots" aria-label=""${r.hr.hits} of ${r.hr.n} matches hit, oldest to newest">${r.dots.map((h, i) => `<i class="${h ? 'on' : ''}" title="${esc(fd(r.rowsUsed[i].date))}: ${fv(r.rowsUsed[i].value)}">${h ? '●' : '○'}</i>`).join('')}</div>
     <div class="xs muted" style="margin-top:6px"><b>Historical hit rate</b> · ${esc(fd(r.from))} – ${esc(fmtLong(r.to))} · ${infoTag(rel.k, rel.t, { n: r.hr.n, cls: 'rel ' + rel.k })}</div>
     <details class="mx"><summary class="xs">Matches (newest first)</summary><div class="scroll"><table><tr><th>Date</th><th>Match</th><th>Score</th><th>Value</th></tr>${rows}</table></div></details>
@@ -6069,6 +6670,14 @@ async function viewTrends(root, r) {
   // Every card on screen is registered so a tap can open its graph with the same subject, market, line, sample and Home/Away Form.
   let reg = [];
   const card = (x, ctx = {}) => cardHtml(x, { ...ctx, ri: reg.push({ x, ctx }) - 1 });
+  // Hypothetical odds box (27 Oct): the same calibrated estimate as the Value page, from ALL of this subject's recorded games for the
+  // market at this card's line and side (the hit rate on the card is never the probability).
+  setHypoSource('trends', i => { const { x, ctx } = reg[i] || {}; if (!x) return { ok: false, key: '', reason: 'card not found' };
+    if (ctx.h2h || x.subject.id === 'h2h') return { ok: false, key: `t|${i}`, reason: 'head-to-head meetings are research only, not an estimate' };
+    const sbj = x.subject, isP = sbj.type === 'player', m = (isP ? PLAYER_MARKETS : TEAM_MARKETS).find(mm => mm.key === x.def.key) || x.def;
+    const rows = marketRows(sbj.allRows || sbj.rows || [], m, isP ? 'minutes' : null).filter(y => y.value !== null && y.value !== undefined).map(y => ({ date: y.date, value: y.value, raw: y })).reverse();
+    const c = { cid: `tr|${sbj.type}|${sbj.id}|${m.key}`, def: { ...m, scope: isP ? 'player' : 'team' }, title: sbj.name, rows, tagCls: x.venue || null };
+    return hypoFor(c, { line: x.line, side: x.side }, 'football'); });
   root.innerHTML = `${dataBanner()}${problemsBanner()}
     <p class="muted">Discover trends across many teams or several fixtures at once. Every figure is a <b>historical hit rate</b> from completed matches: not the chance of it happening next time, not a tip.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
@@ -6575,335 +7184,6 @@ async function viewFinder(root, r) {
 
 return { viewFinder };
 })();
-__m['nfl-model'] = (() => {
-// Experimental NFL model data in the browser. The model itself is trained offline (owner-tools/nfl_model.py); the site only reads its
-// published output (data-nfl-model.json) and turns each prediction's distribution into a probability for ANY line the visitor sets.
-// A historical hit rate is never used as a model probability. Markets that failed the out-of-sample test are marked inactive.
-const model = { status: 'idle', data: null, backtest: null, log: null, byKey: new Map() };
-const RQ = Array.from({ length: 81 }, (_, i) => i / 80);
-const getFresh = async f => { const r = await fetch(`${f}?t=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); };
-async function loadModel(getJson = getFresh) {
-  if (model.status === 'ready' || model.status === 'loading') return model;
-  model.status = 'loading';
-  try {
-    model.data = await getJson('data-nfl-model.json', { fresh: true });
-    model.byKey = new Map(model.data.predictions.map(p => [`${p.player_id}|${p.market}`, p]));
-    model.status = 'ready';
-  } catch { model.status = 'missing'; }
-  return model;
-}
-async function loadBacktest(getJson = getFresh) { if (!model.backtest) { try { model.backtest = await getJson('data-nfl-model-backtest.json', { fresh: true }); } catch { model.backtest = null; } } return model.backtest; }
-async function loadForward(getJson = getFresh) { if (!model.log) { try { model.log = await getJson('data-nfl-model-forward.json', { fresh: true }); } catch { model.log = null; } } return model.log; }
-
-// ---- distributions (same maths as owner-tools/nfl_model.py) ----
-function lgamma(x) { // Lanczos
-  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
-  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
-  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
-  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
-}
-function nbPmf(k, mu, alpha) {
-  if (k < 0) return 0;
-  if (alpha < 1e-6) return Math.exp(k * Math.log(mu) - mu - lgamma(k + 1));
-  const r = 1 / alpha, p = r / (r + mu);
-  return Math.exp(lgamma(k + r) - lgamma(r) - lgamma(k + 1) + r * Math.log(p) + k * Math.log(1 - p));
-}
-const nbCdf = (k, mu, a) => { let s = 0; for (let i = 0; i <= k; i++) s += nbPmf(i, mu, a); return Math.min(1, s); };
-// Same rule as numpy.interp (ties in the quantiles, e.g. many zero-yard games, resolve to the last equal point).
-const interp = (t, xs, ys) => {
-  const n = xs.length; if (t < xs[0]) return ys[0]; if (t >= xs[n - 1]) return ys[n - 1];
-  let lo = 0, hi = n - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
-  const x0 = xs[lo], x1 = xs[hi]; return x1 === x0 ? ys[lo] : ys[lo] + (ys[hi] - ys[lo]) * (t - x0) / (x1 - x0);
-};
-/** P(Y <= y) for a continuous-approximated whole-number outcome described by quantiles of actual/projection (ratio) or actual-projection (shift). */
-function cdfAt(y, mu, mk, pos) {
-  if (mk.dist === 'ratio') { const tab = (mk.ratio_by_pos && mk.ratio_by_pos[pos]) || mk.ratio; const b = tab.find(x => x.mu_max === null || mu <= x.mu_max); return interp(y / Math.max(mu, 1e-3), b.q, RQ); }
-  return interp(y - mu, mk.q, RQ); // 'shift' (team points)
-}
-/** Calibration map learned from earlier out-of-sample seasons: p' = sigmoid(a logit p + b). */
-function calibrate(p, cal) { if (!cal) return p; const q = Math.min(0.995, Math.max(0.005, p)); return 1 / (1 + Math.exp(-(cal.a * Math.log(q / (1 - q)) + cal.b))); }
-/** Raw (uncalibrated) P(Y > L). */
-function rawOver(L, mu, mk, pos) {
-  if (mk.dist === 'nb') return 1 - nbCdf(Math.floor(L), mu, mk.alpha || 0);
-  return 1 - cdfAt(Math.floor(L) + 0.5, mu, mk, pos);
-}
-/** Probabilities for a line: { over, under, push } (push only for whole-number lines). */
-function lineProbs(pred, line, mk) {
-  const mu = pred.proj, L = Number(line);
-  if (!Number.isFinite(L) || !mk || !(mu >= 0)) return null;
-  const whole = Math.abs(L - Math.round(L)) < 1e-9, cal = mk.calibration, pos = pred.position;
-  const over = calibrate(rawOver(L, mu, mk, pos), cal);
-  if (!whole) return { over: clamp(over), under: clamp(1 - over), push: 0 };
-  // whole-number line: Under = not (Y >= L) = 1 - P(Y > L - 0.5); the rest is the push
-  const under = 1 - calibrate(rawOver(L - 0.5, mu, mk, pos), cal);
-  return { over: clamp(over), under: clamp(under), push: clamp(1 - over - under) };
-}
-const clamp = p => Math.max(0, Math.min(1, p));
-const marketInfo = key => model.data?.markets?.[key] || null;
-/** The prediction for a player and market; with gameId, the one for that game (a player can have predictions for two weeks). */
-const predictionFor = (playerId, market, gameId) => (gameId ? (model.data?.predictions || []).find(p => p.player_id === playerId && p.market === market && p.game_id === gameId) || null : model.byKey.get(`${playerId}|${market}`) || null);
-
-// ---- uncertainty and EV classification ----
-/** Margin of error for the probability, from what the backtest measured for this kind of prediction (calibration gap and the 95% interval
- *  of the observed rate). Wider when the cell had few cases. */
-function probMargin(pred) {
-  const c = pred?.cell; if (!c || !c.n) return 0.12;
-  const [lo, hi] = c.observed_ci95 || [null, null];
-  const half = lo != null && hi != null ? (hi - lo) / 2 : 0.1;
-  return Math.min(0.2, Math.max(0.02, Math.abs(c.observed_side_rate - c.predicted_side_prob) + half / 2));
-}
-/** EV % = (p x decimal odds - 1) x 100. Classified with the probability's margin: an edge only counts when it survives the margin. */
-function evVerdict(p, odds, pred) {
-  if (!(odds > 1) || p == null) return null;
-  if (!pred || pred.confidence === 'Insufficient Data' || !pred.active_market) return { label: 'Insufficient Data', cls: 'insufficient' };
-  const m = probMargin(pred), ev = (p * odds - 1) * 100, lo = ((p - m) * odds - 1) * 100, hi = ((p + m) * odds - 1) * 100;
-  const label = lo > 0 ? 'Positive Estimated EV' : hi < 0 ? 'Negative Estimated EV' : 'Uncertain – No Clear Edge';
-  return { ev: Math.round(ev * 10) / 10, lo: Math.round(lo * 10) / 10, hi: Math.round(hi * 10) / 10, margin: m, label, cls: lo > 0 ? 'pos' : hi < 0 ? 'neg' : 'unc' };
-}
-/** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
-function parseAnyOdds(t) {
-  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
-  if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, kind: 'fractional' };
-  // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
-  if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
-    const a = Number(s);
-    if (a >= 100) return { dec: Math.round((1 + a / 100) * 1000) / 1000, kind: 'American' };
-    if (a <= -100) return { dec: Math.round((1 + 100 / -a) * 1000) / 1000, kind: 'American' };
-    return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
-  }
-  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a > 0 && b > 0 ? { dec: Math.round((a / b + 1) * 1000) / 1000, kind: 'fractional' } : { dec: null, error: 'Fractional odds look like 6/4' }; }
-  const d = Number(s); return d > 1 ? { dec: d, kind: 'decimal' } : { dec: null, error: 'Decimal odds are above 1.0 (e.g. 1.91)' };
-}
-
-// ---- plain-English reasons, built only from the model's own inputs ----
-const LBL = { usage: { pass_yds: 'pass attempts', att: 'pass attempts', cmp: 'pass attempts', pass_td: 'pass attempts', int: 'pass attempts', rush_yds: 'carries', car: 'carries', rec_yds: 'targets', rec: 'targets', tgt: 'targets', rec_td: 'targets' } };
-function explain(pred, side, line) {
-  const f = pred.factors || {}, out = [];
-  if (pred.market === 'pts') { out.push(`The betting market's point spread and total imply about ${f.implied_team_points} points for ${pred.team}. The model starts from that number, so it adds little beyond the market.`); return out; }
-  if (f.season_avg != null) out.push(`${pred.player} has averaged ${f.season_avg} ${pred.label.toLowerCase()} this season${f.last5_avg != null ? ` (${f.last5_avg} over the last five games)` : ''}.`);
-  if (f.usage != null && LBL.usage[pred.market]) out.push(`Recent workload: about ${f.usage} ${LBL.usage[pred.market]} per game, weighted towards the latest games.`);
-  if (f.opp_factor != null) { const pc = Math.round((f.opp_factor - 1) * 100); out.push(Math.abs(pc) < 4 ? `${pred.opp}'s defence has allowed about a league-average amount to this position.` : `${pred.opp}'s defence has allowed ${Math.abs(pc)}% ${pc > 0 ? 'more' : 'less'} than average to this position in its recent games (shrunk towards average).`); }
-  if (f.implied_team_points != null) out.push(`The betting market implies about ${f.implied_team_points} points for ${pred.team}${pred.home ? ' at home' : ' away'}.`);
-  out.push(`Projection: ${pred.proj}. For ${side === 'under' ? 'Under' : 'Over'} ${line}, the model's distribution gives the probability shown.`);
-  if (pred.injury_status) out.push(`Injury report: ${pred.injury_status}.`);
-  return out;
-}
-const CONF_TEXT = {
-  'Very High': 'In testing on past seasons, predictions like this (same market, similar sample and edge) came true at about the predicted rate, with many cases.',
-  High: 'Predictions like this were reliable in testing, with a good number of cases.', Medium: 'Predictions like this were roughly right in testing, but with fewer cases or a slightly wider error.',
-  Low: 'Predictions like this were only loosely right in testing.', 'Very Low': 'Predictions like this were poorly calibrated in testing.',
-  'Insufficient Data': 'Not enough earlier games, or this market did not pass the model\'s tests, so no reliable probability can be given.',
-};
-
-// ---- minimum odds ("price to look for") ----
-// Minimum decimal odds for an EV target: (1 + target - P(push)) / P(win). Rounded UP so the stated target is really reached at the shown price.
-const FRAC_DEN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 25, 30, 40, 50, 100];
-function minOdds(pWin, target = 0, pPush = 0) {
-  if (!(pWin > 0)) return null;
-  const req = (1 + target - (pPush || 0)) / pWin; if (!Number.isFinite(req) || req <= 1) return req > 0 && req <= 1 ? { dec: 1.01, frac: '1/100', amer: '-10000', exact: req } : null;
-  const dec = Math.ceil(req * 100 - 1e-9) / 100;                               // up to the next 0.01
-  let best = null; for (const d of FRAC_DEN) { const n = Math.ceil((req - 1) * d - 1e-9); const v = 1 + n / d; if (!best || v < best.v - 1e-12) best = { n, d, v }; } // smallest common fraction >= req
-  const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d);
-  const amer = req >= 2 ? `+${Math.ceil((req - 1) * 100 - 1e-9)}` : `-${Math.floor(100 / (req - 1) + 1e-9)}`;   // American: the shown price is never worse than required
-  return { dec, frac: best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`, amer, exact: req };
-}
-/** Odds shown in the visitor's chosen format. dec: decimal odds. */
-function fmtOdds(dec, fmt = 'decimal') {
-  if (!(dec > 1)) return '–';
-  if (fmt === 'american') return dec >= 2 ? `+${Math.round((dec - 1) * 100)}` : `-${Math.round(100 / (dec - 1))}`;
-  if (fmt === 'fractional') { let best = null; for (const d of FRAC_DEN) { const n = Math.round((dec - 1) * d); if (n < 1) continue; const e = Math.abs(1 + n / d - dec); if (!best || e < best.e - 1e-9) best = { n, d, e }; } const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d); return best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`; }
-  return String(Math.round(dec * 100) / 100);
-}
-
-return { model, loadModel, loadBacktest, loadForward, nbPmf, calibrate, lineProbs, marketInfo, predictionFor, probMargin, evVerdict, parseAnyOdds, explain, CONF_TEXT, minOdds, fmtOdds };
-})();
-__m['prob'] = (() => {
-// Estimated probability for one side of a line, for the Value page's EV (owner request 21 Oct, late evening). Pure: no DOM, tested
-// in Node and backtested by owner-tools/prob-backtest.mjs on past seasons.
-//
-// METHOD (shown on the Value page in plain English)
-//  1. Recent games count more: each earlier qualifying game gets weight 0.5^(age / 10), so a game 10 games ago counts half as much as
-//     the latest one (at most the last 60 games). n_eff = (sum w)^2 / sum w^2 is the effective number of games.
-//  2. Two views of the same games:
-//     * empirical: the weighted share of games over / under / exactly on the line;
-//     * smooth: a distribution fitted to the weighted mean and spread (normal for big numbers or margins that can be negative; Poisson
-//       or negative binomial for small counts; a simple rate for Yes / No markets). It stops one odd result from swinging the estimate
-//       and gives sensible answers for lines far from his usual level.
-//  3. Blend: (n_eff x empirical + 8 x smooth) / (n_eff + 8). Few games => the smooth view dominates; many games => his own record does.
-//  4. Calibration: the blended chance is passed through a straight-line correction on the log-odds scale fitted on earlier seasons and
-//     checked on a later season it never saw (data-prob-calibration.json). If that file is missing, the estimate is marked uncalibrated.
-//  5. Insufficient evidence: fewer than 8 qualifying games, or no game in the last 400 days. No number is shown then.
-//  6. Football team markets also give half weight to the same-venue games (home / away) as the next one: the backtest showed it helps
-//     there, and not for NBA or NFL players.
-//  A historical hit rate is never used as the probability by itself.
-const HALF_LIFE = 10, MAX_GAMES = 60, K_SMOOTH = 8, MIN_GAMES = 8, STALE_DAYS = 400;
-
-const erf = x => { // Abramowitz-Stegun 7.1.26
-  const s = x < 0 ? -1 : 1; x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x);
-  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; };
-const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
-const lgamma = z => { // Lanczos
-  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
-  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
-  z -= 1; let x = c[0]; for (let i = 1; i < g + 2; i++) x += c[i] / (z + i); const t = z + g + 0.5; return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x); };
-/** P(X <= k) for a count with mean mu and variance v (Poisson when v <= mu, negative binomial otherwise). */
-function countCdf(k, mu, v) {
-  if (k < 0) return 0; if (mu <= 0) return 1;
-  let s = 0;
-  if (v <= mu * 1.05) { let p = Math.exp(-mu); for (let i = 0; i <= k; i++) { s += p; p *= mu / (i + 1); } return Math.min(1, s); }
-  const r = mu * mu / (v - mu), q = r / (r + mu);
-  for (let i = 0; i <= k; i++) s += Math.exp(lgamma(i + r) - lgamma(r) - lgamma(i + 1) + r * Math.log(q) + i * Math.log(1 - q));
-  return Math.min(1, s);
-}
-const logit = p => Math.log(p / (1 - p)), sig = x => 1 / (1 + Math.exp(-x));
-const clamp = (p, lo = 0.01, hi = 0.99) => Math.min(hi, Math.max(lo, p));
-
-/** Weighted summary of the qualifying values (newest first). */
-function weigh(values) {
-  const v = values.slice(0, MAX_GAMES); let sw = 0, sw2 = 0, m = 0;
-  const w = v.map((_, i) => 0.5 ** (i / HALF_LIFE));
-  for (let i = 0; i < v.length; i++) { sw += w[i]; sw2 += w[i] * w[i]; m += w[i] * v[i]; }
-  m = sw ? m / sw : 0; let s2 = 0; for (let i = 0; i < v.length; i++) s2 += w[i] * (v[i] - m) ** 2;
-  const nEff = sw2 ? (sw * sw) / sw2 : 0, varW = sw ? (s2 / sw) * (nEff > 1 ? nEff / (nEff - 1) : 1) : 0;
-  return { v, w, sw, nEff, mean: m, var: varW };
-}
-/** { over, under, push } from the smooth distribution. */
-function smooth(S, line, { binary = false } = {}) {
-  if (binary) { const p = clamp(S.mean, 0.02, 0.98); return { over: p, under: 1 - p, push: 0 }; }
-  const ints = S.v.every(x => Number.isInteger(x)), neg = S.v.some(x => x < 0);
-  if (ints && !neg && S.mean < 10) {
-    const v = Math.max(S.var, S.mean * 0.5, 0.05); const lo = Math.ceil(line) - 1, hi = Math.floor(line); // under: X <= lo; over: X > hi
-    const under = countCdf(lo, S.mean, v), over = 1 - countCdf(hi, S.mean, v); return { over, under, push: Math.max(0, 1 - over - under) };
-  }
-  const sd = Math.max(Math.sqrt(Math.max(S.var, 0)), 0.5 + Math.abs(S.mean) * 0.05);
-  if (ints) { const over = 1 - normCdf((Math.floor(line) + 0.5 - S.mean) / sd), under = normCdf((Math.ceil(line) - 0.5 - S.mean) / sd); return { over, under, push: Math.max(0, 1 - over - under) }; }
-  const over = 1 - normCdf((line - S.mean) / sd); return { over, under: 1 - over, push: 0 };
-}
-/** { over, under, push } weighted shares of the games themselves. */
-function empirical(S, line) {
-  let o = 0, u = 0; for (let i = 0; i < S.v.length; i++) { if (S.v[i] > line) o += S.w[i]; else if (S.v[i] < line) u += S.w[i]; }
-  return { over: o / S.sw, under: u / S.sw, push: Math.max(0, 1 - (o + u) / S.sw) };
-}
-/**
- * values: qualifying values, newest first. lastDate: 'YYYY-MM-DD' of the newest (for staleness). now: Date. calib: { a, b } or null.
- * Returns { ok, reason } or { ok, win, lose, push, q (win | not push), lo, hi, nEff, n, emp, smooth, calibrated }.
- */
-function estimate(values, line, side, { binary = false, calib = null, lastDate = null, now = new Date(), venueValues = null, venueCalib = null } = {}) {
-  const vals = values.filter(x => typeof x === 'number' && Number.isFinite(x));
-  if (vals.length < MIN_GAMES) return { ok: false, n: vals.length, reason: `only ${vals.length} qualifying game${vals.length === 1 ? '' : 's'} on record (at least ${MIN_GAMES} are needed)` };
-  if (lastDate && (now - new Date(lastDate + 'T12:00:00Z')) / 864e5 > STALE_DAYS) return { ok: false, n: vals.length, reason: 'no game in the last 400 days' };
-  const S = weigh(vals), E = empirical(S, line), P = smooth(S, line, { binary }), k = K_SMOOTH, t = S.nEff + k;
-  let over = (S.nEff * E.over + k * P.over) / t, under = (S.nEff * E.under + k * P.under) / t;
-  const push = Math.max(0, 1 - over - under), dec = over + under;
-  let q = dec > 0 ? over / dec : 0.5; // chance of Over given no push
-  // Football team markets only (it helped in the backtest there, not in the NBA or NFL): half-weight on an estimate from his earlier games
-  // at the same venue (home / away) as the next game, when there are at least 8 of them; it then uses its own calibration.
-  let venueUsed = false;
-  if (venueValues && venueCalib) { const vv = venueValues.filter(x => typeof x === 'number' && Number.isFinite(x));
-    if (vv.length >= MIN_GAMES) { const ev = estimate(vv, line, 'over', { binary }); if (ev.ok) { q = 0.5 * q + 0.5 * ev.qRaw; calib = venueCalib; venueUsed = true; } } }
-  const raw = q;
-  if (calib && Number.isFinite(calib.a) && Number.isFinite(calib.b)) q = sig(calib.a * logit(clamp(q)) + calib.b);
-  q = clamp(q);
-  over = q * (1 - push); under = (1 - q) * (1 - push);
-  const qs = side === 'under' ? 1 - q : q, se = Math.sqrt(qs * (1 - qs) / t);
-  const win = side === 'under' ? under : over, lose = side === 'under' ? over : under;
-  return { ok: true, win, lose, push, q: qs, qRaw: side === 'under' ? 1 - raw : raw, lo: Math.max(0, qs - 1.96 * se) * (1 - push), hi: Math.min(1, qs + 1.96 * se) * (1 - push),
-    nEff: Math.round(S.nEff * 10) / 10, n: vals.length, used: S.v.length, mean: S.mean, emp: side === 'under' ? E.under : E.over, smooth: side === 'under' ? P.under : P.over, calibrated: !!calib, venueUsed };
-}
-/** EV per unit staked, in %: 100 x (p_win x odds + p_push - 1). */
-const evPct = (win, odds, push = 0) => Math.round((win * odds + push - 1) * 1000) / 10;
-
-return { HALF_LIFE, normCdf, countCdf, weigh, smooth, empirical, estimate, evPct };
-})();
-__m['valueev'] = (() => {
-// Value page EV (owner request 21 Oct, late: "bring back the large green / red EV figure"). For any play carried to Value (all three
-// sports, every market the research cards support) it shows PropLab's ESTIMATED probability (prob.js: recency-weighted, smoothed,
-// calibrated on earlier seasons and checked on a later one), the bookmaker's implied probability, and EV = 100 x (p x odds + p_push - 1).
-// Rules: a historical hit rate is never used as the probability; with too little evidence the page says "Insufficient evidence" and shows
-// no EV; the estimate is labelled experimental; nothing here is a bookmaker price PropLab has seen.
-const { estimate, evPct } = __m['prob'];
-const { parseAnyOdds } = __m['nfl-model'];
-const { cmpLine } = __m['hiwicard'];
-const { isConfirmedOut } = __m['rank'];
-const { esc } = __m['util'];
-
-let calib = null, calibP = null;
-/** data-prob-calibration.json (written by owner-tools/prob-backtest.mjs); null when it cannot be loaded (the estimate is then uncalibrated). */
-function loadCalib() {
-  if (calibP) return calibP;
-  calibP = fetch(`data-prob-calibration.json?v=${Date.now() >> 26}`, { cache: 'default' }).then(r => (r.ok ? r.json() : null)).then(j => { calib = j && j.schema === 1 ? j : null; return calib; }).catch(() => (calib = null));
-  return calibP;
-}
-const calibFor = key => (calib && calib.sports && calib.sports[key]) || null;
-const sportKey = (sport, def) => (sport === 'football' ? (def.scope === 'player' ? 'football_players' : 'football') : sport);
-const sideOf = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over');
-const pct = p => `${(p * 100).toFixed(1)}%`;
-
-/** Every qualifying game behind the card (newest first), with the card's own filters (minutes, game types, scope, team split), NOT cut to
- *  its Games used: the estimate uses the whole record, weighting recent games more. */
-function historyOf(card, st) {
-  const s = { ...st, per: 'all', view: 'form' };
-  const rows = card.rebuild ? card.rebuild(s).rows : card.perFn ? card.perFn(s).rows : card.rows;
-  return (rows || []).slice().reverse(); // card rows are oldest -> newest
-}
-/** Same-venue history (football team markets): the venue of this card's next game, if known. */
-function venueOf(card) { return card.tagCls === 'home' ? true : card.tagCls === 'away' ? false : null; }
-
-/** { ok, ... } estimate for the card at its current line and side. */
-function cardEstimate(card, st, sport) {
-  const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
-  if (card.injury && isConfirmedOut(card.injury)) return { ok: false, reason: `${card.title} is confirmed OUT for this game` };
-  const hist = historyOf(card, st), vals = hist.map(r => r.value);
-  // Three different situations must never share one message (owner review 27 Oct):
-  //  'nodata'  - no recorded match for this market (the source does not record it, or the team has none);
-  //  'handoff' - the card shows games but none reached this estimate: a software fault, reported as such;
-  //  'nomodel' - the research exists but no defensible probability can be given (too few games, stale, OUT, not validated).
-  const shown = (card.rows || []).filter(r => r.value !== null && r.value !== undefined).length;
-  if (!vals.length) return shown ? { ok: false, kind: 'handoff', reason: `the card shows ${shown} game${shown === 1 ? '' : 's'}, but none reached the estimate` } : { ok: false, kind: 'nodata', reason: `no recorded ${card.def.label.toLowerCase()} figures for ${card.title}` };
-  const h = venueOf(card), vv = key === 'football' && h !== null && cb && cb.venue_experiment && cb.venue_experiment.helps ? hist.filter(r => r.raw && r.raw.home === h).map(r => r.value) : null;
-  const e = estimate(vals, line, side, { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
-    venueValues: vv, venueCalib: vv && cb.venue_experiment ? { a: cb.venue_experiment.a, b: cb.venue_experiment.b } : null });
-  if (!e.ok) return { ...e, kind: 'nomodel', key, cb, side, line };
-  // Best Combined % (27 Oct): the probability uses the SELECTED team's own record only, the series the calibration was checked on. The
-  // opponent's complementary record is shown as research beside it; an average of two teams' estimates has never been validated, and the
-  // Combined Historical % is a matchup score, not a probability, so neither is turned into EV.
-  if (card.pair) return { ...e, key, cb, side, line, pairNote: `${card.title}'s own record only; ${card.pair.title}'s record is shown as research, not used in the estimate` };
-  return { ...e, key, cb, side, line };
-}
-/** Best Combined % plays: both teams' research at the current line and the Combined Historical % (labelled as a matchup score, not a probability). */
-function pairResearch(card, st) {
-  if (!card.pair) return '';
-  const line = Number(st.line), side = sideOf(st), cnt = rows => { const v = rows.map(r => r.value).filter(x => x !== null && x !== undefined); const h = v.filter(x => (side === 'under' ? x < line : x > line)).length; return { h, n: v.length, p: v.length ? Math.round(h / v.length * 1000) / 10 : null }; };
-  const a = cnt(card.rows || []), b = cnt(card.pair.perFn ? card.pair.perFn(st).rows : []);
-  const comb = a.p != null && b.p != null ? Math.round((a.p + b.p) / 2 * 10) / 10 : null;
-  const t = (name, x) => `<div class="tile"><b>${x.p == null ? '–' : x.p + '%'}</b><span>${esc(name)}: ${x.n ? `${x.h}/${x.n}` : 'no recorded matches'}</span></div>`;
-  return `<div class="card stack evpair" data-evpair><p class="small" style="margin:0"><b>Matchup research</b> (each team's own matches; not head-to-head)</p>
-    <div class="tiles evtiles">${t(card.title + (card.pair.labelA ? ' ' + card.pair.labelA : ''), a)}${t(card.pair.label || card.pair.title, b)}<div class="tile"><b data-evcomb>${comb == null ? '–' : comb + '%'}</b><span>Combined Historical Matchup % (average of the two; a matchup score, not a probability)</span></div></div></div>`;
-}
-/** The EV block for a card and the odds text the visitor typed. */
-function evBlock(card, st, sport, oddsText) {
-  const e = cardEstimate(card, st, sport), od = parseAnyOdds(oddsText);
-  const sideName = card.def.binary ? (e.side === 'over' ? 'Yes' : 'No') : card.def.hcp ? `${e.side === 'over' ? 'Cover' : 'Fail'} ${st.line}` : `${e.side === 'over' ? 'Over' : 'Under'} ${st.line}`;
-  const research = pairResearch(card, st);
-  if (!e.ok && e.kind === 'nodata') return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="nodata"><b>No Historical Data</b><span>${esc(e.reason)}: PropLab's source has not recorded this statistic for these matches (never counted as 0). No probability, fair odds or EV.</span></div>`;
-  if (!e.ok && e.kind === 'handoff') return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="handoff"><b>Software Problem</b><span>The research did not reach Value correctly (${esc(e.reason)}). This is a PropLab fault, not missing data: please report it. No EV is shown.</span></div>`;
-  if (!e.ok) return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="nomodel"><b>Insufficient Evidence for a Probability</b><span>The historical research on the card is real, but PropLab cannot estimate a fair probability here: ${esc(e.reason)}. No fair odds or EV rather than a misleading figure.</span></div>`;
-  const imp = od.dec ? 1 / od.dec : null;
-  const ev = od.dec ? evPct(e.win, od.dec, e.push) : null, lo = od.dec ? evPct(e.lo, od.dec, e.push) : null, hi = od.dec ? evPct(e.hi, od.dec, e.push) : null;
-  const cls = ev == null ? 'ev-wait' : ev > 0 ? 'ev-pos' : ev < 0 ? 'ev-neg' : 'ev-zero';
-  const fair = e.win > 0 ? (1 - e.push) / e.win : null;
-  const status = !e.cb ? '<b>Uncalibrated:</b> the calibration file could not be loaded, so this is the raw estimate.' : e.cb.passed ? `Experimental estimate, calibrated on earlier seasons and checked on the ${esc(String(e.cb.test_label || e.cb.test_season))} season (it beat a 50 / 50 guess and the last-10 hit rate there).` : '<b>Experimental and not validated</b> for this sport: treat it with extra caution.';
-  return `${research}<div class="evbig ${cls}" data-ev="${ev == null ? '' : ev}" data-evkind="model" role="status">${ev == null ? '<b>Enter the odds</b><span>Type the bookmaker\'s price for this side to see the EV.</span>' : `<b>${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b><span>Expected return per £1 staked: ${ev >= 0 ? '+' : '−'}£${Math.abs(ev / 100).toFixed(2)} · range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the estimate's uncertainty${lo < 0 && hi > 0 ? ' (it crosses 0: no clear edge)' : ''}</span>`}</div>
-    <div class="tiles evtiles"><div class="tile"><b data-evp>${pct(e.win)}</b><span>Estimated probability (${esc(sideName)})${e.push > 0.0005 ? `, push ${pct(e.push)}` : ''}</span></div>
-      <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds${od.dec ? ` (decimal ${od.dec})` : ''}</span></div>
-      <div class="tile"><b>${fair ? fair.toFixed(2) : '–'}</b><span>Fair odds (estimate)</span></div>
-      <div class="tile"><b>${e.n}</b><span>Games behind it (effective ${e.nEff}; recent games count more)</span></div></div>
-    ${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : od.dec ? `<p class="xs muted" style="margin:0">Read as ${esc(od.kind)} odds → decimal ${od.dec}. Entered by you; PropLab has no bookmaker odds.</p>` : ''}
-    <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
-}
-
-return { loadCalib, calibFor, sportKey, historyOf, cardEstimate, evBlock };
-})();
 __m['pricecheck'] = (() => {
 // Compare Price (redesign, 21 Oct 2026). Tapping Compare Price on any result card carries that exact card (sport, fixture, player or team,
 // market, side, line, games used) to the sport's Value page, where the visitor types the odds they can see at a bookmaker.
@@ -7028,6 +7308,8 @@ const { nfl, teamName } = __m['nfl-data'];
 const { model, loadModel, loadBacktest, loadForward, lineProbs, marketInfo, parseAnyOdds, explain, CONF_TEXT, probMargin, minOdds } = __m['nfl-model'];
 const { $, esc, fmtKick } = __m['util'];
 const { infoTag } = __m['info'];
+const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { STAKING_HTML } = __m['valueev'];
 
 const EV_NOTICE = `<section class="ainotice" role="note"><h2>AI Model — Experimental Testing</h2><p>PropLab's AI predictions, confidence ratings and expected value (EV) calculations are currently in testing. Results may be inaccurate and will change as the model is developed and evaluated. These estimates are not guaranteed outcomes and should not be relied upon as the sole basis for betting decisions.</p></section>`;
 const AI = `<span class="aichip">${infoTag('experimental', 'Experimental AI', { cls: 'ai' })}</span>`;
@@ -7199,6 +7481,9 @@ async function viewNflEv(root, r) {
         <div class="tile"><b>${od.dec ? od.dec : '–'}</b><span>Offered odds</span></div>
         <div class="tile"><b class="${verdict ? 'ev-' + verdict[1] : ''}">${evp != null ? `${evp > 0 ? '+' : ''}${evp}%` : '–'}</b><span>${infoTag('evx', 'Estimated EV', { cls: 'neutral' })}</span></div>
         <div class="tile"><b>${evp != null ? `${evp >= 0 ? '+' : '−'}£${Math.abs(evp / 100).toFixed(2)}` : '–'}</b><span>Expected return per £1</span></div></div>
+      ${(() => { // Recommended Units (owner request 27 Oct): the same 1/8 Kelly function as every Value page, from the model probability
+        const ku = od.dec ? kellyUnits(pw, od.exact ?? od.dec, push) : null, er = od.dec ? (pw * (od.exact ?? od.dec) + push - 1) * 100 : null;
+        return `<div class="evunits${ku && er > 0 && ku.units > 0 ? ' pos' : ''}" data-evunits="${ku ? (er > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">Recommended Units:</span> <b>${!od.dec ? 'Enter the odds' : !ku ? 'Units unavailable' : er <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>${STAKING_HTML}<span class="xs muted">${esc(KELLY_NOTE)} This market's model passed its out-of-sample tests, but PropLab has no bookmaker odds history, so this staking has not been proven to make money. ${esc(CAP_NOTE)}</span></div>`; })()}
       ${verdict ? `<div class="evverdict ev-${verdict[1]}"><b>${verdict[0]}</b> <span class="small">EV range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the probability's margin.</span></div>` : '<p class="small muted" style="margin:0">Type the bookmaker\'s odds to see the implied chance and EV.</p>'}
       ${(() => { const t = (() => { try { const v = Number(localStorage.getItem('proplab.nfl.targetEv.v1') ?? 5); return Number.isFinite(v) && v >= 0 ? v : 5; } catch { return 5; } })(); const a0 = minOdds(pw, 0, push), aT = minOdds(pw, t / 100, push);
         return a0 ? `<div class="small minodds"><b>Minimum odds to look for</b> (model probability ${pct(pw)}${push ? `, push ${pct(push)}` : ''}): positive EV at <b>${a0.dec}</b> (${esc(a0.frac)}, ${esc(a0.amer)}) or better; +${t}% EV at <b>${aT.dec}</b> (${esc(aT.frac)}, ${esc(aT.amer)}) or better. <span class="xs muted">Rounded so the stated EV is reached. A price to look for, not a price PropLab has seen at any bookmaker.</span></div>` : ''; })()}
@@ -7812,6 +8097,7 @@ const { hitRate, parseOdds } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
+const { nameMatches, psearchHtml } = __m['psearch'];
 const { sampleKey, $, koLocal, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, koUK, fmtDay } = __m['util'];
 const { getMinGames, setMinGames, MIN_LO, MIN_HI, usAdapter } = __m['v-hiwi'];
 const { prefs } = __m['shared'];
@@ -7824,7 +8110,7 @@ const { nflLoading } = __m['v-nfl'];
 // Milestone 4 (owner request): market first, then position CHECKBOXES limited to the positions that market supports (Select all / Clear all),
 // fixture checkboxes in kick-off order (games that have kicked off stay until their final score), Today's Games (UK date), Minimum Games
 // Played (shared with Hiwi's Section, default 10), and the sort options used in Hiwi.
-const ui = { lines: new Map(), pop: false, market: '__all', groups: null, team: '', games: new Set(), untick: new Set(), today: false, gOpen: false, side: 'over', line: null, last: 10, types: 'R', min: 0, order: 'hi', sort: { key: null, dir: null } };
+const ui = { find: '', lines: new Map(), pop: false, market: '__all', groups: null, team: '', games: new Set(), untick: new Set(), today: false, gOpen: false, side: 'over', line: null, last: 10, types: 'R', min: 0, order: 'hi', sort: { key: null, dir: null } };
 const SAMPLES = [[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
 const POS = { qb: 'QB', rb: 'RB', wr: 'WR', te: 'TE', k: 'K', def: 'Defence' };
 const ORDERS = [...RANK_ORDERS, ['market', 'By Market / Play (by game)']];
@@ -7850,7 +8136,7 @@ async function viewNflFinder(root) {
     const tbc = list.filter(g => !g.ko_utc); const nSel = selGames().length;
     const gRow = g => { const stt = usStatus(g, 'nfl', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     const haveSnaps = (nfl.meta?.sources || []).some(x => /snap/.test(x.used_for || ''));
-    ctl.innerHTML = `${globalSideHtml('nfgside')}<div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${ui.market === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${PLAYER_MKTS().map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
+    ctl.innerHTML = `${globalSideHtml('nfgside')}${psearchHtml('fpfind', ui.find)}<div class="field"><label for="mk">Market</label><select class="in" id="mk"><option value="__all" ${ui.market === '__all' ? 'selected' : ''}>All markets (every player and market)</option>${PLAYER_MKTS().map(x => `<option value="${x.key}" ${x.key === m.key ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><p class="xs muted mdesc">${esc(m.desc)}</p></div>
       <div class="field"><label>Positions</label><div class="hgrid nposgrid" id="npos">${sup.map(g => `<label class="hcheck"><input type="checkbox" data-pos value="${g}" ${gs.includes(g) ? 'checked' : ''}><span>${POS[g]}</span></label>`).join('')}</div>
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:6px"><button type="button" class="chip" data-posall>Select all</button><button type="button" class="chip" data-posnone>Clear all</button></div>
         <p class="xs muted" style="margin:4px 0 0">Only positions with ${esc(m.label.toLowerCase())} statistics are offered.</p></div>
@@ -7878,7 +8164,8 @@ async function viewNflFinder(root) {
     const games = selGames(); const gTeams = games.length ? new Set(games.flatMap(g => [g.home, g.away])) : null;
     const minG = Math.min(getMinGames(), nflSeasonGames() || getMinGames()), hidden = [], subjects = []; // capped at the games played so far this season
     for (const p of nfl.players) {
-      if (!gs.includes(p.group) || !p.current || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.pop && !p.notable)) continue;
+      // temporary player search (owner request 27 Oct): replaces the position ticks and Popular only while text is typed (the market still decides which positions apply)
+      if (!(ui.find ? supportedGroups().includes(p.group) && nameMatches(ui.find, p.name) : gs.includes(p.group) && !(ui.pop && !p.notable)) || !p.current || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team))) continue;
       const rows = (bys.get(p.group).get(p.id) || []).filter(r => r.type === 'R'); // the same games as the result cards: regular season
       const eligible = rows.filter(r => r.season === season).length; // games he played this season
       if (eligible < minG) { if (eligible > 0) hidden.push({ p, n: eligible }); continue; }
@@ -7906,7 +8193,7 @@ async function viewNflFinder(root) {
     drawCtl(); draw();
   });
   ctl.addEventListener('click', e => { const gs = e.target.closest('[data-gside]'); if (gs) { setGlobalSide(gs.dataset.gside); ui.side = gs.dataset.gside; drawCtl(); draw(); } });
-  ctl.addEventListener('change', e => { const t = e.target; ui.shown = 100;
+  ctl.addEventListener('change', e => { const t = e.target; if (t.id === 'fpfind') return; ui.shown = 100;
     if (t.id === 'fxout') { setExcludeOut(t.checked); draw(); return; }
     if (t.id === 'mk') { ui.market = t.value; const sup = supportedGroups(); const keep = sup.filter(g => ui.groups && ui.groups.has(g)); ui.groups = new Set(keep.length ? keep : sup); ui.sort = { key: null, dir: null }; }
     else if (t.matches('[data-pos]')) { const s2 = new Set(groups()); t.checked ? s2.add(t.value) : s2.delete(t.value); ui.groups = s2; }
@@ -7916,7 +8203,10 @@ async function viewNflFinder(root) {
     else if (t.id === 'nflsnapon') setNflSnap(t.checked, getNflSnap().val); else if (t.id === 'nflsnapval') setNflSnap(true, parseInt(t.value, 10));
     else if (t.id === 'tm') ui.team = t.value; else if (t.id === 'nord') ui.order = t.value; else return;
     drawCtl(); draw(); });
+  let psT = null;
+  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
   ctl.addEventListener('input', e => {
+    if (e.target.id === 'fpfind') { ui.find = e.target.value; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); return; }
     if (e.target.id === 'nmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) e.target.value = MIN_HI; draw(); } }
   });
   drawCtl(); draw();
@@ -8246,6 +8536,8 @@ const { viewNbaValue, usValuePage } = __m['v-nba-value'];
 const { carryPrice } = __m['pricecheck'];
 const { resetUclScope } = __m['v-hiwi'];
 const { wireInfo } = __m['info'];
+// hypo.js registers the hypothetical-odds box on every card when it is loaded
+const { HYPO_RULE } = __m['hypo'];
 const { startUpdateChecks, checkForUpdates, currentBuild } = __m['update'];
 
 const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'American Football', emoji: '🏈' }, nba: { label: 'Basketball (NBA)', emoji: '🏀' } };
