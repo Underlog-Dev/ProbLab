@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="111b8773e36c">
+<meta name="proplab-build" content="3e7d53fc1375">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -511,6 +511,14 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 .pssug li{padding:10px 12px;min-height:44px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;cursor:pointer;overflow-wrap:anywhere}.pssug li[aria-selected="true"],.pssug li:hover{background:var(--s2)}.pssug .psnone{cursor:default}
 .livectl .seg button{min-width:48px}.lclockin,.lstats{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.lclockin .in,.lstats .in{width:88px;font-size:16px}.lstats label{display:flex;flex-direction:column;gap:2px}.livectl input[type=range]{width:100%}
 .pcmode{margin:8px 0}
+.hww{margin:6px 0;border:1px solid var(--line);border-radius:10px;padding:4px 10px}.hww summary{cursor:pointer;min-height:32px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.hwwin{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}.hwwin select{max-width:100%}.hwwin .seg button{min-width:0}
+.hypo .hyown{display:flex;flex-direction:column;gap:3px;border-top:1px dashed var(--line);padding-top:5px;margin-top:2px}.hypo .hyownl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700;font-size:12px}
+.hypo .hyownin{width:7.5em;max-width:100%;font:inherit;font-size:16px;font-weight:700;padding:3px 6px;border:1px solid var(--accent);border-radius:8px;background:var(--s1);color:var(--text)}
+.hypo .hyown-pos{color:var(--hit)}.hypo .hyown-neg{color:var(--miss)}
+.tile.tunits{grid-column:span 2;display:flex;flex-direction:column;justify-content:center;border:2px solid transparent}.tile.tunits b{font-size:18px;overflow-wrap:anywhere}
+.tile.tunits.pos{border-color:var(--hit)}.tile.tunits.pos b{color:var(--hit)}.tile.tunits.neg{border-color:var(--miss)}.tile.tunits.neg b{color:var(--miss)}
+.kinfo{margin:0 0 10px;font-size:13px;line-height:1.45}.kinfo summary{cursor:pointer;font-weight:700}.kinfo p{margin:6px 0 0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -2829,6 +2837,17 @@ const cmpLine = (def, line) => (def.binary ? 0.5 : def.hcp ? -line : line);
 const signed = v => (typeof v === 'number' && v > 0 ? '+' + v : String(v).replace('-', '−'));
 /** Bar label under a bar: opponent (gold = playoff game, teal = Play-In), minutes when the card shows them. */
 const oppCls = r => (r.raw && r.raw.type === 'P' ? ' po' : r.raw && r.raw.type === 'PI' ? ' pi' : '');
+/** "Playing with / without" a teammate (NBA / NFL player cards): a small drop-down; the teammate list loads when it is first opened. */
+function wwHtml(card, st) {
+  const L = card.ww.list, mate = L && st.wwId ? L.find(m => String(m.id) === String(st.wwId)) : null, mode = mate ? (st.wwMode || 'without') : 'all', k = card.wwCounts;
+  const head = mate && mode !== 'all' ? `: <b>${mode === 'with' ? 'with' : 'without'} ${esc(mate.name)}</b>` : '';
+  return `<details class="hww" data-h-wwbox ${st.wwOpen ? 'open' : ''}><summary class="xs">Playing with / without a teammate${head}</summary>
+    ${!L ? '<p class="xs muted" style="margin:6px 0 0">Loading teammates…</p>' : !L.length ? '<p class="xs muted" style="margin:6px 0 0">No current teammates with recorded games.</p>' : `<div class="hwwin">
+      <select class="in hpersel" data-h-wwid aria-label="Teammate"><option value="">Choose a teammate…</option>${L.map(m => `<option value="${esc(m.id)}" ${mate && mate.id === m.id ? 'selected' : ''}>${esc(m.name)}${m.pos ? ` (${esc(m.pos)})` : ''}${m.notable ? ' ★' : ''}</option>`).join('')}</select>
+      <div class="seg" role="group" aria-label="With or without">${[['all', 'All games'], ['with', 'With'], ['without', 'Without']].map(([v, l]) => `<button type="button" data-h-wwm="${v}" class="${mode === v ? 'on' : ''}" aria-pressed="${mode === v}" ${!mate && v !== 'all' ? 'disabled' : ''}>${l}</button>`).join('')}</div>
+      ${mate && k ? `<p class="xs muted" style="margin:0" data-h-wwn>${esc((k.basis || 'In this card\'s period').replace(/^./, c => c.toUpperCase()))}: <b>${k.with}</b> game${k.with === 1 ? '' : 's'} with ${esc(mate.name)}, <b>${k.without}</b> without him${k.without < 5 ? ' (a small sample: treat with care)' : ''}. Research only: the model estimate still uses all his games.</p>` : '<p class="xs muted" style="margin:0">Choose a teammate to split this card\'s games by whether he played.</p>'}</div>`}
+  </details>`;
+}
 /** Functions run after every card paint (registered by hypo.js; kept as a hook so this module has no import cycle). */
 const paintHooks = [];
 function cardHtml(card, st) {
@@ -2847,6 +2866,7 @@ function cardHtml(card, st) {
     ${card.minCtl ? `<div class="hminm" data-unit="${esc(card.minCtl.unit || '')}"><label class="xs"><span>${esc(card.minCtl.label || 'Minimum minutes')}${card.minCtl.global != null ? ` <span class="muted">(filter: ${card.minCtl.global}${card.minCtl.unit || ''}+${st.minMin !== undefined && st.minMin !== card.minCtl.global ? ', this card overrides it' : ''})</span>` : ''}</span> <b data-h-minv>${(st.minMin ?? card.minCtl.global) ? `${st.minMin ?? card.minCtl.global}${card.minCtl.unit || ''}+` : 'Off (all games)'}</b></label>
       <input type="range" data-h-minm min="0" max="${card.minCtl.max || 44}" step="1" value="${st.minMin ?? card.minCtl.global ?? 0}" aria-label="${esc(card.minCtl.label || 'Minimum minutes')} (0 = off)"></div>` : ''}
     ${card.lineNote ? `<p class="xs hlinenote">${card.lineNote}</p>` : ''}
+    ${card.ww ? wwHtml(card, st) : ''}
     ${card.persp ? `<div class="hpersp"><span class="xs muted">Whose ${esc(d.label.toLowerCase())}:</span><div class="seg" role="group" aria-label="Whose figures">${card.persp.map(([v, l]) => `<button type="button" data-h-persp="${v}" class="${pv === v ? 'on' : ''}" aria-pressed="${pv === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
     ${card.scopes ? `<div class="hpersp hscopesel"><span class="xs muted">Matches used:</span><div class="seg" role="group" aria-label="Matches used on this card">${card.scopes.map(([v, l]) => `<button type="button" data-h-scope="${v}" class="${card.sc === v ? 'on' : ''}" aria-pressed="${card.sc === v}">${esc(l)}</button>`).join('')}</div></div>
       <p class="xs muted hscnote" data-h-scnote>${card.eligNote(card.sc)}${card.scopeViews[card.sc].below ? ' · <b>no match this season with this figure</b>: shown because you chose this view on the card' : ''}</p>` : ''}
@@ -2959,6 +2979,7 @@ function wireHCards(root, reg, onDetail, onCommit = () => {}) {
   root.addEventListener('change', ev => { const t = ev.target; const [c, e] = get(t); if (!e) return;
     if (t.matches('[data-h-minm]') && e.card.rebuild) { e.st.minMin = Number(t.value); rebuildCard(c, e); return; }
     if (t.matches('[data-h-venue]')) { e.st.venue = t.value; const y = scrollY; rebuildCard(c, e); if (Math.abs(scrollY - y) > 1) scrollTo(0, y); return; }
+    if (t.matches('[data-h-wwid]')) { e.st.wwId = t.value || null; if (e.st.wwId && (!e.st.wwMode || e.st.wwMode === 'all')) e.st.wwMode = 'without'; if (!e.st.wwId) e.st.wwMode = 'all'; e.st.wwOpen = true; rebuildCard(c, e); return; }
     if (t.matches('[data-h-per]')) { e.st.per = t.value; const y = scrollY; rebuildCard(c, e); if (Math.abs(scrollY - y) > 1) scrollTo(0, y); return; }
     if (t.matches('[data-h-num]')) t.value = e.st.line;
     if (t.matches('[data-h-num],[data-h-range]')) root._h.onCommit(c.dataset.cid); });
@@ -2977,6 +2998,9 @@ function wireHCards(root, reg, onDetail, onCommit = () => {}) {
     const tb = t.closest('[data-h-tab]');
     if (tb && e.card.rebuild) { e.st.view = tb.dataset.hTab; rebuildCard(c, e); return; } // Recent Form / Vs Opponent: same market, line and side
     const sg = t.closest('[data-h-seg]'); if (sg && e.card.rebuild) { e.st[sg.dataset.hSeg] = sg.dataset.v; rebuildCard(c, e); return; }
+    const wm = t.closest('[data-h-wwm]'); if (wm && e.card.rebuild) { e.st.wwMode = wm.dataset.hWwm; e.st.wwOpen = true; rebuildCard(c, e); return; }
+    const ws = t.closest('[data-h-wwbox] > summary'); if (ws && e.card.ww) { const cid = c.dataset.cid; setTimeout(() => { const box = ws.parentElement; e.st.wwOpen = box.open;
+      if (box.open && !e.card.ww.list) e.card.ww.load().then(list => { e.card.ww.list = list; const cur = root.querySelector(`.hcard[data-cid="${CSS.escape(cid)}"]`); if (cur) rebuildCard(cur, e); }); }, 0); return; }
     const sd = t.closest('[data-h-side]'); if (sd) { e.st.side = sd.dataset.hSide; e.st.userSide = true; paintHCard(c, e.card, e.st); root._h.onCommit(c.dataset.cid); return; }
     const sp = t.closest('[data-h-step]'); if (sp) { setLine(c, e, clampLine(e.card.def, half(e.st.line + Number(sp.dataset.hStep)))); root._h.onCommit(c.dataset.cid, 'step'); return; }
     const pr = t.closest('[data-h-price]'); if (pr) { root.dispatchEvent(new CustomEvent('hprice', { bubbles: true, detail: { cid: c.dataset.cid, card: e.card, st: e.st } })); return; }
@@ -3069,6 +3093,41 @@ function shortTeam(name) { const k = normTeam(name); if (SHORT[k]) return SHORT[
 
 return { fbSearchTerms, nflSearchTerms, aliasScore, rankTeams, shortTeam };
 })();
+__m['teammates'] = (() => {
+// "Playing with / without" a teammate on NBA and NFL player cards (owner request 28 Oct 2026). Research only: the bars, hit rate and
+// average follow the split; PropLab's model estimate keeps using all his games until a teammate adjustment has been validated.
+// A game counts as WITH a teammate when that teammate played for the same team in that game, and WITHOUT him when the teammate was on
+// the same team at the time (between his first and last game for that team in that season) but did not play. Games before he joined or
+// after he left are in neither group, so a trade never looks like an absence.
+const playedRow = (sport, r) => (sport === 'nba' ? !r.dnp && (r.min == null || r.min > 0) : true);
+const seasonOf = r => r.season ?? Number(String(r.date || '').slice(0, 4));
+
+/** Current teammates of p with their game records: [{ id, name, pos, notable, played: Map(game -> team), spans: Map(season|team -> [first, last]) }]. */
+async function loadTeammates(sport, A, p) {
+  const mates = A.d.players.filter(q => q.current && q.team === p.team && q.id !== p.id && (sport === 'nba' ? q.logs_file : q.group));
+  const out = await Promise.all(mates.map(async q => {
+    let rows = []; try { rows = (await A.playerRowsOf(q)) || []; } catch { rows = []; }
+    const played = new Map(), spans = new Map();
+    for (const r of rows) {
+      const k = `${seasonOf(r)}|${r.team}`, sp = spans.get(k); if (!sp) spans.set(k, [r.date, r.date]); else { if (r.date < sp[0]) sp[0] = r.date; if (r.date > sp[1]) sp[1] = r.date; }
+      if (playedRow(sport, r)) played.set(String(r.game), r.team);
+    }
+    // still on the team now: his current stint runs to today, so a current injury counts as "without" (not only gaps between his games)
+    const latest = Math.max(...rows.map(seasonOf).filter(Number.isFinite)); const cur = spans.get(`${latest}|${q.team}`); if (cur) cur[1] = '9999-12-31';
+    return { id: q.id, name: q.name, pos: q.pos || '', notable: !!q.notable, n: played.size, played, spans };
+  }));
+  return out.filter(m => m.spans.size).sort((a, b) => (b.notable - a.notable) || (b.n - a.n) || a.name.localeCompare(b.name));
+}
+/** 'with' | 'without' | null (not teammates at the time) for one of the player's games. */
+function classify(row, mate) {
+  const t = mate.played.get(String(row.game));
+  if (t != null && t === row.team) return 'with';
+  const sp = mate.spans.get(`${seasonOf(row)}|${row.team}`);
+  return sp && row.date >= sp[0] && row.date <= sp[1] ? 'without' : null;
+}
+
+return { loadTeammates, classify };
+})();
 __m['uscards'] = (() => {
 // One NBA / NFL player-prop result card, shared by Hiwi's Section, Finder and Plays (owner request 21 Oct: the same card everywhere).
 //  * Recent Form: the player's own games, newest first, whichever team he played for. NBA: a DNP is never a game; the Minimum Minutes
@@ -3081,6 +3140,7 @@ __m['uscards'] = (() => {
 const { esc, fmtLong } = __m['util'];
 const { nbaMinGlobal, nbaTypeOk, nflSnapGlobal } = __m['nbaprefs'];
 const { baselineLine } = __m['nba-markets'];
+const { loadTeammates, classify } = __m['teammates'];
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const monthYear = ymd => `${MON[Number(ymd.slice(5, 7)) - 1]} ${ymd.slice(0, 4)}`;
@@ -3125,28 +3185,34 @@ function buildUsPlayerCard(o) {
     minCtl: hasPart ? { global: glob(), max: isNba ? 44 : 100, label: isNba ? 'Minimum minutes' : 'Minimum snap share', unit: isNba ? '' : '%' } : null,
     baseLine: o.startLine != null ? o.startLine : base ? base.line : null,
     lineNote: `${o.startLine != null ? '' : base ? `Starting line ${base.line}: ${esc(base.text)}. An estimated research line, not a bookmaker line.` : ''}${nt ? ` <span class="warnline">Line may be less reliable following a team change.</span>` : ''}`.trim() || null };
+  card.ww = { load: () => loadTeammates(sport, A, p), list: null, sport }; // "Playing with / without" (NBA and NFL)
   card.perOk = true; card.perDefault = String(o.period());
   if (!o.noLink) card.playerHref = `#/${sport}/research/${encodeURIComponent(p.id)}`; // tap the name: every market for this player
   card.rebuild = s0 => {
     const minM = hasPart ? (s0.minMin ?? glob() ?? 0) : 0, view = s0.view || 'form', tf = s0.teamF || 'all';
+    const mate = s0.wwId && card.ww.list ? card.ww.list.find(m => String(m.id) === String(s0.wwId)) : null, wm = mate ? (s0.wwMode || 'without') : 'all';
+    const okWW = x => wm === 'all' || classify(x, mate) === wm;
+    const wwTxt = mate && wm !== 'all' ? ` · ${wm === 'with' ? 'with' : 'without'} ${mate.name}` : '';
+    const wwCount = pool0 => (mate ? { with: pool0.filter(x => classify(x, mate) === 'with').length, without: pool0.filter(x => classify(x, mate) === 'without').length } : null);
     const okMin = x => !minM || (x[pk] != null && x[pk] >= minM); // unknown minutes / snaps never meet a minimum
     const okTeam = x => tf === 'all' || (tf === 'cur' ? x.team === p.team : x.team !== p.team);
     const minTxt = minM ? (isNba ? ` with ${minM}+ minutes` : ` with ${minM}%+ of snaps`) : '';
     if (view === 'vs') {
-      const vs = opp ? raw.filter(x => !x.dnp && x.opp === opp && okMin(x) && okTeam(x)) : [];
+      const vs0 = opp ? raw.filter(x => !x.dnp && x.opp === opp && okMin(x) && okTeam(x)) : [], vs = vs0.filter(okWW); card.wwCounts = wwCount(vs0); if (card.wwCounts) card.wwCounts.basis = 'against this opponent';
       const dnps = opp ? raw.filter(x => x.dnp && x.opp === opp).length : 0;
       const first = vs.length ? vs[vs.length - 1].date : null;
       return { rows: usRows(vs, def, lab), m: vs.length, oppTeam: true, want: null,
-        period: opp ? `every game he played against ${A.teamName(opp)}${minTxt}${first ? ` since ${monthYear(first)}` : ''} (all seasons held, regular season and playoffs)` : 'no opponent',
+        period: opp ? `every game he played against ${A.teamName(opp)}${minTxt}${wwTxt}${first ? ` since ${monthYear(first)}` : ''} (all seasons held, regular season and playoffs)` : 'no opponent',
         note: opp ? `Vs Opponent: ${p.name}'s own ${def.label.toLowerCase()} in each game he played against ${A.teamName(opp)}, whichever team he was with (shown under the bar when it was not ${p.team}). ${vs.length} game${vs.length === 1 ? '' : 's'} found${dnps ? `; ${dnps} more he did not play are not counted` : ''}. Team results are never used.` : null,
         emptyTitle: 'No history', empty: opp ? `${p.name} has no recorded game against ${A.teamName(opp)}${minTxt} in PropLab's records (${isNba ? 'NBA seasons from 2020/21' : 'NFL seasons from 2021'}). Nothing is filled in.` : `${p.name}'s team has no upcoming game published, so there is no opponent to compare.` };
     }
-    const pool = form.filter(x => okMin(x) && okTeam(x));
     const per = s0.per ?? String(o.period()), all = per === 'all', want = per === 'season' || all ? null : Number(per);
+    const pool1 = form.filter(x => okMin(x) && okTeam(x)), pool = pool1.filter(okWW);
+    card.wwCounts = wwCount(want || all ? pool1 : pool1.filter(x => x.season === cs)); if (card.wwCounts) card.wwCounts.basis = want ? `in all his games held (the card shows the latest ${want})` : all ? 'in all his games held' : 'this season';
     const rows = want ? pool.slice(0, want) : all ? pool : pool.filter(x => x.season === cs);
     const short = want && rows.length < want ? ` Only ${rows.length} game${rows.length === 1 ? '' : 's'} qualif${rows.length === 1 ? 'ies' : 'y'}${minM ? (isNba ? ` (${minM}+ minutes)` : ` (${minM}%+ of snaps)`) : ''}${tf !== 'all' ? (tf === 'cur' ? ` with ${p.team}` : ' with previous teams') : ''} in every season PropLab holds, so ${rows.length} ${rows.length === 1 ? 'is' : 'are'} shown.` : '';
     return { rows: usRows(rows, def, lab), m: rows.length, oppTeam: true, want,
-      period: `${want ? `last ${want} games` : all ? 'every game PropLab holds (all seasons)' : o.periodText()}${minTxt}${tf === 'cur' ? ` with ${p.team}` : tf === 'prev' ? ' with previous teams' : ''}`,
+      period: `${want ? `last ${want} games` : all ? 'every game PropLab holds (all seasons)' : o.periodText()}${minTxt}${wwTxt}${tf === 'cur' ? ` with ${p.team}` : tf === 'prev' ? ' with previous teams' : ''}`,
       note: `Each bar: ${def.label} for ${p.name} in one game he played${minM ? `, only games with at least ${minM}${isNba ? ' minutes' : '% of snaps'} (fewer or unknown are skipped before the ${want ? `last ${want}` : all ? 'games' : 'season'} games are taken)` : ''}.${short}`,
       emptyTitle: 'No data', empty: `No ${minM ? `game with ${minM}${isNba ? '+ minutes' : '%+ of snaps'}` : 'completed game with this statistic'} in the chosen period.` };
   };
@@ -3413,6 +3479,35 @@ const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.0
 
 return { KELLY_FRACTION, kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE };
 })();
+__m['teamadj'] = (() => {
+// Teammates OUT tonight (NBA pre-match estimate; owner request 28 Oct 2026). When key teammates (20+ minutes a game over their last 10
+// games) are listed OUT on the Official NBA Injury Report for this game, part of their production is redistributed to the players who
+// remain, in proportion to each player's own output:  delta = beta x missing / (team total - missing);  P(Over L) is then read from his
+// usual distribution at L / (1 + delta). beta = 0.3, fitted on 2023/24-2024/25 and checked on 2025/26 (owner-tools/nba-teammate-backtest.mjs):
+// it improved the Brier score on games with a key absence for points, assists and the points / assists combinations, and made no
+// difference for rebounds, threes, steals and blocks, so it is used only for the markets where it helped.
+const { nba, injuryStatus } = __m['nba-data'];
+const { isConfirmedOut } = __m['rank'];
+
+const TEAM_ADJ = { beta: 0.3, minMinutes: 20, markets: { pts: ['pts'], ast: ['ast'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'], pra: ['pts', 'reb', 'ast'] } };
+/** { delta, names } or null (not NBA, no game, nobody key OUT, or a market where it did not help). */
+function teammateAdjustment(card) {
+  const pl = card && card.detail && card.detail.player && card.detail.player.p, comps = card && card.def && TEAM_ADJ.markets[card.def.key];
+  if (!pl || !comps || !card.game || !nba.logs || !nba.players) return null;
+  const logs = nba.logs.get(pl.logs_file); if (!logs) return null;
+  const day = card.game.date || (card.game.ko_utc || '').slice(0, 10); let miss = 0, tot = 0; const names = [];
+  for (const q of nba.players) {
+    if (!q.current || q.team !== pl.team) continue;
+    const rows = (logs.get(q.id) || []).filter(r => !r.dnp && r.min > 0 && r.team === pl.team && (!day || r.date < day)).slice(0, 10); if (rows.length < 3) continue;
+    const avg = k => rows.reduce((t, r) => t + (Number(r[k]) || 0), 0) / rows.length, v = comps.reduce((t, c) => t + avg(c), 0); tot += v;
+    if (q.id !== pl.id && avg('min') >= TEAM_ADJ.minMinutes) { let inj = null; try { inj = injuryStatus(q, card.game); } catch { inj = null; } if (isConfirmedOut(inj)) { miss += v; names.push(q.name); } }
+  }
+  if (!names.length || tot - miss <= 0) return null;
+  return { delta: (TEAM_ADJ.beta * miss) / (tot - miss), names };
+}
+
+return { TEAM_ADJ, teammateAdjustment };
+})();
 __m['valueev'] = (() => {
 // Value page EV (owner request 21 Oct, late: "bring back the large green / red EV figure"). For any play carried to Value (all three
 // sports, every market the research cards support) it shows PropLab's ESTIMATED probability (prob.js: recency-weighted, smoothed,
@@ -3424,6 +3519,7 @@ const { fmtOdds, oddsFmt, parseIn } = __m['oddsfmt'];
 const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
 const { cmpLine } = __m['hiwicard'];
 const { isConfirmedOut } = __m['rank'];
+const { teammateAdjustment } = __m['teamadj'];
 const { esc } = __m['util'];
 
 let calib = null, calibP = null;
@@ -3441,7 +3537,7 @@ const pct = p => `${(p * 100).toFixed(1)}%`;
 /** Every qualifying game behind the card (newest first), with the card's own filters (minutes, game types, scope, team split), NOT cut to
  *  its Games used: the estimate uses the whole record, weighting recent games more. */
 function historyOf(card, st) {
-  const s = { ...st, per: 'all', view: 'form' };
+  const s = { ...st, per: 'all', view: 'form', wwId: null, wwMode: 'all' }; // with / without a teammate is research only: the estimate uses all his games
   const rows = card.rebuild ? card.rebuild(s).rows : card.perFn ? card.perFn(s).rows : card.rows;
   return (rows || []).slice().reverse(); // card rows are oldest -> newest
 }
@@ -3460,9 +3556,11 @@ function cardEstimate(card, st, sport) {
   const shown = (card.rows || []).filter(r => r.value !== null && r.value !== undefined).length;
   if (!vals.length) return shown ? { ok: false, kind: 'handoff', reason: `the card shows ${shown} game${shown === 1 ? '' : 's'}, but none reached the estimate` } : { ok: false, kind: 'nodata', reason: `no recorded ${card.def.label.toLowerCase()} figures for ${card.title}` };
   const h = venueOf(card), vv = key === 'football' && h !== null && cb && cb.venue_experiment && cb.venue_experiment.helps ? hist.filter(r => r.raw && r.raw.home === h).map(r => r.value) : null;
-  const e = estimate(vals, line, side, { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
+  const adj = sport === 'nba' && !def.binary ? teammateAdjustment(card) : null; // key teammates OUT tonight (validated markets only)
+  const e = estimate(vals, adj ? line / (1 + adj.delta) : line, side, { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
     venueValues: vv, venueCalib: vv && cb.venue_experiment ? { a: cb.venue_experiment.a, b: cb.venue_experiment.b } : null });
   if (!e.ok) return { ...e, kind: 'nomodel', key, cb, side, line };
+  if (adj) e.adj = adj;
   // Best Combined % (27 Oct): the probability uses the SELECTED team's own record only, the series the calibration was checked on. The
   // opponent's complementary record is shown as research beside it; an average of two teams' estimates has never been validated, and the
   // Combined Historical % is a matchup score, not a probability, so neither is turned into EV.
@@ -3481,7 +3579,17 @@ function pairResearch(card, st) {
 }
 /** The staking method, always visible on the EV page (owner request 27 Oct: no settings menu needed to see it). */
 const STAKING_HTML = '<span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>';
-const UNITS_NA = `<div class="evunits na" data-evunits=""><span class="evul">Theoretical Units:</span> <b>Units unavailable</b>${STAKING_HTML}<span class="xs muted">No defensible probability for this line, so no stake is calculated (never an invented figure).</span></div>`;
+const UNITS_NA = `<div class="tiles evtiles">${'<div class="tile tunits" data-evunits=""><b>Units unavailable</b><span class="evul">Theoretical Units</span><span>No defensible probability for this line, so no stake (never an invented figure)</span></div>'}</div>`;
+/** The units tile (in the empty space of the tiles grid; green = worth backing, red = do not bet). ku: undefined = no odds yet; null = invalid. */
+function unitsTile(ku, evRaw, label = 'Theoretical Units') {
+  const st = ku === undefined ? '' : !ku ? '' : evRaw > 0 && ku.units > 0 ? ' pos' : ' neg';
+  const txt = ku === undefined ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : unitsText(ku);
+  return `<div class="tile tunits${st}" data-evunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><b>${esc(txt)}</b><span class="evul">${esc(label)}</span><span>${st === ' pos' ? 'Worth backing at this price (1/8 Kelly)' : st === ' neg' ? 'No positive estimated EV' : '1/8 Kelly, max 2.00u'}</span></div>`;
+}
+/** Brief Kelly explanation, shown once at the top of the Compare Price / EV pages (owner, 28 Oct afternoon). */
+const KELLY_INFO = `<details class="kinfo card" data-kinfo><summary>Staking method: 1/8th Kelly (12.5% Kelly) · 1 unit = 1% of bankroll | Maximum 2.00u per play <span class="xs muted">(how it works)</span></summary>
+  <p>Kelly sizes a stake from the edge: the bigger the gap between PropLab's estimated chance and the chance the odds imply, the bigger the stake; the longer the odds, the smaller the stake for the same edge. PropLab uses one eighth of the full Kelly stake, because the probabilities are estimates and full Kelly is far too aggressive when they are a little off. 1 unit = 1% of your bankroll; the most shown for any play is 2.00u (the uncapped figure is in brackets). No positive EV = 0.00u: do not bet. The 2.00u limit is per play, not per day, so several plays together can add up.</p>
+  <p>These are <b>theoretical units</b>: the probabilities passed calibration checks on past seasons, but PropLab has no bookmaker odds history, so this staking has not been proven to make money.</p></details>`;
 /** The EV block for a card and the odds text the visitor typed. */
 function evBlock(card, st, sport, oddsText) {
   const e = cardEstimate(card, st, sport), od = oddsText && typeof oddsText === 'object' ? oddsText : parseIn(oddsText); // odds in the visitor's chosen format (oddsfmt.js)
@@ -3503,15 +3611,14 @@ function evBlock(card, st, sport, oddsText) {
     <div class="tiles evtiles"><div class="tile"><b data-evp>${pct(e.win)}</b><span>Estimated probability (${esc(sideName)})${e.push > 0.0005 ? `, push ${pct(e.push)}` : ''}</span></div>
       <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds${od.dec ? ` (${esc(fmtOdds(od.exact ?? od.dec))}${oddsFmt() === 'dec' ? '' : `, decimal ${od.dec}`})` : ''}</span></div>
       <div class="tile"><b data-evfair>${fair ? esc(fmtOdds(fair)) : '–'}</b><span>Fair odds (estimate)</span></div>
-      <div class="tile"><b>${e.n}</b><span>Games behind it (effective ${e.nEff}; recent games count more)</span></div></div>
-    <div class="evunits${ku && ku.units > 0 && evRaw > 0 ? ' pos' : ''}" data-evunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">${esc(unitsLabel)}:</span> <b>${!D ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>
-      ${STAKING_HTML}
-      <span class="xs muted">${esc(KELLY_NOTE)}${validated ? ' The probability is calibrated and was checked on a past season, but PropLab has no bookmaker odds history, so this staking has not been proven to make money.' : ' The probability behind it has not been validated for this market, so treat this as a theoretical figure only.'} ${esc(CAP_NOTE)}</span></div>
+      <div class="tile"><b>${e.n}</b><span>Games behind it (effective ${e.nEff}; recent games count more)</span></div>
+      ${unitsTile(D ? ku : undefined, evRaw, unitsLabel)}</div>
     ${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : od.dec ? `<p class="xs muted" style="margin:0">Read as ${esc(od.kind)} odds → decimal ${od.dec}. Entered by you; PropLab has no bookmaker odds.</p>` : ''}
+    ${e.adj ? `<p class="small" style="margin:0" data-evadj><b>Teammates OUT tonight:</b> ${esc(e.adj.names.join(', '))} (Official NBA Injury Report). His usual figures are scaled up by ${(e.adj.delta * 100).toFixed(1)}% for the production they leave behind, an adjustment checked on 2025/26 games (it improved accuracy for this market).</p>` : ''}
     <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
 }
 
-return { loadCalib, calibFor, sportKey, historyOf, cardEstimate, STAKING_HTML, evBlock };
+return { loadCalib, calibFor, sportKey, historyOf, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
 })();
 __m['hypo'] = (() => {
 // Hypothetical odds & units box on every eligible play card (owner request 27 Oct 2026, late evening).
@@ -3531,7 +3638,7 @@ const { cardEstimate, loadCalib } = __m['valueev'];
 const { kellyUnits } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
-const { fmtOdds } = __m['oddsfmt'];
+const { fmtOdds, oddsFmt, fmtName, PLACEHOLDER, readInput, convertInput } = __m['oddsfmt'];
 
 const HYPO_UPLIFT = 0.05;
 const HYPO_RULE = 'Example odds = PropLab\'s fair odds (1 ÷ estimated probability) + 5%, rounded down to 2 decimals. A modest illustration above fair, never a bookmaker price.';
@@ -3567,7 +3674,22 @@ function hypoModel(card, st, sport = sportNow()) {
   return { ok: true, key, e, fair: h.fair, dflt: h.odds, validated: !!(e.cb && e.cb.passed && e.calibrated), pair: !!card.pair };
 }
 const TITLE = 'Hypothetical price — not a live bookmaker offer';
-/** Inner HTML of the box (read-only). */
+// ---- "Your live odds" (owner, 28 Oct afternoon): type the price you can see while scrolling; EV and units show at once on the card.
+// Kept per card, line and side (a new line starts empty); typed in the chosen odds format; the example above stays read-only.
+const owns = new Map(); // key -> { text, exact, auto }
+function ownOut(m) {
+  const st = owns.get(m.key); if (!st || !String(st.text).trim()) return { html: '<span class="xs muted">Type the odds you can see to get the EV and units.</span>', ev: '', u: '' };
+  const r = readInput(st); if (!r.dec) return { html: `<span class="hybad">${esc(r.error || 'Not a valid price')}</span>`, ev: '', u: '' };
+  const c = hypoCalc(m.e.win, m.e.push || 0, r.exact); if (!c) return { html: '<span class="hybad">Not a valid price</span>', ev: '', u: '' };
+  return c.positive
+    ? { html: `<b class="hyown-pos">${esc(signedPct(c.ev))} EV · Back ${c.ku.units.toFixed(2)}u${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b>`, ev: c.ev.toFixed(4), u: c.ku.units.toFixed(2) }
+    : { html: `<b class="hyown-neg">${esc(signedPct(c.ev))} EV · Do not bet (0.00u)</b>`, ev: c.ev.toFixed(4), u: '0.00' };
+}
+function ownHtml(m) {
+  const st = owns.get(m.key), o = ownOut(m), f = oddsFmt();
+  return `<span class="hyown"><label class="hyownl">Your live odds <input class="hyownin" data-hy-own type="text" inputmode="${f === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(st ? st.text : '')}" aria-label="Odds you can see (${esc(fmtName(f))})"></label><span class="hyownout" data-hy-ownout data-ev="${o.ev}" data-u="${o.u}">${o.html}</span></span>`;
+}
+/** Inner HTML of the box (the example is read-only; "Your live odds" below it can be typed in). */
 function inner(m) {
   if (!m.ok) return `<span class="hyt">${TITLE}</span><b class="hyna">Estimate unavailable</b><span class="hys">${esc(m.reason)}. Insufficient data is not the same as negative EV.</span>`;
   const c = hypoCalc(m.e.win, m.e.push || 0, m.dflt), ex = esc(fmtOdds(m.dflt));
@@ -3576,7 +3698,8 @@ function inner(m) {
   return `<span class="hyt">${TITLE}</span>
     <span class="hyodd">Fair odds: <b data-hy-fair>${esc(fmtOdds(m.fair))}</b> · Example target odds: <b data-hy-ex>${ex}</b></span>
     <span class="hym">${main}</span>
-    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''} · example = fair odds + 5% · ${m.validated ? '1/8 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
+    ${ownHtml(m)}
+    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''}${m.e.adj ? ` · adjusted for ${esc(m.e.adj.names.join(', '))} out` : ''} · example = fair odds + 5% · ${m.validated ? '1/8 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
 }
 function state(m) {
   if (!m.ok) return { cls: 'na', ev: '', u: '' };
@@ -3650,10 +3773,21 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') 
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 }
 
-// ---- the box is read-only; a tap on it never opens the card's graph or pop-up. A change of odds format redraws every box (same figures).
+// ---- a tap on the box never opens the card's graph or pop-up; typing in "Your live odds" updates only that line of the box (keeps focus).
+// A change of odds format converts the typed prices (exact price kept) and redraws every box with the same figures.
 if (typeof document !== 'undefined') {
   document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('[data-hypo]')) ev.stopPropagation(); }, true);
-  document.addEventListener('oddsfmt', () => { for (const b of document.querySelectorAll('[data-hypo]')) if (b._hm) fillHypo(b, b._hm); });
+  document.addEventListener('input', ev => {
+    const inp = ev.target.closest && ev.target.closest('[data-hy-own]'); if (!inp) return; ev.stopPropagation();
+    const box = inp.closest('[data-hypo]'); if (!box || !box._hm || !box._hm.ok) return; const m = box._hm;
+    const st = owns.get(m.key) || { text: '', exact: null, auto: null }; st.text = inp.value; owns.set(m.key, st);
+    const o = ownOut(m), out = box.querySelector('[data-hy-ownout]'); if (out) { out.innerHTML = o.html; out.dataset.ev = o.ev; out.dataset.u = o.u; }
+  }, true);
+  document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('[data-hy-own]')) ev.stopPropagation(); }, true);
+  document.addEventListener('keydown', ev => { if (ev.target.closest && ev.target.closest('[data-hy-own]')) { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); } }, true);
+  document.addEventListener('oddsfmt', e => {
+    for (const [k, st] of owns) owns.set(k, convertInput(st, e.detail.from, e.detail.to));
+    for (const b of document.querySelectorAll('[data-hypo]')) if (b._hm) fillHypo(b, b._hm); });
 }
 
 return { HYPO_UPLIFT, HYPO_RULE, hypoOdds, hypoCalc, hypoModel, fillHypo, hypoSlot, queueHypo, setHypoSource, hypoFor };
@@ -7452,7 +7586,8 @@ __m['nbalivevw'] = (() => {
 // The probability comes from nbalive.js with the parameters and validation in data-nba-live-model.json; live EV, fair odds and units are
 // shown only for a market and stage of the game that passed the out-of-sample check with the inputs given. Never the pre-match figure.
 const { LIVE_MARKETS, COMPONENT_LABEL, pregame, liveProb, remainingMin } = __m['nbalive'];
-const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { kellyUnits } = __m['kelly'];
+const { unitsTile } = __m['valueev'];
 const { fmtOdds } = __m['oddsfmt'];
 const { esc } = __m['util'];
 
@@ -7528,10 +7663,8 @@ function liveResultHtml(card, st, L, od) {
     <div class="tiles evtiles"><div class="tile"><b data-livep>${(lp.win * 100).toFixed(1)}%</b><span>Live estimated probability (${esc(sideName)})</span></div>
       <div class="tile"><b data-livefair>${fair ? esc(fmtOdds(fair)) : '–'}</b><span>Live fair odds</span></div>
       <div class="tile"><b>${lp.R.toFixed(1)}</b><span>Projected further minutes for him (of ${T.toFixed(1)} left)</span></div>
-      <div class="tile"><b>${lp.mean.toFixed(1)}</b><span>Projected final ${esc(card.def.label.toLowerCase())} (he has ${have})</span></div></div>
-    <div class="evunits${ku && evRaw > 0 && ku.units > 0 ? ' pos' : ''}" data-liveunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}"><span class="evul">Theoretical Units:</span> <b>${!D ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>
-      <span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>
-      <span class="xs muted">${esc(KELLY_NOTE)} ${esc(CAP_NOTE)}</span></div>
+      <div class="tile"><b>${lp.mean.toFixed(1)}</b><span>Projected final ${esc(card.def.label.toLowerCase())} (he has ${have})</span></div>
+      ${unitsTile(D ? ku : undefined, evRaw)}</div>
     <p class="xs muted" style="margin:0"><b>Experimental live model</b>, checked on every game of ${esc(model.test_season)}${full ? '' : ' (minutes, status, fouls and margin not used: enter his minutes played and On Court / Bench to include them)'} (fit on ${esc(model.fit_seasons.join(' and '))}): for ${esc(card.def.label.toLowerCase())} in ${STAGE_LABEL[stage]} its probabilities were within the calibration limits${full ? ' with his minutes and status entered' : ''}. Calibrated is not the same as profitable: PropLab has no live odds history. Everything here is typed by you; PropLab has no live feed.</p>`;
 }
 /** His earlier games for the pre-game inputs: played games only, before this game, within 400 days (as in the backtest). */
@@ -7582,6 +7715,7 @@ const { wireBarTaps } = __m['barinfo'];
 const { sideCounts } = __m['rank'];
 const { evBlock, loadCalib } = __m['valueev'];
 const { readInput, convertInput, oddsFmt, fmtName, PLACEHOLDER } = __m['oddsfmt'];
+const { KELLY_INFO } = __m['valueev'];
 const { liveSupported, liveControlsHtml, liveResultHtml, wireLive, newLive, loadLiveModel } = __m['nbalivevw'];
 
 let carried = null;
@@ -7601,7 +7735,7 @@ function carryHtml(sport, r, token = null) {
   const want = token || (r && r.q && r.q.get('carry'));
   if (!want) return '';
   if (!carried || carried.sport !== sport || String(carried.at) !== want) return '<div class="banner info pcmiss"><b>The card was not carried over</b> (the page was reloaded or opened from a link). Go back to the card and tap <b>Compare Price</b> again.</div>';
-  return `<section class="pcbox" id="pcbox"><h2 style="margin:0 0 4px">Compare a price for this card</h2>
+  return `<section class="pcbox" id="pcbox"><h2 style="margin:0 0 4px">Compare a price for this card</h2>${KELLY_INFO}
     ${carried.card.game ? `<p class="small" style="margin:0 0 4px"><b>Game:</b> ${esc(carried.card.game.away)} at ${esc(carried.card.game.home)}</p>` : ''}<p class="xs muted" style="margin:0 0 8px">The same card you tapped, with the same line, side and games. Change them here if your bookmaker's line is different.</p>
     <div id="pccard"></div>
     <div class="card stack pcodds"><div class="field"><label for="pcodds">Odds you can see for this side, <span data-pcfmt>${esc(fmtName())}</span> <span class="xs muted">(you type them: PropLab has no odds · format: "Odds shown as" at the bottom of the page)</span></label>
@@ -7715,7 +7849,7 @@ const { $, esc, fmtKick } = __m['util'];
 const { infoTag } = __m['info'];
 const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
 const { parseIn, fmtOdds, oddsFmt, fmtName, PLACEHOLDER, inputText } = __m['oddsfmt'];
-const { STAKING_HTML } = __m['valueev'];
+const { unitsTile, KELLY_INFO } = __m['valueev'];
 
 const EV_NOTICE = `<section class="ainotice" role="note"><h2>AI Model — Experimental Testing</h2><p>PropLab's AI predictions, confidence ratings and expected value (EV) calculations are currently in testing. Results may be inaccurate and will change as the model is developed and evaluated. These estimates are not guaranteed outcomes and should not be relied upon as the sole basis for betting decisions.</p></section>`;
 const AI = `<span class="aichip">${infoTag('experimental', 'Experimental AI', { cls: 'ai' })}</span>`;
@@ -7844,7 +7978,7 @@ async function viewNflEv(root, r) {
   if (q && q.get('carry') && ev.pid && !(byPlayer.get(ev.pid) || []).some(p => p.market === ev.market)) { ev.pid = null; ev.market = ''; } // a carried card the model does not cover: no wrong-market prefill
   const players = [...byPlayer.values()].map(ps => ps[0]).sort((a, b) => who(a).localeCompare(who(b)));
   const label = p => `${who(p)} (${p.position === 'TEAM' ? 'team' : p.position + ', ' + p.team})`;
-  root.innerHTML = `<h1>Value Research ${AI}</h1>${carryHtml('nfl', r)}${q && q.get('carry') ? `<p class="small" style="margin:8px 0">${ev.pid ? '<b>The experimental model also covers this player and market:</b> its probability and EV at your line are below (model estimate, not the card\'s hit rate).' : 'The experimental model does not cover this card, so only the comparison above is available.'}</p>` : ''}${EV_NOTICE}
+  root.innerHTML = `<h1>Value Research ${AI}</h1>${KELLY_INFO}${carryHtml('nfl', r)}${q && q.get('carry') ? `<p class="small" style="margin:8px 0">${ev.pid ? '<b>The experimental model also covers this player and market:</b> its probability and EV at your line are below (model estimate, not the card\'s hit rate).' : 'The experimental model does not cover this card, so only the comparison above is available.'}</p>` : ''}${EV_NOTICE}
     <section id="nfluv"></section>
     <h2 style="margin:16px 0 4px">Experimental model ${AI}</h2>
     <p class="muted small">For players the model covers, it gives its own probability and EV at exactly your line. Choose the player above (or tap Compare Price on a Model Pick), set the bookmaker's line and side, then type the odds you can see. PropLab has no odds of its own and saves nothing you type.</p>
@@ -7890,9 +8024,9 @@ async function viewNflEv(root, r) {
         <div class="tile"><b>${od.dec ? esc(fmtOdds(od.exact ?? od.dec)) : '–'}</b><span>Offered odds</span></div>
         <div class="tile"><b class="${verdict ? 'ev-' + verdict[1] : ''}">${evp != null ? `${evp > 0 ? '+' : ''}${evp}%` : '–'}</b><span>${infoTag('evx', 'Estimated EV', { cls: 'neutral' })}</span></div>
         <div class="tile"><b>${evp != null ? `${evp >= 0 ? '+' : '−'}£${Math.abs(evp / 100).toFixed(2)}` : '–'}</b><span>Expected return per £1</span></div></div>
-      ${(() => { // Recommended Units (owner request 27 Oct): the same 1/8 Kelly function as every Value page, from the model probability
-        const ku = od.dec ? kellyUnits(pw, od.exact ?? od.dec, push) : null, er = od.dec ? (pw * (od.exact ?? od.dec) + push - 1) * 100 : null;
-        return `<div class="evunits${ku && er > 0 && ku.units > 0 ? ' pos' : ''}" data-evunits="${ku ? (er > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">Theoretical Units:</span> <b>${!od.dec ? 'Enter the odds' : !ku ? 'Units unavailable' : er <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>${STAKING_HTML}<span class="xs muted">${esc(KELLY_NOTE)} This market's model passed its out-of-sample tests, but PropLab has no bookmaker odds history, so this staking has not been proven to make money. ${esc(CAP_NOTE)}</span></div>`; })()}
+      ${(() => { // units (owner request 27 Oct; tile 28 Oct): the same 1/8 Kelly function as every Value page, from the model probability
+        const ku = od.dec ? kellyUnits(pw, od.exact ?? od.dec, push) : undefined, er = od.dec ? (pw * (od.exact ?? od.dec) + push - 1) * 100 : null;
+        return `<div class="tiles evtiles">${unitsTile(ku, er)}</div>`; })()}
       ${verdict ? `<div class="evverdict ev-${verdict[1]}"><b>${verdict[0]}</b> <span class="small">EV range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the probability's margin.</span></div>` : '<p class="small muted" style="margin:0">Type the bookmaker\'s odds to see the implied chance and EV.</p>'}
       ${(() => { const t = (() => { try { const v = Number(localStorage.getItem('proplab.nfl.targetEv.v1') ?? 5); return Number.isFinite(v) && v >= 0 ? v : 5; } catch { return 5; } })(); const a0 = minOdds(pw, 0, push), aT = minOdds(pw, t / 100, push);
         return a0 ? `<div class="small minodds"><b>Minimum odds to look for</b> (model probability ${pct(pw)}${push ? `, push ${pct(push)}` : ''}): positive EV at <b>${a0.dec}</b> (${esc(a0.frac)}, ${esc(a0.amer)}) or better; +${t}% EV at <b>${aT.dec}</b> (${esc(aT.frac)}, ${esc(aT.amer)}) or better. <span class="xs muted">Rounded so the stated EV is reached. A price to look for, not a price PropLab has seen at any bookmaker.</span></div>` : ''; })()}
@@ -7937,7 +8071,7 @@ const { $, $$, esc, avg, sampleKey } = __m['util'];
 const { dataBanner, problemsBanner } = __m['shared'];
 const { EV_NOTICE } = __m['v-nfl-model'];
 const { carryHtml, wireCarry } = __m['pricecheck'];
-const { evBlock, loadCalib } = __m['valueev'];
+const { evBlock, loadCalib, KELLY_INFO } = __m['valueev'];
 const { parseIn, fmtOdds, oddsFmt, fmtName, PLACEHOLDER, inputText } = __m['oddsfmt'];
 
 const ui = { subject: null, market: null, side: 'over', line: null, last: 20, venue: '', odds: '', other: '', minutes: '' };
@@ -7998,7 +8132,7 @@ async function viewValue(root, r) {
     // subject's recorded games (recent ones weighted more), at this line and side. Insufficient evidence => no EV.
     { const def = { ...market, scope: subj.type === 'player' ? 'player' : 'team' }, rowsAll = all.filter(x => x.value !== null && x.value !== undefined).map(x => ({ date: x.date, value: x.value, raw: x })).reverse();
       const card = { def, title: subj.name, rows: rowsAll, tagCls: ui.venue || null };
-      h += `<div class="card stack" style="margin-top:12px"><h2 style="margin:0">Estimated probability and EV</h2>${evBlock(card, { line: ui.line, side: ui.side }, 'football', ui.odds)}`; }
+      h += `<div class="card stack" style="margin-top:12px"><h2 style="margin:0">Estimated probability and EV</h2>${KELLY_INFO}${evBlock(card, { line: ui.line, side: ui.side }, 'football', ui.odds)}`; }
     h += '</div>'; res.innerHTML = h;
   }
   const subjEl = $('#subj', root);
