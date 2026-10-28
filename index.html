@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="101b83c3c8ef">
+<meta name="proplab-build" content="111b8773e36c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -226,7 +226,7 @@ details.pgrp{border:1px solid var(--line);border-radius:12px;padding:8px 10px;ma
 .tzab{display:block;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.02em;line-height:1.1}
 .started{display:inline-block;font-size:11px;font-weight:700;line-height:1.15;color:var(--amber);background:rgba(245,184,61,.12);border:1px solid rgba(245,184,61,.45);border-radius:6px;padding:2px 5px;text-align:center;white-space:normal}
 .started small{display:block;font-weight:500;font-size:9.5px}
-.tzset{display:flex;align-items:center;gap:8px;justify-content:center;margin:8px 0 0;font-size:13px}
+.tzset{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;justify-content:center;margin:8px 0 0;font-size:13px}
 .tzset select{width:auto;min-width:0;padding:4px 8px;font-size:13px}
 .hiwiweek{margin:0 0 10px}.hiwiweek ul{margin:4px 0 0;padding-left:18px}.hiwiweek li{margin:1px 0}
 /* Hiwi search suggestions */
@@ -504,11 +504,13 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 .cbhy{margin-top:8px}.hytr td{border-top:0;padding-top:0}
 .hypo{border:1px solid var(--line);border-radius:10px;padding:6px 9px;background:var(--s2);font-size:12.5px;line-height:1.35;display:flex;flex-direction:column;gap:3px;min-width:0;max-width:100%;box-sizing:border-box}
 .hypo .hyt{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-.hypo .hym{overflow-wrap:anywhere}.hypo .hys{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
-.hypo .hyodds{width:4.2em;padding:1px 4px;font:inherit;font-size:16px;font-weight:800;border:1px dashed var(--accent);border-radius:6px;background:transparent;color:var(--text);text-align:center;vertical-align:baseline}
+.hypo .hym,.hypo .hyodd{overflow-wrap:anywhere}.hypo .hys{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
 .hypo.hy-pos .hyu,.hypo.hy-pos .hyev{color:var(--hit)}.hypo.hy-neg .hyno{color:var(--miss)}.hypo .hybad{color:var(--amber)}.hypo .hyna{font-size:13px}
-.hypo .linkbtn{background:none;border:0;color:var(--accent);padding:0;font:inherit;text-decoration:underline}
 .evstake{display:block;font-size:13px;line-height:1.4;margin:2px 0}
+.psbox{position:relative}.pssug{position:absolute;left:0;right:0;top:100%;z-index:60;margin:4px 0 0;padding:4px 0;list-style:none;background:var(--s1);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);max-height:min(320px,50vh);overflow-y:auto}
+.pssug li{padding:10px 12px;min-height:44px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;cursor:pointer;overflow-wrap:anywhere}.pssug li[aria-selected="true"],.pssug li:hover{background:var(--s2)}.pssug .psnone{cursor:default}
+.livectl .seg button{min-width:48px}.lclockin,.lstats{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.lclockin .in,.lstats .in{width:88px;font-size:16px}.lstats label{display:flex;flex-direction:column;gap:2px}.livectl input[type=range]{width:100%}
+.pcmode{margin:8px 0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -2615,7 +2617,49 @@ const psearchHtml = (id, value, label = 'Find a player (temporary)') => `<div cl
   <span class="xs muted" id="${id}-h">${value ? '<b>Search on:</b> showing the matching players only; your ticked players are unchanged and come back when you clear it.' : 'Shows one player\'s plays without changing the players you have ticked.'}</span></div>`;
 const SEARCH_MAX = 12; // at most this many matching players are researched at once (keeps typing fast)
 
-return { nameMatches, psearchHtml, SEARCH_MAX };
+// ---- autocomplete (owner request 28 Oct): suggestions appear under the field from the first letters typed; tapping one shows that
+// player's plays at once (by his player ID, so two players with the same name are never mixed up). Typing again goes back to name matching.
+/** opts: { candidates: () => [{ id, name, sub }], onPick(item), max } */
+function attachSuggest(root, inputId, opts) {
+  if (root[`_ps_${inputId}`]) { root[`_ps_${inputId}`].opts = opts; return; }
+  const S = root[`_ps_${inputId}`] = { opts, items: [], act: -1 };
+  const input = () => root.querySelector('#' + inputId);
+  const list = () => { const i = input(); if (!i) return null; let ul = i.parentElement.querySelector('.pssug');
+    if (!ul) { ul = document.createElement('ul'); ul.className = 'pssug'; ul.id = inputId + '-sug'; ul.setAttribute('role', 'listbox'); ul.hidden = true; i.parentElement.appendChild(ul);
+      i.setAttribute('role', 'combobox'); i.setAttribute('aria-autocomplete', 'list'); i.setAttribute('aria-controls', ul.id); i.setAttribute('aria-expanded', 'false'); }
+    return ul; };
+  const close = () => { const ul = list(); if (ul) { ul.hidden = true; ul.innerHTML = ''; } const i = input(); if (i) i.setAttribute('aria-expanded', 'false'); S.items = []; S.act = -1; };
+  const draw = () => {
+    const i = input(), ul = list(); if (!i || !ul) return; const q = i.value.trim();
+    if (!q || document.activeElement !== i) { close(); return; }
+    const all = S.opts.candidates() || [], hits = all.filter(p => nameMatches(q, p.name));
+    const nq = normName(q); hits.sort((a, b) => { const sa = normName(a.name).split(' ').some(w => w.startsWith(nq)) ? 0 : 1, sb = normName(b.name).split(' ').some(w => w.startsWith(nq)) ? 0 : 1; return sa - sb || a.name.localeCompare(b.name); });
+    S.items = hits.slice(0, S.opts.max || 8); S.act = -1;
+    const dup = new Map(); for (const p of S.items) dup.set(p.name, (dup.get(p.name) || 0) + 1);
+    ul.innerHTML = S.items.length ? S.items.map((p, k) => `<li role="option" id="${inputId}-o${k}" data-psid="${esc(p.id)}" aria-selected="false"><b>${esc(p.name)}</b>${p.sub ? ` <span class="xs muted">${esc(p.sub)}${dup.get(p.name) > 1 ? ' · ID ' + esc(p.id) : ''}</span>` : ''}</li>`).join('')
+      : `<li class="psnone xs muted" aria-disabled="true">No player of the selected games or teams matches "${esc(q)}"</li>`;
+    ul.hidden = false; i.setAttribute('aria-expanded', 'true');
+  };
+  const pick = it => { const i = input(); if (i) i.value = it.name; close(); S.opts.onPick(it); };
+  root.addEventListener('input', e => { if (e.target.id === inputId) draw(); });
+  root.addEventListener('focusin', e => { if (e.target.id === inputId) draw(); });
+  root.addEventListener('focusout', e => { if (e.target.id === inputId) setTimeout(() => { const i = input(); if (!i || document.activeElement !== i) close(); }, 150); });
+  // pointerdown (not click) so the choice lands before the field loses focus on iPhone
+  // pointerdown only keeps the field focused (so the list stays open on iPhone); the choice is made on the click itself
+  root.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.pssug')) e.preventDefault(); });
+  root.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('.pssug')) e.preventDefault(); });
+  root.addEventListener('click', e => { const li = e.target.closest && e.target.closest('.pssug li[data-psid]'); if (!li || !root.contains(li)) return; e.preventDefault(); e.stopPropagation(); const it = S.items.find(p => String(p.id) === li.dataset.psid); if (it) pick(it); });
+  root.addEventListener('keydown', e => {
+    if (e.target.id !== inputId || !S.items.length) { if (e.key === 'Escape') close(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); S.act = (S.act + (e.key === 'ArrowDown' ? 1 : -1) + S.items.length) % S.items.length;
+      list().querySelectorAll('li').forEach((li, k) => li.setAttribute('aria-selected', k === S.act)); input().setAttribute('aria-activedescendant', `${inputId}-o${S.act}`); }
+    else if (e.key === 'Enter' && S.act >= 0) { e.preventDefault(); pick(S.items[S.act]); }
+    else if (e.key === 'Escape') close();
+  });
+  S.close = close;
+}
+
+return { nameMatches, psearchHtml, SEARCH_MAX, attachSuggest };
 })();
 __m['nbaprefs'] = (() => {
 // NBA research settings shared by Hiwi, Finder and Plays, remembered on this device (owner request 21 Oct).
@@ -2812,7 +2856,7 @@ function cardHtml(card, st) {
     <div class="hctl"><div class="seg hsides" role="group" aria-label="${bin ? 'Outcome' : 'Over, Under or Both'}">${sides.map(([v, l]) => `<button type="button" data-h-side="${v}" class="${st.side === v ? 'on' : ''}" aria-pressed="${st.side === v}">${l}</button>`).join('')}</div>
       ${bin ? '' : `<div class="hline"><button type="button" class="hstep" data-h-step="-1" aria-label="Lower line">−</button><input type="range" data-h-range min="${sMin}" max="${sMax}" step="1" value="${st.line}" aria-label="Line for ${esc(d.label)}"><button type="button" class="hstep" data-h-step="1" aria-label="Raise line">+</button><input type="number" inputmode="decimal" class="in hnum" data-h-num step="0.5" value="${st.line}" aria-label="Type a line"></div>`}</div>
     <div class="hyrow"><div class="hyl"><div class="hstat" data-h-stat></div>
-    <p class="hsent" data-h-sent></p></div>${card.noPrice ? '' : '<aside class="hypo hy-wait" data-hypo aria-live="polite"><span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span></aside>'}</div>
+    <p class="hsent" data-h-sent></p></div>${card.noPrice ? '' : '<aside class="hypo hy-wait" data-hypo aria-live="polite"><span class="hyt">Hypothetical price — not a live bookmaker offer</span><span class="hys">Calculating…</span></aside>'}</div>
     <div class="hmeta xs muted">${n} ${unitW} · ${esc(card.h2h ? (card.cover || '') : card.period)} ${n ? infoTag(rel.k, rel.t, { n, cls: 'rel ' + rel.k }) : ''}${card.m > n ? ' ' + infoTag('limited', 'Limited data', { n, m: card.m, cls: 'warnt' }) : ''}${bin ? '' : ' ' + infoTag('research', 'Research line', { cls: 'neutral' })}${d.key.endsWith('cards') ? ' ' + infoTag('cards', 'How cards count', { cls: 'neutral' }) : ''}<span data-h-push></span></div>
     ${n ? `<div class="hbars-wrap"><div class="hbars${card.h2h || spansYears(card.rows) ? ' years' : ''}" data-h-bars>${barsHtml(card, card.rows, 0, !!card.h2h || spansYears(card.rows))}</div></div>
     ${po || pi || card.showMin ? `<p class="xs muted hlegend">${po ? '<span class="lgpo">Gold opponent</span> = playoff game' : ''}${po && pi ? ' · ' : ''}${pi ? '<span class="lgpi">Teal opponent</span> = Play-In game' : ''}${(po || pi) && card.showMin ? ' · ' : ''}${card.showMin ? (card.partUnit === '%' ? `Under each bar: ${esc(card.partLabel)} (nflverse snap counts)` : 'Under each bar: minutes played (DNPs are never counted)') : ''}</p>` : ''}
@@ -3268,147 +3312,84 @@ const evPct = (win, odds, push = 0) => Math.round((win * odds + push - 1) * 1000
 
 return { HALF_LIFE, normCdf, countCdf, weigh, smooth, empirical, estimate, evPct };
 })();
-__m['nfl-model'] = (() => {
-// Experimental NFL model data in the browser. The model itself is trained offline (owner-tools/nfl_model.py); the site only reads its
-// published output (data-nfl-model.json) and turns each prediction's distribution into a probability for ANY line the visitor sets.
-// A historical hit rate is never used as a model probability. Markets that failed the out-of-sample test are marked inactive.
-const model = { status: 'idle', data: null, backtest: null, log: null, byKey: new Map() };
-const RQ = Array.from({ length: 81 }, (_, i) => i / 80);
-const getFresh = async f => { const r = await fetch(`${f}?t=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); };
-async function loadModel(getJson = getFresh) {
-  if (model.status === 'ready' || model.status === 'loading') return model;
-  model.status = 'loading';
-  try {
-    model.data = await getJson('data-nfl-model.json', { fresh: true });
-    model.byKey = new Map(model.data.predictions.map(p => [`${p.player_id}|${p.market}`, p]));
-    model.status = 'ready';
-  } catch { model.status = 'missing'; }
-  return model;
+__m['oddsfmt'] = (() => {
+// Odds display format (owner request 28 Oct 2026): Decimal | Fractional | American, one shared choice for the whole site (footer, next to the
+// time zone). Only the DISPLAY changes: every calculation keeps the full-precision decimal price, so EV, fair odds and units never move
+// when the format changes. Fractions use the usual bookmaker ladder; a price with no exact ladder fraction is shown with "≈".
+const ODDS_FORMATS = [['dec', 'Decimal'], ['frac', 'Fractional'], ['amer', 'American']];
+const KEY = 'proplab.oddsfmt.v1';
+let mem = null;
+function oddsFmt() {
+  if (mem) return mem;
+  try { const v = localStorage.getItem(KEY); if (ODDS_FORMATS.some(f => f[0] === v)) return (mem = v); } catch { /* storage blocked: decimal for this visit */ }
+  return (mem = 'dec');
 }
-async function loadBacktest(getJson = getFresh) { if (!model.backtest) { try { model.backtest = await getJson('data-nfl-model-backtest.json', { fresh: true }); } catch { model.backtest = null; } } return model.backtest; }
-async function loadForward(getJson = getFresh) { if (!model.log) { try { model.log = await getJson('data-nfl-model-forward.json', { fresh: true }); } catch { model.log = null; } } return model.log; }
-
-// ---- distributions (same maths as owner-tools/nfl_model.py) ----
-function lgamma(x) { // Lanczos
-  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
-  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
-  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
-  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+function setOddsFmt(v) {
+  if (!ODDS_FORMATS.some(f => f[0] === v)) return; const old = oddsFmt(); mem = v;
+  try { localStorage.setItem(KEY, v); } catch { /* private mode: this visit only */ }
+  if (typeof document !== 'undefined' && old !== v) document.dispatchEvent(new CustomEvent('oddsfmt', { detail: { from: old, to: v } }));
 }
-function nbPmf(k, mu, alpha) {
-  if (k < 0) return 0;
-  if (alpha < 1e-6) return Math.exp(k * Math.log(mu) - mu - lgamma(k + 1));
-  const r = 1 / alpha, p = r / (r + mu);
-  return Math.exp(lgamma(k + r) - lgamma(r) - lgamma(k + 1) + r * Math.log(p) + k * Math.log(1 - p));
+const fmtName = (f = oddsFmt()) => (ODDS_FORMATS.find(x => x[0] === f) || ODDS_FORMATS[0])[1];
+// UK bookmaker ladder (fractional odds against)
+const LADDER = [[1, 100], [1, 66], [1, 50], [1, 40], [1, 33], [1, 25], [1, 20], [1, 16], [1, 14], [1, 12], [1, 11], [1, 10], [1, 9], [1, 8], [2, 15], [1, 7], [2, 13], [1, 6], [2, 11], [1, 5], [2, 9], [1, 4], [2, 7], [3, 10], [1, 3], [4, 11], [2, 5], [4, 9], [1, 2], [8, 15], [4, 7], [8, 13], [4, 6], [8, 11], [4, 5], [5, 6], [10, 11], [1, 1],
+  [21, 20], [11, 10], [6, 5], [5, 4], [11, 8], [6, 4], [13, 8], [7, 4], [15, 8], [2, 1], [85, 40], [9, 4], [5, 2], [11, 4], [3, 1], [10, 3], [7, 2], [4, 1], [9, 2], [5, 1], [11, 2], [6, 1], [13, 2], [7, 1], [15, 2], [8, 1], [17, 2], [9, 1], [10, 1], [11, 1], [12, 1], [14, 1], [16, 1], [18, 1], [20, 1],
+  [22, 1], [25, 1], [28, 1], [33, 1], [40, 1], [50, 1], [66, 1], [80, 1], [100, 1], [150, 1], [200, 1], [250, 1], [500, 1], [1000, 1]];
+/** { txt, exact } fraction for a decimal price: exact when the ladder fraction is the same price to two decimals. */
+function toFrac(dec) {
+  const v = dec - 1; let best = LADDER[0], bd = Infinity;
+  for (const f of LADDER) { const d = Math.abs(f[0] / f[1] - v); if (d < bd) { bd = d; best = f; } }
+  const exact = Math.abs((1 + best[0] / best[1]) - dec) < 0.005 || Math.round((1 + best[0] / best[1]) * 100) === Math.round(dec * 100);
+  return { txt: `${best[0]}/${best[1]}`, exact };
 }
-const nbCdf = (k, mu, a) => { let s = 0; for (let i = 0; i <= k; i++) s += nbPmf(i, mu, a); return Math.min(1, s); };
-// Same rule as numpy.interp (ties in the quantiles, e.g. many zero-yard games, resolve to the last equal point).
-const interp = (t, xs, ys) => {
-  const n = xs.length; if (t < xs[0]) return ys[0]; if (t >= xs[n - 1]) return ys[n - 1];
-  let lo = 0, hi = n - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
-  const x0 = xs[lo], x1 = xs[hi]; return x1 === x0 ? ys[lo] : ys[lo] + (ys[hi] - ys[lo]) * (t - x0) / (x1 - x0);
-};
-/** P(Y <= y) for a continuous-approximated whole-number outcome described by quantiles of actual/projection (ratio) or actual-projection (shift). */
-function cdfAt(y, mu, mk, pos) {
-  if (mk.dist === 'ratio') { const tab = (mk.ratio_by_pos && mk.ratio_by_pos[pos]) || mk.ratio; const b = tab.find(x => x.mu_max === null || mu <= x.mu_max); return interp(y / Math.max(mu, 1e-3), b.q, RQ); }
-  return interp(y - mu, mk.q, RQ); // 'shift' (team points)
+/** American odds for a decimal price (standard: +100 or more, or -100 or less). */
+function toAmer(dec) {
+  const a = dec >= 2 ? Math.round((dec - 1) * 100) : -Math.round(100 / (dec - 1));
+  const back = a > 0 ? 1 + a / 100 : 1 + 100 / -a;
+  return { txt: a > 0 ? `+${a}` : String(a), exact: Math.abs(back - dec) < 0.005 };
 }
-/** Calibration map learned from earlier out-of-sample seasons: p' = sigmoid(a logit p + b). */
-function calibrate(p, cal) { if (!cal) return p; const q = Math.min(0.995, Math.max(0.005, p)); return 1 / (1 + Math.exp(-(cal.a * Math.log(q / (1 - q)) + cal.b))); }
-/** Raw (uncalibrated) P(Y > L). */
-function rawOver(L, mu, mk, pos) {
-  if (mk.dist === 'nb') return 1 - nbCdf(Math.floor(L), mu, mk.alpha || 0);
-  return 1 - cdfAt(Math.floor(L) + 0.5, mu, mk, pos);
+/** Display a decimal price in the chosen format. Approximate fractions / American figures get "≈". */
+function fmtOdds(dec, f = oddsFmt()) {
+  if (!Number.isFinite(dec) || dec <= 1) return '–';
+  if (f === 'frac') { const r = toFrac(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
+  if (f === 'amer') { const r = toAmer(dec); return r.exact ? r.txt : `≈ ${r.txt}`; }
+  return dec.toFixed(2);
 }
-/** Probabilities for a line: { over, under, push } (push only for whole-number lines). */
-function lineProbs(pred, line, mk) {
-  const mu = pred.proj, L = Number(line);
-  if (!Number.isFinite(L) || !mk || !(mu >= 0)) return null;
-  const whole = Math.abs(L - Math.round(L)) < 1e-9, cal = mk.calibration, pos = pred.position;
-  const over = calibrate(rawOver(L, mu, mk, pos), cal);
-  if (!whole) return { over: clamp(over), under: clamp(1 - over), push: 0 };
-  // whole-number line: Under = not (Y >= L) = 1 - P(Y > L - 0.5); the rest is the push
-  const under = 1 - calibrate(rawOver(L - 0.5, mu, mk, pos), cal);
-  return { over: clamp(over), under: clamp(under), push: clamp(1 - over - under) };
-}
-const clamp = p => Math.max(0, Math.min(1, p));
-const marketInfo = key => model.data?.markets?.[key] || null;
-/** The prediction for a player and market; with gameId, the one for that game (a player can have predictions for two weeks). */
-const predictionFor = (playerId, market, gameId) => (gameId ? (model.data?.predictions || []).find(p => p.player_id === playerId && p.market === market && p.game_id === gameId) || null : model.byKey.get(`${playerId}|${market}`) || null);
-
-// ---- uncertainty and EV classification ----
-/** Margin of error for the probability, from what the backtest measured for this kind of prediction (calibration gap and the 95% interval
- *  of the observed rate). Wider when the cell had few cases. */
-function probMargin(pred) {
-  const c = pred?.cell; if (!c || !c.n) return 0.12;
-  const [lo, hi] = c.observed_ci95 || [null, null];
-  const half = lo != null && hi != null ? (hi - lo) / 2 : 0.1;
-  return Math.min(0.2, Math.max(0.02, Math.abs(c.observed_side_rate - c.predicted_side_prob) + half / 2));
-}
-/** EV % = (p x decimal odds - 1) x 100. Classified with the probability's margin: an edge only counts when it survives the margin. */
-function evVerdict(p, odds, pred) {
-  if (!(odds > 1) || p == null) return null;
-  if (!pred || pred.confidence === 'Insufficient Data' || !pred.active_market) return { label: 'Insufficient Data', cls: 'insufficient' };
-  const m = probMargin(pred), ev = (p * odds - 1) * 100, lo = ((p - m) * odds - 1) * 100, hi = ((p + m) * odds - 1) * 100;
-  const label = lo > 0 ? 'Positive Estimated EV' : hi < 0 ? 'Negative Estimated EV' : 'Uncertain – No Clear Edge';
-  return { ev: Math.round(ev * 10) / 10, lo: Math.round(lo * 10) / 10, hi: Math.round(hi * 10) / 10, margin: m, label, cls: lo > 0 ? 'pos' : hi < 0 ? 'neg' : 'unc' };
-}
-/** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
-function parseAnyOdds(t) {
-  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
-  if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, exact: 2, kind: 'fractional' };
-  // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
-  if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
-    const a = Number(s);
-    if (a >= 100) return { dec: Math.round((1 + a / 100) * 1000) / 1000, exact: 1 + a / 100, kind: 'American' };
-    if (a <= -100) return { dec: Math.round((1 + 100 / -a) * 1000) / 1000, exact: 1 + 100 / -a, kind: 'American' };
-    return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
+/** The text to put in an input for a price (no "≈"; the page keeps the exact price while the text is unchanged). */
+function inputText(dec, f = oddsFmt()) { if (!Number.isFinite(dec) || dec <= 1) return ''; return f === 'frac' ? toFrac(dec).txt : f === 'amer' ? toAmer(dec).txt : String(Math.round(dec * 1000) / 1000); }
+const PLACEHOLDER = { dec: 'e.g. 2.10', frac: 'e.g. 11/10 or evens', amer: 'e.g. +110 or -150' };
+const KIND = { dec: 'decimal', frac: 'fractional', amer: 'American' };
+/** Parse odds typed in the chosen format. Returns { dec (3 dp, display), exact (full precision), kind } or { dec:null, error }. */
+function parseIn(text, f = oddsFmt()) {
+  const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
+  const ok = x => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind: KIND[f] } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
+  const hint = s.includes('/') || s === 'evens' || s === 'evs' ? 'fractional' : /^[+-]\d/.test(s) || (/^\d{3,}$/.test(s) && f === 'dec') ? 'American' : null;
+  if (f === 'frac') {
+    if (s === 'evens' || s === 'evs' || s === 'even') return ok(2);
+    const m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s); if (!m) return { dec: null, error: `Fractional odds look like 11/10 or 4/6${hint && hint !== 'fractional' ? ` (that looks like ${hint} odds: change "Odds shown as" at the bottom of the page)` : ''}` };
+    const a = Number(m[1]), b = Number(m[2]); if (!(a > 0 && b > 0)) return { dec: null, error: 'Both numbers of a fraction must be above 0' }; return ok(1 + a / b);
   }
-  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a > 0 && b > 0 ? { dec: Math.round((a / b + 1) * 1000) / 1000, exact: a / b + 1, kind: 'fractional' } : { dec: null, error: 'Fractional odds look like 6/4' }; }
-  const d = Number(s); return Number.isFinite(d) && d > 1 ? { dec: d, exact: d, kind: 'decimal' } : { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 1.91)' };
+  if (f === 'amer') {
+    const m = /^([+-]?)(\d+(?:\.\d+)?)$/.exec(s); if (!m) return { dec: null, error: `American odds look like +110 or -150${hint === 'fractional' ? ' (that looks like fractional odds: change "Odds shown as" at the bottom of the page)' : ''}` };
+    const a = Number(m[2]) * (m[1] === '-' ? -1 : 1); if (Math.abs(a) < 100) return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
+    return ok(a > 0 ? 1 + a / 100 : 1 + 100 / -a);
+  }
+  if (!/^\d+(\.\d+)?$/.test(s)) return { dec: null, error: `Decimal odds look like 2.10${hint ? ` (that looks like ${hint} odds: change "Odds shown as" at the bottom of the page)` : ''}` };
+  const d = Number(s); if (d <= 1) return { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 2.10)' }; return ok(d);
+}
+/**
+ * An odds input that survives format changes without drift: st = { text, exact, auto } where `auto` is the text PropLab wrote when
+ * converting. While the visitor has not edited it, the exact price is used; once they type, their text is parsed.
+ */
+function readInput(st, f = oddsFmt()) {
+  if (st.exact != null && st.auto != null && st.text === st.auto) return { dec: Math.round(st.exact * 1000) / 1000, exact: st.exact, kind: KIND[f], converted: true };
+  return parseIn(st.text, f);
+}
+function convertInput(st, from, to) {
+  const r = readInput(st, from); if (!r.dec) return st;
+  const t = inputText(r.exact, to); return { text: t, exact: r.exact, auto: t };
 }
 
-// ---- plain-English reasons, built only from the model's own inputs ----
-const LBL = { usage: { pass_yds: 'pass attempts', att: 'pass attempts', cmp: 'pass attempts', pass_td: 'pass attempts', int: 'pass attempts', rush_yds: 'carries', car: 'carries', rec_yds: 'targets', rec: 'targets', tgt: 'targets', rec_td: 'targets' } };
-function explain(pred, side, line) {
-  const f = pred.factors || {}, out = [];
-  if (pred.market === 'pts') { out.push(`The betting market's point spread and total imply about ${f.implied_team_points} points for ${pred.team}. The model starts from that number, so it adds little beyond the market.`); return out; }
-  if (f.season_avg != null) out.push(`${pred.player} has averaged ${f.season_avg} ${pred.label.toLowerCase()} this season${f.last5_avg != null ? ` (${f.last5_avg} over the last five games)` : ''}.`);
-  if (f.usage != null && LBL.usage[pred.market]) out.push(`Recent workload: about ${f.usage} ${LBL.usage[pred.market]} per game, weighted towards the latest games.`);
-  if (f.opp_factor != null) { const pc = Math.round((f.opp_factor - 1) * 100); out.push(Math.abs(pc) < 4 ? `${pred.opp}'s defence has allowed about a league-average amount to this position.` : `${pred.opp}'s defence has allowed ${Math.abs(pc)}% ${pc > 0 ? 'more' : 'less'} than average to this position in its recent games (shrunk towards average).`); }
-  if (f.implied_team_points != null) out.push(`The betting market implies about ${f.implied_team_points} points for ${pred.team}${pred.home ? ' at home' : ' away'}.`);
-  out.push(`Projection: ${pred.proj}. For ${side === 'under' ? 'Under' : 'Over'} ${line}, the model's distribution gives the probability shown.`);
-  if (pred.injury_status) out.push(`Injury report: ${pred.injury_status}.`);
-  return out;
-}
-const CONF_TEXT = {
-  'Very High': 'In testing on past seasons, predictions like this (same market, similar sample and edge) came true at about the predicted rate, with many cases.',
-  High: 'Predictions like this were reliable in testing, with a good number of cases.', Medium: 'Predictions like this were roughly right in testing, but with fewer cases or a slightly wider error.',
-  Low: 'Predictions like this were only loosely right in testing.', 'Very Low': 'Predictions like this were poorly calibrated in testing.',
-  'Insufficient Data': 'Not enough earlier games, or this market did not pass the model\'s tests, so no reliable probability can be given.',
-};
-
-// ---- minimum odds ("price to look for") ----
-// Minimum decimal odds for an EV target: (1 + target - P(push)) / P(win). Rounded UP so the stated target is really reached at the shown price.
-const FRAC_DEN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 25, 30, 40, 50, 100];
-function minOdds(pWin, target = 0, pPush = 0) {
-  if (!(pWin > 0)) return null;
-  const req = (1 + target - (pPush || 0)) / pWin; if (!Number.isFinite(req) || req <= 1) return req > 0 && req <= 1 ? { dec: 1.01, frac: '1/100', amer: '-10000', exact: req } : null;
-  const dec = Math.ceil(req * 100 - 1e-9) / 100;                               // up to the next 0.01
-  let best = null; for (const d of FRAC_DEN) { const n = Math.ceil((req - 1) * d - 1e-9); const v = 1 + n / d; if (!best || v < best.v - 1e-12) best = { n, d, v }; } // smallest common fraction >= req
-  const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d);
-  const amer = req >= 2 ? `+${Math.ceil((req - 1) * 100 - 1e-9)}` : `-${Math.floor(100 / (req - 1) + 1e-9)}`;   // American: the shown price is never worse than required
-  return { dec, frac: best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`, amer, exact: req };
-}
-/** Odds shown in the visitor's chosen format. dec: decimal odds. */
-function fmtOdds(dec, fmt = 'decimal') {
-  if (!(dec > 1)) return '–';
-  if (fmt === 'american') return dec >= 2 ? `+${Math.round((dec - 1) * 100)}` : `-${Math.round(100 / (dec - 1))}`;
-  if (fmt === 'fractional') { let best = null; for (const d of FRAC_DEN) { const n = Math.round((dec - 1) * d); if (n < 1) continue; const e = Math.abs(1 + n / d - dec); if (!best || e < best.e - 1e-9) best = { n, d, e }; } const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d); return best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`; }
-  return String(Math.round(dec * 100) / 100);
-}
-
-return { model, loadModel, loadBacktest, loadForward, nbPmf, calibrate, lineProbs, marketInfo, predictionFor, probMargin, evVerdict, parseAnyOdds, explain, CONF_TEXT, minOdds, fmtOdds };
+return { ODDS_FORMATS, oddsFmt, setOddsFmt, fmtName, toFrac, toAmer, fmtOdds, inputText, PLACEHOLDER, parseIn, readInput, convertInput };
 })();
 __m['kelly'] = (() => {
 // Recommended Units on the EV page (owner request 27 Oct 2026, evening): 1/8 Kelly, 1 unit = 1% of bankroll, capped at 2.00 units per selection.
@@ -3439,7 +3420,7 @@ __m['valueev'] = (() => {
 // Rules: a historical hit rate is never used as the probability; with too little evidence the page says "Insufficient evidence" and shows
 // no EV; the estimate is labelled experimental; nothing here is a bookmaker price PropLab has seen.
 const { estimate, evPct } = __m['prob'];
-const { parseAnyOdds } = __m['nfl-model'];
+const { fmtOdds, oddsFmt, parseIn } = __m['oddsfmt'];
 const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
 const { cmpLine } = __m['hiwicard'];
 const { isConfirmedOut } = __m['rank'];
@@ -3500,10 +3481,10 @@ function pairResearch(card, st) {
 }
 /** The staking method, always visible on the EV page (owner request 27 Oct: no settings menu needed to see it). */
 const STAKING_HTML = '<span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>';
-const UNITS_NA = `<div class="evunits na" data-evunits=""><span class="evul">Recommended Units:</span> <b>Units unavailable</b>${STAKING_HTML}<span class="xs muted">No defensible probability for this line, so no stake is calculated (never an invented figure).</span></div>`;
+const UNITS_NA = `<div class="evunits na" data-evunits=""><span class="evul">Theoretical Units:</span> <b>Units unavailable</b>${STAKING_HTML}<span class="xs muted">No defensible probability for this line, so no stake is calculated (never an invented figure).</span></div>`;
 /** The EV block for a card and the odds text the visitor typed. */
 function evBlock(card, st, sport, oddsText) {
-  const e = cardEstimate(card, st, sport), od = parseAnyOdds(oddsText);
+  const e = cardEstimate(card, st, sport), od = oddsText && typeof oddsText === 'object' ? oddsText : parseIn(oddsText); // odds in the visitor's chosen format (oddsfmt.js)
   const sideName = card.def.binary ? (e.side === 'over' ? 'Yes' : 'No') : card.def.hcp ? `${e.side === 'over' ? 'Cover' : 'Fail'} ${st.line}` : `${e.side === 'over' ? 'Over' : 'Under'} ${st.line}`;
   const research = pairResearch(card, st);
   if (!e.ok && e.kind === 'nodata') return `${research}<div class="evbig ev-none" data-ev="none" data-evkind="nodata"><b>No Historical Data</b><span>${esc(e.reason)}: PropLab's source has not recorded this statistic for these matches (never counted as 0). No probability, fair odds or EV.</span></div>${UNITS_NA}`;
@@ -3514,14 +3495,14 @@ function evBlock(card, st, sport, oddsText) {
   const ev = D ? evPct(e.win, D, e.push) : null, lo = D ? evPct(e.lo, D, e.push) : null, hi = D ? evPct(e.hi, D, e.push) : null;
   // Recommended Units (1/8 Kelly, 1u = 1% of bankroll, max 2.00u per selection) from the SAME probability as the EV, never the hit rate
   const ku = D ? kellyUnits(e.win, D, e.push) : null, validated = !!(e.cb && e.cb.passed && e.calibrated);
-  const unitsLabel = validated ? 'Recommended Units' : 'Theoretical Units — Unvalidated Estimate', evRaw = D ? (e.win * D + e.push - 1) * 100 : null;
+  const unitsLabel = validated ? 'Theoretical Units' : 'Theoretical Units — Unvalidated Estimate', evRaw = D ? (e.win * D + e.push - 1) * 100 : null;
   const cls = ev == null ? 'ev-wait' : ev > 0 ? 'ev-pos' : ev < 0 ? 'ev-neg' : 'ev-zero';
   const fair = e.win > 0 ? (1 - e.push) / e.win : null;
   const status = !e.cb ? '<b>Uncalibrated:</b> the calibration file could not be loaded, so this is the raw estimate.' : e.cb.passed ? `Experimental estimate, calibrated on earlier seasons and checked on the ${esc(String(e.cb.test_label || e.cb.test_season))} season (it beat a 50 / 50 guess and the last-10 hit rate there).` : '<b>Experimental and not validated</b> for this sport: treat it with extra caution.';
   return `${research}<div class="evbig ${cls}" data-ev="${ev == null ? '' : ev}" data-evkind="model" role="status">${ev == null ? '<b>Enter the odds</b><span>Type the bookmaker\'s price for this side to see the EV.</span>' : `<b>${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b><span>Expected return per £1 staked: ${ev >= 0 ? '+' : '−'}£${Math.abs(ev / 100).toFixed(2)} · range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the estimate's uncertainty${lo < 0 && hi > 0 ? ' (it crosses 0: no clear edge)' : ''}</span>`}</div>
     <div class="tiles evtiles"><div class="tile"><b data-evp>${pct(e.win)}</b><span>Estimated probability (${esc(sideName)})${e.push > 0.0005 ? `, push ${pct(e.push)}` : ''}</span></div>
-      <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds${od.dec ? ` (decimal ${od.dec})` : ''}</span></div>
-      <div class="tile"><b>${fair ? fair.toFixed(2) : '–'}</b><span>Fair odds (estimate)</span></div>
+      <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds${od.dec ? ` (${esc(fmtOdds(od.exact ?? od.dec))}${oddsFmt() === 'dec' ? '' : `, decimal ${od.dec}`})` : ''}</span></div>
+      <div class="tile"><b data-evfair>${fair ? esc(fmtOdds(fair)) : '–'}</b><span>Fair odds (estimate)</span></div>
       <div class="tile"><b>${e.n}</b><span>Games behind it (effective ${e.nEff}; recent games count more)</span></div></div>
     <div class="evunits${ku && ku.units > 0 && evRaw > 0 ? ' pos' : ''}" data-evunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">${esc(unitsLabel)}:</span> <b>${!D ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>
       ${STAKING_HTML}
@@ -3543,12 +3524,14 @@ __m['hypo'] = (() => {
 //   fair odds        = (1 − push) / p            (= 1 / p when the line cannot push, the owner's formula)
 //   example odds     = fair odds × 1.05, rounded DOWN to 2 decimals (a modest 5% above fair; never below fair + 0.01)
 //   By construction the example price is above fair, so it shows a small positive edge: it illustrates the stake IF such a price were
-//   found. It is labelled "Hypothetical odds — not a live price", and the visitor can type any other odds (then ≤ fair → Do not bet).
+//   found. It is labelled "Hypothetical price — not a live bookmaker offer". The box is READ-ONLY (owner, 28 Oct): real prices are typed
+//   on the EV page only. Odds are shown in the visitor's chosen format (oddsfmt.js); the calculation always uses the decimal price.
 // EV and units: EV = (p × odds + push − 1) × 100; units = min(2, max(0, full Kelly) / 8 × 100) (kelly.js, the EV page's own function).
 const { cardEstimate, loadCalib } = __m['valueev'];
 const { kellyUnits } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
+const { fmtOdds } = __m['oddsfmt'];
 
 const HYPO_UPLIFT = 0.05;
 const HYPO_RULE = 'Example odds = PropLab\'s fair odds (1 ÷ estimated probability) + 5%, rounded down to 2 decimals. A modest illustration above fair, never a bookmaker price.';
@@ -3568,10 +3551,6 @@ function hypoCalc(win, push, d) {
   if (!ku || !Number.isFinite(evRaw)) return null;
   return { ev: evRaw, ku, positive: evRaw > 1e-9 && ku.uncapped > 0 };
 }
-/** Decimal odds typed in the box: plain decimal only (e.g. 2.1 or 2,10). null if unreadable. */
-const readOdds = s => { const t = String(s ?? '').trim().replace(',', '.'); if (!/^\d+(\.\d+)?$/.test(t)) return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
-
-const edits = new Map(); // `${cid}|${line}|${side}` -> odds the visitor typed (a new line or side starts from the example price again)
 const sideKey = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over');
 const sportNow = () => { const m = /^#\/(nba|nfl)(\/|$)/.exec(location.hash || ''); return m ? m[1] : 'football'; };
 const signedPct = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}%`;
@@ -3587,34 +3566,32 @@ function hypoModel(card, st, sport = sportNow()) {
   if (!h) return { ok: false, key, reason: 'no fair price can be formed from the estimate' };
   return { ok: true, key, e, fair: h.fair, dflt: h.odds, validated: !!(e.cb && e.cb.passed && e.calibrated), pair: !!card.pair };
 }
-/** Inner HTML of the box. */
+const TITLE = 'Hypothetical price — not a live bookmaker offer';
+/** Inner HTML of the box (read-only). */
 function inner(m) {
-  if (!m.ok) return `<span class="hyt">Hypothetical odds — not a live price</span><b class="hyna">Estimate unavailable</b><span class="hys">${esc(m.reason)}. Insufficient data is not the same as negative EV.</span>`;
-  const typed = edits.has(m.key) ? edits.get(m.key) : null, txt = typed ?? m.dflt.toFixed(2), d = readOdds(txt), c = d != null ? hypoCalc(m.e.win, m.e.push || 0, d) : null;
-  const unitWord = m.validated ? '1/8 Kelly' : 'Theoretical units — unvalidated';
-  const inp = `<input class="hyodds" data-hy-odds type="text" inputmode="decimal" autocomplete="off" value="${esc(txt)}" aria-label="Hypothetical decimal odds (tap to change)">`;
-  let main;
-  if (!c) main = `If odds are ${inp} → <b class="hybad">Enter decimal odds above 1.00</b>`;
-  else if (!c.positive) main = `If odds are ${inp} → <b class="hyno">Do not bet — No positive estimated EV</b> <span class="hyu">0.00u · ${esc(signedPct(c.ev))} EV</span>`;
-  else main = `If odds are ${inp} → <b class="hyu">${c.ku.units.toFixed(2)}u${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b> at <b class="hyev">${esc(signedPct(c.ev))} EV</b>`;
-  const p = (m.e.win * 100).toFixed(1);
-  return `<span class="hyt">Hypothetical odds — not a live price</span><span class="hym">${main}</span>
-    <span class="hys">Model estimate ${p}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''} · fair ${m.fair.toFixed(2)} · ${typed == null ? 'example = fair + 5%' : '<button type="button" class="linkbtn" data-hy-reset>reset example</button>'} · ${esc(unitWord)}, max 2.00u per play</span>`;
+  if (!m.ok) return `<span class="hyt">${TITLE}</span><b class="hyna">Estimate unavailable</b><span class="hys">${esc(m.reason)}. Insufficient data is not the same as negative EV.</span>`;
+  const c = hypoCalc(m.e.win, m.e.push || 0, m.dflt), ex = esc(fmtOdds(m.dflt));
+  const main = !c ? '<b class="hyna">Estimate unavailable</b>' : !c.positive ? `If available at ${ex}: <b class="hyno">Do not bet — No positive estimated EV</b> · <b class="hyu">0.00u</b>`
+    : `If available at ${ex}: <b class="hyev">${esc(signedPct(c.ev))} estimated EV</b> · <b class="hyu">${c.ku.units.toFixed(2)}u theoretical${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b>`;
+  return `<span class="hyt">${TITLE}</span>
+    <span class="hyodd">Fair odds: <b data-hy-fair>${esc(fmtOdds(m.fair))}</b> · Example target odds: <b data-hy-ex>${ex}</b></span>
+    <span class="hym">${main}</span>
+    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''} · example = fair odds + 5% · ${m.validated ? '1/8 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
 }
 function state(m) {
   if (!m.ok) return { cls: 'na', ev: '', u: '' };
-  const typed = edits.has(m.key) ? edits.get(m.key) : null, d = readOdds(typed ?? m.dflt.toFixed(2)), c = d != null ? hypoCalc(m.e.win, m.e.push || 0, d) : null;
-  return !c ? { cls: 'bad', ev: '', u: '' } : { cls: c.positive ? 'pos' : 'neg', ev: c.ev.toFixed(4), u: (c.positive ? c.ku.units : 0).toFixed(2), un: c.ku.uncapped.toFixed(2) };
+  const c = hypoCalc(m.e.win, m.e.push || 0, m.dflt);
+  return !c ? { cls: 'na', ev: '', u: '' } : { cls: c.positive ? 'pos' : 'neg', ev: c.ev.toFixed(4), u: (c.positive ? c.ku.units : 0).toFixed(2), un: c.ku.uncapped.toFixed(2) };
 }
 /** Fills (or refreshes) a box element from a model. */
 function fillHypo(box, m) {
   box._hm = m; const s = state(m);
   box.className = `hypo hy-${s.cls}`; box.dataset.hyKey = m.key; box.dataset.hyEv = s.ev; box.dataset.hyUnits = s.u; box.dataset.hyUncapped = s.un || '';
-  box.dataset.hyP = m.ok ? String(m.e.win) : ''; box.dataset.hyOdds = m.ok ? String(edits.get(m.key) ?? m.dflt.toFixed(2)) : '';
+  box.dataset.hyP = m.ok ? String(m.e.win) : ''; box.dataset.hyOdds = m.ok ? m.dflt.toFixed(2) : ''; box.dataset.hyFair = m.ok ? String(m.fair) : '';
   box.innerHTML = inner(m);
 }
 /** An empty placeholder box; filled by queueHypo (never shows the previous line's figures). */
-const hypoSlot = (extra = '') => `<aside class="hypo hy-wait" data-hypo${extra} aria-live="polite"><span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span></aside>`;
+const hypoSlot = (extra = '') => `<aside class="hypo hy-wait" data-hypo${extra} aria-live="polite"><span class="hyt">Hypothetical price — not a live bookmaker offer</span><span class="hys">Calculating…</span></aside>`;
 
 // ---- scheduling: a single card (a line or side change) is filled at once; a page of new cards is filled in small time-boxed batches so
 // rendering, filtering and scrolling stay as fast as before. The calibration file is loaded once before the first fill.
@@ -3641,7 +3618,7 @@ function queueHypo(box, model) {
   const t = now(); if (t - frameT > 16) { frameT = t; spent = 0; }
   if (calibReady && spent < 6 && !queue.length) { const a = now(); run(j); spent += now() - a; return; }
   box.className = 'hypo hy-wait'; delete box.dataset.hyKey; box.dataset.hyEv = ''; box.dataset.hyUnits = '';
-  box.innerHTML = '<span class="hyt">Hypothetical odds — not a live price</span><span class="hys">Calculating…</span>';
+  box.innerHTML = '<span class="hyt">Hypothetical price — not a live bookmaker offer</span><span class="hys">Calculating…</span>';
   queue.push(j);
   if (!calibReady) { globalThis.__plHypoPending = 1; calibP.then(schedule); } else schedule();
 }
@@ -3673,26 +3650,13 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') 
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 }
 
-// ---- typing odds in any box (one delegated listener for the whole app): EV and units update at once, on the card itself
+// ---- the box is read-only; a tap on it never opens the card's graph or pop-up. A change of odds format redraws every box (same figures).
 if (typeof document !== 'undefined') {
-  const onType = ev => {
-    const inp = ev.target.closest && ev.target.closest('[data-hy-odds]'); if (!inp) return; const box = inp.closest('[data-hypo]'); if (!box || !box._hm || !box._hm.ok) return;
-    ev.stopPropagation(); // the page's own filter handlers never see these keystrokes
-    edits.set(box._hm.key, inp.value);
-    const pos = inp.selectionStart; fillHypo(box, box._hm); const n = box.querySelector('[data-hy-odds]'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* not a text input */ } }
-  };
-  document.addEventListener('input', onType, true);
-  document.addEventListener('click', ev => {
-    const t = ev.target.closest && ev.target.closest('[data-hypo]'); if (!t) return;
-    ev.stopPropagation(); // tapping the box never opens the card's graph or pop-up
-    if (ev.target.closest('[data-hy-reset]') && t._hm) { edits.delete(t._hm.key); fillHypo(t, t._hm); }
-  }, true);
-  // keys and change events in the box never reach the page's own shortcuts, filters or card handlers
-  document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('[data-hy-odds]')) ev.stopPropagation(); }, true);
-  document.addEventListener('keydown', ev => { if (ev.target.closest && ev.target.closest('[data-hy-odds]')) { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); } }, true);
+  document.addEventListener('click', ev => { if (ev.target.closest && ev.target.closest('[data-hypo]')) ev.stopPropagation(); }, true);
+  document.addEventListener('oddsfmt', () => { for (const b of document.querySelectorAll('[data-hypo]')) if (b._hm) fillHypo(b, b._hm); });
 }
 
-return { HYPO_UPLIFT, HYPO_RULE, hypoOdds, hypoCalc, readOdds, hypoModel, fillHypo, hypoSlot, queueHypo, setHypoSource, hypoFor };
+return { HYPO_UPLIFT, HYPO_RULE, hypoOdds, hypoCalc, hypoModel, fillHypo, hypoSlot, queueHypo, setHypoSource, hypoFor };
 })();
 __m['barinfo'] = (() => {
 // The "tap a bar" game sheet (Milestone 5), shared by Hiwi's Section and any other place a result card is shown on its own
@@ -4485,7 +4449,7 @@ __m['v-hiwi'] = (() => {
 // Sorting by hit rate is applied when results are built or the sort is chosen; moving a card's line never moves the card.
 const { store, upcomingFixtures, teamRowsFor, teamSlugOf, leagueName, LEAGUE_NAMES, teamsOfLeague, fxSortLocal, selectableFixtures, currentSeason, teamRowsScoped, isCup, COMP_SHORT, hasEuropean } = __m['data'];
 const { fbPlayers, hasPlayerLogs, clubsWithPlayerStats } = __m['fbscan'];
-const { nameMatches, psearchHtml, SEARCH_MAX } = __m['psearch'];
+const { nameMatches, psearchHtml, SEARCH_MAX, attachSuggest } = __m['psearch'];
 const { setClubRows, buildPlays: cbBuild, sortPlays: cbSort, mountPlays, COMBINED_KEYS, supportedKeys: cbSupported } = __m['combinedcore'];
 const { nflSeasonGames: nfl_nflSeasonGames, injuryStatus: nfl_injuryStatus, latestSeason: nfl_latestSeason, loadGroup: nfl_loadGroup, nfl: nfl_nfl, nflSelectable: nfl_nflSelectable, nflUpcoming: nfl_nflUpcoming, teamGameRows: nfl_teamGameRows, teamName: nfl_teamName } = __m['nfl-data'];
 const { NBA_POS: nba_NBA_POS, TYPE_NAME: nba_TYPE_NAME, injuryStatus: nba_injuryStatus, latestSeason: nba_latestSeason, nba: nba_nba, nbaSelectable: nba_nbaSelectable, nbaUpcoming: nba_nbaUpcoming, nextGameOf: nba_nextGameOf, playerRows: nba_playerRows, seasonLabel: nba_seasonLabel, teamGameRows: nba_teamGameRows, teamName: nba_teamName } = __m['nba-data'];
@@ -4753,9 +4717,11 @@ async function viewHiwi(root, r, sport) {
   // ---------- temporary player search (owner request 27 Oct, evening) ----------
   // The players of the selected games / teams (any position, popular or not) whose names match. Never ticks or unticks anyone: while a search
   // is typed it replaces the ticked players in the results only; clearing it brings the ticked players back unchanged.
+  const searchCands = () => { const sel = new Set(subjClubsAll()); return usMode ? A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (!sel.size || sel.has(p.team))).map(p => ({ id: p.id, name: p.name, sub: `${p.pos || ''}${p.pos ? ', ' : ''}${p.team}` }))
+      : fbPlayerList().filter(p => p.currentClub && (!sel.size || sel.has(p.currentClub))).map(p => ({ id: p.id, name: p.name, sub: p.team || '' })); };
   const searchHits = () => { const q = (st.pfind || '').trim(); if (!q) return null;
-    const sel = new Set(subjClubsAll()); const all = usMode ? A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (!sel.size || sel.has(p.team))).map(p => ({ id: p.id, name: p.name }))
-      : fbPlayerList().filter(p => p.currentClub && (!sel.size || sel.has(p.currentClub))).map(p => ({ id: p.id, name: p.name }));
+    const all = searchCands();
+    if (st.pfindId) { const one = all.filter(p => String(p.id) === String(st.pfindId)); if (one.length) return { q, hits: one, more: 0, picked: true }; } // a tapped suggestion: that player only, by ID
     const hits = all.filter(p => nameMatches(q, p.name)).sort((a, b) => a.name.localeCompare(b.name)); return { q, hits: hits.slice(0, SEARCH_MAX), more: Math.max(0, hits.length - SEARCH_MAX) }; };
   const subjClubsAll = () => (st.mode === 'teams' ? [...st.teams] : selFx().flatMap(id => { const f = fxById(id); return f ? homeAway(f) : []; }));
   const effPls = () => { const h = searchHits(); return h ? new Set(h.hits.map(p => p.id)) : pls(); };
@@ -5400,7 +5366,7 @@ async function viewHiwi(root, r, sport) {
     if (t.closest('#hmkbtn')) { const need = !usMode && lgsWithPlayers().some(lg => !playersBy.has(lg)); openMarkets(need);
       if (need) ensurePlayers().then(() => { const m0 = document.querySelector('.hmkmodal'); if (m0 && m0.dataset.waiting) openMarkets(false, m0); }); return; }
     if (t.closest('#hpl > summary')) bgPlayers(); // the Players list loads player data when first opened
-    if (t.closest('[data-psclear="hpfind"]')) { st.pfind = ''; const i = $('#hpfind', hf); if (i) { i.value = ''; i.focus(); } psHelp(); clearTimeout(psT); refresh(); return; }
+    if (t.closest('[data-psclear="hpfind"]')) { st.pfind = ''; st.pfindId = null; const i = $('#hpfind', hf); if (i) { i.value = ''; i.focus(); } psHelp(); clearTimeout(psT); refresh(); return; }
     if (t.closest('#hsort')) { openSort(); return; }
     const rk = t.closest('[data-hrank]'); if (rk) { if (st.rank !== rk.dataset.hrank) { st.rank = rk.dataset.hrank; remember(); draw(); refresh(); } return; }
     const mc = t.closest('[data-hmc]'), me = t.closest('[data-hme]'); if (mc || me) { if (mc) st.minComb = Number(mc.dataset.hmc); else st.minEach = Number(me.dataset.hme); remember(); draw(); refresh(); return; }
@@ -5431,9 +5397,10 @@ async function viewHiwi(root, r, sport) {
   });
   let psT = null; // a short pause after typing before the results rebuild (no rebuild per keystroke)
   const psHelp = () => { const x = hf.querySelector('[data-psclear="hpfind"]'); if (x) x.hidden = !st.pfind; const h = hf.querySelector('#hpfind-h'); if (h) h.innerHTML = st.pfind ? '<b>Search on:</b> showing the matching players only; your ticked players are unchanged and come back when you clear it.' : 'Shows one player\'s plays without changing the players you have ticked.'; };
+  attachSuggest(hf, 'hpfind', { candidates: () => searchCands(), onPick: it => { st.pfind = it.name; st.pfindId = it.id; psHelp(); clearTimeout(psT); globalThis.__plPending = 1; refresh(); } });
   hf.addEventListener('input', e => {
     const t = e.target;
-    if (t.id === 'hpfind') { st.pfind = t.value; psHelp(); clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(() => { psT = null; refresh(); }, 250); return; }
+    if (t.id === 'hpfind') { st.pfind = t.value; st.pfindId = null; psHelp(); clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(() => { psT = null; refresh(); }, 250); return; }
     if (t.id === 'hmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) t.value = MIN_HI; refresh(); } return; }
     if (t.id === 'hqmin') { const n = parseInt(t.value, 10); if (Number.isFinite(n) && n >= QMIN) { setMinQual(n); if (n > QMAX) t.value = QMAX; if (cards.length) { resort(); } } return; }
     if (t.id === 'hsq') { st.sq = t.value; const pos = t.selectionStart; remember(); draw(); const n = $('#hsq', hf); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* */ } } return; }
@@ -5470,7 +5437,7 @@ const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
-const { nameMatches, psearchHtml } = __m['psearch'];
+const { nameMatches, psearchHtml, attachSuggest } = __m['psearch'];
 const { sampleKey, $, koLocal, koUK, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, keepScrollIn } = __m['util'];
 const { nbaLoading, nbaCredit } = __m['v-nba'];
 const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes } = __m['nbaprefs'];
@@ -5542,7 +5509,7 @@ async function viewNbaFinder(root) {
       const bys = new Map(await Promise.all(files.map(async t => [t, await loadLogs(t)])));
       for (const p of nba.players) {
         // temporary player search (owner request 27 Oct): replaces the player filters (positions, Popular) only while text is typed; nothing is ticked or unticked
-        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.find ? !nameMatches(ui.find, p.name) : (!ui.pos.has(p.group || 'F') || (ui.pop && !p.notable)))) continue;
+        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.find ? (ui.findId ? String(p.id) !== String(ui.findId) : !nameMatches(ui.find, p.name)) : (!ui.pos.has(p.group || 'F') || (ui.pop && !p.notable)))) continue;
         const raw = bys.get(p.logs_file).get(p.id) || [], game = games.find(g => g.home === p.team || g.away === p.team) || null, inj = injuryStatus(p, game);
         if (getExcludeOut() && isConfirmedOut(inj)) continue;
         subjects.push({ key: p.id, id: p.id, type: 'player', name: p.name, sub: `${p.pos || ''} · ${p.team}`, href: `#/nba/research/${encodeURIComponent(p.id)}`, game, opp: game ? (game.home === p.team ? game.away : game.home) : null, inj, unavailable: isConfirmedOut(inj), newTeam: !!p.new_team,
@@ -5571,8 +5538,10 @@ async function viewNbaFinder(root) {
     redraw(); draw();
   });
   let psT = null;
-  ctl.addEventListener('input', e => { if (e.target.id !== 'fpfind') return; ui.find = e.target.value; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); });
-  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
+  ctl.addEventListener('input', e => { if (e.target.id !== 'fpfind') return; ui.find = e.target.value; ui.findId = null; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); });
+  attachSuggest(ctl, 'fpfind', { candidates: () => { const gs = selGames(), gT = gs.length ? new Set(gs.flatMap(g => [g.home, g.away])) : null; return nba.players.filter(p => p.current && p.logs_file && (!ui.team || p.team === ui.team) && (!gT || gT.has(p.team))).map(p => ({ id: p.id, name: p.name, sub: `${p.pos || ''}${p.pos ? ', ' : ''}${p.team}` })); },
+    onPick: it => { ui.find = it.name; ui.findId = it.id; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = false; clearTimeout(psT); globalThis.__plPending = 1; draw(true).then(() => { globalThis.__plPending = 0; }); } });
+  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; ui.findId = null; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
   ctl.addEventListener('change', e => { const t = e.target; if (t.id === 'fpfind') return; ui.shown = 100;
     if (t.id === 'fxout') { setExcludeOut(t.checked); draw(); return; }
     if (t.id === 'mk') { if (isT()) ui.tmarket = t.value; else ui.market = t.value; ui.sort = { key: null, dir: null }; }
@@ -7184,6 +7153,421 @@ async function viewFinder(root, r) {
 
 return { viewFinder };
 })();
+__m['nfl-model'] = (() => {
+// Experimental NFL model data in the browser. The model itself is trained offline (owner-tools/nfl_model.py); the site only reads its
+// published output (data-nfl-model.json) and turns each prediction's distribution into a probability for ANY line the visitor sets.
+// A historical hit rate is never used as a model probability. Markets that failed the out-of-sample test are marked inactive.
+const model = { status: 'idle', data: null, backtest: null, log: null, byKey: new Map() };
+const RQ = Array.from({ length: 81 }, (_, i) => i / 80);
+const getFresh = async f => { const r = await fetch(`${f}?t=${Date.now()}`, { cache: 'no-store' }); if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); };
+async function loadModel(getJson = getFresh) {
+  if (model.status === 'ready' || model.status === 'loading') return model;
+  model.status = 'loading';
+  try {
+    model.data = await getJson('data-nfl-model.json', { fresh: true });
+    model.byKey = new Map(model.data.predictions.map(p => [`${p.player_id}|${p.market}`, p]));
+    model.status = 'ready';
+  } catch { model.status = 'missing'; }
+  return model;
+}
+async function loadBacktest(getJson = getFresh) { if (!model.backtest) { try { model.backtest = await getJson('data-nfl-model-backtest.json', { fresh: true }); } catch { model.backtest = null; } } return model.backtest; }
+async function loadForward(getJson = getFresh) { if (!model.log) { try { model.log = await getJson('data-nfl-model-forward.json', { fresh: true }); } catch { model.log = null; } } return model.log; }
+
+// ---- distributions (same maths as owner-tools/nfl_model.py) ----
+function lgamma(x) { // Lanczos
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+function nbPmf(k, mu, alpha) {
+  if (k < 0) return 0;
+  if (alpha < 1e-6) return Math.exp(k * Math.log(mu) - mu - lgamma(k + 1));
+  const r = 1 / alpha, p = r / (r + mu);
+  return Math.exp(lgamma(k + r) - lgamma(r) - lgamma(k + 1) + r * Math.log(p) + k * Math.log(1 - p));
+}
+const nbCdf = (k, mu, a) => { let s = 0; for (let i = 0; i <= k; i++) s += nbPmf(i, mu, a); return Math.min(1, s); };
+// Same rule as numpy.interp (ties in the quantiles, e.g. many zero-yard games, resolve to the last equal point).
+const interp = (t, xs, ys) => {
+  const n = xs.length; if (t < xs[0]) return ys[0]; if (t >= xs[n - 1]) return ys[n - 1];
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
+  const x0 = xs[lo], x1 = xs[hi]; return x1 === x0 ? ys[lo] : ys[lo] + (ys[hi] - ys[lo]) * (t - x0) / (x1 - x0);
+};
+/** P(Y <= y) for a continuous-approximated whole-number outcome described by quantiles of actual/projection (ratio) or actual-projection (shift). */
+function cdfAt(y, mu, mk, pos) {
+  if (mk.dist === 'ratio') { const tab = (mk.ratio_by_pos && mk.ratio_by_pos[pos]) || mk.ratio; const b = tab.find(x => x.mu_max === null || mu <= x.mu_max); return interp(y / Math.max(mu, 1e-3), b.q, RQ); }
+  return interp(y - mu, mk.q, RQ); // 'shift' (team points)
+}
+/** Calibration map learned from earlier out-of-sample seasons: p' = sigmoid(a logit p + b). */
+function calibrate(p, cal) { if (!cal) return p; const q = Math.min(0.995, Math.max(0.005, p)); return 1 / (1 + Math.exp(-(cal.a * Math.log(q / (1 - q)) + cal.b))); }
+/** Raw (uncalibrated) P(Y > L). */
+function rawOver(L, mu, mk, pos) {
+  if (mk.dist === 'nb') return 1 - nbCdf(Math.floor(L), mu, mk.alpha || 0);
+  return 1 - cdfAt(Math.floor(L) + 0.5, mu, mk, pos);
+}
+/** Probabilities for a line: { over, under, push } (push only for whole-number lines). */
+function lineProbs(pred, line, mk) {
+  const mu = pred.proj, L = Number(line);
+  if (!Number.isFinite(L) || !mk || !(mu >= 0)) return null;
+  const whole = Math.abs(L - Math.round(L)) < 1e-9, cal = mk.calibration, pos = pred.position;
+  const over = calibrate(rawOver(L, mu, mk, pos), cal);
+  if (!whole) return { over: clamp(over), under: clamp(1 - over), push: 0 };
+  // whole-number line: Under = not (Y >= L) = 1 - P(Y > L - 0.5); the rest is the push
+  const under = 1 - calibrate(rawOver(L - 0.5, mu, mk, pos), cal);
+  return { over: clamp(over), under: clamp(under), push: clamp(1 - over - under) };
+}
+const clamp = p => Math.max(0, Math.min(1, p));
+const marketInfo = key => model.data?.markets?.[key] || null;
+/** The prediction for a player and market; with gameId, the one for that game (a player can have predictions for two weeks). */
+const predictionFor = (playerId, market, gameId) => (gameId ? (model.data?.predictions || []).find(p => p.player_id === playerId && p.market === market && p.game_id === gameId) || null : model.byKey.get(`${playerId}|${market}`) || null);
+
+// ---- uncertainty and EV classification ----
+/** Margin of error for the probability, from what the backtest measured for this kind of prediction (calibration gap and the 95% interval
+ *  of the observed rate). Wider when the cell had few cases. */
+function probMargin(pred) {
+  const c = pred?.cell; if (!c || !c.n) return 0.12;
+  const [lo, hi] = c.observed_ci95 || [null, null];
+  const half = lo != null && hi != null ? (hi - lo) / 2 : 0.1;
+  return Math.min(0.2, Math.max(0.02, Math.abs(c.observed_side_rate - c.predicted_side_prob) + half / 2));
+}
+/** EV % = (p x decimal odds - 1) x 100. Classified with the probability's margin: an edge only counts when it survives the margin. */
+function evVerdict(p, odds, pred) {
+  if (!(odds > 1) || p == null) return null;
+  if (!pred || pred.confidence === 'Insufficient Data' || !pred.active_market) return { label: 'Insufficient Data', cls: 'insufficient' };
+  const m = probMargin(pred), ev = (p * odds - 1) * 100, lo = ((p - m) * odds - 1) * 100, hi = ((p + m) * odds - 1) * 100;
+  const label = lo > 0 ? 'Positive Estimated EV' : hi < 0 ? 'Negative Estimated EV' : 'Uncertain – No Clear Edge';
+  return { ev: Math.round(ev * 10) / 10, lo: Math.round(lo * 10) / 10, hi: Math.round(hi * 10) / 10, margin: m, label, cls: lo > 0 ? 'pos' : hi < 0 ? 'neg' : 'unc' };
+}
+/** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
+function parseAnyOdds(t) {
+  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
+  if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, exact: 2, kind: 'fractional' };
+  // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
+  if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
+    const a = Number(s);
+    if (a >= 100) return { dec: Math.round((1 + a / 100) * 1000) / 1000, exact: 1 + a / 100, kind: 'American' };
+    if (a <= -100) return { dec: Math.round((1 + 100 / -a) * 1000) / 1000, exact: 1 + 100 / -a, kind: 'American' };
+    return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
+  }
+  if (s.includes('/')) { const [a, b] = s.split('/').map(Number); return a > 0 && b > 0 ? { dec: Math.round((a / b + 1) * 1000) / 1000, exact: a / b + 1, kind: 'fractional' } : { dec: null, error: 'Fractional odds look like 6/4' }; }
+  const d = Number(s); return Number.isFinite(d) && d > 1 ? { dec: d, exact: d, kind: 'decimal' } : { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 1.91)' };
+}
+
+// ---- plain-English reasons, built only from the model's own inputs ----
+const LBL = { usage: { pass_yds: 'pass attempts', att: 'pass attempts', cmp: 'pass attempts', pass_td: 'pass attempts', int: 'pass attempts', rush_yds: 'carries', car: 'carries', rec_yds: 'targets', rec: 'targets', tgt: 'targets', rec_td: 'targets' } };
+function explain(pred, side, line) {
+  const f = pred.factors || {}, out = [];
+  if (pred.market === 'pts') { out.push(`The betting market's point spread and total imply about ${f.implied_team_points} points for ${pred.team}. The model starts from that number, so it adds little beyond the market.`); return out; }
+  if (f.season_avg != null) out.push(`${pred.player} has averaged ${f.season_avg} ${pred.label.toLowerCase()} this season${f.last5_avg != null ? ` (${f.last5_avg} over the last five games)` : ''}.`);
+  if (f.usage != null && LBL.usage[pred.market]) out.push(`Recent workload: about ${f.usage} ${LBL.usage[pred.market]} per game, weighted towards the latest games.`);
+  if (f.opp_factor != null) { const pc = Math.round((f.opp_factor - 1) * 100); out.push(Math.abs(pc) < 4 ? `${pred.opp}'s defence has allowed about a league-average amount to this position.` : `${pred.opp}'s defence has allowed ${Math.abs(pc)}% ${pc > 0 ? 'more' : 'less'} than average to this position in its recent games (shrunk towards average).`); }
+  if (f.implied_team_points != null) out.push(`The betting market implies about ${f.implied_team_points} points for ${pred.team}${pred.home ? ' at home' : ' away'}.`);
+  out.push(`Projection: ${pred.proj}. For ${side === 'under' ? 'Under' : 'Over'} ${line}, the model's distribution gives the probability shown.`);
+  if (pred.injury_status) out.push(`Injury report: ${pred.injury_status}.`);
+  return out;
+}
+const CONF_TEXT = {
+  'Very High': 'In testing on past seasons, predictions like this (same market, similar sample and edge) came true at about the predicted rate, with many cases.',
+  High: 'Predictions like this were reliable in testing, with a good number of cases.', Medium: 'Predictions like this were roughly right in testing, but with fewer cases or a slightly wider error.',
+  Low: 'Predictions like this were only loosely right in testing.', 'Very Low': 'Predictions like this were poorly calibrated in testing.',
+  'Insufficient Data': 'Not enough earlier games, or this market did not pass the model\'s tests, so no reliable probability can be given.',
+};
+
+// ---- minimum odds ("price to look for") ----
+// Minimum decimal odds for an EV target: (1 + target - P(push)) / P(win). Rounded UP so the stated target is really reached at the shown price.
+const FRAC_DEN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 25, 30, 40, 50, 100];
+function minOdds(pWin, target = 0, pPush = 0) {
+  if (!(pWin > 0)) return null;
+  const req = (1 + target - (pPush || 0)) / pWin; if (!Number.isFinite(req) || req <= 1) return req > 0 && req <= 1 ? { dec: 1.01, frac: '1/100', amer: '-10000', exact: req } : null;
+  const dec = Math.ceil(req * 100 - 1e-9) / 100;                               // up to the next 0.01
+  let best = null; for (const d of FRAC_DEN) { const n = Math.ceil((req - 1) * d - 1e-9); const v = 1 + n / d; if (!best || v < best.v - 1e-12) best = { n, d, v }; } // smallest common fraction >= req
+  const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d);
+  const amer = req >= 2 ? `+${Math.ceil((req - 1) * 100 - 1e-9)}` : `-${Math.floor(100 / (req - 1) + 1e-9)}`;   // American: the shown price is never worse than required
+  return { dec, frac: best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`, amer, exact: req };
+}
+/** Odds shown in the visitor's chosen format. dec: decimal odds. */
+function fmtOdds(dec, fmt = 'decimal') {
+  if (!(dec > 1)) return '–';
+  if (fmt === 'american') return dec >= 2 ? `+${Math.round((dec - 1) * 100)}` : `-${Math.round(100 / (dec - 1))}`;
+  if (fmt === 'fractional') { let best = null; for (const d of FRAC_DEN) { const n = Math.round((dec - 1) * d); if (n < 1) continue; const e = Math.abs(1 + n / d - dec); if (!best || e < best.e - 1e-9) best = { n, d, e }; } const g = (a, b) => (b ? g(b, a % b) : a), k = g(best.n, best.d); return best.n === best.d ? 'evens' : `${best.n / k}/${best.d / k}`; }
+  return String(Math.round(dec * 100) / 100);
+}
+
+return { model, loadModel, loadBacktest, loadForward, nbPmf, calibrate, lineProbs, marketInfo, predictionFor, probMargin, evVerdict, parseAnyOdds, explain, CONF_TEXT, minOdds, fmtOdds };
+})();
+__m['nbalive'] = (() => {
+// NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
+// so the probability shown on the page is exactly the one that was validated.
+//
+// Final total = what he already has (entered by the visitor) + what he adds in the rest of the game.
+//   1. Pre-game: expected minutes M (recency-weighted, last 10 played games) and his per-minute rates (last 25 played games) of the
+//      events that make up the market: free throws made (1 point), two-point baskets (2), threes (3), rebounds, assists, steals, blocks.
+//   2. Projected remaining minutes R from the game clock and what is known about him now (minutes so far, on court / bench, fouls,
+//      score margin), with coefficients fitted on two seasons of historical in-game states rebuilt from play-by-play. Never "every remaining
+//      minute": a bench player or one already near his usual minutes gets fewer.
+//   3. Remaining events N ~ negative binomial (mean kappa x event rate x R; market-specific over-dispersion fitted on the same seasons), and
+//      the remaining total is a COMPOUND count: each event adds 1, 2 or 3 in his own mix (points come in lumps, so "needs 1 more point"
+//      and "needs 2 more points" are almost the same chance). Exact distribution by Panjer's recursion.
+//   4. P(Over L) = P(already + Y > L), then a logistic recalibration per market fitted on the fit seasons (time left, low-minute players,
+//      the last 6 minutes, overtime). Combined markets add their events into one count, so the parts share the same minutes.
+// data-nba-live-model.json holds the fitted parameters and the out-of-sample validation by market and stage of the game; live EV is shown
+// only where that market passed at that stage.
+// events per market: severity (points / units per event) -> the per-minute rates that produce it
+const EVENTS = { pts: { 1: ['ftm'], 2: ['fg2m'], 3: ['tpm'] }, reb: { 1: ['reb'] }, ast: { 1: ['ast'] }, tpm: { 1: ['tpm'] }, stl: { 1: ['stl'] }, blk: { 1: ['blk'] },
+  pr: { 1: ['ftm', 'reb'], 2: ['fg2m'], 3: ['tpm'] }, pa: { 1: ['ftm', 'ast'], 2: ['fg2m'], 3: ['tpm'] }, ra: { 1: ['reb', 'ast'] }, pra: { 1: ['ftm', 'reb', 'ast'], 2: ['fg2m'], 3: ['tpm'] }, sb: { 1: ['stl', 'blk'] } };
+const LIVE_MARKETS = { pts: ['pts'], reb: ['reb'], ast: ['ast'], tpm: ['tpm'], stl: ['stl'], blk: ['blk'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'], pra: ['pts', 'reb', 'ast'], sb: ['stl', 'blk'] };
+const COMPONENT_LABEL = { pts: 'Points', reb: 'Rebounds', ast: 'Assists', tpm: 'Threes made', stl: 'Steals', blk: 'Blocks' };
+const MIN_GAMES = 5;
+const W_MIN = 0.85, W_RATE = 0.93, N_MIN = 10, N_RATE = 25;
+const FOUL_LIMIT = { 1: 2, 2: 3, 3: 4, 4: 5 }; // more fouls than this in the period = foul trouble (coaches sit him)
+
+/** history: his earlier games, newest first, each { min, pts, reb, ast, stl, blk, tpm, ftm, fgm } (DNPs / no minutes are skipped). */
+function pregame(history) {
+  const g = (history || []).filter(r => r && Number.isFinite(r.min) && r.min > 0);
+  if (g.length < MIN_GAMES) return { ok: false, n: g.length, reason: `only ${g.length} played game${g.length === 1 ? '' : 's'} on record (at least ${MIN_GAMES} are needed)` };
+  let sw = 0, sm = 0; g.slice(0, N_MIN).forEach((r, i) => { const w = W_MIN ** i; sw += w; sm += w * r.min; });
+  const M = sm / sw, rate = {};
+  for (const s of ['pts', 'reb', 'ast', 'stl', 'blk', 'tpm', 'ftm', 'fgm', 'fg2m']) {
+    let num = 0, den = 0; g.slice(0, N_RATE).forEach((r, i) => { const v = s === 'fg2m' ? r.fgm - r.tpm : r[s]; if (!Number.isFinite(v)) return; const w = W_RATE ** i; num += w * v; den += w * r.min; });
+    rate[s] = den > 0 ? num / den : null;
+  }
+  return { ok: true, n: g.length, M: Math.min(48, M), rate };
+}
+/** Seconds of the game still to play from this point (regulation; in overtime, what is left of the current overtime). */
+function remainingMin(period, clockSec) {
+  if (!(period >= 1) || !Number.isFinite(clockSec) || clockSec < 0) return null;
+  if (period <= 4) { if (clockSec > 720) return null; return ((4 - period) * 720 + clockSec) / 60; }
+  if (clockSec > 300) return null; return clockSec / 60;
+}
+/** Elapsed game minutes (regulation 48, each overtime 5; never double-counted). */
+const elapsedMin = (period, clockSec) => (period <= 4 ? ((period - 1) * 720 + (720 - clockSec)) / 60 : (2880 + (period - 5) * 300 + (300 - clockSec)) / 60);
+
+/** Feature vector for the remaining-minutes regression. s: { period, clockSec, minSoFar|null, status 'on'|'bench'|'unknown', fouls|null, margin|null } */
+function minuteFeatures(pre, s) {
+  const T = remainingMin(s.period, s.clockSec), share = pre.M / 48;
+  const known = Number.isFinite(s.minSoFar);
+  const budget = s.period >= 5 ? T * Math.min(1, pre.M / 34) : known ? Math.min(T, Math.max(0, pre.M - s.minSoFar)) : share * T; // overtime: regulars play most of it
+  const near = Math.min(T, 4);
+  const onF = s.status === 'on' ? near : s.status === 'bench' ? 0 : share * near;
+  const lim = FOUL_LIMIT[Math.min(4, s.period)] ?? 5, trouble = Number.isFinite(s.fouls) ? Math.max(0, s.fouls - lim) + (s.fouls >= 6 ? 99 : 0) : 0;
+  const blow = Number.isFinite(s.margin) ? Math.min(1, Math.max(0, Math.abs(s.margin) - 12) / 15) : 0; // a big lead or deficit: starters rest
+  return { T, x: [share * T, budget, onF, Math.min(1, trouble) * share * T, blow * budget] };
+}
+/** Projected remaining minutes, clamped to [0, T]. variant: 'full' (minutes known), 'nomin' (minutes unknown). */
+function projectMinutes(pre, s, params) {
+  if (s.out) return 0;
+  if (Number.isFinite(s.fouls) && s.fouls >= 6) return 0; // fouled out
+  const f = minuteFeatures(pre, s); if (f.T == null) return null;
+  const beta = params.minutes[Number.isFinite(s.minSoFar) ? 'full' : 'nomin'];
+  const r = f.x.reduce((t, v, i) => t + v * beta[i], 0);
+  return Math.min(f.T, Math.max(0, r));
+}
+// ---- negative binomial ----
+function lgamma(x) { // Lanczos
+  const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < g + 2; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+/** P(Y <= y) for Y ~ NB(mean mu, size k) (k = Infinity -> Poisson). */
+function nbCdf(y, mu, k) {
+  if (y < 0) return 0; if (!(mu > 0)) return 1;
+  const pois = !Number.isFinite(k) || k > 1e6;
+  let p0, ratio;
+  if (pois) { p0 = Math.exp(-mu); ratio = j => mu / j; }
+  else { const q = k / (k + mu); p0 = Math.exp(k * Math.log(q)); ratio = j => ((j - 1 + k) / j) * (1 - q); }
+  if (p0 === 0) { // very large mean: work in logs
+    let lp = pois ? -mu : k * Math.log(k / (k + mu)), s = 0, m = -Infinity; const terms = [lp];
+    for (let j = 1; j <= y; j++) { lp += Math.log(ratio(j)); terms.push(lp); }
+    m = Math.max(...terms); for (const t of terms) s += Math.exp(t - m); return Math.min(1, Math.exp(m) * s);
+  }
+  let p = p0, s = p0; for (let j = 1; j <= y; j++) { p *= ratio(j); s += p; }
+  return Math.min(1, s);
+}
+/** Size of the negative binomial at mean mu: variance = phi*mu + mu^2/k (phi > 1 when production comes in lumps, e.g. 2- and 3-point baskets). */
+const sizeFor = (mu, mp) => { const phi = mp.phi ?? 1; if (!(mu > 0)) return mp.k; const ex = (phi - 1) * mu + (mu * mu) / mp.k; return ex > 0 ? (mu * mu) / ex : Infinity; };
+/** Event rate per minute for a market and the severity mix [p1, p2, p3]. */
+function eventRates(pre, market) {
+  const E = EVENTS[market]; if (!E) return null; const w = [0, 0, 0, 0];
+  for (const [sev, keys] of Object.entries(E)) for (const k of keys) { const r = pre.rate[k]; if (!Number.isFinite(r)) return null; w[sev] += Math.max(0, r); }
+  const lam = w[1] + w[2] + w[3]; if (!(lam > 0)) return { lam: 0, sev: [0, 1, 0, 0], meanSev: 1 };
+  const sev = [0, w[1] / lam, w[2] / lam, w[3] / lam]; return { lam, sev, meanSev: sev[1] + 2 * sev[2] + 3 * sev[3] };
+}
+/** cdf[0..top] of a compound negative binomial (counts: mean nu, size r; each event 1, 2 or 3 with probabilities sev[1..3]) - Panjer. */
+function compoundCdf(top, nu, r, sev) {
+  const g = new Array(top + 1).fill(0);
+  if (!(nu > 0)) { g.fill(1); return g; }
+  let a, b, g0;
+  if (!Number.isFinite(r) || r > 1e6) { a = 0; b = nu; g0 = Math.exp(-nu); }
+  else { const q = r / (r + nu); a = 1 - q; b = (r - 1) * (1 - q); g0 = Math.exp(r * Math.log(q)); }
+  const pmf = [g0]; let acc = g0; g[0] = acc;
+  for (let x = 1; x <= top; x++) { let v = 0; for (let j = 1; j <= 3 && j <= x; j++) if (sev[j]) v += (a + (b * j) / x) * sev[j] * pmf[x - j]; pmf.push(v); acc += v; g[x] = Math.min(1, acc); }
+  return g;
+}
+/** Final recalibration (logistic, per market, fitted on the fit seasons): z = logit(p); tau = share of the game left; lowMin = usual minutes < 20. */
+const calFeatures = (z, tau, lowMin, late, ot) => { const lm = lowMin ? 1 : 0, la = late ? 1 : 0, o = ot ? 1 : 0; return [1, z, z * tau, tau, z * lm, lm, z * la, la, z * o, o]; };
+function calibrate(p, mp, tau, lowMin, late, ot) {
+  if (!mp.cal || !(p > 1e-9 && p < 1 - 1e-9)) return p;
+  const q = Math.min(1 - 1e-6, Math.max(1e-6, p)), z = Math.log(q / (1 - q));
+  const v = calFeatures(z, tau, lowMin, late, ot).reduce((t, x, i) => t + x * (mp.cal[i] || 0), 0);
+  return 1 / (1 + Math.exp(-v));
+}
+const nbLogPmf = (y, mu, k) => (!Number.isFinite(k) || k > 1e6 ? y * Math.log(mu) - mu - lgamma(y + 1)
+  : lgamma(y + k) - lgamma(k) - lgamma(y + 1) + k * Math.log(k / (k + mu)) + y * Math.log(mu / (k + mu)));
+
+/**
+ * The live probability. market: a key of LIVE_MARKETS; cur: { pts, reb, ... } what he has now (every component must be entered);
+ * line: the half-point line; side 'over' | 'under'. Returns { ok, win, push, mean, R, T, settled } or { ok:false, reason }.
+ */
+function liveProb(pre, s, market, cur, line, side, params) {
+  const comps = LIVE_MARKETS[market];
+  if (!comps) return { ok: false, reason: 'this market is not covered by the live model' };
+  const mp = params && params.markets && params.markets[market];
+  if (!mp) return { ok: false, reason: 'no fitted parameters for this market' };
+  if (!pre || !pre.ok) return { ok: false, reason: (pre && pre.reason) || 'no pre-game history' };
+  const T = remainingMin(s.period, s.clockSec); if (T == null) return { ok: false, reason: 'invalid game clock' };
+  for (const c of comps) if (!Number.isFinite(cur[c]) || cur[c] < 0) return { ok: false, reason: `enter his current ${COMPONENT_LABEL[c].toLowerCase()} (never assumed to be 0)` };
+  if (!Number.isFinite(line)) return { ok: false, reason: 'enter a line' };
+  const have = comps.reduce((t, c) => t + cur[c], 0);
+  const ev = eventRates(pre, market); if (!ev) return { ok: false, reason: 'no per-minute rate for this market' };
+  const R = projectMinutes(pre, s, params); if (R == null) return { ok: false, reason: 'invalid game state' };
+  const nu = mp.kappa * ev.lam * R, rate = ev.lam * ev.meanSev, mu = nu * ev.meanSev;
+  const needOver = Math.floor(line - have) + 1; // smallest Y with have + Y > L
+  const top = Math.max(needOver, Number.isInteger(line) ? line - have : 0);
+  const cdf = top > 0 ? compoundCdf(top, nu, sizeFor(nu, mp), ev.sev) : [1];
+  const C = y => (y < 0 ? 0 : cdf[Math.min(y, cdf.length - 1)]);
+  const pOver = needOver <= 0 ? 1 : calibrate(1 - C(needOver - 1), mp, T / 48, pre.M < 20, s.period === 4 && T <= 6, s.period >= 5);
+  let pPush = 0; if (Number.isInteger(line) && line - have >= 0) { const y = line - have; pPush = C(y) - C(y - 1); }
+  const pUnder = Math.max(0, 1 - pOver - pPush);
+  const settledOver = have > line, settledUnder = T === 0 && have < line;
+  return { ok: true, have, mean: have + mu, mu, R, T, rate, win: side === 'under' ? pUnder : pOver, push: pPush,
+    settled: settledOver ? (side === 'under' ? 'lost' : 'won') : T === 0 ? (have === line ? 'push' : side === 'under' ? (have < line ? 'won' : 'lost') : 'lost') : null };
+}
+
+return { EVENTS, LIVE_MARKETS, COMPONENT_LABEL, MIN_GAMES, FOUL_LIMIT, pregame, remainingMin, elapsedMin, minuteFeatures, projectMinutes, nbCdf, sizeFor, eventRates, compoundCdf, calFeatures, calibrate, nbLogPmf, liveProb };
+})();
+__m['nbalivevw'] = (() => {
+// NBA Live Simulator on the EV page (owner request 28 Oct 2026). Pre-Match (the existing calculator) stays the default.
+// Every in-game figure is TYPED by the visitor: PropLab has no live feed, so nothing (score, status, statistics) is filled in or assumed.
+// The probability comes from nbalive.js with the parameters and validation in data-nba-live-model.json; live EV, fair odds and units are
+// shown only for a market and stage of the game that passed the out-of-sample check with the inputs given. Never the pre-match figure.
+const { LIVE_MARKETS, COMPONENT_LABEL, pregame, liveProb, remainingMin } = __m['nbalive'];
+const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { fmtOdds } = __m['oddsfmt'];
+const { esc } = __m['util'];
+
+let modelP = null, model = null, modelErr = false;
+function loadLiveModel() {
+  if (modelP) return modelP;
+  modelP = fetch(`data-nba-live-model.json?v=${Date.now() >> 26}`, { cache: 'default' }).then(r => (r.ok ? r.json() : null)).then(j => { model = j && j.schema === 1 ? j : null; modelErr = !model; return model; }).catch(() => { modelErr = true; return null; });
+  return modelP;
+}
+const liveModel = () => model;
+const liveSupported = (sport, card) => sport === 'nba' && !!(card && card.def && (!card.def.scope || card.def.scope === 'player') && card.detail && card.detail.player);
+const STAGE_LABEL = { q1: 'the first quarter', q2: 'the second quarter', q3: 'the third quarter', q4early: 'the fourth quarter before the last 6 minutes', q4late: 'the fourth quarter with 6:00 to 3:01 left', q4end: 'the last 3 minutes', ot: 'overtime' };
+const stageOf = (period, clockSec) => (period >= 5 ? 'ot' : period === 4 ? (clockSec <= 180 ? 'q4end' : clockSec <= 360 ? 'q4late' : 'q4early') : 'q' + period);
+const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const newLive = () => ({ period: 1, clock: 720, cur: {}, status: 'unknown', minSoFar: '', fouls: '', margin: '', out: false });
+const num = v => (v === '' || v == null ? null : Number(v));
+
+/** Controls (drawn once; the result below is redrawn on every change). */
+function liveControlsHtml(card, L) {
+  const comps = LIVE_MARKETS[card.def.key] || [];
+  const maxC = L.period >= 5 ? 300 : 720;
+  return `<div class="livectl stack" data-livectl>
+    <div class="field"><label>Current quarter</label><div class="seg" role="group" aria-label="Current quarter">${[1, 2, 3, 4, 5].map(q => `<button type="button" data-lq="${q}" class="${L.period === q ? 'on' : ''}" aria-pressed="${L.period === q}">${q === 5 ? 'OT' : 'Q' + q}</button>`).join('')}</div></div>
+    <div class="field"><label for="lclock">Time remaining in the ${L.period >= 5 ? 'overtime' : 'quarter'}: <b data-lclockv>${L.period >= 5 ? 'OT' : 'Q' + L.period} — ${mmss(L.clock)} remaining</b></label>
+      <input type="range" id="lclock" min="0" max="${maxC}" step="1" value="${L.clock}" aria-label="Time remaining in seconds">
+      <div class="lclockin"><label class="xs">Min <input class="in" type="number" inputmode="numeric" min="0" max="${maxC / 60}" data-lmin value="${Math.floor(L.clock / 60)}"></label><label class="xs">Sec <input class="in" type="number" inputmode="numeric" min="0" max="59" data-lsec value="${Math.round(L.clock % 60)}"></label><span class="xs muted" data-lregv></span></div></div>
+    ${comps.length ? `<div class="field"><label>His statistics so far in this game <span class="xs muted">(type them; empty = not entered, never 0)</span></label><div class="lstats">${comps.map(c => `<label class="xs">${esc(COMPONENT_LABEL[c])}<input class="in" type="number" inputmode="numeric" min="0" step="1" data-lcur="${c}" value="${esc(L.cur[c] ?? '')}" placeholder="–"></label>`).join('')}</div></div>` : ''}
+    <div class="field"><label>Player status</label><div class="seg" role="group" aria-label="Player status">${[['on', 'On Court'], ['bench', 'Bench'], ['unknown', 'Unknown']].map(([v, l]) => `<button type="button" data-lst="${v}" class="${L.status === v ? 'on' : ''}" aria-pressed="${L.status === v}">${l}</button>`).join('')}</div></div>
+    <div class="lstats"><label class="xs">Minutes played so far <input class="in" type="number" inputmode="decimal" min="0" max="65" step="0.5" data-lopt="minSoFar" value="${esc(L.minSoFar)}" placeholder="optional"></label>
+      <label class="xs">Personal fouls <input class="in" type="number" inputmode="numeric" min="0" max="6" step="1" data-lopt="fouls" value="${esc(L.fouls)}" placeholder="optional"></label>
+      <label class="xs">His team's score margin <input class="in" type="number" inputmode="numeric" min="-80" max="80" step="1" data-lopt="margin" value="${esc(L.margin)}" placeholder="e.g. +8 or -12"></label></div>
+    <label class="hcheck xs"><input type="checkbox" data-lout ${L.out ? 'checked' : ''}> Ruled out, injured for the rest of the game or ejected (only if you know it)</label>
+  </div><div data-liveout aria-live="polite"></div>`;
+}
+
+/** The result block. od: parsed odds { dec, exact } or null. */
+function liveResultHtml(card, st, L, od) {
+  const NA = (title, why) => `<div class="evbig ev-none" data-live="na"><b>${esc(title)}</b><span>${why}</span></div>`;
+  const key = card.def.key, comps = LIVE_MARKETS[key];
+  if (!comps) return NA('Live EV unavailable', `${esc(card.def.label)} is not covered by the live model. Covered: points, rebounds, assists, threes made, steals, blocks and their combinations (P+R, P+A, R+A, P+R+A, S+B). The pre-match figure is never used instead.`);
+  if (!model) return modelErr ? NA('Live EV unavailable', 'The live model file could not be loaded. Nothing is estimated without it.') : NA('Loading the live model…', '');
+  const mp = model.markets[key];
+  if (!mp || !mp.passed) return NA('Live EV unavailable — model not yet validated', `The live model did not pass its out-of-sample check for ${esc(card.def.label.toLowerCase())}.`);
+  const side = (st.side === 'under' || st.side === 'no') ? 'under' : 'over', line = Number(st.line);
+  const T = remainingMin(L.period, L.clock);
+  const s = { period: L.period, clockSec: L.clock, minSoFar: num(L.minSoFar), status: L.status, fouls: num(L.fouls), margin: num(L.margin), out: L.out };
+  const cur = {}; for (const c of comps) cur[c] = num(L.cur[c]);
+  const missing = comps.filter(c => !Number.isInteger(cur[c]) || cur[c] < 0);
+  if (missing.length) return NA('Enter his current statistics', `Type his current ${missing.map(c => COMPONENT_LABEL[c].toLowerCase()).join(' and ')} for this game, as whole numbers. An empty field is never treated as 0.`);
+  const have = comps.reduce((t, c) => t + cur[c], 0);
+  if (have > line) return NA(side === 'over' ? 'Target already reached' : 'Under already lost', `He has ${have}, above the line of ${line}. ${side === 'over' ? 'The Over has already won' : 'The Under can no longer win'}, so there is no live bet to price.`);
+  if (L.period === 4 && L.clock === 0) return NA('Game over', 'The fourth quarter has ended. If the game went to overtime, choose OT. No new live calculations after the final whistle.');
+  if (L.period >= 5 && L.clock === 0) return NA('End of overtime', 'If there is another overtime, set the clock back to 5:00; otherwise the game is over.');
+  if (L.out || (Number.isFinite(s.fouls) && s.fouls >= 6)) return NA('He will not add to his total', `${L.out ? 'Marked as ruled out, injured or ejected' : 'Six fouls: fouled out'}. His final is ${have}, ${have > line ? 'above' : have === line ? 'on' : 'below'} the line, so the outcome no longer depends on the game: no live bet to price.`);
+  const full = Number.isFinite(s.minSoFar) && (s.status === 'on' || s.status === 'bench');
+  const stage = stageOf(L.period, L.clock), vs = model.validation && model.validation.byMarketStage && model.validation.byMarketStage[key] && model.validation.byMarketStage[key][stage];
+  const passStage = vs && (full ? vs.pass_full : vs.pass_unknown);
+  if (!passStage) {
+    const hint = !full && vs && vs.pass_full ? ' Enter his <b>minutes played so far</b> and <b>On Court / Bench</b>: with those the model was validated here.' : '';
+    return NA('Live EV unavailable — model not yet validated', `For ${esc(card.def.label.toLowerCase())} in ${STAGE_LABEL[stage]}${full ? '' : ' without his minutes and status'}, the historical check found the probabilities off by more than the limit.${hint}`);
+  }
+  // exactly the validated variant: with minutes AND status, every input given is used; otherwise the version that assumed none of them
+  const used = full ? s : { ...s, minSoFar: null, status: 'unknown', fouls: null, margin: null };
+  const pre = pregame(historyOf(card));
+  const lp = liveProb(pre, used, key, cur, line, side, model);
+  if (!lp.ok) return NA('Live EV unavailable', esc(lp.reason));
+  const fair = lp.win > 0 ? (1 - lp.push) / lp.win : null;
+  const D = od && od.dec ? (od.exact ?? od.dec) : null;
+  const evRaw = D ? (lp.win * D + lp.push - 1) * 100 : null, ku = D ? kellyUnits(lp.win, D, lp.push) : null;
+  const cls = evRaw == null ? 'ev-wait' : evRaw > 0 ? 'ev-pos' : 'ev-neg';
+  const sideName = `${side === 'over' ? 'Over' : 'Under'} ${line}`;
+  return `<div class="evbig ${cls}" data-live="ok" data-live-p="${lp.win}" data-live-ev="${evRaw ?? ''}">${evRaw == null ? '<b>Enter the odds</b><span>Type the live price you can see for this side (above) to see the live EV.</span>' : `<b>${evRaw > 0 ? '+' : evRaw < 0 ? '−' : ''}${Math.abs(evRaw).toFixed(1)}%</b><span>Live estimated EV for ${esc(sideName)}</span>`}</div>
+    <div class="tiles evtiles"><div class="tile"><b data-livep>${(lp.win * 100).toFixed(1)}%</b><span>Live estimated probability (${esc(sideName)})</span></div>
+      <div class="tile"><b data-livefair>${fair ? esc(fmtOdds(fair)) : '–'}</b><span>Live fair odds</span></div>
+      <div class="tile"><b>${lp.R.toFixed(1)}</b><span>Projected further minutes for him (of ${T.toFixed(1)} left)</span></div>
+      <div class="tile"><b>${lp.mean.toFixed(1)}</b><span>Projected final ${esc(card.def.label.toLowerCase())} (he has ${have})</span></div></div>
+    <div class="evunits${ku && evRaw > 0 && ku.units > 0 ? ' pos' : ''}" data-liveunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}"><span class="evul">Theoretical Units:</span> <b>${!D ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>
+      <span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>
+      <span class="xs muted">${esc(KELLY_NOTE)} ${esc(CAP_NOTE)}</span></div>
+    <p class="xs muted" style="margin:0"><b>Experimental live model</b>, checked on every game of ${esc(model.test_season)}${full ? '' : ' (minutes, status, fouls and margin not used: enter his minutes played and On Court / Bench to include them)'} (fit on ${esc(model.fit_seasons.join(' and '))}): for ${esc(card.def.label.toLowerCase())} in ${STAGE_LABEL[stage]} its probabilities were within the calibration limits${full ? ' with his minutes and status entered' : ''}. Calibrated is not the same as profitable: PropLab has no live odds history. Everything here is typed by you; PropLab has no live feed.</p>`;
+}
+/** His earlier games for the pre-game inputs: played games only, before this game, within 400 days (as in the backtest). */
+function historyOf(card) {
+  const rows = (card.detail && card.detail.rows) || [], gid = card.game && card.game.id, lim = new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10);
+  return rows.filter(r => !r.dnp && Number.isFinite(r.min) && r.min > 0 && r.game !== gid && r.date >= lim)
+    .slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 30);
+}
+/** Wires the controls in box; L is mutated; onChange() redraws the result. */
+function wireLive(box, card, L, onChange) {
+  const ctl = box.querySelector('[data-livectl]'); if (!ctl) return;
+  const reg = () => { const t = remainingMin(L.period, L.clock); const v = ctl.querySelector('[data-lregv]'); if (v) v.textContent = L.period >= 5 ? 'Overtime: only this overtime is counted' : `Regulation time remaining: ${mmss(t * 60)}`;
+    const cv = ctl.querySelector('[data-lclockv]'); if (cv) cv.textContent = `${L.period >= 5 ? 'OT' : 'Q' + L.period} — ${mmss(L.clock)} remaining`; };
+  let raf = 0; const go = () => { reg(); if (raf) return; raf = requestAnimationFrame(() => { raf = 0; onChange(); }); };
+  const setClock = (v, from) => { const max = L.period >= 5 ? 300 : 720; L.clock = Math.max(0, Math.min(max, Math.round(v)));
+    if (from !== 'range') ctl.querySelector('#lclock').value = L.clock;
+    if (from !== 'num') { ctl.querySelector('[data-lmin]').value = Math.floor(L.clock / 60); ctl.querySelector('[data-lsec]').value = L.clock % 60; } go(); };
+  ctl.addEventListener('click', e => {
+    const q = e.target.closest('[data-lq]'); if (q) { const old = L.period; L.period = Number(q.dataset.lq); if ((old >= 5) !== (L.period >= 5)) L.clock = L.period >= 5 ? 300 : 720;
+      ctl.querySelectorAll('[data-lq]').forEach(b => { const on = Number(b.dataset.lq) === L.period; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      const r = ctl.querySelector('#lclock'); r.max = L.period >= 5 ? 300 : 720; ctl.querySelector('[data-lmin]').max = L.period >= 5 ? 5 : 12; setClock(L.clock); return; }
+    const s = e.target.closest('[data-lst]'); if (s) { L.status = s.dataset.lst; ctl.querySelectorAll('[data-lst]').forEach(b => { const on = b.dataset.lst === L.status; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); go(); }
+  });
+  ctl.addEventListener('input', e => {
+    const t = e.target;
+    if (t.id === 'lclock') return setClock(Number(t.value), 'range');
+    if (t.matches('[data-lmin],[data-lsec]')) { const m = Number(ctl.querySelector('[data-lmin]').value) || 0, sc = Number(ctl.querySelector('[data-lsec]').value) || 0; return setClock(m * 60 + Math.min(59, Math.max(0, sc)), 'num'); }
+    if (t.matches('[data-lcur]')) { L.cur[t.dataset.lcur] = t.value.trim(); return go(); }
+    if (t.matches('[data-lopt]')) { L[t.dataset.lopt] = t.value.trim(); return go(); }
+  });
+  ctl.addEventListener('change', e => { if (e.target.matches('[data-lout]')) { L.out = e.target.checked; go(); } });
+  reg();
+}
+
+return { loadLiveModel, liveModel, liveSupported, stageOf, newLive, liveControlsHtml, liveResultHtml, historyOf, wireLive };
+})();
 __m['pricecheck'] = (() => {
 // Compare Price (redesign, 21 Oct 2026). Tapping Compare Price on any result card carries that exact card (sport, fixture, player or team,
 // market, side, line, games used) to the sport's Value page, where the visitor types the odds they can see at a bookmaker.
@@ -7197,18 +7581,20 @@ const { cardHtml, paintHCard, wireHCards, lineStats, cmpLine } = __m['hiwicard']
 const { wireBarTaps } = __m['barinfo'];
 const { sideCounts } = __m['rank'];
 const { evBlock, loadCalib } = __m['valueev'];
-const { parseAnyOdds } = __m['nfl-model'];
+const { readInput, convertInput, oddsFmt, fmtName, PLACEHOLDER } = __m['oddsfmt'];
+const { liveSupported, liveControlsHtml, liveResultHtml, wireLive, newLive, loadLiveModel } = __m['nbalivevw'];
 
 let carried = null;
 const VALUE = { football: '#/value', nfl: '#/nfl/value', nba: '#/nba/value' };
 /** Called by the card's Compare Price button. extra: query params for the sport's own Value tools (e.g. NFL model prefill). */
 function carryPrice(card, st, sport, extra = '') {
-  carried = { card, st: { ...st }, sport, at: Date.now(), odds: '' };
+  carried = { card, st: { ...st }, sport, at: Date.now(), odds: '', oddsIn: { text: '', exact: null, auto: null }, mode: 'pre', live: null };
   location.hash = `${VALUE[sport] || VALUE.football}?carry=${carried.at}${extra}`;
 }
 const hasCarry = sport => !!carried && carried.sport === sport;
 /** Shows a card on the Value page itself (e.g. NBA Value's own picker); returns the token to pass to carryHtml. */
-const setCarried = (card, st, sport) => { carried = { card, st: { ...st }, sport, at: Date.now(), odds: carried && carried.sport === sport ? carried.odds : '' }; return String(carried.at); };
+const setCarried = (card, st, sport) => { const keep = carried && carried.sport === sport; carried = { card, st: { ...st }, sport, at: Date.now(), odds: keep ? carried.odds : '', oddsIn: keep && carried.oddsIn ? carried.oddsIn : { text: '', exact: null, auto: null }, mode: 'pre', live: null }; return String(carried.at); };
+const oddsState = () => { if (!carried.oddsIn) carried.oddsIn = { text: carried.odds || '', exact: null, auto: null }; return carried.oddsIn; };
 /** The carried-card block at the top of a Value page. Returns '' when nothing was carried; a short notice when the link was opened
  *  without the card (e.g. after a reload). */
 function carryHtml(sport, r, token = null) {
@@ -7218,9 +7604,10 @@ function carryHtml(sport, r, token = null) {
   return `<section class="pcbox" id="pcbox"><h2 style="margin:0 0 4px">Compare a price for this card</h2>
     ${carried.card.game ? `<p class="small" style="margin:0 0 4px"><b>Game:</b> ${esc(carried.card.game.away)} at ${esc(carried.card.game.home)}</p>` : ''}<p class="xs muted" style="margin:0 0 8px">The same card you tapped, with the same line, side and games. Change them here if your bookmaker's line is different.</p>
     <div id="pccard"></div>
-    <div class="card stack pcodds"><div class="field"><label for="pcodds">Odds you can see for this side <span class="xs muted">(you type them: PropLab has no odds)</span></label>
-      <input class="in" id="pcodds" inputmode="text" autocomplete="off" placeholder="e.g. 1.91, 10/11, evens or -110" value="${esc(carried.odds)}"></div>
-      <div id="pcev" class="stack"></div>
+    <div class="card stack pcodds"><div class="field"><label for="pcodds">Odds you can see for this side, <span data-pcfmt>${esc(fmtName())}</span> <span class="xs muted">(you type them: PropLab has no odds · format: "Odds shown as" at the bottom of the page)</span></label>
+      <input class="in" id="pcodds" inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(oddsState().text)}"></div>
+      ${liveSupported(sport, carried.card) ? `<div class="seg pcmode" role="group" aria-label="Pre-match or live" data-pcmode><button type="button" data-v="pre" class="${carried.mode !== 'live' ? 'on' : ''}" aria-pressed="${carried.mode !== 'live'}">Pre-Match</button><button type="button" data-v="live" class="${carried.mode === 'live' ? 'on' : ''}" aria-pressed="${carried.mode === 'live'}">Live Simulator</button></div><div data-pclive ${carried.mode === 'live' ? '' : 'hidden'}></div>` : ''}
+      <div id="pcev" class="stack" ${carried.mode === 'live' ? 'hidden' : ''}></div>
       <div id="pcout" aria-live="polite"></div></div></section>`;
 }
 function wireCarry(root) {
@@ -7234,15 +7621,33 @@ function wireCarry(root) {
   const calc = () => {
     const e = reg.get(c.cid); const cur = e.card, s0 = e.st; const s = lineStats(cur.rows.map(x => x.value), cmpLine(cur.def, s0.line));
     const side = s0.side === 'both' ? null : (s0.side === 'under' || s0.side === 'no') ? 'under' : 'over';
-    const k = sideCounts(s, side); const o = parseAnyOdds(carried.odds).dec;
+    const od = readInput(oddsState()), k = sideCounts(s, side); const o = od.dec;
     const sideName = cur.def.binary ? (k.side === 'over' ? 'Yes' : 'No') : cur.def.hcp ? (k.side === 'over' ? `Cover ${s0.line}` : `Fail ${s0.line}`) : `${k.side === 'over' ? 'Over' : 'Under'} ${s0.line}`;
     let h = '';
-    const ev = box.querySelector('#pcev'); if (ev) ev.innerHTML = evBlock(cur, s0, carried.sport, carried.odds);
+    const ev = box.querySelector('#pcev'); if (ev && carried.mode !== 'live') ev.innerHTML = evBlock(cur, s0, carried.sport, od);
+    const lv = box.querySelector('[data-liveout]'); if (lv && carried.mode === 'live') lv.innerHTML = `${liveResultHtml(cur, s0, carried.live, od.dec ? od : null)}${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : ''}`;
     h += k.n ? `<p style="margin:0"><b>Past frequency (history, not a probability):</b> ${sideName} in <b>${k.hits} of ${k.n}</b> (${k.pct}%) of the card's games.</p>` : '<p style="margin:0">This card has no games with data in its Games used.</p>';
     if (o) { const imp = 100 / o; if (k.n && side) h += `<p class="small" style="margin:6px 0 0">The past frequency (${k.pct}%) is ${k.pct > imp ? 'above' : k.pct < imp ? 'below' : 'equal to'} the odds' implied ${imp.toFixed(1)}%. The EV above uses the estimated probability, not this frequency.</p>`; }
     out.innerHTML = h;
   };
-  box.querySelector('#pcodds').addEventListener('input', ev => { carried.odds = ev.target.value; calc(); });
+  box.querySelector('#pcodds').addEventListener('input', ev => { carried.odds = ev.target.value; oddsState().text = ev.target.value; calc(); });
+  // odds format changed at the bottom of the page: the typed price is converted (the exact price is kept, so nothing drifts)
+  const onFmt = e => { if (!box.isConnected) { document.removeEventListener('oddsfmt', onFmt); return; }
+    carried.oddsIn = convertInput(oddsState(), e.detail.from, e.detail.to); carried.odds = carried.oddsIn.text;
+    const inp = box.querySelector('#pcodds'); inp.value = carried.oddsIn.text; inp.placeholder = PLACEHOLDER[e.detail.to]; inp.inputMode = e.detail.to === 'dec' ? 'decimal' : 'text';
+    const f = box.querySelector('[data-pcfmt]'); if (f) f.textContent = fmtName(e.detail.to); calc(); };
+  document.addEventListener('oddsfmt', onFmt);
+  // Pre-Match / Live Simulator (NBA player markets)
+  const lvSlot = box.querySelector('[data-pclive]');
+  const drawLive = () => { if (!lvSlot) return; const e = reg.get(c.cid); carried.live = carried.live || newLive(); lvSlot.innerHTML = liveControlsHtml(e.card, carried.live); wireLive(lvSlot, e.card, carried.live, calc); };
+  if (lvSlot) {
+    if (carried.mode === 'live') { drawLive(); loadLiveModel().then(() => box.isConnected && calc()); }
+    box.querySelector('[data-pcmode]').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; carried.mode = b.dataset.v;
+      box.querySelectorAll('[data-pcmode] button').forEach(x => { const on = x.dataset.v === carried.mode; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+      lvSlot.hidden = carried.mode !== 'live'; box.querySelector('#pcev').hidden = carried.mode === 'live';
+      if (carried.mode === 'live' && !lvSlot.firstChild) drawLive();
+      if (carried.mode === 'live') loadLiveModel().then(() => box.isConnected && calc()); calc(); });
+  }
   // the card's own controls (line, side, games) repaint it first; then the comparison follows
   slot.addEventListener('input', () => setTimeout(calc, 0)); slot.addEventListener('click', () => setTimeout(calc, 0)); slot.addEventListener('change', () => setTimeout(calc, 0));
   calc(); loadCalib().then(() => { if (box.isConnected) calc(); });
@@ -7309,6 +7714,7 @@ const { model, loadModel, loadBacktest, loadForward, lineProbs, marketInfo, pars
 const { $, esc, fmtKick } = __m['util'];
 const { infoTag } = __m['info'];
 const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { parseIn, fmtOdds, oddsFmt, fmtName, PLACEHOLDER, inputText } = __m['oddsfmt'];
 const { STAKING_HTML } = __m['valueev'];
 
 const EV_NOTICE = `<section class="ainotice" role="note"><h2>AI Model — Experimental Testing</h2><p>PropLab's AI predictions, confidence ratings and expected value (EV) calculations are currently in testing. Results may be inaccurate and will change as the model is developed and evaluated. These estimates are not guaranteed outcomes and should not be relied upon as the sole basis for betting decisions.</p></section>`;
@@ -7427,6 +7833,9 @@ function fwHtml(fw, name) {
 // ---------------------------------------------------------------- EV (Value) page, NFL
 const ev = { pid: '', market: '', line: null, side: 'over', odds: '' };
 async function viewNflEv(root, r) {
+  { const onFmt = e => { const el = document.getElementById('evo'); if (!root.isConnected || !el) { document.removeEventListener('oddsfmt', onFmt); return; }
+      const r0 = parseIn(ev.odds, e.detail.from); if (r0.dec) { ev.odds = inputText(r0.exact, e.detail.to); el.value = ev.odds; } el.placeholder = PLACEHOLDER[e.detail.to]; el.dispatchEvent(new Event('input', { bubbles: true })); };
+    document.addEventListener('oddsfmt', onFmt); }
   loading(root); await loadModel();
   const q = r?.q; if (q && q.get('pid')) { ev.pid = q.get('pid'); ev.market = q.get('m') || ''; ev.line = q.get('line') != null ? Number(q.get('line')) : null; ev.side = q.get('side') === 'under' ? 'under' : 'over'; }
   if (model.status !== 'ready') { missing(root, 'Value Research'); if (q && q.get('carry')) { root.insertAdjacentHTML('afterbegin', carryHtml('nfl', r)); wireCarry(root); } return; }
@@ -7454,12 +7863,12 @@ async function viewNflEv(root, r) {
     if (!ps.some(p => p.market === ev.market)) { ev.market = ps[0].market; ev.line = null; }
     const p = ps.find(x => x.market === ev.market), mk = marketInfo(p.market);
     if (ev.line == null || !Number.isFinite(ev.line)) ev.line = p.ref_line ?? 0.5;
-    const od = parseAnyOdds(ev.odds);
+    const od = parseIn(ev.odds);
     evc.innerHTML = `<div class="small muted">${esc(fxText(p))} · ${esc(kick(p))}</div>
       <div class="ctl"><div class="field"><label for="evm">Market</label><select class="in" id="evm">${ps.map(x => `<option value="${x.market}" ${x.market === p.market ? 'selected' : ''}>${esc(marketInfo(x.market)?.label || x.market)}${marketInfo(x.market)?.active ? '' : ' (model inactive)'}</option>`).join('')}</select></div>
         <div class="field"><label>Side</label><div class="seg" id="evs">${[['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ev.side === v ? 'on' : ''}" aria-pressed="${ev.side === v}">${l}</button>`).join('')}</div></div>
         <div class="field"><label for="evl">Bookmaker's line</label><div class="hline"><button type="button" class="hstep" data-evstep="-1" aria-label="Lower the line by 1">−</button><input id="evl" class="in hnum" type="number" inputmode="decimal" step="0.5" value="${ev.line}" aria-label="Line"><button type="button" class="hstep" data-evstep="1" aria-label="Raise the line by 1">+</button></div><span class="xs muted">Reference line ${p.ref_line ?? '–'} ${infoTag('refline', 'what is this?', { cls: 'neutral' })}</span></div>
-        <div class="field"><label for="evo">Bookmaker's odds for your side</label><input class="in" id="evo" inputmode="text" autocomplete="off" placeholder="1.91, 10/11 or -110" value="${esc(ev.odds)}"><span class="xs muted" id="evok">${od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error ? esc(od.error) : 'Decimal, fractional or American odds'}</span></div></div>`;
+        <div class="field"><label for="evo">Bookmaker's odds for your side (${esc(fmtName())})</label><input class="in" id="evo" inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(ev.odds)}"><span class="xs muted" id="evok">${od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error ? esc(od.error) : `${fmtName()} odds (change the format at the bottom of the page)`}</span></div></div>`;
     drawResult(p, mk, od);
   };
   const drawResult = (p, mk, od) => {
@@ -7477,13 +7886,13 @@ async function viewNflEv(root, r) {
     evr.innerHTML = `<div class="card evcard stack" style="margin-top:12px">
       <div class="tiles"><div class="tile"><b>${pct(pw)}</b><span>${infoTag('mprob', 'Model probability', { cls: 'neutral' })} <span class="xs muted">± ${(m * 100).toFixed(0)} pts</span></span></div>
         <div class="tile"><b>${imp ? pct(imp) : '–'}</b><span>Implied by the odds</span></div>
-        <div class="tile"><b>${fair ? fair.toFixed(2) : '–'}</b><span>${infoTag('fair', 'Fair odds', { cls: 'neutral' })}</span></div>
-        <div class="tile"><b>${od.dec ? od.dec : '–'}</b><span>Offered odds</span></div>
+        <div class="tile"><b>${fair ? esc(fmtOdds(fair)) : '–'}</b><span>${infoTag('fair', 'Fair odds', { cls: 'neutral' })}</span></div>
+        <div class="tile"><b>${od.dec ? esc(fmtOdds(od.exact ?? od.dec)) : '–'}</b><span>Offered odds</span></div>
         <div class="tile"><b class="${verdict ? 'ev-' + verdict[1] : ''}">${evp != null ? `${evp > 0 ? '+' : ''}${evp}%` : '–'}</b><span>${infoTag('evx', 'Estimated EV', { cls: 'neutral' })}</span></div>
         <div class="tile"><b>${evp != null ? `${evp >= 0 ? '+' : '−'}£${Math.abs(evp / 100).toFixed(2)}` : '–'}</b><span>Expected return per £1</span></div></div>
       ${(() => { // Recommended Units (owner request 27 Oct): the same 1/8 Kelly function as every Value page, from the model probability
         const ku = od.dec ? kellyUnits(pw, od.exact ?? od.dec, push) : null, er = od.dec ? (pw * (od.exact ?? od.dec) + push - 1) * 100 : null;
-        return `<div class="evunits${ku && er > 0 && ku.units > 0 ? ' pos' : ''}" data-evunits="${ku ? (er > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">Recommended Units:</span> <b>${!od.dec ? 'Enter the odds' : !ku ? 'Units unavailable' : er <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>${STAKING_HTML}<span class="xs muted">${esc(KELLY_NOTE)} This market's model passed its out-of-sample tests, but PropLab has no bookmaker odds history, so this staking has not been proven to make money. ${esc(CAP_NOTE)}</span></div>`; })()}
+        return `<div class="evunits${ku && er > 0 && ku.units > 0 ? ' pos' : ''}" data-evunits="${ku ? (er > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><span class="evul">Theoretical Units:</span> <b>${!od.dec ? 'Enter the odds' : !ku ? 'Units unavailable' : er <= 0 ? '0.00u — Do not bet' : esc(unitsText(ku))}</b>${STAKING_HTML}<span class="xs muted">${esc(KELLY_NOTE)} This market's model passed its out-of-sample tests, but PropLab has no bookmaker odds history, so this staking has not been proven to make money. ${esc(CAP_NOTE)}</span></div>`; })()}
       ${verdict ? `<div class="evverdict ev-${verdict[1]}"><b>${verdict[0]}</b> <span class="small">EV range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the probability's margin.</span></div>` : '<p class="small muted" style="margin:0">Type the bookmaker\'s odds to see the implied chance and EV.</p>'}
       ${(() => { const t = (() => { try { const v = Number(localStorage.getItem('proplab.nfl.targetEv.v1') ?? 5); return Number.isFinite(v) && v >= 0 ? v : 5; } catch { return 5; } })(); const a0 = minOdds(pw, 0, push), aT = minOdds(pw, t / 100, push);
         return a0 ? `<div class="small minodds"><b>Minimum odds to look for</b> (model probability ${pct(pw)}${push ? `, push ${pct(push)}` : ''}): positive EV at <b>${a0.dec}</b> (${esc(a0.frac)}, ${esc(a0.amer)}) or better; +${t}% EV at <b>${aT.dec}</b> (${esc(aT.frac)}, ${esc(aT.amer)}) or better. <span class="xs muted">Rounded so the stated EV is reached. A price to look for, not a price PropLab has seen at any bookmaker.</span></div>` : ''; })()}
@@ -7509,8 +7918,8 @@ async function viewNflEv(root, r) {
     const st = e.target.closest('[data-evstep]'); if (st) { ev.line = Math.max(0.5, Math.round((ev.line + Number(st.dataset.evstep)) * 2) / 2); draw(); }
   });
   root.addEventListener('input', e => {
-    if (e.target.id === 'evo') { ev.odds = e.target.value; const od = parseAnyOdds(ev.odds); const k = $('#evok', root); if (k) k.textContent = od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error || 'Decimal, fractional or American odds'; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), od); }
-    if (e.target.id === 'evl') { const v = parseFloat(e.target.value); if (Number.isFinite(v)) { ev.line = v; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), parseAnyOdds(ev.odds)); } }
+    if (e.target.id === 'evo') { ev.odds = e.target.value; const od = parseIn(ev.odds); const k = $('#evok', root); if (k) k.textContent = od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error || `${fmtName()} odds (change the format at the bottom of the page)`; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), od); }
+    if (e.target.id === 'evl') { const v = parseFloat(e.target.value); if (Number.isFinite(v)) { ev.line = v; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), parseIn(ev.odds)); } }
   });
   draw();
 }
@@ -7529,10 +7938,14 @@ const { dataBanner, problemsBanner } = __m['shared'];
 const { EV_NOTICE } = __m['v-nfl-model'];
 const { carryHtml, wireCarry } = __m['pricecheck'];
 const { evBlock, loadCalib } = __m['valueev'];
+const { parseIn, fmtOdds, oddsFmt, fmtName, PLACEHOLDER, inputText } = __m['oddsfmt'];
 
 const ui = { subject: null, market: null, side: 'over', line: null, last: 20, venue: '', odds: '', other: '', minutes: '' };
 
 async function viewValue(root, r) {
+  { const onFmt = e => { if (!root.isConnected || !document.querySelector('#od')) { document.removeEventListener('oddsfmt', onFmt); return; }
+      for (const [id, k] of [['od', 'odds'], ['ot', 'other']]) { const r = parseIn(ui[k], e.detail.from); if (!r.dec) continue; ui[k] = inputText(r.exact, e.detail.to); const el = document.getElementById(id); if (el) { el.value = ui[k]; el.placeholder = id === 'od' ? PLACEHOLDER[e.detail.to] : el.placeholder; el.dispatchEvent(new Event('input', { bubbles: true })); } } };
+    document.addEventListener('oddsfmt', onFmt); }
   if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Value: compare a price</h1>${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
   const q = r.q;
   if (q.get('s')) { ui.subject = q.get('s'); ui.market = RETIRED_MARKETS.has(q.get('m')) ? null : q.get('m'); /* old links to the removed yellow/red markets are ignored safely */ ui.side = q.get('side') === 'under' ? 'under' : 'over'; ui.line = q.get('line') ? Number(q.get('line')) : null; ui.last = q.get('last') === 'season' ? 'season' : q.get('last') ? Number(q.get('last')) || 0 : 20; ui.venue = ['home', 'away'].includes(q.get('venue')) ? q.get('venue') : ''; } // a play's exact sample (26 Oct)
@@ -7563,7 +7976,7 @@ async function viewValue(root, r) {
         <div class="field"><label>Line</label><div class="stepper"><button data-step="-1" aria-label="Lower">−</button><input id="ln" type="text" inputmode="decimal" value="${ui.line}" aria-label="Line"><button data-step="1" aria-label="Raise">+</button></div></div>
         <div class="field"><label>Data used</label><div class="seg" id="lt">${['season', 5, 10, 15, 20, 0].map(n => `<button data-v="${n}" class="${ui.last === n ? 'on' : ''}">${n === 'season' ? 'Season' : n ? 'Last ' + n : 'All'}</button>`).join('')}</div></div>
         <div class="field"><label>Venue</label><div class="seg" id="vn">${[['', 'All'], ['home', 'Home'], ['away', 'Away']].map(([v, l]) => `<button data-v="${v}" class="${ui.venue === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-        <div class="field"><label>Odds for your side</label><input class="in" id="od" inputmode="text" placeholder="e.g. 1.9 or 10/11" value="${esc(ui.odds)}"></div>
+        <div class="field"><label>Odds for your side (${esc(fmtName())})</label><input class="in" id="od" inputmode="text" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(ui.odds)}"></div>
         <div class="field"><label>Other side odds (optional)</label><input class="in" id="ot" inputmode="text" placeholder="removes the margin" value="${esc(ui.other)}"></div>
         ${type === 'player' ? `<div class="field"><label>Expected minutes</label><input class="in" id="mn" inputmode="numeric" placeholder="${avg(rows.slice(0, 5).map(x => x.minutes).filter(v => typeof v === 'number')) ?? '90'}" value="${esc(ui.minutes)}"></div>` : ''}</div>`;
     syncMinus(el, ui.line, null);
@@ -7575,11 +7988,11 @@ async function viewValue(root, r) {
     const cs = all.reduce((m, x) => (x.season > m ? x.season : m), 0);
     const sampleRows = applyFilters(all, { last: typeof ui.last === 'number' && ui.last ? ui.last : null, season: ui.last === 'season' ? cs : null, venue: ui.venue });
     const hr = hitRate(sampleRows.map(x => x.value), ui.line, ui.side); res.dataset.sample = sampleKey(sampleRows);
-    const odds = parseOdds(ui.odds), other = parseOdds(ui.other);
+    const odds = parseIn(ui.odds).dec, other = parseIn(ui.other).dec; void other;
     const word = ui.side === 'under' ? 'Under' : 'Over';
     let h = `<div class="card stack" style="margin-top:12px"><h2>Trend: what happened</h2>`;
     h += hr.n ? `<p style="margin:0"><b class="stat" style="font-size:24px">${hr.hits} of ${hr.n}</b> <span class="muted">(${hr.hitPct}%) went ${word.toLowerCase()} ${ui.line} ${esc(market.label)}</span></p>${hr.n < 8 ? `<div class="banner"><b>Small sample (${hr.n}).</b> Too few matches to draw a conclusion.</div>` : ''}` : '<div class="banner">No matches with data for this market.</div>';
-    if (odds && hr.n) { const be = 100 / odds; h += `<p style="margin:0">At <b>${odds}</b> you need to win more than <b>${be.toFixed(1)}%</b> of the time to break even. The past frequency was ${hr.hitPct}%, ${hr.hitPct > be ? 'above' : 'below'} that. This compares a past count with a price. It is <b>not</b> a probability estimate and does not mean the bet has value.</p>`; }
+    if (odds && hr.n) { const be = 100 / odds; h += `<p style="margin:0">At <b>${esc(fmtOdds(odds))}</b> you need to win more than <b>${be.toFixed(1)}%</b> of the time to break even. The past frequency was ${hr.hitPct}%, ${hr.hitPct > be ? 'above' : 'below'} that. This compares a past count with a price. It is <b>not</b> a probability estimate and does not mean the bet has value.</p>`; }
     h += '</div>';
     // Estimated probability and EV (26 Oct): the same calibrated estimate as every other Value page (valueev.js), from all of this
     // subject's recorded games (recent ones weighted more), at this line and side. Insufficient evidence => no EV.
@@ -8097,7 +8510,7 @@ const { hitRate, parseOdds } = __m['analytics'];
 const { dotsFor } = __m['plays'];
 const { stepperHtml, openGraphModal } = __m['panel'];
 const { nextSort, sortRows, sortTh } = __m['sorttable'];
-const { nameMatches, psearchHtml } = __m['psearch'];
+const { nameMatches, psearchHtml, attachSuggest } = __m['psearch'];
 const { sampleKey, $, koLocal, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, koUK, fmtDay } = __m['util'];
 const { getMinGames, setMinGames, MIN_LO, MIN_HI, usAdapter } = __m['v-hiwi'];
 const { prefs } = __m['shared'];
@@ -8165,7 +8578,7 @@ async function viewNflFinder(root) {
     const minG = Math.min(getMinGames(), nflSeasonGames() || getMinGames()), hidden = [], subjects = []; // capped at the games played so far this season
     for (const p of nfl.players) {
       // temporary player search (owner request 27 Oct): replaces the position ticks and Popular only while text is typed (the market still decides which positions apply)
-      if (!(ui.find ? supportedGroups().includes(p.group) && nameMatches(ui.find, p.name) : gs.includes(p.group) && !(ui.pop && !p.notable)) || !p.current || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team))) continue;
+      if (!(ui.find ? supportedGroups().includes(p.group) && (ui.findId ? String(p.id) === String(ui.findId) : nameMatches(ui.find, p.name)) : gs.includes(p.group) && !(ui.pop && !p.notable)) || !p.current || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team))) continue;
       const rows = (bys.get(p.group).get(p.id) || []).filter(r => r.type === 'R'); // the same games as the result cards: regular season
       const eligible = rows.filter(r => r.season === season).length; // games he played this season
       if (eligible < minG) { if (eligible > 0) hidden.push({ p, n: eligible }); continue; }
@@ -8204,9 +8617,11 @@ async function viewNflFinder(root) {
     else if (t.id === 'tm') ui.team = t.value; else if (t.id === 'nord') ui.order = t.value; else return;
     drawCtl(); draw(); });
   let psT = null;
-  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
+  attachSuggest(ctl, 'fpfind', { candidates: () => { const gs = selGames(), gT = gs.length ? new Set(gs.flatMap(g => [g.home, g.away])) : null, sg = supportedGroups(); return nfl.players.filter(p => p.current && sg.includes(p.group) && (!ui.team || p.team === ui.team) && (!gT || gT.has(p.team))).map(p => ({ id: p.id, name: p.name, sub: `${p.pos || ''}${p.pos ? ', ' : ''}${p.team}` })); },
+    onPick: it => { ui.find = it.name; ui.findId = it.id; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = false; clearTimeout(psT); globalThis.__plPending = 1; draw(true).then(() => { globalThis.__plPending = 0; }); } });
+  ctl.addEventListener('click', e => { if (!e.target.closest('[data-psclear="fpfind"]')) return; ui.find = ''; ui.findId = null; const i = ctl.querySelector('#fpfind'); if (i) { i.value = ''; i.focus(); } e.target.closest('[data-psclear]').hidden = true; clearTimeout(psT); draw(true); });
   ctl.addEventListener('input', e => {
-    if (e.target.id === 'fpfind') { ui.find = e.target.value; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); return; }
+    if (e.target.id === 'fpfind') { ui.find = e.target.value; ui.findId = null; const x = ctl.querySelector('[data-psclear="fpfind"]'); if (x) x.hidden = !ui.find; clearTimeout(psT); globalThis.__plPending = 1; psT = setTimeout(async () => { psT = null; await draw(true); globalThis.__plPending = 0; }, 250); return; }
     if (e.target.id === 'nmin') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= MIN_LO) { setMinGames(n); if (n > MIN_HI) e.target.value = MIN_HI; draw(); } }
   });
   drawCtl(); draw();
@@ -8538,6 +8953,7 @@ const { resetUclScope } = __m['v-hiwi'];
 const { wireInfo } = __m['info'];
 // hypo.js registers the hypothetical-odds box on every card when it is loaded
 const { HYPO_RULE } = __m['hypo'];
+const { ODDS_FORMATS, oddsFmt, setOddsFmt } = __m['oddsfmt'];
 const { startUpdateChecks, checkForUpdates, currentBuild } = __m['update'];
 
 const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'American Football', emoji: '🏈' }, nba: { label: 'Basketball (NBA)', emoji: '🏀' } };
@@ -8581,7 +8997,7 @@ let note = '';
 function shell() {
   document.body.insertAdjacentHTML('afterbegin', `<header class="top"><div class="top-in"><a class="brand" href="#/sports" aria-label="PropLab: choose a sport">${LOGO}<span>Prop<b>Lab</b></span></a>
     <div class="topctl" id="topctl"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
-  <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select></p><p class="xs muted updline">Version <span data-build></span> · <button type="button" class="linkbtn" data-updcheck>Check for updates</button> <span data-updmsg role="status"></span></p></footer>`);
+  <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select> <label for="oddsel">Odds shown as</label> <select id="oddsel" class="in" aria-label="Odds format">${ODDS_FORMATS.map(([v, l]) => `<option value="${v}" ${v === oddsFmt() ? 'selected' : ''}>${l}</option>`).join('')}</select></p><p class="xs muted updline">Version <span data-build></span> · <button type="button" class="linkbtn" data-updcheck>Check for updates</button> <span data-updmsg role="status"></span></p></footer>`);
   drawTz();
   // Back to top (owner request 26 Oct): appears while scrolling DOWN a long page, hides at once on any upward scroll or near the top;
   // follows the page scroll only (not lists or sheets inside it); smooth unless the visitor prefers reduced motion.
@@ -8598,6 +9014,7 @@ function shell() {
     if (m) m.textContent = r.state === 'code' ? 'A new version is available: tap Update in the bar below.' : r.state === 'data' ? 'New data is available: tap Update in the bar below.' : r.state === 'offline' ? 'Could not reach the site (offline?). Try again later.' : r.state === 'dev' ? 'Development copy: no update checks.' : 'You have the latest version.';
   });
   $('#tzsel').addEventListener('change', e => { setTzPref(e.target.value); drawTz(); render(); });
+  $('#oddsel').addEventListener('change', e => setOddsFmt(e.target.value)); // every odds figure redraws in place (no recalculation)
   $('#topctl').addEventListener('change', e => {
     if (e.target.id !== 'sportsel') return; const w = where(); const to = e.target.value; if (to === w.sport) return;
     const eq = equivalentHref(w, to); setSport(to);
