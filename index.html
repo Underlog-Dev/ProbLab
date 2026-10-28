@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="3e7d53fc1375">
+<meta name="proplab-build" content="a89f2aa85fa8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -491,7 +491,7 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 /* NBA / NFL "LIVE by schedule" (Phase 2): outlined red, never filled, never pulsing, so it cannot be mistaken for a verified LIVE */
 .livewin{display:inline-block;font:inherit;font-size:11px;font-weight:800;letter-spacing:.04em;line-height:1.15;color:#ff8a8a;background:transparent;border:1.5px dashed #d92d2d;border-radius:6px;padding:2px 6px;text-align:center;white-space:normal;cursor:pointer}
 .livewin small{display:block;font-weight:600;font-size:9.5px;letter-spacing:0;color:var(--muted)}
-/* Recommended Units on the EV page (1/8 Kelly) */
+/* Units on the EV page (1/10 Kelly) */
 .evunits{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--s1)}
 .evunits .evul{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.evunits b{font-size:22px;overflow-wrap:anywhere}.evunits.pos b{color:var(--green,#22c55e)}
 /* temporary player search */
@@ -3424,24 +3424,25 @@ function fmtOdds(dec, f = oddsFmt()) {
 function inputText(dec, f = oddsFmt()) { if (!Number.isFinite(dec) || dec <= 1) return ''; return f === 'frac' ? toFrac(dec).txt : f === 'amer' ? toAmer(dec).txt : String(Math.round(dec * 1000) / 1000); }
 const PLACEHOLDER = { dec: 'e.g. 2.10', frac: 'e.g. 11/10 or evens', amer: 'e.g. +110 or -150' };
 const KIND = { dec: 'decimal', frac: 'fractional', amer: 'American' };
-/** Parse odds typed in the chosen format. Returns { dec (3 dp, display), exact (full precision), kind } or { dec:null, error }. */
+/**
+ * Parse odds typed in ANY format, whatever "Odds shown as" says (owner, 28 Oct): 11/10 or evens = fractional; +110 / -150 = American;
+ * 2.10 or 3 = decimal; a whole number of 100 or more without a sign = American (+), since decimal odds that long are not realistic.
+ * Returns { dec (3 dp, display), exact (full precision), kind } or { dec:null, error }. `kind` says how it was read.
+ */
 function parseIn(text, f = oddsFmt()) {
+  void f;
   const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
-  const ok = x => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind: KIND[f] } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
-  const hint = s.includes('/') || s === 'evens' || s === 'evs' ? 'fractional' : /^[+-]\d/.test(s) || (/^\d{3,}$/.test(s) && f === 'dec') ? 'American' : null;
-  if (f === 'frac') {
-    if (s === 'evens' || s === 'evs' || s === 'even') return ok(2);
-    const m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s); if (!m) return { dec: null, error: `Fractional odds look like 11/10 or 4/6${hint && hint !== 'fractional' ? ` (that looks like ${hint} odds: change "Odds shown as" at the bottom of the page)` : ''}` };
-    const a = Number(m[1]), b = Number(m[2]); if (!(a > 0 && b > 0)) return { dec: null, error: 'Both numbers of a fraction must be above 0' }; return ok(1 + a / b);
-  }
-  if (f === 'amer') {
-    const m = /^([+-]?)(\d+(?:\.\d+)?)$/.exec(s); if (!m) return { dec: null, error: `American odds look like +110 or -150${hint === 'fractional' ? ' (that looks like fractional odds: change "Odds shown as" at the bottom of the page)' : ''}` };
-    const a = Number(m[2]) * (m[1] === '-' ? -1 : 1); if (Math.abs(a) < 100) return { dec: null, error: 'American odds are +100 or more, or -100 or less' };
-    return ok(a > 0 ? 1 + a / 100 : 1 + 100 / -a);
-  }
-  if (!/^\d+(\.\d+)?$/.test(s)) return { dec: null, error: `Decimal odds look like 2.10${hint ? ` (that looks like ${hint} odds: change "Odds shown as" at the bottom of the page)` : ''}` };
-  const d = Number(s); if (d <= 1) return { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 2.10)' }; return ok(d);
+  const ok = (x, kind) => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
+  if (s === 'evens' || s === 'evs' || s === 'even' || s === 'ev') return ok(2, 'fractional');
+  let m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s);
+  if (m) { const a = Number(m[1]), b = Number(m[2]); return a > 0 && b > 0 ? ok(1 + a / b, 'fractional') : { dec: null, error: 'Both numbers of a fraction must be above 0 (e.g. 11/10)' }; }
+  m = /^([+-])(\d+(?:\.\d+)?)$/.exec(s);
+  if (m) { const a = Number(m[2]) * (m[1] === '-' ? -1 : 1); return Math.abs(a) < 100 ? { dec: null, error: 'American odds are +100 or more, or -100 or less' } : ok(a > 0 ? 1 + a / 100 : 1 + 100 / -a, 'American'); }
+  if (/^\d+$/.test(s) && Number(s) >= 100) return ok(1 + Number(s) / 100, 'American');
+  if (/^\d+(\.\d+)?$/.test(s) || /^\.\d+$/.test(s)) { const d = Number(s); return d <= 1 ? { dec: null, error: 'Decimal odds must be above 1.00 (e.g. 2.10)' } : ok(d, 'decimal'); }
+  return { dec: null, error: 'Not a price: type it as 2.10, 11/10, evens, +110 or -150' };
 }
+const kindOf = (f = oddsFmt()) => KIND[f];
 /**
  * An odds input that survives format changes without drift: st = { text, exact, auto } where `auto` is the text PropLab wrote when
  * converting. While the visitor has not edited it, the exact price is used; once they type, their text is parsed.
@@ -3455,16 +3456,17 @@ function convertInput(st, from, to) {
   const t = inputText(r.exact, to); return { text: t, exact: r.exact, auto: t };
 }
 
-return { ODDS_FORMATS, oddsFmt, setOddsFmt, fmtName, toFrac, toAmer, fmtOdds, inputText, PLACEHOLDER, parseIn, readInput, convertInput };
+return { ODDS_FORMATS, oddsFmt, setOddsFmt, fmtName, toFrac, toAmer, fmtOdds, inputText, PLACEHOLDER, parseIn, kindOf, readInput, convertInput };
 })();
 __m['kelly'] = (() => {
-// Recommended Units on the EV page (owner request 27 Oct 2026, evening): 1/8 Kelly, 1 unit = 1% of bankroll, capped at 2.00 units per selection.
+// Units (owner request 27 Oct 2026; changed to 1/10 Kelly with stakes rounded DOWN to 2 decimals on 28 Oct): 1 unit = 1% of bankroll, capped at
+// 2.00 units per selection.
 //   full Kelly f* = (b·p − q) / b with b = decimal odds − 1, p = the estimated win probability, q = the estimated loss probability. With no
 //   push (q = 1 − p) this is exactly (p × odds − 1) / (odds − 1), the owner's formula; on a whole-number line a push returns the stake, so it
-//   is neither a win nor a loss. fractional = max(0, f*) / 8; uncapped units = fractional × 100; units = min(uncapped, 2).
-//   The cap is applied before display rounding; only the shown figures are rounded (2 decimals, no quarter / half-unit steps).
+//   is neither a win nor a loss. fractional = max(0, f*) / 10; uncapped units = fractional × 100; units = min(uncapped, 2).
+//   The cap is applied before display rounding; only the shown figures are rounded, always DOWN to 2 decimals (1.178 -> 1.17), never up.
 //   Odds of 1.00 or below, or a missing / invalid probability, give no units at all (never NaN, Infinity or an invented figure).
-const KELLY_FRACTION = 1 / 8, UNIT_PCT = 1, MAX_UNITS = 2;
+const KELLY_FRACTION = 1 / 10, UNIT_PCT = 1, MAX_UNITS = 2;
 function kellyUnits(p, dec, push = 0) {
   if (![p, dec, push].every(Number.isFinite) || dec <= 1 || p < 0 || p > 1 || push < 0 || p + push > 1 + 1e-12) return null;
   const b = dec - 1, q = Math.max(0, 1 - p - push), full = (b * p - q) / b;
@@ -3473,11 +3475,13 @@ function kellyUnits(p, dec, push = 0) {
   return { full, uncapped, units: Math.min(uncapped, MAX_UNITS), capped: uncapped > MAX_UNITS };
 }
 /** "0.93u", "2.00u (2.75u uncapped)", "0.00u", or "Units unavailable". */
-const unitsText = k => (!k ? 'Units unavailable' : k.capped ? `${k.units.toFixed(2)}u (${k.uncapped.toFixed(2)}u uncapped)` : `${k.units.toFixed(2)}u`);
-const KELLY_NOTE = 'Calculated using 1/8 Kelly, capped at 2.00u. Results depend on the accuracy of the estimated probability.';
+/** Units shown: rounded DOWN to 2 decimals (owner, 28 Oct). */
+const fmtU = x => (Math.floor(x * 100 + 1e-9) / 100).toFixed(2);
+const unitsText = k => (!k ? 'Units unavailable' : k.capped ? `${fmtU(k.units)}u (${fmtU(k.uncapped)}u uncapped)` : `${fmtU(k.units)}u`);
+const KELLY_NOTE = 'Calculated using 1/10 Kelly, capped at 2.00u. Results depend on the accuracy of the estimated probability.';
 const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.00u selections together are not automatically safe or within a daily bankroll budget.';
 
-return { KELLY_FRACTION, kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE };
+return { KELLY_FRACTION, kellyUnits, fmtU, unitsText, KELLY_NOTE, CAP_NOTE };
 })();
 __m['teamadj'] = (() => {
 // Teammates OUT tonight (NBA pre-match estimate; owner request 28 Oct 2026). When key teammates (20+ minutes a game over their last 10
@@ -3516,7 +3520,7 @@ __m['valueev'] = (() => {
 // no EV; the estimate is labelled experimental; nothing here is a bookmaker price PropLab has seen.
 const { estimate, evPct } = __m['prob'];
 const { fmtOdds, oddsFmt, parseIn } = __m['oddsfmt'];
-const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { kellyUnits, unitsText, fmtU } = __m['kelly'];
 const { cmpLine } = __m['hiwicard'];
 const { isConfirmedOut } = __m['rank'];
 const { teammateAdjustment } = __m['teamadj'];
@@ -3578,17 +3582,17 @@ function pairResearch(card, st) {
     <div class="tiles evtiles">${t(card.title + (card.pair.labelA ? ' ' + card.pair.labelA : ''), a)}${t(card.pair.label || card.pair.title, b)}<div class="tile"><b data-evcomb>${comb == null ? '–' : comb + '%'}</b><span>Combined Historical Matchup % (average of the two; a matchup score, not a probability)</span></div></div></div>`;
 }
 /** The staking method, always visible on the EV page (owner request 27 Oct: no settings menu needed to see it). */
-const STAKING_HTML = '<span class="evstake"><b>Staking method: 1/8th Kelly (12.5% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>';
+const STAKING_HTML = '<span class="evstake"><b>Staking method: 1/10th Kelly (10% Kelly)</b><br>1 unit = 1% of bankroll | Maximum 2.00u per play</span>';
 const UNITS_NA = `<div class="tiles evtiles">${'<div class="tile tunits" data-evunits=""><b>Units unavailable</b><span class="evul">Theoretical Units</span><span>No defensible probability for this line, so no stake (never an invented figure)</span></div>'}</div>`;
 /** The units tile (in the empty space of the tiles grid; green = worth backing, red = do not bet). ku: undefined = no odds yet; null = invalid. */
 function unitsTile(ku, evRaw, label = 'Theoretical Units') {
-  const st = ku === undefined ? '' : !ku ? '' : evRaw > 0 && ku.units > 0 ? ' pos' : ' neg';
-  const txt = ku === undefined ? 'Enter the odds' : !ku ? 'Units unavailable' : evRaw <= 0 ? '0.00u — Do not bet' : unitsText(ku);
-  return `<div class="tile tunits${st}" data-evunits="${ku ? (evRaw > 0 ? ku.units : 0).toFixed(2) : ''}" data-evuncapped="${ku ? ku.uncapped.toFixed(2) : ''}"><b>${esc(txt)}</b><span class="evul">${esc(label)}</span><span>${st === ' pos' ? 'Worth backing at this price (1/8 Kelly)' : st === ' neg' ? 'No positive estimated EV' : '1/8 Kelly, max 2.00u'}</span></div>`;
+  const ok = ku && evRaw > 0 && ku.units >= 0.01 - 1e-9, st = ku === undefined ? '' : !ku ? '' : ok ? ' pos' : ' neg';
+  const txt = ku === undefined ? 'Enter the odds' : !ku ? 'Units unavailable' : !ok ? '0.00u — Do not bet' : unitsText(ku);
+  return `<div class="tile tunits${st}" data-evunits="${ku ? (ok ? fmtU(ku.units) : '0.00') : ''}" data-evuncapped="${ku ? fmtU(ku.uncapped) : ''}"><b>${esc(txt)}</b><span class="evul">${esc(label)}</span><span>${st === ' pos' ? 'Worth backing at this price (1/10 Kelly)' : st === ' neg' ? 'No positive estimated EV' : '1/10 Kelly, max 2.00u'}</span></div>`;
 }
 /** Brief Kelly explanation, shown once at the top of the Compare Price / EV pages (owner, 28 Oct afternoon). */
-const KELLY_INFO = `<details class="kinfo card" data-kinfo><summary>Staking method: 1/8th Kelly (12.5% Kelly) · 1 unit = 1% of bankroll | Maximum 2.00u per play <span class="xs muted">(how it works)</span></summary>
-  <p>Kelly sizes a stake from the edge: the bigger the gap between PropLab's estimated chance and the chance the odds imply, the bigger the stake; the longer the odds, the smaller the stake for the same edge. PropLab uses one eighth of the full Kelly stake, because the probabilities are estimates and full Kelly is far too aggressive when they are a little off. 1 unit = 1% of your bankroll; the most shown for any play is 2.00u (the uncapped figure is in brackets). No positive EV = 0.00u: do not bet. The 2.00u limit is per play, not per day, so several plays together can add up.</p>
+const KELLY_INFO = `<details class="kinfo card" data-kinfo><summary>Staking method: 1/10th Kelly (10% Kelly) · 1 unit = 1% of bankroll | Maximum 2.00u per play <span class="xs muted">(how it works)</span></summary>
+  <p>Kelly sizes a stake from the edge: the bigger the gap between PropLab's estimated chance and the chance the odds imply, the bigger the stake; the longer the odds, the smaller the stake for the same edge. PropLab uses one tenth of the full Kelly stake, rounded down to 2 decimals, because the probabilities are estimates and full Kelly is far too aggressive when they are a little off. 1 unit = 1% of your bankroll; the most shown for any play is 2.00u (the uncapped figure is in brackets). No positive EV = 0.00u: do not bet. The 2.00u limit is per play, not per day, so several plays together can add up.</p>
   <p>These are <b>theoretical units</b>: the probabilities passed calibration checks on past seasons, but PropLab has no bookmaker odds history, so this staking has not been proven to make money.</p></details>`;
 /** The EV block for a card and the odds text the visitor typed. */
 function evBlock(card, st, sport, oddsText) {
@@ -3601,7 +3605,7 @@ function evBlock(card, st, sport, oddsText) {
   const imp = od.dec ? 1 / od.dec : null;
   const D = od.dec ? (od.exact ?? od.dec) : null; // full-precision odds for the calculations (the 3-decimal figure is for display)
   const ev = D ? evPct(e.win, D, e.push) : null, lo = D ? evPct(e.lo, D, e.push) : null, hi = D ? evPct(e.hi, D, e.push) : null;
-  // Recommended Units (1/8 Kelly, 1u = 1% of bankroll, max 2.00u per selection) from the SAME probability as the EV, never the hit rate
+  // Units (1/10 Kelly, 1u = 1% of bankroll, max 2.00u per selection) from the SAME probability as the EV, never the hit rate
   const ku = D ? kellyUnits(e.win, D, e.push) : null, validated = !!(e.cb && e.cb.passed && e.calibrated);
   const unitsLabel = validated ? 'Theoretical Units' : 'Theoretical Units — Unvalidated Estimate', evRaw = D ? (e.win * D + e.push - 1) * 100 : null;
   const cls = ev == null ? 'ev-wait' : ev > 0 ? 'ev-pos' : ev < 0 ? 'ev-neg' : 'ev-zero';
@@ -3633,12 +3637,12 @@ __m['hypo'] = (() => {
 //   By construction the example price is above fair, so it shows a small positive edge: it illustrates the stake IF such a price were
 //   found. It is labelled "Hypothetical price — not a live bookmaker offer". The box is READ-ONLY (owner, 28 Oct): real prices are typed
 //   on the EV page only. Odds are shown in the visitor's chosen format (oddsfmt.js); the calculation always uses the decimal price.
-// EV and units: EV = (p × odds + push − 1) × 100; units = min(2, max(0, full Kelly) / 8 × 100) (kelly.js, the EV page's own function).
+// EV and units: EV = (p × odds + push − 1) × 100; units = min(2, max(0, full Kelly) / 10 × 100), shown rounded down to 2 decimals (kelly.js, the EV page's own function).
 const { cardEstimate, loadCalib } = __m['valueev'];
-const { kellyUnits } = __m['kelly'];
+const { kellyUnits, fmtU } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
-const { fmtOdds, oddsFmt, fmtName, PLACEHOLDER, readInput, convertInput } = __m['oddsfmt'];
+const { fmtOdds, oddsFmt, fmtName, PLACEHOLDER, readInput, convertInput, kindOf } = __m['oddsfmt'];
 
 const HYPO_UPLIFT = 0.05;
 const HYPO_RULE = 'Example odds = PropLab\'s fair odds (1 ÷ estimated probability) + 5%, rounded down to 2 decimals. A modest illustration above fair, never a bookmaker price.';
@@ -3656,7 +3660,7 @@ function hypoCalc(win, push, d) {
   if (!Number.isFinite(d) || d <= 1) return null;
   const evRaw = (win * d + push - 1) * 100, ku = kellyUnits(win, d, push);
   if (!ku || !Number.isFinite(evRaw)) return null;
-  return { ev: evRaw, ku, positive: evRaw > 1e-9 && ku.uncapped > 0 };
+  return { ev: evRaw, ku, positive: evRaw > 1e-9 && ku.uncapped >= 0.01 - 1e-9 }; // a stake that rounds down to 0.00u is not a bet
 }
 const sideKey = st => ((st.side === 'under' || st.side === 'no') ? 'under' : 'over');
 const sportNow = () => { const m = /^#\/(nba|nfl)(\/|$)/.exec(location.hash || ''); return m ? m[1] : 'football'; };
@@ -3681,9 +3685,10 @@ function ownOut(m) {
   const st = owns.get(m.key); if (!st || !String(st.text).trim()) return { html: '<span class="xs muted">Type the odds you can see to get the EV and units.</span>', ev: '', u: '' };
   const r = readInput(st); if (!r.dec) return { html: `<span class="hybad">${esc(r.error || 'Not a valid price')}</span>`, ev: '', u: '' };
   const c = hypoCalc(m.e.win, m.e.push || 0, r.exact); if (!c) return { html: '<span class="hybad">Not a valid price</span>', ev: '', u: '' };
+  const rd = r.kind && r.kind !== kindOf() ? `<span class="xs muted"> · read as ${esc(r.kind)} ${esc(fmtOdds(r.exact, 'dec'))}</span>` : '';
   return c.positive
-    ? { html: `<b class="hyown-pos">${esc(signedPct(c.ev))} EV · Back ${c.ku.units.toFixed(2)}u${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b>`, ev: c.ev.toFixed(4), u: c.ku.units.toFixed(2) }
-    : { html: `<b class="hyown-neg">${esc(signedPct(c.ev))} EV · Do not bet (0.00u)</b>`, ev: c.ev.toFixed(4), u: '0.00' };
+    ? { html: `<b class="hyown-pos">${esc(signedPct(c.ev))} EV · Back ${fmtU(c.ku.units)}u${c.ku.capped ? ` (${fmtU(c.ku.uncapped)}u uncapped)` : ''}</b>${rd}`, ev: c.ev.toFixed(4), u: fmtU(c.ku.units) }
+    : { html: `<b class="hyown-neg">${esc(signedPct(c.ev))} EV · Do not bet (0.00u)</b>${rd}`, ev: c.ev.toFixed(4), u: '0.00' };
 }
 function ownHtml(m) {
   const st = owns.get(m.key), o = ownOut(m), f = oddsFmt();
@@ -3694,17 +3699,17 @@ function inner(m) {
   if (!m.ok) return `<span class="hyt">${TITLE}</span><b class="hyna">Estimate unavailable</b><span class="hys">${esc(m.reason)}. Insufficient data is not the same as negative EV.</span>`;
   const c = hypoCalc(m.e.win, m.e.push || 0, m.dflt), ex = esc(fmtOdds(m.dflt));
   const main = !c ? '<b class="hyna">Estimate unavailable</b>' : !c.positive ? `If available at ${ex}: <b class="hyno">Do not bet — No positive estimated EV</b> · <b class="hyu">0.00u</b>`
-    : `If available at ${ex}: <b class="hyev">${esc(signedPct(c.ev))} estimated EV</b> · <b class="hyu">${c.ku.units.toFixed(2)}u theoretical${c.ku.capped ? ` (${c.ku.uncapped.toFixed(2)}u uncapped)` : ''}</b>`;
+    : `If available at ${ex}: <b class="hyev">${esc(signedPct(c.ev))} estimated EV</b> · <b class="hyu">${fmtU(c.ku.units)}u theoretical${c.ku.capped ? ` (${fmtU(c.ku.uncapped)}u uncapped)` : ''}</b>`;
   return `<span class="hyt">${TITLE}</span>
     <span class="hyodd">Fair odds: <b data-hy-fair>${esc(fmtOdds(m.fair))}</b> · Example target odds: <b data-hy-ex>${ex}</b></span>
     <span class="hym">${main}</span>
     ${ownHtml(m)}
-    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''}${m.e.adj ? ` · adjusted for ${esc(m.e.adj.names.join(', '))} out` : ''} · example = fair odds + 5% · ${m.validated ? '1/8 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
+    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''}${m.e.adj ? ` · adjusted for ${esc(m.e.adj.names.join(', '))} out` : ''} · example = fair odds + 5% · ${m.validated ? '1/10 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
 }
 function state(m) {
   if (!m.ok) return { cls: 'na', ev: '', u: '' };
   const c = hypoCalc(m.e.win, m.e.push || 0, m.dflt);
-  return !c ? { cls: 'na', ev: '', u: '' } : { cls: c.positive ? 'pos' : 'neg', ev: c.ev.toFixed(4), u: (c.positive ? c.ku.units : 0).toFixed(2), un: c.ku.uncapped.toFixed(2) };
+  return !c ? { cls: 'na', ev: '', u: '' } : { cls: c.positive ? 'pos' : 'neg', ev: c.ev.toFixed(4), u: c.positive ? fmtU(c.ku.units) : '0.00', un: fmtU(c.ku.uncapped) };
 }
 /** Fills (or refreshes) a box element from a model. */
 function fillHypo(box, m) {
@@ -7738,7 +7743,7 @@ function carryHtml(sport, r, token = null) {
   return `<section class="pcbox" id="pcbox"><h2 style="margin:0 0 4px">Compare a price for this card</h2>${KELLY_INFO}
     ${carried.card.game ? `<p class="small" style="margin:0 0 4px"><b>Game:</b> ${esc(carried.card.game.away)} at ${esc(carried.card.game.home)}</p>` : ''}<p class="xs muted" style="margin:0 0 8px">The same card you tapped, with the same line, side and games. Change them here if your bookmaker's line is different.</p>
     <div id="pccard"></div>
-    <div class="card stack pcodds"><div class="field"><label for="pcodds">Odds you can see for this side, <span data-pcfmt>${esc(fmtName())}</span> <span class="xs muted">(you type them: PropLab has no odds · format: "Odds shown as" at the bottom of the page)</span></label>
+    <div class="card stack pcodds"><div class="field"><label for="pcodds">Odds you can see for this side, <span data-pcfmt>${esc(fmtName())}</span> <span class="xs muted">(you type them: PropLab has no odds · any format works: 2.10, 11/10 or +110)</span></label>
       <input class="in" id="pcodds" inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(oddsState().text)}"></div>
       ${liveSupported(sport, carried.card) ? `<div class="seg pcmode" role="group" aria-label="Pre-match or live" data-pcmode><button type="button" data-v="pre" class="${carried.mode !== 'live' ? 'on' : ''}" aria-pressed="${carried.mode !== 'live'}">Pre-Match</button><button type="button" data-v="live" class="${carried.mode === 'live' ? 'on' : ''}" aria-pressed="${carried.mode === 'live'}">Live Simulator</button></div><div data-pclive ${carried.mode === 'live' ? '' : 'hidden'}></div>` : ''}
       <div id="pcev" class="stack" ${carried.mode === 'live' ? 'hidden' : ''}></div>
@@ -7847,7 +7852,7 @@ const { nfl, teamName } = __m['nfl-data'];
 const { model, loadModel, loadBacktest, loadForward, lineProbs, marketInfo, parseAnyOdds, explain, CONF_TEXT, probMargin, minOdds } = __m['nfl-model'];
 const { $, esc, fmtKick } = __m['util'];
 const { infoTag } = __m['info'];
-const { kellyUnits, unitsText, KELLY_NOTE, CAP_NOTE } = __m['kelly'];
+const { kellyUnits } = __m['kelly'];
 const { parseIn, fmtOdds, oddsFmt, fmtName, PLACEHOLDER, inputText } = __m['oddsfmt'];
 const { unitsTile, KELLY_INFO } = __m['valueev'];
 
@@ -8002,7 +8007,7 @@ async function viewNflEv(root, r) {
       <div class="ctl"><div class="field"><label for="evm">Market</label><select class="in" id="evm">${ps.map(x => `<option value="${x.market}" ${x.market === p.market ? 'selected' : ''}>${esc(marketInfo(x.market)?.label || x.market)}${marketInfo(x.market)?.active ? '' : ' (model inactive)'}</option>`).join('')}</select></div>
         <div class="field"><label>Side</label><div class="seg" id="evs">${[['over', 'Over'], ['under', 'Under']].map(([v, l]) => `<button type="button" data-v="${v}" class="${ev.side === v ? 'on' : ''}" aria-pressed="${ev.side === v}">${l}</button>`).join('')}</div></div>
         <div class="field"><label for="evl">Bookmaker's line</label><div class="hline"><button type="button" class="hstep" data-evstep="-1" aria-label="Lower the line by 1">−</button><input id="evl" class="in hnum" type="number" inputmode="decimal" step="0.5" value="${ev.line}" aria-label="Line"><button type="button" class="hstep" data-evstep="1" aria-label="Raise the line by 1">+</button></div><span class="xs muted">Reference line ${p.ref_line ?? '–'} ${infoTag('refline', 'what is this?', { cls: 'neutral' })}</span></div>
-        <div class="field"><label for="evo">Bookmaker's odds for your side (${esc(fmtName())})</label><input class="in" id="evo" inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(ev.odds)}"><span class="xs muted" id="evok">${od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error ? esc(od.error) : `${fmtName()} odds (change the format at the bottom of the page)`}</span></div></div>`;
+        <div class="field"><label for="evo">Bookmaker's odds for your side (${esc(fmtName())})</label><input class="in" id="evo" inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(ev.odds)}"><span class="xs muted" id="evok">${od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error ? esc(od.error) : 'Any format: 2.10, 11/10, evens, +110 or -150'}</span></div></div>`;
     drawResult(p, mk, od);
   };
   const drawResult = (p, mk, od) => {
@@ -8024,7 +8029,7 @@ async function viewNflEv(root, r) {
         <div class="tile"><b>${od.dec ? esc(fmtOdds(od.exact ?? od.dec)) : '–'}</b><span>Offered odds</span></div>
         <div class="tile"><b class="${verdict ? 'ev-' + verdict[1] : ''}">${evp != null ? `${evp > 0 ? '+' : ''}${evp}%` : '–'}</b><span>${infoTag('evx', 'Estimated EV', { cls: 'neutral' })}</span></div>
         <div class="tile"><b>${evp != null ? `${evp >= 0 ? '+' : '−'}£${Math.abs(evp / 100).toFixed(2)}` : '–'}</b><span>Expected return per £1</span></div></div>
-      ${(() => { // units (owner request 27 Oct; tile 28 Oct): the same 1/8 Kelly function as every Value page, from the model probability
+      ${(() => { // units (owner request 27 Oct; tile 28 Oct): the same 1/10 Kelly function as every Value page, from the model probability
         const ku = od.dec ? kellyUnits(pw, od.exact ?? od.dec, push) : undefined, er = od.dec ? (pw * (od.exact ?? od.dec) + push - 1) * 100 : null;
         return `<div class="tiles evtiles">${unitsTile(ku, er)}</div>`; })()}
       ${verdict ? `<div class="evverdict ev-${verdict[1]}"><b>${verdict[0]}</b> <span class="small">EV range ${lo > 0 ? '+' : ''}${lo}% to ${hi > 0 ? '+' : ''}${hi}% across the probability's margin.</span></div>` : '<p class="small muted" style="margin:0">Type the bookmaker\'s odds to see the implied chance and EV.</p>'}
@@ -8052,7 +8057,7 @@ async function viewNflEv(root, r) {
     const st = e.target.closest('[data-evstep]'); if (st) { ev.line = Math.max(0.5, Math.round((ev.line + Number(st.dataset.evstep)) * 2) / 2); draw(); }
   });
   root.addEventListener('input', e => {
-    if (e.target.id === 'evo') { ev.odds = e.target.value; const od = parseIn(ev.odds); const k = $('#evok', root); if (k) k.textContent = od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error || `${fmtName()} odds (change the format at the bottom of the page)`; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), od); }
+    if (e.target.id === 'evo') { ev.odds = e.target.value; const od = parseIn(ev.odds); const k = $('#evok', root); if (k) k.textContent = od.dec ? `Read as ${od.kind} → decimal ${od.dec}` : od.error || 'Any format: 2.10, 11/10, evens, +110 or -150'; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), od); }
     if (e.target.id === 'evl') { const v = parseFloat(e.target.value); if (Number.isFinite(v)) { ev.line = v; const p = (byPlayer.get(ev.pid) || []).find(x => x.market === ev.market); if (p) drawResult(p, marketInfo(p.market), parseIn(ev.odds)); } }
   });
   draw();
