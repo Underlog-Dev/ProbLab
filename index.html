@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="494c523881ab">
+<meta name="proplab-build" content="63d855ffab14">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -520,6 +520,7 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 .tile.tunits.pos{border-color:var(--hit)}.tile.tunits.pos b{color:var(--hit)}.tile.tunits.neg{border-color:var(--miss)}.tile.tunits.neg b{color:var(--miss)}
 .kinfo{margin:0 0 10px;font-size:13px;line-height:1.45}.kinfo summary{cursor:pointer;font-weight:700}.kinfo p{margin:6px 0 0}
 .mfhide{display:none!important}.mfbox .in{max-width:220px;font-size:16px}
+.hypo[data-mfbelow]::before{content:"Below your minimum fair odds (kept on screen because you changed this play)";display:block;font-size:11px;font-weight:700;color:var(--amber)}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1611,11 +1612,17 @@ const minFairHtml = () => { const m = minFair(); return `<div class="field mfbox
   <span class="xs muted" data-mfnote>${m ? '' : 'Empty = every play shown.'}</span></div>`; };
 /** The element to hide for a box: its card, or for a Find Plays table the row and the box row under it. */
 const holders = box => { const tr = box.closest('tr.hytr'); if (tr) return [tr, tr.previousElementSibling].filter(Boolean); const c = box.closest('.hcard, .cbcard, .card.play'); return c ? [c] : []; };
+// A play you are working on (line, side, games, teammate...) is never hidden by the filter while you change it: it stays on screen,
+// marked "below your minimum", until the minimum itself is changed (owner report 28 Oct, 22:53: the play disappeared on a line change).
+const kept = new Set();
+const keyOf = h => (h.matches('tr.hytr') ? (h.previousElementSibling && h.previousElementSibling.dataset.rk) : h.dataset.rk || h.dataset.cid) || null;
 /** Show / hide the play of one box (called after every fill). */
 function applyMinFair(box) {
   const m = minFair(), fair = Number(box.dataset.hyFair), wait = box.classList.contains('hy-wait');
-  const hide = !!m && !wait && !(Number.isFinite(fair) && fair >= m.dec - 1e-9);
-  for (const h of holders(box)) h.classList.toggle('mfhide', hide);
+  const below = !!m && !wait && !(Number.isFinite(fair) && fair >= m.dec - 1e-9), hs = holders(box);
+  const keep = below && hs.some(h => { const k = keyOf(h); return k && kept.has(k); });
+  for (const h of hs) h.classList.toggle('mfhide', below && !keep);
+  if (keep) box.dataset.mfbelow = '1'; else delete box.dataset.mfbelow;
 }
 function note() {
   const m = minFair(), n = new Set([...document.querySelectorAll('.mfhide')].map(x => (x.matches('tr') ? x.closest('tr.hytr') || x.nextElementSibling : x))).size;
@@ -1632,7 +1639,11 @@ if (typeof document !== 'undefined') {
   document.addEventListener('change', ev => { if (ev.target.closest && ev.target.closest('[data-minfair]')) ev.stopPropagation(); }, true);
   document.addEventListener('keydown', ev => { if (ev.target.closest && ev.target.closest('[data-minfair]')) { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); } }, true);
   document.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-mfclear]'); if (!b) return; ev.stopPropagation(); setMinFair(''); document.querySelectorAll('[data-minfair]').forEach(x => { x.value = ''; }); }, true);
-  document.addEventListener('minfair', () => { document.querySelectorAll('[data-hypo]').forEach(applyMinFair); scheduleNote(); });
+  // any control inside a play marks it as one you are working on
+  const mark = ev => { const t = ev.target; if (!t.closest || t.closest('[data-hypo]')) return; const h = t.closest('.hcard, .cbcard, tr[data-ri]'); if (!h) return;
+    if (!t.closest('button, input, select, summary, [data-h-step], [data-cbstep], [data-rstep]')) return; const k = h.dataset.rk || h.dataset.cid; if (k) kept.add(k); };
+  document.addEventListener('pointerdown', mark, true); document.addEventListener('click', mark, true); document.addEventListener('input', mark, true); document.addEventListener('change', mark, true); document.addEventListener('keydown', mark, true);
+  document.addEventListener('minfair', () => { kept.clear(); document.querySelectorAll('[data-hypo]').forEach(applyMinFair); scheduleNote(); });
 }
 
 return { minFair, minFairHtml, applyMinFair, scheduleNote };
