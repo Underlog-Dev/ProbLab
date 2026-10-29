@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="63d855ffab14">
+<meta name="proplab-build" content="a4a6f97ab11c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -521,6 +521,31 @@ select.in{-webkit-appearance:none;appearance:none;overflow:hidden;text-overflow:
 .kinfo{margin:0 0 10px;font-size:13px;line-height:1.45}.kinfo summary{cursor:pointer;font-weight:700}.kinfo p{margin:6px 0 0}
 .mfhide{display:none!important}.mfbox .in{max-width:220px;font-size:16px}
 .hypo[data-mfbelow]::before{content:"Below your minimum fair odds (kept on screen because you changed this play)";display:block;font-size:11px;font-weight:700;color:var(--amber)}
+/* NBA matchup ranks (29 Oct): badges on every NBA play and the Team matchups page. Green = easy matchup, yellow = medium, red = tough. */
+.hmu{margin:0 0 8px}.hmu[hidden]{display:none}
+.hmul{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin:0 0 4px}
+.mumod{color:var(--accent);font-weight:600}
+.mubs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mub{display:flex;gap:6px;align-items:center;min-width:0;border:1px solid var(--line);border-radius:10px;padding:5px 7px;background:var(--s1);color:var(--text);text-decoration:none!important;min-height:44px}
+.mub>b{flex:none;min-width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:14px;font-variant-numeric:tabular-nums;color:#0a0d12}
+.mub>span{min-width:0;font-size:11px;line-height:1.25;font-weight:600;overflow-wrap:anywhere}.mub small{display:block;font-weight:400;color:var(--muted);font-size:10.5px}
+.mu-g{--muc:#34d399}.mu-y{--muc:#f5b83d}.mu-r{--muc:#f87171}
+.mub.mu-g,.mub.mu-y,.mub.mu-r{border-color:color-mix(in srgb,var(--muc) 45%,var(--line))}
+.mub.mu-g>b,.mub.mu-y>b,.mub.mu-r>b{background:var(--muc)}.mub>b{background:var(--s2);color:var(--text)}
+.mub.mu-g>b,.mub.mu-y>b,.mub.mu-r>b{color:#0a0d12}
+@media (max-width:380px){.mubs{grid-template-columns:1fr}.mub{min-height:40px}}
+.mup{display:inline-block;min-width:30px;padding:2px 5px;border-radius:7px;text-align:center;font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums;background:var(--s2);color:var(--text)}
+.mup.mu-g,.mup.mu-y,.mup.mu-r{background:var(--muc);color:#0a0d12}
+.mutbl{overflow-x:auto;max-width:100%}.mut-t{font-size:13px;width:100%;table-layout:fixed}
+.mut-t th{padding:6px 2px;font-size:10px;letter-spacing:0;white-space:normal;line-height:1.2;text-align:center}.mut-t th:first-child{text-align:left;width:46px}
+.mut-t td{padding:5px 2px;border-top:1px solid var(--line);text-align:center}.mut-t td.mut{text-align:left}
+.mut-t .sorth{min-height:32px;margin:0;justify-content:center;text-transform:none;font-size:10.5px}.mut-t .sorth.on{color:var(--accent)}
+.murow{display:flex;flex-wrap:wrap;gap:8px 16px}
+.mulink{font-weight:600}
+.mut-t tr.muhl td{background:color-mix(in srgb,var(--accent) 18%,transparent)}.mut-t tr.muhl td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+/* Find Plays rows: the badges wrap inside the table cell (never widen the table) */
+.hytr>td{white-space:normal}.hytr .hmu,.hytr td>.hyrow{width:0;min-width:100%}.hytr .mubs{display:flex;flex-wrap:wrap}.hytr .mub{flex:1 1 140px;min-width:0}
+.mut-t .sorth{display:block;width:100%;box-sizing:border-box;padding:0 1px;white-space:normal;text-align:center;overflow-wrap:anywhere;line-height:1.15}.mut-t .sorth small{display:block;font-size:9.5px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1150,7 +1175,7 @@ __m['nba-data'] = (() => {
 // source did not record stay null, quarter points are only present when they add up to the box score.
 const { koUK, fxStatus, recentlyCalledOff } = __m['util'];
 
-const nba = { status: 'idle', error: '', meta: null, games: [], gameById: new Map(), players: [], playerById: new Map(), teams: new Map(), logs: new Map(), loading: new Map(), injuries: null, getJson: null };
+const nba = { status: 'idle', error: '', meta: null, matchups: null, games: [], gameById: new Map(), players: [], playerById: new Map(), teams: new Map(), logs: new Map(), loading: new Map(), injuries: null, getJson: null };
 const NBA_POS = [['', 'All'], ['G', 'Guards'], ['F', 'Forwards'], ['C', 'Centres']];
 const posGroup = p => { const s = String(p || '').toUpperCase(); return s.includes('C') && !s.includes('G') ? 'C' : s.includes('G') ? 'G' : s.includes('F') ? 'F' : ''; };
 const TYPE_NAME = { R: 'Regular season', C: 'NBA Cup final', PI: 'Play-In', P: 'Playoffs' };
@@ -1162,7 +1187,9 @@ async function loadNba(getJson) {
   nba.status = 'loading'; nba.getJson = getJson;
   try {
     const meta = await getJson('data-nba-meta.json', { fresh: true }); const v = meta.updated || '';
-    const [games, players] = await Promise.all([getJson('data-nba-games.json', { v }), getJson('data-nba-players.json', { v })]);
+    // 29 Oct: team matchup ranks (data-nba-matchups.json); optional: without it there are no matchup badges and no matchup adjustment
+    const [games, players, mu] = await Promise.all([getJson('data-nba-games.json', { v }), getJson('data-nba-players.json', { v }), getJson('data-nba-matchups.json', { v }).catch(() => null)]);
+    nba.matchups = mu && mu.schema === 1 && mu.teams ? mu : null;
     if (meta.schema !== 1 || games.schema !== 1 || players.schema !== 1) throw new Error('format');
     nba.meta = meta;
     const gc = games.cols, bc = games.box_cols;
@@ -3003,6 +3030,7 @@ function cardHtml(card, st) {
   return `<article class="hcard${card.h2h ? ' isH2H' : ''}" data-cid="${esc(card.cid)}">
     <header class="hch"><div class="hct">${card.playerHref ? `<a class="hplink" href="${esc(card.playerHref)}" title="All markets for ${esc(card.title)}"><b>${esc(card.title)}</b></a>` : `<b>${esc(card.title)}</b>`}<span class="hscope s-${esc(card.tagCls || d.scope)}">${esc(card.tag || SCOPE_LABEL[d.scope])}</span>${isConfirmedOut(card.injury) ? `<span class="outb" title="${esc(card.injury.label + (card.injury.detail ? ' · ' + card.injury.detail : ''))}">Unavailable (OUT)</span>` : ''}${card.newTeam ? `<button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM" data-text="${esc(card.newTeam)}" aria-haspopup="dialog">NEW TEAM</button>` : ''}</div><div class="hpct"><span data-h-pct></span><small class="hpdir" data-h-dir></small></div></header>
     <div class="hcm"><b>${esc(d.key === 't.dc' && card.fixture && (card.tagCls === 'home' || card.tagCls === 'away') ? sideMarketName('t.dc', card.tagCls, d.label) : d.label)}</b>${card.context ? ` · <span>${esc(card.context)}</span>` : ''}</div>
+    ${card.mu ? '<div class="hmu" data-h-mu hidden></div>' : ''}
     ${card.tabs ? `<div class="hpersp htabs"><div class="seg" role="tablist" aria-label="Which games">${card.tabs.map(([v, l]) => `<button type="button" role="tab" data-h-tab="${v}" class="${(st.view || 'form') === v ? 'on' : ''}" aria-selected="${(st.view || 'form') === v}">${esc(l)}</button>`).join('')}</div></div>` : ''}
     ${card.segs ? card.segs.map(g => `<div class="hpersp hsegsel"><span class="xs muted">${esc(g.label)}:</span><div class="seg" role="group" aria-label="${esc(g.label)}">${g.opts.map(([v, l]) => `<button type="button" data-h-seg="${esc(g.key)}" data-v="${esc(v)}" class="${(st[g.key] || g.opts[0][0]) === v ? 'on' : ''}" aria-pressed="${(st[g.key] || g.opts[0][0]) === v}">${esc(l)}</button>`).join('')}</div></div>`).join('') : ''}
     ${card.minCtl ? `<div class="hminm" data-unit="${esc(card.minCtl.unit || '')}"><label class="xs"><span>${esc(card.minCtl.label || 'Minimum minutes')}${card.minCtl.global != null ? ` <span class="muted">(filter: ${card.minCtl.global}${card.minCtl.unit || ''}+${st.minMin !== undefined && st.minMin !== card.minCtl.global ? ', this card overrides it' : ''})</span>` : ''}</span> <b data-h-minv>${(st.minMin ?? card.minCtl.global) ? `${st.minMin ?? card.minCtl.global}${card.minCtl.unit || ''}+` : 'Off (all games)'}</b></label>
@@ -3328,6 +3356,7 @@ function buildUsPlayerCard(o) {
     baseLine: o.startLine != null ? o.startLine : base ? base.line : null,
     lineNote: `${o.startLine != null ? '' : base ? `Starting line ${base.line}: ${esc(base.text)}. An estimated research line, not a bookmaker line.` : ''}${nt ? ` <span class="warnline">Line may be less reliable following a team change.</span>` : ''}`.trim() || null };
   card.ww = { load: () => loadTeammates(sport, A, p), list: null, sport }; // "Playing with / without" (NBA and NFL)
+  if (isNba && opp) card.mu = true; // matchup ranks (matchupui.js fills the slot on every paint)
   card.perOk = true; card.perDefault = String(o.period());
   if (!o.noLink) card.playerHref = `#/${sport}/research/${encodeURIComponent(p.id)}`; // tap the name: every market for this player
   card.rebuild = s0 => {
@@ -3549,13 +3578,15 @@ __m['teamadj'] = (() => {
 // Teammates OUT tonight (NBA pre-match estimate; owner request 28 Oct 2026). When key teammates (20+ minutes a game over their last 10
 // games) are listed OUT on the Official NBA Injury Report for this game, part of their production is redistributed to the players who
 // remain, in proportion to each player's own output:  delta = beta x missing / (team total - missing);  P(Over L) is then read from his
-// usual distribution at L / (1 + delta). beta = 0.3, fitted on 2023/24-2024/25 and checked on 2025/26 (owner-tools/nba-teammate-backtest.mjs):
-// it improved the Brier score on games with a key absence for points, assists and the points / assists combinations, and made no
-// difference for rebounds, threes, steals and blocks, so it is used only for the markets where it helped.
+// usual distribution at L / (1 + delta). Fitted on 2023/24-2024/25 and checked on 2025/26 (owner-tools/nba-teammate-backtest.mjs, INTERP=1).
 const { nba, injuryStatus } = __m['nba-data'];
 const { isConfirmedOut } = __m['rank'];
 
-const TEAM_ADJ = { beta: 0.3, minMinutes: 20, markets: { pts: ['pts'], ast: ['ast'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'], pra: ['pts', 'reb', 'ast'] } };
+// 29 Oct: refitted with the scaled line interpolated between half-point lines (valueev.js scaledEstimate; before, a small adjustment changed
+// nothing unless it crossed a whole number). Same seasons; the strength is now per market, and rebounds, threes, steals + blocks also
+// improved on 2025/26, so they are used too (steals and blocks alone still did not: not used).
+const TEAM_ADJ = { minMinutes: 20, beta: { pts: 0.3, reb: 0.3, ast: 0.4, tpm: 0.3, pr: 0.3, pa: 0.3, ra: 0.3, pra: 0.3, sb: 0.2 },
+  markets: { pts: ['pts'], reb: ['reb'], ast: ['ast'], tpm: ['tpm'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'], pra: ['pts', 'reb', 'ast'], sb: ['stl', 'blk'] } };
 /** { delta, names } or null (not NBA, no game, nobody key OUT, or a market where it did not help). */
 function teammateAdjustment(card) {
   const pl = card && card.detail && card.detail.player && card.detail.player.p, comps = card && card.def && TEAM_ADJ.markets[card.def.key];
@@ -3569,10 +3600,153 @@ function teammateAdjustment(card) {
     if (q.id !== pl.id && avg('min') >= TEAM_ADJ.minMinutes) { let inj = null; try { inj = injuryStatus(q, card.game); } catch { inj = null; } if (isConfirmedOut(inj)) { miss += v; names.push(q.name); } }
   }
   if (!names.length || tot - miss <= 0) return null;
-  return { delta: (TEAM_ADJ.beta * miss) / (tot - miss), names };
+  return { delta: (TEAM_ADJ.beta[card.def.key] * miss) / (tot - miss), names, beta: TEAM_ADJ.beta[card.def.key] };
 }
 
 return { TEAM_ADJ, teammateAdjustment };
+})();
+__m['nbamatchups'] = (() => {
+// NBA team matchup tables (owner request 29 Oct 2026). Shared by the nightly builder (owner-tools/nba-matchups.mjs, writes
+// data-nba-matchups.json) and the backtest (owner-tools/nba-matchup-backtest.mjs), so the site uses exactly what was tested.
+// For every team, from the completed games BEFORE a date in a season:
+//   pace            possessions per game (both teams' possessions averaged; possessions = FGA + 0.44 x FTA - OREB + TOV)
+//   off[stat]       what its players produce per 100 possessions
+//   def[stat]       what opponents' players produce against it per 100 possessions, overall and by position group (G, F, C)
+// Early in a season each figure is blended with last season's final figure: (n x this season + K x last season) / (n + K), K = 10 games,
+// so the tables move steadily instead of jumping after a few games. Factors are each team's figure divided by the league figure.
+const STATS = ['pts', 'reb', 'ast', 'stl', 'blk', 'tpm'];
+const POS = ['G', 'F', 'C'];
+const K_BLEND = 10;
+const posGroup = p => { const s = String(p || '').toUpperCase(); return s.startsWith('C') ? 'C' : s.includes('F') ? 'F' : s.includes('G') ? 'G' : null; };
+const COMBOS = { pts: ['pts'], reb: ['reb'], ast: ['ast'], stl: ['stl'], blk: ['blk'], tpm: ['tpm'], pr: ['pts', 'reb'], pa: ['pts', 'ast'], ra: ['reb', 'ast'], pra: ['pts', 'reb', 'ast'], sb: ['stl', 'blk'] };
+const poss = b => (b ? (b.fga || 0) + 0.44 * (b.fta || 0) - (b.oreb || 0) + (b.tov || 0) : null);
+const z = () => Object.fromEntries(STATS.map(s => [s, 0]));
+
+/** Raw season sums. games: [{ id, date, home, away, hb, ab }] (final only); rows: [{ game, team, pos, pts, ... }] played rows of those games. */
+function seasonSums(games, rowsByGame) {
+  const T = new Map(); const team = t => { if (!T.has(t)) T.set(t, { n: 0, poss: 0, off: z(), def: z(), dvp: Object.fromEntries(POS.map(p => [p, z()])) }); return T.get(t); };
+  for (const g of games) {
+    const ph = poss(g.hb), pa = poss(g.ab); if (!(ph > 0 && pa > 0)) continue; const P = (ph + pa) / 2;
+    const rows = rowsByGame.get(g.id); if (!rows || !rows.length) continue;
+    const H = team(g.home), A = team(g.away); H.n++; A.n++; H.poss += P; A.poss += P;
+    for (const r of rows) {
+      const mine = r.team === g.home ? H : r.team === g.away ? A : null; if (!mine) continue; const opp = mine === H ? A : H, pg = posGroup(r.pos);
+      for (const s of STATS) { const v = Number(r[s]) || 0; mine.off[s] += v; opp.def[s] += v; if (pg) opp.dvp[pg][s] += v; }
+    }
+  }
+  return T;
+}
+/** Per-100-possession table blended with last season. cur, prev: Maps from seasonSums. Returns { league, teams }. */
+function buildTable(cur, prev) {
+  const per100 = x => { const o = { n: x.n, pace: x.n ? x.poss / x.n : null, off: {}, def: {}, dvp: {} };
+    for (const s of STATS) { o.off[s] = x.poss ? (x.off[s] / x.poss) * 100 : null; o.def[s] = x.poss ? (x.def[s] / x.poss) * 100 : null; }
+    for (const p of POS) { o.dvp[p] = {}; for (const s of STATS) o.dvp[p][s] = x.poss ? (x.dvp[p][s] / x.poss) * 100 : null; } return o; };
+  const sumAll = M => { const a = { n: 0, poss: 0, off: z(), def: z(), dvp: Object.fromEntries(POS.map(p => [p, z()])) };
+    for (const x of M.values()) { a.n += x.n; a.poss += x.poss; for (const s of STATS) { a.off[s] += x.off[s]; a.def[s] += x.def[s]; for (const p of POS) a.dvp[p][s] += x.dvp[p][s]; } } return a; };
+  const Lc = per100(sumAll(cur)), Lp = prev && prev.size ? per100(sumAll(prev)) : null;
+  const mix = (n, c, p, lgc) => { const pv = p ?? lgc; if (c == null) return pv; if (pv == null) return c; return (n * c + K_BLEND * pv) / (n + K_BLEND); };
+  const league = Lc.n ? Lc : Lp; const teams = {};
+  for (const t of new Set([...cur.keys(), ...(prev ? prev.keys() : [])])) {
+    if ((cur.get(t)?.n || 0) + (prev?.get(t)?.n || 0) < 15) continue; // All-Star / exhibition sides (1-3 games a season) are not teams to rank
+    const c = cur.has(t) ? per100(cur.get(t)) : { n: 0, pace: null, off: {}, def: {}, dvp: { G: {}, F: {}, C: {} } }, p = prev && prev.has(t) ? per100(prev.get(t)) : null, n = c.n;
+    const o = { n, pace: mix(n, c.pace, p && p.pace, league.pace), off: {}, def: {}, dvp: { G: {}, F: {}, C: {} } };
+    for (const s of STATS) { o.off[s] = mix(n, c.off[s], p && p.off[s], league.off[s]); o.def[s] = mix(n, c.def[s], p && p.def[s], league.def[s]); for (const q of POS) o.dvp[q][s] = mix(n, c.dvp[q][s], p && p.dvp[q][s], league.dvp[q][s]); }
+    teams[t] = o;
+  }
+  // 29 Oct: the league reference is the average of the teams' BLENDED figures, so it is blended exactly like them. (The raw league figure of
+  // this season alone made every early-season multiplier lean the same way: e.g. this season's faster league pace made every team look slow.)
+  const L = Object.values(teams).filter(x => x.pace != null), avg = f => { const v = L.map(f).filter(x => x != null && Number.isFinite(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const lg = { n: league.n, pace: avg(x => x.pace), off: {}, def: {}, dvp: { G: {}, F: {}, C: {} } };
+  for (const s of STATS) { lg.off[s] = avg(x => x.off[s]); lg.def[s] = avg(x => x.def[s]); for (const q of POS) lg.dvp[q][s] = avg(x => x.dvp[q][s]); }
+  return { league: lg, teams };
+}
+/** A scaled line (line / scale) usually falls between two half-point lines; the probability is interpolated between them, which is the same as
+ *  treating each whole-number result as spread evenly over +-0.5 (29 Oct: without this a small adjustment changes nothing unless it crosses a
+ *  whole number). { lo, hi, w }: P(line) = (1 - w) x P(lo) + w x P(hi). At a half-point line w = 0. */
+const interpLine = L => { const lo = Math.floor(L - 0.5 + 1e-9) + 0.5; return { lo, hi: lo + 1, w: Math.max(0, Math.min(1, L - lo)) }; };
+/** Multiplier for a player's expected output vs this opponent: (opp allows to his position / league)^gd x (opp pace / league pace)^gp. */
+function matchupMult(table, opp, pos, market, gd, gp) {
+  const T = table && table.teams[opp], L = table && table.league, pg = posGroup(pos), comps = COMBOS[market]; if (!T || !L || !comps) return null;
+  const a = comps.reduce((t, s) => t + (pg ? T.dvp[pg][s] : T.def[s]), 0), b = comps.reduce((t, s) => t + (pg ? L.dvp[pg][s] : L.def[s]), 0);
+  if (!(a > 0 && b > 0 && T.pace > 0 && L.pace > 0)) return null;
+  return Math.pow(a / b, gd) * Math.pow(T.pace / L.pace, gp);
+}
+
+return { STATS, POS, K_BLEND, posGroup, COMBOS, seasonSums, buildTable, interpLine, matchupMult };
+})();
+__m['matchupui'] = (() => {
+// NBA matchup ranks on every NBA player play, and the matchup part of the model (owner request 29 Oct 2026).
+// data-nba-matchups.json (owner-tools/nba-matchups.mjs, rebuilt every night) holds, for every team: what its defence allows per 100
+// possessions overall and to guards / forwards / centres, what its offence produces, its pace, and ranks 1-30 (per game and per 100).
+// Badges on a play: the opponent's defence against HIS position group, the opponent's defence overall, and his team's offence, each with a
+// rank 1-30 and a colour (green = easy matchup, yellow = medium, red = tough). On an Under the colours flip (a tough defence helps an Under),
+// the rank never changes. The model uses the matchup only for the markets where the backtest showed it improved accuracy (params.on).
+const { nba } = __m['nba-data'];
+const { paintHooks } = __m['hiwicard'];
+const { matchupMult, posGroup, COMBOS } = __m['nbamatchups'];
+const { esc } = __m['util'];
+
+const POS_NAME = { G: 'guards', F: 'forwards', C: 'centres' };
+const POS_ONE = { G: 'guard', F: 'forward', C: 'centre' };
+const MU_LABEL = { pts: 'Points', reb: 'Rebounds', ast: 'Assists', stl: 'Steals', blk: 'Blocks', tpm: 'Threes made', pr: 'Points + Rebounds', pa: 'Points + Assists', ra: 'Rebounds + Assists', pra: 'Pts + Reb + Ast', sb: 'Steals + Blocks' };
+const MU_SHORT = { pts: 'PTS', reb: 'REB', ast: 'AST', stl: 'STL', blk: 'BLK', tpm: '3PM', pr: 'P+R', pa: 'P+A', ra: 'R+A', pra: 'PRA', sb: 'S+B' };
+// half / quarter markets show the full-game matchup for the same statistic (labelled); the model never adjusts them (not backtested)
+const MAP = { ...Object.fromEntries(Object.keys(COMBOS).map(k => [k, k])), h1pts: 'pts', q1pts: 'pts', h1reb: 'reb', h1ast: 'ast' };
+
+/** The table, or null (not loaded / missing: no badges and no model adjustment, never an invented figure). */
+const muTable = () => (nba.matchups && nba.matchups.schema === 1 && nba.matchups.teams ? nba.matchups : null);
+/** Colour tier for a rank. kind 'def': rank 1 = allows the least = tough (red); kind 'off': rank 1 = produces the most (green). */
+function tier(rank, kind, under = false) {
+  if (!Number.isFinite(rank)) return '';
+  const n = Object.keys(muTable()?.teams || {}).length || 30, third = n / 3;
+  const easy = kind === 'def' ? rank > 2 * third : rank <= third, tough = kind === 'def' ? rank <= third : rank > 2 * third;
+  const t = easy ? 'g' : tough ? 'r' : 'y';
+  return under ? ({ g: 'r', r: 'g', y: 'y' })[t] : t;
+}
+const TIER_WORD = { g: 'easy matchup', y: 'medium matchup', r: 'tough matchup' };
+const UNDER_WORD = { g: 'helps the Under', y: 'neutral for the Under', r: 'works against the Under' };
+const ord = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+const pg = (T, v) => (v == null || !T || !T.pace ? null : (v * T.pace) / 100);
+
+/** Matchup facts for an NBA player card, or null. */
+function muInfo(card) {
+  const M = muTable(), pl = card && card.detail && card.detail.player && card.detail.player.p, mk = card && card.def && MAP[card.def.key];
+  if (!M || !card || !card.mu || !pl || !mk || !card.opp || !card.def || card.def.scope === 'team') return null; // card.mu: NBA player cards only (uscards.js)
+  const O = M.teams[card.opp], Tm = M.teams[pl.team], L = M.league, g = posGroup(pl.pos); if (!O) return null;
+  const info = { opp: card.opp, team: pl.team, g, mk, full: mk !== card.def.key, n: O.n, season: M.season,
+    def: { rank: O.rank.pg.def[mk], v: pg(O, O.def[mk]), lg: pg(L, L.def[mk]) },
+    dvp: g ? { rank: O.rank.pg.dvp[g][mk], v: pg(O, O.dvp[g][mk]), lg: pg(L, L.dvp[g][mk]) } : null,
+    off: Tm ? { rank: Tm.rank.pg.off[mk], v: pg(Tm, Tm.off[mk]), lg: pg(L, L.off[mk]) } : null,
+    pace: { rank: O.rank.pace, v: O.pace, lg: L.pace } };
+  return info;
+}
+/** The model's matchup multiplier for this card (validated markets only), or null. */
+function muModel(card) {
+  const M = muTable(), key = card && card.def && card.def.key, P = M && M.params && M.params[key], pl = card && card.detail && card.detail.player && card.detail.player.p;
+  if (!P || !P.on || !pl || !card.opp || card.def.binary) return null;
+  const mult = matchupMult(M, card.opp, pl.pos, key, P.gd, P.gp);
+  if (!(mult > 0) || Math.abs(mult - 1) < 1e-6) return null;
+  return { mult, opp: card.opp, gd: P.gd, gp: P.gp, pos: posGroup(pl.pos), change: P.change_pct };
+}
+const f1 = x => (x == null ? '–' : x >= 10 ? x.toFixed(1) : x.toFixed(2));
+const href = (mk, g, t) => `#/nba/matchups?m=${encodeURIComponent(mk)}${g ? `&pos=${g}` : ''}${t ? `&t=${encodeURIComponent(t)}` : ''}`;
+/** Badge row for a card at its current side. */
+function muHtml(card, st) {
+  const i = muInfo(card); if (!i) return '';
+  const under = st && (st.side === 'under' || st.side === 'no'), lab = MU_SHORT[i.mk];
+  const chip = (attr, rank, kind, big, small, title) => { const t = tier(rank, kind, under);
+    return `<a class="mub mu-${t}" ${attr} href="${href(i.mk, kind === 'off' ? 'off' : attr.includes('"def"') ? 'def' : i.g, kind === 'off' ? i.team : i.opp)}" title="${esc(title)}${t ? ` — ${under ? UNDER_WORD[t] : TIER_WORD[t]}` : ''}"><b>${Number.isFinite(rank) ? rank : '–'}</b><span>${esc(big)}<small>${esc(small)}</small></span></a>`; };
+  const parts = [];
+  if (i.dvp) parts.push(chip('data-mu="dvp"', i.dvp.rank, 'def', `${i.opp} v ${POS_NAME[i.g]}`, `${f1(i.dvp.v)} ${lab} a game (avg ${f1(i.dvp.lg)})`, `${i.opp}'s defence against ${POS_NAME[i.g]} (${lab}): ${ord(i.dvp.rank)} of 30. 1 = allows the fewest (toughest), 30 = allows the most (easiest). ${f1(i.dvp.v)} a game to all ${POS_NAME[i.g]} combined; league average ${f1(i.dvp.lg)}`));
+  parts.push(chip('data-mu="def"', i.def.rank, 'def', `${i.opp} defence`, `${f1(i.def.v)} ${lab} allowed a game`, `${i.opp}'s overall defence (${lab}): ${ord(i.def.rank)} of 30. 1 = allows the fewest`));
+  if (i.off) parts.push(chip('data-mu="off"', i.off.rank, 'off', `${i.team} offence`, `${f1(i.off.v)} ${lab} a game`, `${i.team}'s offence (${lab}): ${ord(i.off.rank)} of 30. 1 = produces the most`));
+  const m = muModel(card);
+  return `<div class="hmul xs"><span class="muted">Matchup${i.full ? ` (full-game ${esc(MU_LABEL[i.mk].toLowerCase())})` : ` · ${esc(lab)}`}${under ? ' · colours for the Under' : ''}</span>${m ? `<span class="mumod" data-mu-model="${m.mult.toFixed(4)}">model ×${m.mult.toFixed(3)}</span>` : ''}</div><div class="mubs">${parts.join('')}</div>`;
+}
+// fill the badge slot on every card paint (after a side, line or tab change too: the colours follow the side)
+paintHooks.push((el, card, st) => { const s = el.querySelector('[data-h-mu]'); if (!s) return; const h = muHtml(card, st); s.innerHTML = h; s.hidden = !h; });
+
+return { POS_NAME, POS_ONE, MU_LABEL, MU_SHORT, muTable, tier, TIER_WORD, ord, muInfo, muModel, muHtml };
 })();
 __m['valueev'] = (() => {
 // Value page EV (owner request 21 Oct, late: "bring back the large green / red EV figure"). For any play carried to Value (all three
@@ -3586,6 +3760,8 @@ const { kellyUnits, unitsText, fmtU } = __m['kelly'];
 const { cmpLine } = __m['hiwicard'];
 const { isConfirmedOut } = __m['rank'];
 const { teammateAdjustment } = __m['teamadj'];
+const { muModel } = __m['matchupui'];
+const { interpLine } = __m['nbamatchups'];
 const { esc } = __m['util'];
 
 let calib = null, calibP = null;
@@ -3610,6 +3786,14 @@ function historyOf(card, st) {
 /** Same-venue history (football team markets): the venue of this card's next game, if known. */
 function venueOf(card) { return card.tagCls === 'home' ? true : card.tagCls === 'away' ? false : null; }
 
+/** Estimate at a scaled line (line / scale): interpolated between the two half-point lines around it (nbamatchups.js interpLine, the same
+ *  as the backtests), so a small adjustment moves the probability smoothly instead of only when it crosses a whole number. */
+function scaledEstimate(vals, L, side, opts) {
+  const { lo, hi, w } = interpLine(L), a = estimate(vals, lo, side, opts); if (!a.ok || w <= 0) return a;
+  const b = estimate(vals, hi, side, opts); if (!b.ok) return a;
+  const o = { ...a }; for (const k of ['win', 'lose', 'q', 'lo', 'hi', 'push', 'emp', 'smooth', 'qRaw']) if (Number.isFinite(a[k]) && Number.isFinite(b[k])) o[k] = (1 - w) * a[k] + w * b[k];
+  return o;
+}
 /** { ok, ... } estimate for the card at its current line and side. */
 function cardEstimate(card, st, sport) {
   const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
@@ -3623,10 +3807,14 @@ function cardEstimate(card, st, sport) {
   if (!vals.length) return shown ? { ok: false, kind: 'handoff', reason: `the card shows ${shown} game${shown === 1 ? '' : 's'}, but none reached the estimate` } : { ok: false, kind: 'nodata', reason: `no recorded ${card.def.label.toLowerCase()} figures for ${card.title}` };
   const h = venueOf(card), vv = key === 'football' && h !== null && cb && cb.venue_experiment && cb.venue_experiment.helps ? hist.filter(r => r.raw && r.raw.home === h).map(r => r.value) : null;
   const adj = sport === 'nba' && !def.binary ? teammateAdjustment(card) : null; // key teammates OUT tonight (validated markets only)
-  const e = estimate(vals, adj ? line / (1 + adj.delta) : line, side, { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
-    venueValues: vv, venueCalib: vv && cb.venue_experiment ? { a: cb.venue_experiment.a, b: cb.venue_experiment.b } : null });
+  const mu = sport === 'nba' && !def.binary ? muModel(card) : null; // opponent's defence v his position and pace (validated markets only)
+  const scale = (adj ? 1 + adj.delta : 1) * (mu ? mu.mult : 1);
+  const opts = { binary: !!def.binary, calib: cb ? { a: cb.a, b: cb.b } : null, lastDate: hist[0] ? hist[0].date : null,
+    venueValues: vv, venueCalib: vv && cb.venue_experiment ? { a: cb.venue_experiment.a, b: cb.venue_experiment.b } : null };
+  const e = scale === 1 ? estimate(vals, line, side, opts) : scaledEstimate(vals, line / scale, side, opts);
   if (!e.ok) return { ...e, kind: 'nomodel', key, cb, side, line };
   if (adj) e.adj = adj;
+  if (mu) e.mu = mu;
   // Best Combined % (27 Oct): the probability uses the SELECTED team's own record only, the series the calibration was checked on. The
   // opponent's complementary record is shown as research beside it; an average of two teams' estimates has never been validated, and the
   // Combined Historical % is a matchup score, not a probability, so neither is turned into EV.
@@ -3681,6 +3869,7 @@ function evBlock(card, st, sport, oddsText) {
       ${unitsTile(D ? ku : undefined, evRaw, unitsLabel)}</div>
     ${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : od.dec ? `<p class="xs muted" style="margin:0">Read as ${esc(od.kind)} odds → decimal ${od.dec}. Entered by you; PropLab has no bookmaker odds.</p>` : ''}
     ${e.adj ? `<p class="small" style="margin:0" data-evadj><b>Teammates OUT tonight:</b> ${esc(e.adj.names.join(', '))} (Official NBA Injury Report). His usual figures are scaled up by ${(e.adj.delta * 100).toFixed(1)}% for the production they leave behind, an adjustment checked on 2025/26 games (it improved accuracy for this market).</p>` : ''}
+    ${e.mu ? `<p class="small" style="margin:0" data-evmu><b>Matchup:</b> against ${esc(e.mu.opp)}${e.mu.pos ? ` (what they allow to ${esc(({ G: 'guards', F: 'forwards', C: 'centres' })[e.mu.pos])}` : ' (what they allow'}${e.mu.gp ? ' and their pace)' : ')'} his usual figures are scaled by ×${e.mu.mult.toFixed(3)} (${e.mu.mult >= 1 ? '+' : '−'}${Math.abs((e.mu.mult - 1) * 100).toFixed(1)}%). This adjustment improved accuracy on 2025/26 games for this market (Brier ${e.mu.change}%), so it is used; it is small by design.</p>` : ''}
     <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
 }
 
@@ -3701,6 +3890,7 @@ __m['hypo'] = (() => {
 //   on the EV page only. Odds are shown in the visitor's chosen format (oddsfmt.js); the calculation always uses the decimal price.
 // EV and units: EV = (p × odds + push − 1) × 100; units = min(2, max(0, full Kelly) / 10 × 100), shown rounded down to 2 decimals (kelly.js, the EV page's own function).
 const { cardEstimate, loadCalib } = __m['valueev'];
+const { muHtml } = __m['matchupui'];
 const { kellyUnits, fmtU } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
@@ -3738,7 +3928,7 @@ function hypoModel(card, st, sport = sportNow()) {
   if (!e || !e.ok || !Number.isFinite(e.win)) return { ok: false, key, reason: (e && e.reason) || 'no defensible probability for this line' };
   const h = hypoOdds(e.win, e.push || 0);
   if (!h) return { ok: false, key, reason: 'no fair price can be formed from the estimate' };
-  return { ok: true, key, e, fair: h.fair, dflt: h.odds, validated: !!(e.cb && e.cb.passed && e.calibrated), pair: !!card.pair };
+  return { ok: true, key, e, fair: h.fair, dflt: h.odds, validated: !!(e.cb && e.cb.passed && e.calibrated), pair: !!card.pair, mu: muHtml(card, st) };
 }
 const TITLE = 'Hypothetical price — not a live bookmaker offer';
 // ---- "Your live odds" (owner, 28 Oct afternoon): type the price you can see while scrolling; EV and units show at once on the card.
@@ -3767,7 +3957,7 @@ function inner(m) {
     <span class="hyodd">Fair odds: <b data-hy-fair>${esc(fmtOdds(m.fair))}</b> · Example target odds: <b data-hy-ex>${ex}</b></span>
     <span class="hym">${main}</span>
     ${ownHtml(m)}
-    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''}${m.e.adj ? ` · adjusted for ${esc(m.e.adj.names.join(', '))} out` : ''} · example = fair odds + 5% · ${m.validated ? '1/10 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
+    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}% (not the hit rate)${m.pair ? ', selected team\'s own record' : ''}${m.e.adj ? ` · adjusted for ${esc(m.e.adj.names.join(', '))} out` : ''}${m.e.mu ? ` · matchup v ${esc(m.e.mu.opp)} ×${m.e.mu.mult.toFixed(3)}` : ''} · example = fair odds + 5% · ${m.validated ? '1/10 Kelly' : 'unvalidated estimate'}, max 2.00u per play. Illustrative only.</span>`;
 }
 function state(m) {
   if (!m.ok) return { cls: 'na', ev: '', u: '' };
@@ -3780,6 +3970,7 @@ function fillHypo(box, m) {
   box.className = `hypo hy-${s.cls}`; box.dataset.hyKey = m.key; box.dataset.hyEv = s.ev; box.dataset.hyUnits = s.u; box.dataset.hyUncapped = s.un || '';
   box.dataset.hyP = m.ok ? String(m.e.win) : ''; box.dataset.hyOdds = m.ok ? m.dflt.toFixed(2) : ''; box.dataset.hyFair = m.ok ? String(m.fair) : '';
   box.innerHTML = inner(m);
+  const ms = box.closest('td') && box.closest('td').querySelector('[data-hy-mu]'); if (ms) { ms.innerHTML = m.mu || ''; ms.hidden = !m.mu; } // matchup ranks (Find Plays rows)
   applyMinFair(box); scheduleNote(); // the minimum fair odds filter (minfair.js)
 }
 /** An empty placeholder box; filled by queueHypo (never shows the previous line's figures). */
@@ -3986,7 +4177,7 @@ function rowHtml(x, i, prevLim, opp = true) {
       <td class="n opt">${m.binary ? '–' : m.hcp ? signed(fmt(x.hr.avg)) : fmt(x.hr.avg)}</td>
       ${opp ? `<td class="n opt">${x.vs && x.vs.n ? `${x.vs.hits}/${x.vs.n} <span class="xs muted">v ${esc(x.opp)}</span>` : x.opp ? `<span class="xs muted">none v ${esc(x.opp)}</span>` : '–'}</td>` : ''}
       <td class="opt">${dotHtml(x.dots)}</td></tr>
-      <tr class="hytr" data-hyfor="${i}"><td colspan="6"><div class="hyrow">${hypoSlot(` data-hy-src="usf:${i}"`)}</div></td></tr>`;
+      <tr class="hytr" data-hyfor="${i}"><td colspan="6">${x.type === 'player' ? '<div class="hmu" data-hy-mu hidden></div>' : ''}<div class="hyrow">${hypoSlot(` data-hy-src="usf:${i}"`)}</div></td></tr>`;
 }
 function tableHtml(rows, { shown = 100, sampleText = '', subjWord = 'Player', opp = true } = {}) {
   const body = rows.slice(0, shown).map((x, i) => rowHtml(x, i, i > 0 && rows[i - 1]._lim, opp)).join('');
@@ -4777,7 +4968,7 @@ async function viewHiwi(root, r, sport) {
   if (!restoring) { st.gw = { cur: true, next: false }; st.linked = null; } // Current Gameweek every time the page opens (its fixtures are ticked below)
   const ready = usMode ? A.d.status === 'ready' : store.status === 'ready';
   root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Research a team's own record, or an upcoming match. Each result card has its own line: move it and the hit rate and bars update. Detailed analysis compares both teams and their head-to-head.</p></div></div>
-    <div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
+    ${isNba ? '<p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p>' : ''}<div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
   if (!ready) return;
   const hf = $('#hf', root), out = $('#hout', root);
 
@@ -5664,7 +5855,7 @@ async function viewNbaFinder(root) {
   if (nbaLoading(root)) return;
   await loadNbaInjuries();
   root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Which NBA players (or teams) clear a line most often. For one player or game, use <a href="#/nba/hiwi">Hiwi's Section</a>.</p>
-    <div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>${nbaCredit()}`;
+    <p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p><div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>${nbaCredit()}`;
   const ctl = $('#ctl', root), out = $('#out', root), now = new Date(), cs = latestSeason(); let shown = [];
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up)
   const isT = () => ui.subj === 'team';
@@ -5854,7 +6045,7 @@ async function viewNbaPlays(root, r) {
   if (r && r.q.get('player') && nba.playerById.get(r.q.get('player'))) { ui.kind = 'player'; ui.player = r.q.get('player'); }
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up)
   root.innerHTML = `<h1>Plays</h1><p class="muted" style="margin-top:-4px">Pick one NBA game, player or team. PropLab scans every market with recorded data and shows each market at <b>one line set from his (or the team's) games before the ones shown</b>, never a line tuned to them, and lists those that reached your minimum hit rate. Historical hit rates, not predictions or tips.</p>
-    <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>${nbaCredit()}`;
+    <p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p><div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>${nbaCredit()}`;
   const ctl = $('#ctl', root), out = $('#out', root), now = new Date(), cs = latestSeason(), A = usAdapter('nba');
   const games = () => nbaSelectable(now).length ? nbaSelectable(now) : nbaUpcoming(now);
   const teams = () => [...nba.teams.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -5955,6 +6146,70 @@ async function viewNbaPlays(root, r) {
 }
 
 return { viewNbaPlays };
+})();
+__m['v-nba-matchups'] = (() => {
+// NBA team matchups (owner request 29 Oct 2026): every team ranked 1-30 for what its defence allows (overall and to guards, forwards and
+// centres), what its offence produces, and its pace, for each statistic. Rebuilt every night with the data (data-nba-matchups.json).
+// Colours: green = easy matchup for a player facing that defence (it allows a lot) / a strong offence / a fast pace; yellow = middle third;
+// red = tough. Ranks are per game by default (per 100 possessions on request). This season's games are blended with last season's
+// (10 games' weight), so early-season ranks move steadily.
+const { nba, teamName } = __m['nba-data'];
+const { muTable, tier, MU_LABEL, MU_SHORT, POS_NAME, ord } = __m['matchupui'];
+const { POS } = __m['nbamatchups'];
+const { esc } = __m['util'];
+const { nbaLoading, nbaCredit } = __m['v-nba'];
+
+const ui = { m: 'pts', sort: 'G', show: 'rank', per: 'pg', hl: '' };
+const COLS = [['G', 'v Guards', 'def'], ['F', 'v Forwards', 'def'], ['C', 'v Centres', 'def'], ['def', 'Defence', 'def'], ['off', 'Offence', 'off'], ['pace', 'Pace', 'off']];
+const seg = (name, items, cur) => `<div class="seg wrap" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
+
+function cell(M, t, col) {
+  const T = M.teams[t], L = M.league, m = ui.m, k = ui.per === 'pg' ? T.pace / 100 : 1, kl = ui.per === 'pg' ? L.pace / 100 : 1, R = ui.per === 'pg' ? T.rank.pg : T.rank;
+  if (col === 'pace') return { rank: T.rank.pace, v: T.pace, lg: L.pace };
+  if (col === 'def') return { rank: R.def[m], v: T.def[m] * k, lg: L.def[m] * kl };
+  if (col === 'off') return { rank: R.off[m], v: T.off[m] * k, lg: L.off[m] * kl };
+  return { rank: R.dvp[col][m], v: T.dvp[col][m] * k, lg: L.dvp[col][m] * kl };
+}
+const f1 = x => (x == null || !Number.isFinite(x) ? '–' : x >= 10 ? x.toFixed(1) : x.toFixed(2));
+
+function table(M) {
+  const teams = Object.keys(M.teams), sc = COLS.find(c => c[0] === ui.sort) || COLS[0];
+  teams.sort((a, b) => (cell(M, a, sc[0]).rank - cell(M, b, sc[0]).rank) * (sc[2] === 'def' ? -1 : 1) || a.localeCompare(b)); // easiest first
+  const head = `<tr><th>Team</th>${COLS.map(([c, l]) => `<th class="n"><button type="button" class="sorth${c === ui.sort ? ' on' : ''}" data-musort="${c}" aria-label="Sort by ${esc(l)}">${l.startsWith('v ') ? `<small>v</small> ${esc(l.slice(2))}` : esc(l)}${c === ui.sort ? ' ▾' : ''}</button></th>`).join('')}</tr>`;
+  const rows = teams.map(t => `<tr data-team="${esc(t)}"${t === ui.hl ? ' class="muhl"' : ''}><td class="mut"><b title="${esc(teamName(t))}">${esc(t)}</b></td>${COLS.map(([c, , kind]) => { const x = cell(M, t, c), tt = tier(x.rank, kind);
+    const ttl = `${teamName(t)} ${c === 'pace' ? 'pace' : c === 'off' ? 'offence' : c === 'def' ? 'defence' : 'defence v ' + POS_NAME[c]}: ${ord(x.rank)} of ${teams.length}; ${f1(x.v)}${c === 'pace' ? ' possessions a game' : ` ${MU_SHORT[ui.m]} ${ui.per === 'pg' ? 'a game' : 'per 100 possessions'}`} (league ${f1(x.lg)})`;
+    return `<td class="n"><span class="mup mu-${tt}" title="${esc(ttl)}" data-r="${x.rank}">${ui.show === 'rank' ? x.rank : f1(x.v)}</span></td>`; }).join('')}</tr>`).join('');
+  return `<div class="mutbl"><table class="mut-t">${head}${rows}</table></div>`;
+}
+
+async function viewNbaMatchups(root, r) {
+  if (nbaLoading(root)) return;
+  if (r && r.q) { const m = r.q.get('m'), p = r.q.get('pos'); if (m && MU_LABEL[m]) ui.m = m; if (p && (POS.includes(p) || ['def', 'off', 'pace'].includes(p))) ui.sort = p; ui.hl = (r.q.get('t') || '').toUpperCase(); }
+  const M = muTable();
+  if (!M) { root.innerHTML = `<h1>Team matchups</h1><div class="banner info"><b>Matchup table not available</b>. The file is built with the nightly data update; until it loads, plays show no matchup ranks and the model makes no matchup adjustment.</div>${nbaCredit()}`; return; }
+  root.innerHTML = '<div id="mupage"></div>'; const pg = root.firstElementChild;
+  const draw = () => {
+    pg.innerHTML = `<h1>Team matchups</h1>
+    <p class="muted" style="margin-top:-4px">How every team ranks, 1-${Object.keys(M.teams).length}, for what its defence allows (overall and to each position) and what its offence produces. Updated every night with the stats.</p>
+    <div class="card stack" id="muctl">
+      <div><span class="xs muted">Statistic</span>${seg('m', Object.keys(MU_SHORT).map(k => [k, MU_SHORT[k]]), ui.m)}</div>
+      <div class="murow"><div><span class="xs muted">Show</span>${seg('show', [['rank', 'Ranks'], ['val', 'Figures']], ui.show)}</div><div><span class="xs muted">Measured</span>${seg('per', [['pg', 'Per game'], ['p100', 'Per 100 possessions']], ui.per)}</div></div>
+      <p class="xs muted" style="margin:0" data-mulegend><span class="mup mu-g">Green</span> easy matchup &nbsp;<span class="mup mu-y">Yellow</span> medium &nbsp;<span class="mup mu-r">Red</span> tough. Defence columns: rank 1 = allows the fewest ${esc(MU_SHORT[ui.m])} (toughest), 30 = allows the most. Offence and pace: rank 1 = produces the most / fastest (green). Sorted easiest first; tap a column to sort by it.</p>
+    </div>
+    <h2 style="margin:14px 0 6px">${esc(MU_LABEL[ui.m])} <span class="xs muted">${ui.per === 'pg' ? 'a game' : 'per 100 possessions'}</span></h2>
+    ${table(M)}
+    <p class="xs muted">${esc(M.method)} ${M.games_this_season} games played so far this season. On each NBA play: the opponent's rank against his position, the opponent's defence and his team's offence, in the same colours (on an Under they flip, because a tough defence helps an Under). The model uses the matchup only for ${Object.entries(M.params || {}).filter(([, v]) => v.on).map(([k]) => MU_LABEL[k] || k).join(', ') || 'no markets'}, the markets where it improved accuracy on 2025/26 games. Updated ${esc(String(M.updated || '').slice(0, 16).replace('T', ' '))} UTC.</p>
+    ${nbaCredit()}`;
+  };
+  draw();
+  if (ui.hl) { const tr = pg.querySelector('tr.muhl'); if (tr) setTimeout(() => tr.scrollIntoView({ block: 'center', behavior: 'instant' }), 50); }
+  pg.addEventListener('click', e => {
+    const b = e.target.closest('[data-seg] button'); if (b) { const k = b.closest('[data-seg]').dataset.seg; ui[k] = b.dataset.v; draw(); return; }
+    const s = e.target.closest('[data-musort]'); if (s) { ui.sort = s.dataset.musort; draw(); }
+  });
+}
+
+return { viewNbaMatchups };
 })();
 __m['search'] = (() => {
 const { normName, teamAliases } = __m['teams'];
@@ -8934,6 +9189,7 @@ function viewStart(root, sport) {
     ['Choose a Match', `Pick a ${s.unit === 'game' ? 'game' : 'fixture'}, then research both teams and their players.`, s.matches, 'See matches'],
     ['Find a Player or Team', 'Search by name (nicknames work) and open their record.', s.search, 'Search'],
     ['Advanced Research', "Hiwi's Section: build your own cards for any market and line, with every filter.", s.hiwi, "Open Hiwi's Section"],
+    ...(sport === 'nba' ? [['Team Matchups', 'Every team ranked 1-30 for what its defence allows to guards, forwards and centres and what its offence produces, updated every night.', '#/nba/matchups', 'See matchups']] : []),
     ['Compare a Price', 'Type the odds you can see at a bookmaker and compare them with what happened in the past.', s.value, 'Compare a price'],
   ];
   root.innerHTML = `<section class="startpg"><h1>${s.em} ${esc(s.name)}: start here</h1>
@@ -9135,6 +9391,7 @@ const { nba, loadNba } = __m['nba-data'];
 const { viewNbaFixtures, viewNbaSearch, viewNbaPlayer } = __m['v-nba'];
 const { viewNbaFinder } = __m['v-nba-finder'];
 const { viewNbaPlays } = __m['v-nba-plays'];
+const { viewNbaMatchups } = __m['v-nba-matchups'];
 const { $, esc, TZ_CHOICES, tzPref, setTzPref, detectTz, tzAbbr } = __m['util'];
 const { route, hooks, getSport, setSport } = __m['shared'];
 const { ICON, LOGO, BEAR_ICON } = __m['icons'];
@@ -9180,7 +9437,7 @@ const FB = { research: 'search', start: 'start', football: 'home', players: 'sea
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', value: '#/value', about: '#/about' };
 const NBA_HREF = { start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', value: '#/nfl/value', about: '#/about' };
-const TITLES = { research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
@@ -9281,7 +9538,7 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
-      const V = { research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      const V = { research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
