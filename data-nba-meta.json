@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-10-29T23:34:11Z",
+ "updated": "2026-10-30T23:34:01Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -207,7 +207,7 @@
    "group": "ATL",
    "file": "data-nba-logs-ATL.json",
    "players": 18,
-   "rows": 4670
+   "rows": 4683
   },
   {
    "group": "BKN",
@@ -236,8 +236,8 @@
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
-   "players": 14,
-   "rows": 3428
+   "players": 15,
+   "rows": 3441
   },
   {
    "group": "DAL",
@@ -260,8 +260,8 @@
   {
    "group": "FA",
    "file": "data-nba-logs-FA.json",
-   "players": 146,
-   "rows": 27217
+   "players": 145,
+   "rows": 26961
   },
   {
    "group": "GSW",
@@ -284,8 +284,8 @@
   {
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
-   "players": 18,
-   "rows": 4324
+   "players": 19,
+   "rows": 4580
   },
   {
    "group": "LAL",
@@ -297,7 +297,7 @@
    "group": "MEM",
    "file": "data-nba-logs-MEM.json",
    "players": 18,
-   "rows": 2687
+   "rows": 2702
   },
   {
    "group": "MIA",
@@ -321,7 +321,7 @@
    "group": "NOP",
    "file": "data-nba-logs-NOP.json",
    "players": 18,
-   "rows": 4166
+   "rows": 4179
   },
   {
    "group": "NYK",
@@ -357,13 +357,13 @@
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3758
+   "rows": 3771
   },
   {
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
    "players": 17,
-   "rows": 3039
+   "rows": 3051
   },
   {
    "group": "SAS",
@@ -392,10 +392,10 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7844,
-  "players": 1190,
-  "player_games": 206344,
-  "quarter_points_ok": 167560,
+  "final": 7847,
+  "players": 1191,
+  "player_games": 206423,
+  "quarter_points_ok": 167626,
   "quarter_points_dropped": 247
  },
  "problems": [],

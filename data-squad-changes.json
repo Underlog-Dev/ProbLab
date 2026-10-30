@@ -1,6 +1,6 @@
 {
 "schema": 1,
-"updated": "2026-10-28",
+"updated": "2026-10-30",
 "source": "Wikipedia club articles (CC BY-SA 4.0), compared night by night",
 "note": "A player leaving a list may have been sold, released, retired or loaned out: the list does not say which.",
 "items": [
@@ -10,6 +10,30 @@
 "player": "Lucá Williams-Barnett",
 "from": null,
 "to": "Tottenham Hotspur",
+"kind": "joined the squad list"
+},
+{
+"date": "2026-10-30",
+"league": "mls",
+"player": "Brian Gutiérrez",
+"from": null,
+"to": "New York Red Bulls",
+"kind": "joined the squad list"
+},
+{
+"date": "2026-10-30",
+"league": "mls",
+"player": "Wan Kuzain",
+"from": null,
+"to": "New York Red Bulls",
+"kind": "joined the squad list"
+},
+{
+"date": "2026-10-30",
+"league": "mls",
+"player": "Andri Syahputra",
+"from": null,
+"to": "Houston Dynamo",
 "kind": "joined the squad list"
 }
 ]
