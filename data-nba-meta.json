@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-02T20:06:56Z",
+ "updated": "2026-11-03T23:38:39Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -207,55 +207,55 @@
    "group": "ATL",
    "file": "data-nba-logs-ATL.json",
    "players": 18,
-   "rows": 4695
+   "rows": 4707
   },
   {
    "group": "BKN",
    "file": "data-nba-logs-BKN.json",
    "players": 18,
-   "rows": 3199
+   "rows": 3212
   },
   {
    "group": "BOS",
    "file": "data-nba-logs-BOS.json",
    "players": 17,
-   "rows": 4583
+   "rows": 4597
   },
   {
    "group": "CHA",
    "file": "data-nba-logs-CHA.json",
    "players": 18,
-   "rows": 3713
+   "rows": 3726
   },
   {
    "group": "CHI",
    "file": "data-nba-logs-CHI.json",
    "players": 17,
-   "rows": 4351
+   "rows": 4366
   },
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
    "players": 15,
-   "rows": 3454
+   "rows": 3466
   },
   {
    "group": "DAL",
    "file": "data-nba-logs-DAL.json",
    "players": 18,
-   "rows": 3779
+   "rows": 3792
   },
   {
    "group": "DEN",
    "file": "data-nba-logs-DEN.json",
    "players": 17,
-   "rows": 4523
+   "rows": 4536
   },
   {
    "group": "DET",
    "file": "data-nba-logs-DET.json",
    "players": 18,
-   "rows": 4711
+   "rows": 4725
   },
   {
    "group": "FA",
@@ -267,139 +267,139 @@
    "group": "GSW",
    "file": "data-nba-logs-GSW.json",
    "players": 18,
-   "rows": 4792
+   "rows": 4805
   },
   {
    "group": "HOU",
    "file": "data-nba-logs-HOU.json",
    "players": 18,
-   "rows": 4593
+   "rows": 4608
   },
   {
    "group": "IND",
    "file": "data-nba-logs-IND.json",
    "players": 17,
-   "rows": 5187
+   "rows": 5199
   },
   {
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
    "players": 19,
-   "rows": 4608
+   "rows": 4621
   },
   {
    "group": "LAL",
    "file": "data-nba-logs-LAL.json",
    "players": 20,
-   "rows": 4941
+   "rows": 4956
   },
   {
    "group": "MEM",
    "file": "data-nba-logs-MEM.json",
    "players": 18,
-   "rows": 2717
+   "rows": 2732
   },
   {
    "group": "MIA",
    "file": "data-nba-logs-MIA.json",
    "players": 17,
-   "rows": 4721
+   "rows": 4735
   },
   {
    "group": "MIL",
    "file": "data-nba-logs-MIL.json",
    "players": 19,
-   "rows": 4308
+   "rows": 4323
   },
   {
    "group": "MIN",
    "file": "data-nba-logs-MIN.json",
    "players": 17,
-   "rows": 4450
+   "rows": 4463
   },
   {
    "group": "NOP",
    "file": "data-nba-logs-NOP.json",
    "players": 18,
-   "rows": 4192
+   "rows": 4205
   },
   {
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5262
+   "rows": 5276
   },
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 18,
-   "rows": 3383
+   "rows": 3394
   },
   {
    "group": "ORL",
    "file": "data-nba-logs-ORL.json",
    "players": 17,
-   "rows": 4429
+   "rows": 4440
   },
   {
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4534
+   "rows": 4547
   },
   {
    "group": "PHX",
    "file": "data-nba-logs-PHX.json",
    "players": 19,
-   "rows": 3801
+   "rows": 3814
   },
   {
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3784
+   "rows": 3797
   },
   {
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
    "players": 17,
-   "rows": 3064
+   "rows": 3076
   },
   {
    "group": "SAS",
    "file": "data-nba-logs-SAS.json",
    "players": 17,
-   "rows": 4218
+   "rows": 4230
   },
   {
    "group": "TOR",
    "file": "data-nba-logs-TOR.json",
    "players": 16,
-   "rows": 3317
+   "rows": 3329
   },
   {
    "group": "UTA",
    "file": "data-nba-logs-UTA.json",
    "players": 19,
-   "rows": 4670
+   "rows": 4684
   },
   {
    "group": "WAS",
    "file": "data-nba-logs-WAS.json",
    "players": 18,
-   "rows": 3695
+   "rows": 3707
   }
  ],
  "counts": {
   "games": 8976,
-  "final": 7868,
+  "final": 7883,
   "players": 1191,
-  "player_games": 206982,
-  "quarter_points_ok": 168108,
+  "player_games": 207376,
+  "quarter_points_ok": 168442,
   "quarter_points_dropped": 247,
-  "q1_rebounds_ok": 167027,
-  "q1_rebounds_dropped": 1328,
-  "q1_assists_ok": 167843,
+  "q1_rebounds_ok": 167358,
+  "q1_rebounds_dropped": 1331,
+  "q1_assists_ok": 168177,
   "q1_assists_dropped": 512
  },
  "problems": [],
