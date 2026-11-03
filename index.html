@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="97b9cf43ddc2">
+<meta name="proplab-build" content="55223450021a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -648,6 +648,41 @@ button.mumod .ii{font-size:10px;border:1px solid currentColor;border-radius:50%;
   nav.tabbar a .s{white-space:normal;text-align:center;line-height:1.1;max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none}
   nav.tabbar a{padding:4px 1px}}
 @media (max-width:360px){nav.tabbar a .s{font-size:10.5px}}
+/* Acca slip (3 Nov 2026): tab on the right edge, panel slides out from the right; a full-width drawer on phones */
+.slipwrap[hidden]{display:none}
+.sliptab{position:fixed;right:0;top:46%;z-index:35;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 7px;border:1px solid var(--line);border-right:0;border-radius:12px 0 0 12px;background:var(--accent2);color:#fff;font:600 12px/1 inherit;cursor:pointer;box-shadow:-2px 2px 10px rgba(0,0,0,.35)}
+.sliptab span{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.04em}
+.sliptab b{min-width:22px;height:22px;border-radius:11px;background:#fff;color:var(--accent2);display:grid;place-items:center;font-size:12px}
+.slipwrap.open .sliptab{right:min(380px,100vw)}
+.slippanel{position:fixed;right:0;top:var(--toph,64px);bottom:0;width:min(380px,100vw);z-index:36;background:var(--s1);border-left:1px solid var(--line);overflow-y:auto;overscroll-behavior:contain;padding:10px 14px 24px;box-shadow:-6px 0 24px rgba(0,0,0,.45)}
+.sliph{display:flex;align-items:center;justify-content:space-between;gap:8px;position:sticky;top:-10px;background:var(--s1);padding:6px 0;z-index:1}
+.slipx{border:1px solid var(--line);background:var(--s2);color:var(--text);border-radius:10px;width:40px;height:40px;font-size:16px;cursor:pointer}
+.sliphint{margin:0 0 8px}
+.sliplist{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px}
+.slipsel{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--s2)}
+.slipsel.bad{border-color:var(--amber)}
+.slipsel-a{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.sliptiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sliptiles>div{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:var(--s2);display:flex;flex-direction:column;gap:2px}
+.sliptiles small{font-size:11px;color:var(--muted);line-height:1.2}
+.sliptiles b{font-size:16px}
+.slipbets{margin-top:8px}.slipbets table{width:100%;font-size:12px}
+.slipadd.on{background:rgba(52,211,153,.14);border-color:var(--hit);color:var(--hit)}
+.slipadd small{font-weight:400;opacity:.8}
+.rslip{margin-top:8px}
+.rflash{outline:2px solid var(--accent);outline-offset:2px;transition:outline-color .6s}
+@media (max-width:700px){.slippanel{left:0;width:auto;top:0;bottom:calc(var(--navh) + env(safe-area-inset-bottom));padding-top:calc(10px + env(safe-area-inset-top));border-left:0;z-index:45}.slipwrap.open .sliptab{display:none}.sliptab{top:52%;padding:10px 6px}}
+html.slipopen body{overflow-anchor:none}
+/* search suggestions in Hiwi's Section */
+.recsearch{position:relative}.recsbox{position:relative}.recsbox .in{width:100%;padding-right:40px}
+.recsx{position:absolute;right:4px;top:4px;border:0;background:none;color:var(--muted);width:36px;height:36px;font-size:15px;cursor:pointer}
+.recsug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:31;background:var(--s2);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.45);max-height:320px;overflow-y:auto}
+.recsug button{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;padding:11px 12px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);font:inherit;font-size:14px;cursor:pointer;min-height:44px}
+.recsug button:last-child{border-bottom:0}.recsug button small{color:var(--muted);font-size:11px}
+.recsug button:hover,.recsug button:focus{background:var(--s1)}
+.inplay{display:inline-block;background:rgba(245,184,61,.16);color:var(--amber);border:1px solid var(--amber);border-radius:6px;font-size:10px;font-weight:700;padding:1px 5px;letter-spacing:.03em}
+.nmuwrap{overflow-x:auto;max-width:100%}.nmut{width:100%}.nmut td,.nmut th{vertical-align:top}
+.slipbook{display:flex;align-items:center;gap:8px;margin-top:6px}.slipbook .in{max-width:140px;padding:6px 10px;min-height:38px}.slipev{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0;background:var(--s2)}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1896,14 +1931,14 @@ const NBA_MARKETS = [
   { key: 'sb', label: 'Steals + Blocks', grp: 'Combined', get: sum('stl', 'blk'), range: [0.5, 5.5], parts: r => [[r.stl, 'p4'], [r.blk, 'p5']], desc: 'Steals plus blocks by the same player in the same game.' },
   { key: 'oreb', label: 'Offensive Rebounds', grp: 'Additional', get: v('oreb'), range: [0.5, 5.5], desc: 'Offensive rebounds.' },
   { key: 'dreb', label: 'Defensive Rebounds', grp: 'Additional', get: v('dreb'), range: [0.5, 12.5], desc: 'Defensive rebounds.' },
-  { key: 'dd', label: 'Double-Double', grp: 'Additional', binary: true, get: r => { const n = dbl(r); return n == null ? null : n >= 2 ? 1 : 0; }, desc: 'Yes when the player reached 10 or more in at least two of points, rebounds, assists, steals and blocks.' },
-  { key: 'td', label: 'Triple-Double', grp: 'Additional', binary: true, get: r => { const n = dbl(r); return n == null ? null : n >= 3 ? 1 : 0; }, desc: 'Yes when the player reached 10 or more in at least three of points, rebounds, assists, steals and blocks.' },
+  { key: 'dd', label: 'Double-Double', grp: 'Double & triple-double', binary: true, get: r => { const n = dbl(r); return n == null ? null : n >= 2 ? 1 : 0; }, desc: 'Yes when the player reached 10 or more in at least two of points, rebounds, assists, steals and blocks.' },
+  { key: 'td', label: 'Triple-Double', grp: 'Double & triple-double', binary: true, get: r => { const n = dbl(r); return n == null ? null : n >= 3 ? 1 : 0; }, desc: 'Yes when the player reached 10 or more in at least three of points, rebounds, assists, steals and blocks.' },
   { key: 'h1pts', label: 'First-Half Points', grp: 'Halves & quarters', get: v('h1'), range: [2.5, 19.5], desc: 'Points the player scored in quarters 1 and 2 (from play-by-play; only games where his quarter points add up to his box-score points).' },
-  { key: 'q1pts', label: 'First-Quarter Points', grp: 'Halves & quarters', get: v('q1'), range: [0.5, 11.5], desc: 'Points the player scored in the first quarter (from play-by-play).' },
+  { key: 'q1pts', label: 'First-Quarter Points', grp: 'First quarter', get: v('q1'), range: [0.5, 11.5], desc: 'Points the player scored in the first quarter (from play-by-play).' },
   { key: 'h1reb', label: 'First-Half Rebounds', grp: 'Halves & quarters', get: v('reb1h'), range: [0.5, 8.5], desc: 'Rebounds the player took in the first half (from play-by-play).' },
   { key: 'h1ast', label: 'First-Half Assists', grp: 'Halves & quarters', get: v('ast1h'), range: [0.5, 6.5], desc: 'Assists the player made in the first half (from play-by-play: assisted field goals naming him).' },
-  { key: 'q1reb', label: 'First-Quarter Rebounds', grp: 'Halves & quarters', get: v('reb1q'), range: [0.5, 5.5], desc: 'Rebounds the player took in the first quarter (from play-by-play; only games where his whole-game rebounds in the play-by-play equal his box score, otherwise missing, never 0).' },
-  { key: 'q1ast', label: 'First-Quarter Assists', grp: 'Halves & quarters', get: v('ast1q'), range: [0.5, 4.5], desc: 'Assists the player made in the first quarter (from play-by-play; only games where his whole-game assists in the play-by-play equal his box score, otherwise missing, never 0).' },
+  { key: 'q1reb', label: 'First-Quarter Rebounds', grp: 'First quarter', get: v('reb1q'), range: [0.5, 5.5], desc: 'Rebounds the player took in the first quarter (from play-by-play; only games where his whole-game rebounds in the play-by-play equal his box score, otherwise missing, never 0).' },
+  { key: 'q1ast', label: 'First-Quarter Assists', grp: 'First quarter', get: v('ast1q'), range: [0.5, 4.5], desc: 'Assists the player made in the first quarter (from play-by-play; only games where his whole-game assists in the play-by-play equal his box score, otherwise missing, never 0).' },
 ];
 const marg = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] - r[b]);
 const win = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] > r[b] ? 1 : r[a] < r[b] ? 0 : 0.5);
@@ -1947,7 +1982,8 @@ for (const m of [...NBA_MARKETS, ...NBA_TEAM_MARKETS]) { m.group = m.grp; if (!m
 const NO_BET = new Set(['tpa', 'fga', 'oreb', 'dreb', 'h1pts', 'h1reb', 'h1ast', 'pf', 'tov', 'ttov']); // ttov: team turnovers, the same statistic for a team
 const isBetMarket = key => !NO_BET.has(key);
 const NBA_BET_MARKETS = NBA_MARKETS.filter(m => !NO_BET.has(m.key));
-const NBA_PLAYER_GROUPS = ['Core', 'Combined', 'Additional', 'Halves & quarters'].map(g => [g, NBA_BET_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
+// player groups (owner, 3 Nov): only the first quarter can be bet among quarters and halves, and Double & triple-double is what was 'Additional'
+const NBA_PLAYER_GROUPS = ['Core', 'Combined', 'Double & triple-double', 'First quarter'].map(g => [g, NBA_BET_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
 const NBA_TEAM_BET_MARKETS = NBA_TEAM_MARKETS.filter(m => !NO_BET.has(m.key));
 const NBA_TEAM_GROUPS = ['Points', 'Halves & quarters', 'Team stats', 'Result', 'Handicaps'].map(g => [`Team: ${g}`, NBA_TEAM_BET_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
 const NBA_GROUPS = [...NBA_PLAYER_GROUPS.map(([g, ks]) => [`Player: ${g}`, ks]), ...NBA_TEAM_GROUPS]; // player props first, then team and match markets (owner, 2 Nov)
@@ -6371,7 +6407,7 @@ const { loadGroup } = __m['nfl-data'];
 const memo = new Map();
 /** Table for one season: Map(`${group}|${market}`) -> Map(team -> { rank, n, per, lg, games }). defs: the market definitions in use. */
 async function nflDefTable(A, season, defs) {
-  const key = `${season}|${A.d.games.length}`; if (memo.has(key)) return memo.get(key);
+  const key = `${season}|${A.d.games.length}|${defs.map(d => d.key).sort().join(',')}`; /* per set of markets asked for */ if (memo.has(key)) return memo.get(key);
   const P = (async () => {
     const out = new Map(), groups = ['qb', 'rb', 'wr', 'te'];
     for (const g of groups) {
@@ -7083,6 +7119,329 @@ if (typeof document !== 'undefined') document.addEventListener('click', ev => {
 
 return { myPlays, roomFor, addPlay, checks, ladders, viewMyPlays };
 })();
+__m['accabuild'] = (() => {
+// Acca Builder engine (owner request 2 Nov 2026). Builds an accumulator close to a target fair price from the same plays, lines,
+// calibrated probabilities, hit rates, matchup colours and confidence as Recommended Plays (recplays.js). Pure apart from the
+// candidates it is given; the page (v-acca.js) keeps locks, exclusions and the saved state.
+//
+// Objective (stated on the page): among combinations whose combined FAIR odds are within the tolerance of the target, choose the one
+// with the most SUPPORT: the sum over legs of log(Best Overall score / probability) + log(cautious probability / probability), less 3%
+// for every leg (the cautious figure is one standard error below the probability, so thin evidence costs more). Every combination at
+// the target has about the same model probability (1 / target), so this picks legs whose probability is backed by their own season,
+// recent and opponent record, matchup and confidence, and it prefers fewer legs (each one adds its own model risk). Ties go to the
+// higher average Best Overall score. The search is a beam search over a shortlist of legs; it is not a guarantee of the best possible
+// combination and nothing about it says the acca will win.
+//
+// Joint probability:
+//  * legs from DIFFERENT games: the product of the leg probabilities (different events);
+//  * the SAME player twice: never (his figures move together: it is one bet in disguise);
+//  * two legs from the SAME game (NBA / NFL players): only when the two players share at least MIN_SHARED earlier games, from which
+//    the historical joint hit rate at these lines is compared with what independence would give; the ratio, pulled towards 1 with
+//    SHRINK pretend games, scales the product. Fewer shared games, or a team / match market in the same game: "unpriced" - shown as
+//    research, never priced, never generated automatically;
+//  * football: one leg per match (same-match team / match markets are left unpriced).
+// Nothing here is a bookmaker price. EV appears only for a price the user types for the whole acca.
+const { evalAt, passes } = __m['recplays'];
+
+const ACCA = { legCost: 0.03, tol: 0.15, maxLegs: 8, LEGS_CAP: 10, beam: 160, shortlist: 140, MIN_SHARED: 30, SHRINK: 30 };
+const RARE_ACCA = new Set(['stl', 'blk', 'sb', 'dd', 'td', 'atd', 'rush_td', 'rec_td', 'tds', 'ftd']);
+const legId = (c, side, L) => `${c.id}|${side}|${L}`;
+const gameKey = c => `${c.sport}|${c.fid}`;
+const subjOf = c => `${c.sport}|${c.pid || c.team || c.name}`;
+
+/** Every eligible leg: each candidate at every line whose fair odds are inside [minFair, maxFair] and passes the other filters. The fair
+ *  odds rise with the line (Over; fall for Under), so the range is found by halving and only those few lines are priced. */
+function legPool(cands, o, excluded = new Set()) {
+  // o.minProb: minimum model probability per leg (percent); o.xsubj: excluded players / teams (subj keys); o.games: the selected games
+  // (Set of `${sport}|${fid}`, null = every game). excluded holds leg ids and `${candidate id}|${side}` keys (that market at any line).
+  const out = [], q = { ...o, minProb: 0, minHit: 0, minFair: 0, maxFair: 0 }, xs = o.xsubj || new Set(), mp = Number(o.minProb) || 0;
+  for (const c of cands) { if (o.grps && o.grps.size && !o.grps.has(c.grp)) continue; if (o.noRare && RARE_ACCA.has(c.def.key)) continue; if (!o.injOk && c.inj && c.inj.cls === 'warn') continue;
+    if (o.games && !o.games.has(gameKey(c))) continue; if (xs.has(subjOf(c))) continue; if (o.mkOff && o.mkOff.has(`${c.sport}|${c.def.key}`)) continue; /* markets you unticked */
+    for (const side of c.def.binary ? ['over'] : o.sides || ['over']) { if (excluded.has(`${c.id}|${side}`)) continue;
+      const Ls = side === 'under' ? c.lines.slice().reverse() : c.lines, F = k => { const r = evalAt(c, Ls[k], side); return r ? r.fair : null; };
+      const first = (test) => { let lo = 0, hi = Ls.length - 1, b = Ls.length; while (lo <= hi) { const m = (lo + hi) >> 1, f = F(m); if (f != null && test(f)) { b = m; hi = m - 1; } else lo = m + 1; } return b; };
+      const a = o.minFair ? first(f => f >= o.minFair - 1e-9) : 0, z = o.maxFair ? first(f => f > o.maxFair + 1e-9) - 1 : Ls.length - 1;
+      for (let k = a; k <= z && k < Ls.length; k++) { const r = evalAt(c, Ls[k], side); if (!r || !passes(r, q) || r.p * 100 < mp - 1e-9) continue; const id = legId(c, side, r.L); if (!excluded.has(id)) out.push(mkLeg(c, side, r)); } } }
+  return out;
+}
+function mkLeg(c, side, r) {
+  const cautious = Math.max(0.01, r.score + 0), p = r.p;
+  // support: the leg's Best Overall score (cautious probability blended with its season, recent and opponent record, matchup and
+  // confidence) as a share of its model probability, less ACCA.legCost for every leg (each leg adds its own model risk)
+  const sup = Math.log(Math.max(0.01, Math.min(p, r.rank)) / p) + Math.log(Math.max(0.01, Math.min(p, cautious)) / p) - ACCA.legCost;
+  return { id: legId(c, side, r.L), c, side, r, p, fair: r.fair, cautious: Math.min(p, cautious), rank: r.rank, sup, game: gameKey(c), subj: subjOf(c) };
+}
+/** Historical same-game dependence of two player legs: { ok, ratio, n, joint, indep } or { ok:false, why }. */
+function sameGame(a, b) {
+  if (a.c.kind !== 'player' || b.c.kind !== 'player') return { ok: false, why: 'a team or match market in the same game: how it moves with the other leg cannot be measured from PropLab\'s data' };
+  if (a.c.sport === 'football') return { ok: false, why: 'football: one leg per match' };
+  const ra = new Map(a.c.rows.filter(x => x.game).map(x => [x.game, x.value])), shared = b.c.rows.filter(x => x.game && ra.has(x.game)); // the same GAME (not just the same date)
+  if (shared.length < ACCA.MIN_SHARED) return { ok: false, why: `only ${shared.length} earlier games together (at least ${ACCA.MIN_SHARED} are needed to measure how their figures move together)` };
+  const hit = (v, leg) => (leg.side === 'under' ? v < leg.r.L : v > leg.r.L);
+  let ha = 0, hb = 0, hab = 0; for (const x of shared) { const A = hit(ra.get(x.game), a), B = hit(x.value, b); ha += A; hb += B; hab += A && B; }
+  const n = shared.length, pa = ha / n, pb = hb / n, ind = pa * pb;
+  if (!(ind > 0)) return { ok: false, why: 'one of the two never hit in their shared games' };
+  const raw = (hab / n) / ind, ratio = (n * raw + ACCA.SHRINK * 1) / (n + ACCA.SHRINK);
+  return { ok: true, ratio, n, joint: hab / n, indep: ind };
+}
+/** Joint probability of a set of legs: { p, pCaut, fair, priced, notes, pairs }. */
+function jointOf(legs) {
+  let p = 1, pc = 1; const notes = [], pairs = []; let priced = true;
+  const bySubj = new Map(); for (const l of legs) { if (bySubj.has(l.subj)) { priced = false; notes.push(`${l.c.name} appears twice: not priced (one player's legs move together)`); } bySubj.set(l.subj, l); }
+  const byGame = new Map(); for (const l of legs) { if (!byGame.has(l.game)) byGame.set(l.game, []); byGame.get(l.game).push(l); }
+  for (const l of legs) { p *= l.p; pc *= l.cautious; }
+  for (const gl of byGame.values()) { if (gl.length < 2) continue;
+    for (let i = 0; i < gl.length; i++) for (let j = i + 1; j < gl.length; j++) { if (gl[i].subj === gl[j].subj) continue; const d = sameGame(gl[i], gl[j]);
+      if (!d.ok) { priced = false; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): unpriced, ${d.why}`); continue; }
+      p *= d.ratio; pc *= Math.min(1, d.ratio); pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
+      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)}. EXPERIMENTAL and hypothetical: this adjustment has not been tested on real outcomes`); } }
+  p = Math.min(0.999, p); return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs };
+}
+/**
+ * Build: locked legs first, then a beam search over the shortlist for the best set of extra legs whose combined fair odds land within
+ * the tolerance of target (decimal). opts: allowSame (two legs may share a game; only priced pairs are kept), skip (leg ids not to offer
+ * this time), minLegs / maxLegs (the total, locked legs included), exact (replacement after an Exclude: exactly maxLegs legs, the closest
+ * to the target if none lands within the tolerance).
+ * Returns { legs, joint, hit (within tolerance), over, short, note }.
+ */
+function buildAcca(pool, locked, target, opts = {}) {
+  const A = { ...ACCA, ...opts }, skip = opts.skip || new Set(), lockIds = new Set(locked.map(l => l.id)), lockSubj = new Set(locked.map(l => l.subj)), lockGames = new Set(locked.map(l => l.game));
+  const maxL = Math.max(1, Math.min(A.LEGS_CAP, opts.maxLegs || A.maxLegs)), minL = Math.max(1, Math.min(maxL, opts.minLegs || 1)), exact = !!opts.exact;
+  const base = jointOf(locked), lt = Math.log(target), logF0 = base.priced ? -Math.log(base.p) : 0, tolL = Math.log(1 + A.tol);
+  if (locked.length > maxL) return { legs: locked, joint: base, hit: false, over: true, note: `You have ${locked.length} legs locked, more than your maximum of ${maxL}: untick Include on a leg or raise the maximum.` };
+  if (!exact && base.priced && locked.length >= minL && logF0 > lt + tolL) return { legs: locked, joint: base, hit: false, over: true, note: 'Your locked legs already go past the target on their own.' };
+  if (!exact && locked.length >= minL && locked.length && Math.abs(lt - logF0) <= tolL + 1e-9) return { legs: locked, joint: base, hit: true, note: 'Your locked legs already reach the target.' };
+  const cand = pool.filter(l => !lockIds.has(l.id) && !skip.has(l.id) && !lockSubj.has(l.subj) && (opts.allowSame || !lockGames.has(l.game)))
+    .sort((x, y) => y.sup / Math.log(y.fair) - x.sup / Math.log(x.fair) || y.rank - x.rank).slice(0, A.shortlist); // most support per unit of price first
+  const need = lt - logF0, lo = need + Math.log(1 - A.tol), hi = need + tolL; // log fair still to add
+  const pos = new Map(cand.map((l, i) => [l, i]));
+  let beam = [{ legs: [], lf: 0, lc: 0, rk: 0, subj: new Set(), games: new Set() }]; const done = []; let near = []; // near: the sets of an allowed size closest to the target, in case none lands within the tolerance
+  for (let depth = 0; depth < maxL - locked.length && beam.length; depth++) {
+    const next = [];
+    for (const s of beam) for (const l of cand) {
+      if (s.subj.has(l.subj)) continue; if (!opts.allowSame && s.games.has(l.game)) continue;
+      if (s.legs.length && pos.get(l) <= pos.get(s.legs[s.legs.length - 1])) continue; // each set once (shortlist order)
+      const lf = s.lf + Math.log(l.fair); if (!exact && lf > hi + 1e-9) continue;
+      const t = { legs: [...s.legs, l], lf, lc: s.lc + l.sup, rk: s.rk + l.rank, subj: new Set([...s.subj, l.subj]), games: new Set([...s.games, l.game]) }, total = locked.length + t.legs.length;
+      if (total >= minL) near.push(t);
+      if (exact) { if (total === maxL) done.push(t); else next.push(t); continue; }
+      if (total >= minL && lf >= lo - 1e-9) done.push(t);
+      if (total < maxL && lf < hi - 1e-9) next.push(t); }
+    // keep the most promising partial sets: highest support per unit of log odds so far, then rank (exact: closest to the target first)
+    if (exact) { const K = maxL - locked.length, off = t => Math.abs(t.lf - need * t.legs.length / K); next.sort((x, y) => off(x) - off(y) || y.lc - x.lc); }
+    else next.sort((x, y) => (y.lc / Math.max(0.05, y.lf)) - (x.lc / Math.max(0.05, x.lf)) || y.rk - x.rk);
+    beam = next.slice(0, A.beam);
+    near.sort((x, y) => Math.abs(x.lf - need) - Math.abs(y.lf - need)); near = near.slice(0, 60);
+  }
+  const score = t => { const legs = [...locked, ...t.legs], j = jointOf(legs); return { legs, j, v: j.priced ? t.lc : -Infinity, rk: (t.rk + locked.reduce((a, l) => a + l.rank, 0)) / legs.length }; };
+  const inRange = x => x.legs.length >= minL && x.legs.length <= maxL;
+  const scored = done.map(score).filter(x => inRange(x) && x.j.priced && Math.abs(Math.log(x.j.fair) - lt) <= tolL + 1e-9).sort((a, b) => b.v - a.v || b.rk - a.rk);
+  if (scored.length) return { legs: scored[0].legs, joint: scored[0].j, hit: true, note: '' };
+  // nothing within the tolerance: the closest priced set with an allowed number of legs, from everything tried, and why
+  const why = whyNot(cand, locked, target, minL, maxL, A);
+  const all = [...done, ...near, ...beam].map(score).filter(x => inRange(x) && x.j.priced).sort((a, b) => Math.abs(Math.log(a.j.fair) - lt) - Math.abs(Math.log(b.j.fair) - lt));
+  if (all.length) return { legs: all[0].legs, joint: all[0].j, hit: false, note: `No combination of ${minL === maxL ? minL : `${minL}-${maxL}`} eligible legs lands within ${Math.round(A.tol * 100)}% of the target; this is the closest one found.${why ? ' ' + why : ''}` };
+  return { legs: locked, joint: base, hit: false, short: true, note: `No acca with ${minL === maxL ? minL : `${minL} to ${maxL}`} legs can be built from the eligible legs.${why ? ' ' + why : ' Widen the per-leg fair-odds range, lower the minimum probability, add sports, days or games, or clear exclusions.'}` };
+}
+/** Why no acca meets the target with minL..maxL legs: '' or a plain sentence (from the eligible legs, one per game unless allowSame). */
+function whyNot(cand, locked, target, minL, maxL, o = {}) {
+  const games = new Map(), subj = new Set(locked.map(l => l.subj)), lg = new Set(locked.map(l => l.game));
+  for (const l of cand) { if (subj.has(l.subj) || (!o.allowSame && lg.has(l.game))) continue; const k = o.allowSame ? l.subj : l.game, e = games.get(k); if (!e) games.set(k, { min: l.fair, max: l.fair }); else { e.min = Math.min(e.min, l.fair); e.max = Math.max(e.max, l.fair); } }
+  const room = games.size, needN = minL - locked.length, f0 = locked.reduce((a, l) => a * l.fair, 1), tol = o.tol ?? ACCA.tol;
+  if (!cand.length && needN > 0) return 'There are no eligible legs left under your filters and exclusions.';
+  if (needN > room) return `Only ${room} ${o.allowSame ? 'different players / teams have' : 'games have'} an eligible leg${o.allowSame ? '' : ' (one leg per game)'}, so at most ${room + locked.length} legs; your minimum is ${minL}. Lower the minimum legs, add games, sports or days${o.allowSame ? '' : ', or allow two legs from the same game'}.`;
+  const mins = [...games.values()].map(e => e.min).sort((a, b) => a - b), maxs = [...games.values()].map(e => e.max).sort((a, b) => b - a);
+  const cheapest = f0 * mins.slice(0, Math.max(0, needN)).reduce((a, x) => a * x, 1), longest = f0 * maxs.slice(0, Math.max(0, maxL - locked.length)).reduce((a, x) => a * x, 1);
+  if (cheapest > target * (1 + tol)) return `With at least ${minL} legs, the shortest acca possible from the eligible legs is about ${cheapest.toFixed(2)} (decimal), above your target of ${target.toFixed(2)}: lower the minimum legs or the minimum fair odds per leg, or raise the target.`;
+  if (longest < target * (1 - tol)) return `With at most ${maxL} legs, the longest acca possible from the eligible legs is about ${longest.toFixed(2)} (decimal), below your target of ${target.toFixed(2)}: raise the maximum legs or the maximum fair odds per leg, lower the minimum probability, or lower the target.`;
+  return '';
+}
+/** Is a saved leg still valid now? '' or the reason. */
+function legProblem(l, now = Date.now()) {
+  const f = l.c.f; if (f && f.ko_utc && Date.parse(f.ko_utc) <= now) return 'its game has started';
+  if (l.c.inj && l.c.inj.unavailable) return `${l.c.name} is now listed ${l.c.inj.label}`;
+  return '';
+}
+
+return { ACCA, RARE_ACCA, legId, gameKey, subjOf, legPool, mkLeg, sameGame, jointOf, buildAcca, whyNot, legProblem };
+})();
+__m['accaslip'] = (() => {
+// Acca slip (owner request 3 Nov 2026): a betting-slip-style panel on the right of Hiwi's Section. "Add to Acca" on any play puts that
+// exact selection (player / team, market, line, side) in the slip; the slip works out singles, doubles, trebles, accumulators and the
+// standard full-cover system bets (Trixie to Goliath) with PropLab's FAIR odds only. It is a calculator: there are no bookmaker prices,
+// nothing is placed anywhere, and a fair-odds return is not a price anyone will pay.
+//
+// Maths (all on decimal fair odds = 1 / model probability, never on the formatted text):
+//  * one bet (a single, double, treble, n-fold) = stake per bet x the product of its selections' decimal fair odds;
+//  * a system bet = every required combination priced separately (a Trixie is 3 doubles + 1 treble = 4 bets), total stake = stake per bet
+//    x number of bets, return if everything wins = the sum of every bet's return, profit = that return - the total stake;
+//  * a product of probabilities is only a fair price when the selections are unrelated. Two selections from the SAME game (or the same
+//    player / team twice) are correlated and PropLab has no validated joint model for them, so every bet containing such a pair is
+//    marked unpriced and left out of the figures, and the slip says so. No correlation adjustment is invented.
+//  * a selection with no valid probability (or whose game is over) is unpriced too, and so is every bet that contains it.
+const { legId, subjOf } = __m['accabuild'];
+const { evalAt, ladderName } = __m['recplays'];
+const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
+const { esc, fmtKick } = __m['util'];
+const { hooks } = __m['shared'];
+
+const KEY = 'proplab.slip.v1';
+const GAME_OVER_MS = { nba: 4 * 3600e3, nfl: 5 * 3600e3, football: 3 * 3600e3 };
+// ---------------- pure maths ----------------
+/** Every k-subset of [0..n-1], in order. */
+function combos(n, k) { const out = [], c = []; const go = s => { if (c.length === k) { out.push(c.slice()); return; } for (let i = s; i <= n - (k - c.length); i++) { c.push(i); go(i + 1); c.pop(); } }; if (k >= 1 && k <= n) go(0); return out; }
+const nCk = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
+const FOLD = k => (k === 1 ? 'Singles' : k === 2 ? 'Doubles' : k === 3 ? 'Trebles' : `${k}-folds`);
+// full-cover bets: [id, name, selections, smallest fold included]
+const SYSTEMS = [['trixie', 'Trixie', 3, 2], ['patent', 'Patent', 3, 1], ['yankee', 'Yankee', 4, 2], ['lucky15', 'Lucky 15', 4, 1], ['canadian', 'Canadian (Super Yankee)', 5, 2], ['lucky31', 'Lucky 31', 5, 1], ['heinz', 'Heinz', 6, 2], ['lucky63', 'Lucky 63', 6, 1], ['superheinz', 'Super Heinz', 7, 2], ['goliath', 'Goliath', 8, 2]];
+/** The bet types available for n selections: [{ id, name, ks (fold sizes), bets, text }]. */
+function formatsFor(n) {
+  const out = [];
+  if (n >= 2) out.push({ id: 'acca', name: n === 2 ? 'Double (full acca)' : n === 3 ? 'Treble (full acca)' : `${n}-fold accumulator (full acca)`, ks: [n] });
+  if (n >= 1) out.push({ id: 'k1', name: 'Singles', ks: [1] });
+  for (let k = 2; k < n; k++) out.push({ id: `k${k}`, name: FOLD(k), ks: [k] });
+  for (const [id, name, m, lo] of SYSTEMS) if (n === m) { const ks = []; for (let k = lo; k <= m; k++) ks.push(k); out.push({ id, name, ks, system: true }); }
+  for (const f of out) { f.bets = f.ks.reduce((a, k) => a + nCk(n, k), 0); f.text = f.system ? `${f.bets} bets: ${f.ks.map(k => { const m = nCk(n, k), w = FOLD(k).toLowerCase(); return `${m} ${m === 1 ? w.replace(/s$/, '') : w}`; }).join(' + ')}` : f.ks[0] === 1 ? `${f.bets} single${f.bets === 1 ? '' : 's'}, one on each selection` : f.ks[0] === n ? `1 bet: all ${n} selections must win` : `${f.bets} ${FOLD(f.ks[0]).toLowerCase()}: every combination of ${f.ks[0]} of the ${n} selections`; }
+  return out;
+}
+/** Is one selection priceable? '' or the reason. */
+function selProblem(x, now = Date.now()) {
+  if (!(Number.isFinite(x.p) && x.p > 0 && x.p < 1) || !(Number.isFinite(x.fair) && x.fair > 1)) return 'no valid model probability';
+  if (x.ko && now - Date.parse(x.ko) > (GAME_OVER_MS[x.sport] || 4 * 3600e3)) return 'its game is over';
+  return '';
+}
+/** Why one combination of selections cannot be priced: '' or the reason. */
+function comboProblem(sels) {
+  for (const x of sels) { const p = selProblem(x); if (p) return `${x.name}: ${p}`; }
+  for (let i = 0; i < sels.length; i++) for (let j = i + 1; j < sels.length; j++) {
+    if (sels[i].subj === sels[j].subj) return `${sels[i].name} twice (the same player or team: correlated)`;
+    if (sels[i].game === sels[j].game) return `${sels[i].name} and ${sels[j].name} are from the same game (correlated: PropLab has no validated same-game price)`; }
+  return '';
+}
+/**
+ * Price a slip: sels (each { p, fair, game, subj, name, ... }), the format id, the stake and whether it is per bet or the total.
+ * Returns { fmt, bets: [{ idx, odds|null, ret|null, why }], n, unit, total, priced, unpriced, retAll, retPriced, profitAll, oddsAll, pAll }.
+ * retAll / profitAll / oddsAll are null when any bet is unpriced (so nothing misleading is shown as the full figure).
+ */
+function priceSlip(sels, fmtId, stake, per = 'bet') {
+  const F = formatsFor(sels.length), fmt = F.find(f => f.id === fmtId) || F[0]; if (!fmt) return null;
+  const nb = fmt.bets, st = Number(stake), unit = Number.isFinite(st) && st > 0 ? (per === 'total' ? st / nb : st) : 0, total = unit * nb, bets = [];
+  for (const k of fmt.ks) for (const idx of combos(sels.length, k)) { const ss = idx.map(i => sels[i]), why = comboProblem(ss), odds = why ? null : ss.reduce((a, x) => a * x.fair, 1); bets.push({ idx, k, odds, ret: odds == null ? null : unit * odds, why }); }
+  // EV at YOUR prices (optional): each selection's bookmaker price typed in the slip. A bet's bookmaker price = the product of its
+  // selections' prices (how a bookmaker settles an acca of different events); its win chance = the product of the model probabilities
+  // (the same independence estimate). EV = (sum of stake x chance x price) / total stake - 1. Only when every bet is priced and every
+  // selection has a price.
+  let evRet = 0, evOk = bets.length > 0, bookAll = 0;
+  for (const b of bets) { const ss = b.idx.map(i => sels[i]); if (b.odds == null || ss.some(x => !(x.book > 1))) { evOk = false; continue; } const bo = ss.reduce((a, x) => a * x.book, 1), pw = ss.reduce((a, x) => a * x.p, 1); b.book = bo; evRet += pw * bo; bookAll += bo; }
+  const ok = bets.filter(b => b.odds != null), retPriced = ok.reduce((a, b) => a + b.ret, 0), unpriced = bets.length - ok.length;
+  const allOk = unpriced === 0, okAll = sels.every(x => !selProblem(x)) && !comboProblem(sels);
+  return { fmt, bets, n: nb, unit, total, priced: ok.length, unpriced, retPriced, retAll: allOk ? retPriced : null, profitAll: allOk ? retPriced - total : null,
+    oddsAll: allOk && total > 0 ? retPriced / total : allOk ? ok.reduce((a, b) => a + b.odds, 0) / nb : null, pAll: okAll ? sels.reduce((a, x) => a * x.p, 1) : null,
+    ev: evOk ? (evRet / nb - 1) * 100 : null, bookRet: evOk ? unit * bookAll : null, booksMissing: sels.filter(x => !(x.book > 1)).length };
+}
+// ---------------- state ----------------
+let ST = null; const reg = new Map(); // candidate id -> candidate (this visit), so a line can be changed inside the slip
+const load = () => { if (ST) return ST; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; }
+  ST = { sel: Array.isArray(j.sel) ? j.sel : [], fmt: j.fmt || 'acca', stakeTxt: j.stakeTxt || '', per: j.per === 'total' ? 'total' : 'bet', open: false, armed: 0 }; return ST; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ sel: ST.sel, fmt: ST.fmt, stakeTxt: ST.stakeTxt, per: ST.per })); } catch { /* this visit only */ } };
+/** A slip selection from a candidate, side and evaluated line (recplays). */
+function selOf(c, side, r) {
+  const g = c.f || {};
+  return { id: legId(c, side, r.L), cid: c.id, side, L: r.L, sport: c.sport, name: c.name, kind: c.kind, team: c.team || '', market: c.def.label, label: ladderName(c, r),
+    line: c.def.binary ? (side === 'under' ? 'No' : 'Yes') : `${side === 'under' ? 'Under' : 'Over'} ${r.L}`, fixture: c.sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`,
+    ko: g.ko_utc || '', kick: fmtKick(g), fid: String(c.fid), game: `${c.sport}|${c.fid}`, subj: subjOf(c), p: r.p, fair: r.fair, at: Date.now() };
+}
+const slipCount = () => load().sel.length;
+const slipHas = id => load().sel.some(x => x.id === id);
+const changed = () => { save(); syncButtons(); drawTab(); if (ST.open) drawPanel(); };
+/** Add (or, if it is already there, remove) one selection. Returns true when it is in the slip afterwards. */
+function slipToggle(c, side, r) { const S = load(), x = selOf(c, side, r); reg.set(c.id, c); const i = S.sel.findIndex(y => y.id === x.id); if (i >= 0) S.sel.splice(i, 1); else S.sel.push(x); changed(); return i < 0; }
+/** Add several (Acca Builder legs); exact duplicates are skipped. Returns how many were added. */
+function slipAddMany(list) { const S = load(); let n = 0; for (const { c, side, r } of list) { reg.set(c.id, c); const x = selOf(c, side, r); if (!S.sel.some(y => y.id === x.id)) { S.sel.push(x); n++; } } changed(); return n; }
+/** Fresh candidates are on screen (after the nightly update the probability can change): re-price the selections they cover. */
+function slipRegister(cands) { const S = load(); let ch = false; for (const c of cands) reg.set(c.id, c);
+  for (const x of S.sel) { const c = reg.get(x.cid); if (!c) continue; const r = evalAt(c, x.L, x.side); if (r && (Math.abs(r.p - x.p) > 1e-12 || Math.abs(r.fair - x.fair) > 1e-12)) { x.p = r.p; x.fair = r.fair; x.label = ladderName(c, r); ch = true; } }
+  if (ch) changed(); }
+// ---------------- UI ----------------
+let el = null, visible = false;
+const money = v => `£${(Math.round(v * 100) / 100).toFixed(2)}`;
+function ensure() {
+  if (el || typeof document === 'undefined') return el;
+  el = document.createElement('div'); el.className = 'slipwrap'; el.innerHTML = '<button type="button" class="sliptab" data-sliptab aria-expanded="false" aria-controls="slippanel"></button><aside class="slippanel" id="slippanel" aria-label="Acca slip" hidden></aside>';
+  document.body.appendChild(el);
+  el.addEventListener('click', onClick); el.addEventListener('input', onInput); el.addEventListener('change', onChange);
+  document.addEventListener('oddsfmt', () => { if (ST && ST.open) drawPanel(); syncButtons(); });
+  return el;
+}
+/** Show the slip tab on these pages only (Hiwi's Section singles and the Acca Builder). */
+function slipRoute(w) { load(); ensure(); visible = !!w && ['rec', 'acca'].includes(w.page); el.hidden = !visible; if (!visible) setOpen(false); drawTab(); }
+function setOpen(v) { if (!el) return; ST.open = v; const pn = el.querySelector('.slippanel'), tb = el.querySelector('.sliptab'); pn.hidden = !v; tb.setAttribute('aria-expanded', String(v)); el.classList.toggle('open', v); document.documentElement.classList.toggle('slipopen', v); if (v) drawPanel(); }
+function drawTab() { if (!el) return; const n = load().sel.length; el.querySelector('.sliptab').innerHTML = `<span>Acca slip</span><b data-slipn>${n}</b>`; }
+/** Every Add to Acca button on the page shows whether its selection is in the slip. */
+function syncButtons() { if (typeof document === 'undefined') return; for (const b of document.querySelectorAll('[data-slipid]')) { const on = slipHas(b.dataset.slipid); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.innerHTML = on ? '✓ In Acca slip <small>(tap to remove)</small>' : '＋ Add to Acca'; } }
+function drawPanel() {
+  const S = load(), pn = el.querySelector('.slippanel'), F = formatsFor(S.sel.length); if (F.length && !F.some(f => f.id === S.fmt)) S.fmt = F[0].id;
+  const sc = pn.scrollTop;
+  pn.innerHTML = `<header class="sliph"><b>Acca slip <span data-slipcount>(${S.sel.length})</span></b><button type="button" class="slipx" data-slipclose aria-label="Close the slip">✕</button></header>
+    <p class="xs muted sliphint">PropLab fair odds only: a hypothetical calculator, not a bookmaker quote. Nothing is placed.</p>
+    ${S.sel.length ? `<ol class="sliplist">${S.sel.map((x, i) => { const pr = selProblem(x), c = reg.get(x.cid), started = x.ko && Date.now() > Date.parse(x.ko) && !pr;
+      return `<li class="slipsel${pr ? ' bad' : ''}" data-slipi="${i}"><div class="slipsel-t"><b>${esc(x.name)}</b> <span class="xs muted">${esc(x.sport.toUpperCase())}</span><div class="small">${esc(x.label)} <span class="muted">(${esc(x.market)}, ${esc(x.line)})</span></div><div class="xs muted">${esc(x.fixture)} · ${esc(x.kick || '')}</div>
+        ${pr ? `<div class="xs warn">Unavailable for pricing: ${esc(pr)}. Left out of every bet that contains it.</div>` : `<div class="xs">Model <b>${(x.p * 100).toFixed(1)}%</b> · fair odds <b data-slipfair>${esc(fmtOdds(x.fair))}</b>${started ? ' · <span class="warn">game started: pre-game estimate</span>' : ''}</div>`}
+        <label class="slipbook"><span class="xs">Your odds</span><input class="in" data-slipbook type="text" inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(x.bookTxt || '')}" aria-label="Bookmaker odds for ${esc(x.name)}"></label>
+        <div class="slipsel-a">${c && !c.def.binary ? `<button type="button" class="hstep" data-slipstep="-1" aria-label="Lower the line">−</button><span class="xs">line</span><button type="button" class="hstep" data-slipstep="1" aria-label="Raise the line">+</button>` : ''}<button type="button" class="chip" data-slipview>View play</button><button type="button" class="chip" data-sliprm aria-label="Remove ${esc(x.name)}">Remove</button></div></div></li>`; }).join('')}</ol>
+    <label class="field"><span>Bet type</span><select class="in" data-slipfmt>${F.map(f => `<option value="${f.id}" ${f.id === S.fmt ? 'selected' : ''}>${esc(f.name)} · ${f.bets} bet${f.bets === 1 ? '' : 's'}</option>`).join('')}</select></label>
+    <p class="xs muted" data-slipfmttext style="margin:2px 0 8px"></p>
+    <div class="recrow"><label class="field"><span>Stake (£)</span><input class="in" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 10" value="${esc(S.stakeTxt)}"></label>
+      <div class="field"><span class="xs muted">The stake is</span><div class="seg" data-slipper><button type="button" data-v="bet" class="${S.per === 'bet' ? 'on' : ''}">Per bet</button><button type="button" data-v="total" class="${S.per === 'total' ? 'on' : ''}">Total</button></div></div></div>
+    <div class="slipout" data-slipout aria-live="polite"></div>
+    <div class="row" style="border:0;padding:8px 0 0;gap:8px"><button type="button" class="chip" data-slipclear>${S.armed && Date.now() - S.armed < 4000 ? `Tap again to clear all ${S.sel.length}` : 'Clear slip'}</button></div>`
+    : '<p class="small muted" style="margin:12px 0">Your slip is empty. Tap <b>＋ Add to Acca</b> on any play in Hiwi\'s Section to add it.</p>'}
+    <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Selections from the same game, or the same player twice, are correlated: bets containing them are shown as unpriced, because PropLab has no validated way to price them together. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
+  pn.scrollTop = sc; drawOut();
+}
+function drawOut() {
+  const S = load(), box = el.querySelector('[data-slipout]'); if (!box) return; const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£,\s]/g, '')), S.per);
+  const tx = el.querySelector('[data-slipfmttext]'); if (tx && R) tx.textContent = R.fmt.text + (R.fmt.system ? '. Each bet has the same stake.' : '');
+  if (!R) { box.innerHTML = ''; return; }
+  const has = R.unit > 0, many = R.n > 1;
+  box.innerHTML = `<div class="sliptiles">
+      <div><small>Bets</small><b data-slipbets>${R.n}</b></div>
+      <div><small>Stake per bet</small><b data-slipunit>${has ? money(R.unit) : '–'}</b></div>
+      <div><small>Total stake</small><b data-sliptotal>${has ? money(R.total) : '–'}</b></div>
+      <div><small>${many ? 'Fair odds if all win (return ÷ total stake)' : 'Combined fair odds'}</small><b data-slipodds>${R.oddsAll != null ? esc(fmtOdds(R.oddsAll)) : 'Unavailable'}</b></div>
+      <div><small>Potential return${many ? ' if every selection wins' : ''} (incl. stake)</small><b data-slipret>${R.retAll != null ? (has ? money(R.retAll) : '–') : 'Unavailable'}</b></div>
+      <div><small>Potential profit${many ? ' if every selection wins' : ''}</small><b data-slipprofit>${R.profitAll != null ? (has ? money(R.profitAll) : '–') : 'Unavailable'}</b></div></div>
+    ${R.unpriced ? `<p class="xs warn" data-slipunpriced style="margin:6px 0">${R.unpriced} of ${R.n} bet${R.n === 1 ? '' : 's'} cannot be priced (${esc([...new Set(R.bets.filter(b => b.why).map(b => b.why))].slice(0, 2).join('; '))}), so the full return and profit are unavailable. ${R.priced ? `The ${R.priced} priced bet${R.priced === 1 ? '' : 's'} alone would return ${has ? money(R.retPriced) : '–'} if they all won; the total stake above still includes every bet.` : ''}</p>` : ''}
+    <div class="slipev" data-slipev>${R.ev != null ? `<b class="${R.ev > 0 ? 'hit' : 'miss'}">${R.ev > 0 ? 'EV+' : 'EV−'} ${R.ev > 0 ? '+' : '−'}${Math.abs(R.ev).toFixed(1)}%</b> at your prices${has ? ` · return if all win at your prices ${money(R.bookRet)}` : ''}<br><span class="xs muted">Average return per £1 staked if the model probabilities are right, treating the selections as unrelated (an independence estimate, not verified on real accas). Hypothetical, not evidence of profit.</span>`
+      : R.unpriced ? '<span class="xs muted">No EV: some bets cannot be priced (see above).</span>' : `<span class="xs muted">Type your bookmaker's price for ${R.booksMissing === S.sel.length ? 'each selection' : `the ${R.booksMissing} selection${R.booksMissing === 1 ? '' : 's'} still without one`} to see whether this bet is EV+ or EV− at your prices.</span>`}</div>
+    ${R.pAll != null && S.sel.length > 1 ? `<p class="xs muted" style="margin:6px 0">Chance every selection wins: ${(R.pAll * 100).toFixed(1)}% (independence estimate: the model probabilities multiplied, legs from different games treated as unrelated; not verified on real accas).</p>` : ''}
+    ${!has ? '<p class="xs muted" style="margin:6px 0">Type a stake to see the returns.</p>' : ''}
+    <details class="slipbets"><summary class="small"><b>Every bet (${R.n})</b></summary><table class="ralttb"><tr><th>Bet</th><th>Fair odds</th><th>Stake</th><th>Return if it wins</th></tr>${R.bets.map(b => `<tr${b.why ? ' class="muted"' : ''}><td>${esc(b.idx.map(i => S.sel[i].name.split(' ').slice(-1)[0]).join(' + '))}</td><td>${b.odds != null ? esc(fmtOdds(b.odds)) : 'Unpriced'}</td><td>${has ? money(R.unit) : '–'}</td><td>${b.ret != null ? (has ? money(b.ret) : '–') : esc(b.why)}</td></tr>`).join('')}</table></details>
+    <p class="xs muted" style="margin:6px 0 0">Hypothetical fair-odds payout, not a bookmaker quote or a guaranteed return. At fair odds the average return is your stake: that is what "fair" means.</p>`;
+}
+function onClick(e) {
+  const t = e.target, S = load();
+  if (t.closest('[data-sliptab]')) { setOpen(!S.open); return; }
+  if (t.closest('[data-slipclose]')) { setOpen(false); return; }
+  const pb = t.closest('[data-slipper] button'); if (pb) { S.per = pb.dataset.v; save(); pb.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === pb)); drawOut(); return; }
+  if (t.closest('[data-slipclear]')) { if (S.armed && Date.now() - S.armed < 4000) { S.sel = []; S.armed = 0; changed(); } else { S.armed = Date.now(); drawPanel(); setTimeout(() => { if (S.armed && Date.now() - S.armed >= 4000) { S.armed = 0; if (S.open) drawPanel(); } }, 4100); } return; }
+  const li = t.closest('[data-slipi]'); if (!li) return; const i = Number(li.dataset.slipi), x = S.sel[i]; if (!x) return;
+  if (t.closest('[data-sliprm]')) { S.sel.splice(i, 1); changed(); return; }
+  const stp = t.closest('[data-slipstep]'); if (stp) { const c = reg.get(x.cid); if (!c) return; const L = x.L + Number(stp.dataset.slipstep); if (!c.lines.includes(L)) return; const r = evalAt(c, L, x.side); if (!r) return;
+    const nx = selOf(c, x.side, r); if (S.sel.some((y, j) => j !== i && y.id === nx.id)) return; S.sel[i] = nx; changed(); return; }
+  if (t.closest('[data-slipview]')) { const card = document.querySelector(`[data-rid="${CSS.escape(`${x.cid}|${x.side}`)}"]`);
+    if (card) { if (matchMedia('(max-width: 700px)').matches) setOpen(false); toCard(card); card.classList.add('rflash'); setTimeout(() => card.classList.remove('rflash'), 1600); return; }
+    hooks.recFocus = { sport: x.sport, fid: x.fid, cid: x.cid, side: x.side, L: x.L }; if (matchMedia('(max-width: 700px)').matches) setOpen(false);
+    location.hash = x.sport === 'football' ? '#/rec' : `#/${x.sport}/rec`; }
+}
+/** Scroll a play's card to just under the header. */
+function toCard(card) { const h = document.querySelector('header.top'), y = card.getBoundingClientRect().top + scrollY - ((h && h.getBoundingClientRect().bottom) || 0) - 8; scrollTo(0, Math.max(0, y)); }
+function onInput(e) { const t = e.target; if (t.matches('[data-slipstake]')) { load().stakeTxt = t.value; save(); drawOut(); return; }
+  if (t.matches('[data-slipbook]')) { const li = t.closest('[data-slipi]'), x = li && load().sel[Number(li.dataset.slipi)]; if (!x) return; const r = t.value.trim() ? parseIn(t.value) : null; x.bookTxt = t.value; x.book = r && r.dec ? (r.exact ?? r.dec) : null; save(); drawOut(); } }
+function onChange(e) { const t = e.target; if (t.matches('[data-slipfmt]')) { load().fmt = t.value; save(); drawOut(); } }
+
+return { combos, formatsFor, selProblem, comboProblem, priceSlip, selOf, slipCount, slipHas, slipToggle, slipAddMany, slipRegister, slipRoute, syncButtons, toCard };
+})();
 __m['blowout'] = (() => {
 // Blowout risk (owner request 2 Nov 2026): how likely a game is to be decided by a big margin, which cuts starters' minutes late on.
 // Each team's strength = its recent average winning margin this season (regular season, newest games count more), shrunk towards 0
@@ -7180,7 +7539,10 @@ const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { addPlay } = __m['myplays'];
-const { esc, fmtKick, fmtDay, fixtureId, koUK } = __m['util'];
+const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS } = __m['util'];
+const { legId } = __m['accabuild'];
+const { slipToggle, slipRegister, syncButtons, toCard } = __m['accaslip'];
+const { hooks } = __m['shared'];
 const { nightOf } = __m['nightdate'];
 const { blowoutOf } = __m['blowout'];
 const { BEAR_ART } = __m['icons'];
@@ -7197,29 +7559,39 @@ const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 1
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
     r.conf.rank < 3 ? `${r.conf.level} confidence: less ${(3 - r.conf.rank) * 3}` : 'High confidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'l10', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 0, minSample: 0, venue: 'all', grps: [], injOk: true, hideBlowout: false };
+const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true };
+// recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Medium+ confidence, high blowout risk hidden.
+// Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
+const DEFV = 2, RECO = () => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 2, hideBlowout: true });
 const S = {}; // per sport: { fx: Set, f: filters, sort, adv, kept: Map(id -> { L, side }), shown, cands: Map(fid -> candidates) }
 function stateOf(sport) {
   if (S[sport]) return S[sport];
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY(sport)) || '{}') || {}; } catch { saved = {}; }
   // first visit: fair odds of at least 1.30 (no near-certain 1+ lines nobody prices) and, for NBA, the markets bookmakers usually offer
-  const first = saved.f ? {} : { minFairTxt: inputText(1.3), grps: sport === 'nba' ? ['Core', 'Combined'] : [] };
-  S[sport] = { odds: new Map(), fx: new Set(saved.fx || []), f: { ...DEF, ...first, ...(saved.f || {}) }, sort: saved.sort || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  const first = saved.f && saved.defv === DEFV ? {} : RECO(), once = saved.f && saved.defv !== DEFV;
+  S[sport] = { odds: new Map(), lg: new Set(saved.lg || []), fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: saved.sort || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  S[sport].f.grps = []; /* owner, 3 Nov: every market is on by default; the Markets list below the filters replaces the market-type buttons */ if (!Array.isArray(S[sport].f.mkOff)) S[sport].f.mkOff = [];
+  if (once) save(sport, S[sport]); /* the recommended settings, once */
   return S[sport];
 }
-const save = (sport, s) => { try { localStorage.setItem(KEY(sport), JSON.stringify({ fx: [...s.fx], f: s.f, sort: s.sort })); } catch { /* this visit only */ } };
+const save = (sport, s) => { try { localStorage.setItem(KEY(sport), JSON.stringify({ fx: [...s.fx], lg: [...(s.lg || [])], f: s.f, sort: s.sort, defv: DEFV })); } catch { /* this visit only */ } };
 const seg = (name, items, cur) => `<div class="seg wrap" data-rseg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
-const GRPS = { nba: ['Core', 'Combined', 'Additional', 'Halves & quarters'], nfl: null, football: ['Match', 'Team'] };
+const GRPS = { nba: ['Core', 'Combined', 'Double & triple-double', 'First quarter'], nfl: null, football: ['Match', 'Team'] };
 const ukDay = g => koUK(g).ymd;
 const dayOfFor = sport => (sport === 'football' ? ukDay : nightOf); // US games belong to their US night (a 03:00 GMT tip is still that night's game)
 
+// In play (owner, 3 Nov: a play must stay visible once its game goes live): kicked off within the usual length of a game and no final
+// result yet. Its plays stay on screen, marked as pre-game estimates; after that window the game drops off (awaiting its result).
+const PLAY_MS = { nba: US_WINDOW_MS.nba, nfl: US_WINDOW_MS.nfl, football: LIVE_MS + 15 * 60e3 };
+const inPlay = (f, sport, now = Date.now()) => !!(f && f.ko_utc && !f.final && Date.parse(f.ko_utc) <= now && now - Date.parse(f.ko_utc) < PLAY_MS[sport]);
 function fixturesOf(sport, A) {
-  const now = new Date();
-  // games that have not started yet only: a play on a game already under way (or awaiting its result) is no use
-  const ahead = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime();
-  if (sport === 'football') return selectableFixtures('', now).filter(ahead) /* every published upcoming fixture, all competitions */;
-  return A.upcoming(now).filter(ahead).slice(0, 60);
+  const now = new Date(), ok = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime() || inPlay(f, sport, now.getTime());
+  if (sport === 'football') return selectableFixtures('', now).filter(ok) /* every published upcoming fixture (and any in play), all competitions */;
+  const ids = new Set(); return [...A.selectable(now), ...A.upcoming(now)].filter(f => ok(f) && f.status !== 'canceled' && !ids.has(f.id) && ids.add(f.id))
+    .sort((a, b) => (Date.parse(a.ko_utc || 0) || 0) - (Date.parse(b.ko_utc || 0) || 0)).slice(0, 60);
 }
+// search (owner, 3 Nov): names suggested as you type; a search covers every listed game, not only the ticked ones
+const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 const fxIdOf = (sport, f) => (sport === 'football' ? fixtureId(f) : String(f.id));
 const fxLabel = (sport, f, A) => (sport === 'football' ? `${f.home} v ${f.away}` : `${A.teamName(f.away)} at ${A.teamName(f.home)}`);
 
@@ -7246,19 +7618,27 @@ async function viewRecommended(root, sport) {
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
       <button type="button" class="chip" data-fxall="today">Today's games</button><button type="button" class="chip" data-fxall="all">Select all upcoming</button><button type="button" class="chip" data-fxall="none">Clear all</button></div>
-      ${sport === 'football' ? `<div class="row" style="border:0;padding:0 0 6px;gap:6px;flex-wrap:wrap"><span class="xs muted">Add a competition:</span>${[...new Set(all.map(f => f.league))].map(l => `<button type="button" class="chip" data-fxlg="${esc(l)}">${esc(leagueName(l))}</button>`).join('')}</div>` : ''}
-      <div class="recfxlist">${days.map(([d, fs]) => `<p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
-        return `<label class="hcheck hfxrow"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f).split(' · ')[1] || '')}</b> ${esc(fxLabel(sport, f, A))}${sport === 'football' ? ` <span class="hfxlg">${esc(leagueName(f.league))}</span>` : ''}${bo ? ` <span class="bo bo-${bo.level.toLowerCase()}" title="${esc(bo.text)}">blowout risk: ${bo.level}</span>` : ''}</span></label>`; }).join('')}`).join('') || '<p class="small muted">No upcoming games published.</p>'}</div></details>
+      ${sport === 'football' ? `<div class="row" style="border:0;padding:0 0 6px;gap:6px;flex-wrap:wrap"><span class="xs muted">1a. Competitions (tap to show; none = all):</span>${[...new Set(all.map(f => f.league))].map(l => `<button type="button" class="chip${s.lg.has(l) ? ' on' : ''}" aria-pressed="${s.lg.has(l)}" data-fxlg="${esc(l)}">${esc(leagueName(l))}</button>`).join('')}</div><p class="xs muted" style="margin:0 0 4px">Then tick the games you want from those competitions.</p>` : ''}
+      <div class="recfxlist">${days.map(([d, fs]) => `<div data-fxday><p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
+        return `<label class="hcheck hfxrow" data-lg="${esc(f.league || '')}"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f).split(' · ')[1] || '')}</b> ${inPlay(f, sport) ? '<span class="inplay">IN PLAY</span> ' : ''}${esc(fxLabel(sport, f, A))}${sport === 'football' ? ` <span class="hfxlg">${esc(leagueName(f.league))}</span>` : ''}${bo ? ` <span class="bo bo-${bo.level.toLowerCase()}" title="${esc(bo.text)}">blowout risk: ${bo.level}</span>` : ''}</span></label>`; }).join('')}</div>`).join('') || '<p class="small muted">No upcoming games published.</p>'}</div></details>
     <div class="card stack recflt" id="recflt"></div>
+    <details class="card recadv recmk" id="recmk" ${s.mkOpen ? 'open' : ''}><summary><b>3. Markets</b> <span class="muted small" data-mkcount>(every market)</span></summary><div data-mkbody><p class="xs muted">The markets appear once your games are worked out.</p></div></details>
     <div id="recout" style="margin-top:12px"></div></div>`;
   const pg = root.querySelector('#recpg'), out = pg.querySelector('#recout');
-  const fxCount = () => { const el = pg.querySelector('[data-fxcount]'); if (el) el.textContent = `${s.fx.size} selected`; };
-  fxCount();
+  const fxCount = () => { const el = pg.querySelector('[data-fxcount]'); if (el) el.textContent = `${s.fx.size} selected${s.lg.size ? ` · ${[...s.lg].map(leagueName).join(', ')}` : ''}`; };
+  // competitions first (football): only the chosen competitions' games are listed and used; none chosen = every competition
+  const shownF = f => sport !== 'football' || !s.lg.size || s.lg.has(f.league);
+  const applyLg = () => { pg.querySelectorAll('.hfxrow[data-lg]').forEach(r => { r.hidden = sport === 'football' && s.lg.size > 0 && !s.lg.has(r.dataset.lg); }); pg.querySelectorAll('[data-fxday]').forEach(d => { d.hidden = ![...d.querySelectorAll('.hfxrow')].some(r => !r.hidden); }); pg.querySelectorAll('[data-fxlg]').forEach(b => { const on = s.lg.has(b.dataset.fxlg); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); };
+  if (s.lg.size) { const known = new Set(all.map(f => f.league)); for (const l of [...s.lg]) if (!known.has(l)) s.lg.delete(l); }
+  for (const f of all) if (!shownF(f)) s.fx.delete(fxIdOf(sport, f));
+  if (!s.fx.size) { const vis = all.filter(shownF), d = vis.length ? ukDay(vis[0]) : null; for (const f of vis) if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); }
+  applyLg(); fxCount();
   const fair = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? r.exact : null; };
   const opts = () => ({ ...s.f, sides: s.f.sides === 'both' ? ['over', 'under'] : [s.f.sides], minFair: fair(s.f.minFairTxt), maxFair: fair(s.f.maxFairTxt), grps: new Set(s.f.grps) });
   const drawFilters = () => {
-    const f = s.f, grps = GRPS[sport];
-    pg.querySelector('#recflt').innerHTML = `<b>2. Your filters</b>
+    const f = s.f, grps = GRPS[sport], y = scrollY;
+    pg.querySelector('#recflt').innerHTML = `<div class="row" style="border:0;padding:0;justify-content:space-between;align-items:center;gap:8px"><b>2. Your filters</b><button type="button" class="chip" data-rreset>Reset to recommended settings</button></div>
+      <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
       <div class="recrow"><label class="field"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
         <label class="field"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="decimal" placeholder="e.g. 1.50" value="${esc(f.minFairTxt)}"></label>
         <label class="field"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="decimal" placeholder="e.g. 3.00" value="${esc(f.maxFairTxt)}"></label></div>
@@ -7269,19 +7649,30 @@ async function viewRecommended(root, sport) {
         <div class="recrow"><label class="field"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
         <div class="field"><span class="xs muted">Minimum confidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Medium+'], ['3', 'High']], String(f.minConf))}</div>
-        <label class="field"><span>Player or team</span><input class="in" type="search" data-rf="q" placeholder="Name (part of it works)" value="${esc(f.q || '')}" autocomplete="off"></label>
         <label class="field"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
         ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Home / away</span>${seg('venue', [['all', 'Both'], ['home', 'Home team'], ['away', 'Away team']], f.venue)}</div>`}
-        ${grps ? `<div class="field"><span class="xs muted">Market type</span><div class="seg wrap" data-rgrps>${grps.map(g => `<button type="button" data-v="${esc(g)}" class="${f.grps.includes(g) ? 'on' : ''}">${esc(g)}</button>`).join('')}</div><span class="xs muted">None chosen = all.</span></div>` : ''}
         ${sport === 'football' ? '' : `<label class="hcheck"><input type="checkbox" data-rck="injOk" ${f.injOk ? 'checked' : ''}><span>Include players listed Questionable / Doubtful</span></label>`}
         ${sport !== 'football' ? `<label class="hcheck"><input type="checkbox" data-rck="hideBlowout" ${f.hideBlowout ? 'checked' : ''}><span>Hide games with high blowout risk</span></label>` : ''}
       </details>`;
+    scrollTo(0, y);
   };
   // ---------------- evaluation ----------------
   let token = 0;
+  // ---------------- search index (names in every listed game) ----------------
+  let IDX = null;
+  const index = () => { if (IDX) return IDX; const m = new Map(), put = (label, sub, kind, fid) => { const k = `${kind}|${label}`; let e = m.get(k); if (!e) m.set(k, e = { label, sub, kind, fids: new Set(), n: norm(label) }); e.fids.add(fid); };
+    for (const f of all) { const id = fxIdOf(sport, f);
+      if (sport === 'football') { put(f.home, leagueName(f.league), 'team', id); put(f.away, leagueName(f.league), 'team', id); continue; }
+      for (const t of [f.home, f.away]) { put(A.teamName(t), t, 'team', id); for (const p of A.d.players) if (p.current && p.team === t && (sport !== 'nba' || p.logs_file)) put(p.name, `${t}${p.pos ? ' · ' + p.pos : ''}`, 'player', id); } }
+    return (IDX = [...m.values()]); };
+  const wordStart = (n, q) => n.startsWith(q) || n.includes(' ' + q);
+  const suggest = q => { const Q = norm(q); if (!Q) return []; const hits = index().filter(e => e.n.includes(Q)); hits.sort((a, b) => (wordStart(b.n, Q) - wordStart(a.n, Q)) || (b.n.startsWith(Q) - a.n.startsWith(Q)) || (a.kind === 'team') - (b.kind === 'team') || a.label.localeCompare(b.label)); return hits.slice(0, 8); };
+  const searchIds = () => { const Q = norm(s.f.q); if (!Q) return []; const ids = new Set(); for (const e of index()) if (e.n.includes(Q)) e.fids.forEach(i => ids.add(i)); return [...ids].filter(id => byId.has(id)); };
+  const scope = () => [...new Set([...s.fx, ...searchIds()])].filter(id => byId.has(id));
+  const nmOf = c => norm(`${c.name} ${c.team || ''} ${sport === 'football' ? (c.kind === 'match' ? `${c.f.home} ${c.f.away}` : '') : A.teamName(c.team)}`);
   const run = async () => {
-    const my = ++token, want = [...s.fx].map(id => byId.get(id)).filter(Boolean);
-    if (!want.length) { out.innerHTML = '<div class="banner info"><b>Choose at least one game</b> above.</div>'; return; }
+    const my = ++token, want = scope().map(id => byId.get(id)).filter(Boolean);
+    if (!want.length) { out.innerHTML = String(s.f.q || '').trim() ? `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No player or team called "${esc(s.f.q)}" is in the listed games.</b> Check the spelling, or pick a name from the suggestions as you type.</div>` : '<div class="banner info"><b>Choose at least one game</b> above.</div>'; return; }
     const need = want.filter(f => !s.cands.has(fxIdOf(sport, f)));
     if (need.length) {
       out.innerHTML = '<div class="card"><b data-recprog>Working out every market… 0%</b><div class="recbar"><i style="width:0%"></i></div><p class="xs muted" style="margin:6px 0 0">Every eligible player and market is priced at several lines with the same model as the cards. This happens once per game; filters then apply instantly.</p></div>';
@@ -7294,12 +7685,26 @@ async function viewRecommended(root, sport) {
     }
     if (my !== token) return; render();
   };
+  // ---------------- markets (owner, 3 Nov): every market on by default; untick the ones you do not want ----------------
+  const drawMarkets = cands => { const body = pg.querySelector('[data-mkbody]'); if (!body) return; const M = new Map();
+    for (const c of cands) { const e = M.get(c.def.key) || { key: c.def.key, label: c.def.label, grp: c.grp || c.def.grp || 'Markets', n: 0 }; e.n++; M.set(c.def.key, e); }
+    const L = [...M.values()], off = new Set(s.f.mkOff), on = L.filter(m => !off.has(m.key)).length, cnt = pg.querySelector('[data-mkcount]');
+    if (cnt) cnt.textContent = !L.length ? '' : on === L.length ? `(all ${L.length} on)` : `(${on} of ${L.length} on)`;
+    if (!L.length) return; const G = [...new Set(L.map(m => m.grp))];
+    body.innerHTML = `<div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap"><button type="button" class="chip" data-mkall>All markets</button><button type="button" class="chip" data-mknone>Clear all</button></div>
+      ${G.map(g => { const ms = L.filter(m => m.grp === g).sort((a, b) => a.label.localeCompare(b.label)), all = ms.every(m => !off.has(m.key));
+        return `<div class="mkgrp"><p class="xs muted" style="margin:8px 0 2px"><b>${esc(g)}</b> <button type="button" class="linkbtn xs" data-mkgrp="${esc(g)}">${all ? 'untick all' : 'tick all'}</button></p>${ms.map(m => `<label class="hcheck"><input type="checkbox" data-mk value="${esc(m.key)}" ${off.has(m.key) ? '' : 'checked'}><span>${esc(m.label)}</span></label>`).join('')}</div>`; }).join('')}
+      <p class="xs muted" style="margin:6px 0 0">Markets in the games you have chosen. New markets are on until you untick them. Your choice is remembered.</p>`; };
   // ---------------- list ----------------
   let current = [];
   const render = (keepOrder = false) => {
-    const want = [...s.fx].map(id => s.cands.get(id) || []).flat(), o = opts();
-    const q = String(s.f.q || '').trim().toLowerCase(), nm = c => `${c.name} ${c.team || ''} ${c.opp || ''} ${sport === 'football' ? `${c.f.home} ${c.f.away}` : ''}`.toLowerCase();
-    let list = pickPlays(q ? want.filter(c => nm(c).includes(q)) : want, o, f => (sport === 'football' ? null : blowoutOf(f, sport)));
+    const want = scope().map(id => s.cands.get(id) || []).flat(), o = opts(); slipRegister(want);
+    drawMarkets(want); const off = new Set(s.f.mkOff);
+    const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key));
+    let list = pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false;
+    // a search found him (or them) but no line meets every filter: show the strongest lines anyway, marked, instead of "0 plays"
+    if (q && mine.length && !list.length) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
+      list = pickPlays(mine, r).map(x => ({ ...x, keptOut: true })); relaxed = true; }
     // plays you are adjusting stay on screen, at their position, even if they no longer pass
     const kept = [...s.kept.entries()];
     for (const [id, k] of kept) { if (list.some(x => x.c.id === id && x.side === k.side)) continue; const c = want.find(x => x.id === id); if (!c) continue; const r = evalAt(c, k.L, k.side); if (r) list.push({ c, side: k.side, rep: r, alts: [], keptOut: true }); }
@@ -7308,13 +7713,17 @@ async function viewRecommended(root, sport) {
     else list = sortPlays(list, s.sort, s.f.hitWin);
     current = list;
     const evaluated = want.length, n = list.filter(x => !x.keptOut).length;
-    if (!list.length) { out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.</div>`; return; }
-    out.innerHTML = `<p class="pcbanner" id="recbanner">${n} play${n === 1 ? '' : 's'} match your filters <span class="xs muted">(from ${evaluated} player / team markets checked)</span></p>
+    if (!list.length && want.length && !want.some(c => !off.has(c.def.key))) { out.innerHTML = '<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No markets selected.</b> Open 3. Markets and tick at least one (or tap All markets).</div>'; return; }
+    if (!list.length) { const hits = q ? suggest(s.f.q) : [];
+      out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info">${q ? (mine.length ? `<b>No line of ${esc(s.f.q)} reaches even a 50% model probability.</b>` : hits.length ? `<b>PropLab has no plays for ${esc(hits.map(h => h.label).slice(0, 3).join(', '))} in the listed games.</b> A player needs at least 8 recorded games and to be playing this season, and players listed OUT are left out.` : `<b>No player or team called "${esc(s.f.q)}" is in the listed games.</b>`) : `<b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.`}</div>`; return; }
+    out.innerHTML = `<p class="pcbanner" id="recbanner">${relaxed ? `${list.length} play${list.length === 1 ? '' : 's'} for "${esc(s.f.q)}" <span class="xs muted">(none meets every filter)</span>` : `${n} play${n === 1 ? '' : 's'} match your filters${q ? ` for "${esc(s.f.q)}"` : ''} <span class="xs muted">(from ${evaluated} player / team markets checked)</span>`}</p>
+      ${relaxed ? `<div class="banner info"><b>None of the plays for "${esc(s.f.q)}" meets all your filters</b>, so the strongest line of each market is shown without the fair-odds, hit-rate, confidence, matchup and market-type filters (model probability at least ${Math.min(o.minProb || 0, 50)}%). Each card is marked "outside your filters".</div>` : ''}
       <div class="row" style="border:0;padding:0;gap:8px;align-items:center;margin-bottom:8px"><button type="button" class="chip" data-resort>⇅ Re-sort</button><button type="button" class="infotag" data-info="recrank" data-title="How plays are chosen and ranked" data-text="${esc(RANK_TXT)}" aria-haspopup="dialog">How it works<span class="ii" aria-hidden="true">i</span></button><span class="xs muted">Cards stay in place while you change lines; Re-sort re-ranks them.</span></div>
       <div id="rcards" data-total="${list.length}">${list.slice(0, s.shown).map(cardHtml).join('')}</div>
       ${list.length > s.shown ? `<button type="button" class="btn" data-rmore>Show more (${list.length - s.shown} more)</button>` : ''}
-      ${(() => { const av = streaks(q ? want.filter(c => nm(c).includes(q)) : want, o); return av.length ? `<details class="card recavoid"><summary><b>Avoid: hot streaks the model does not trust</b> <span class="xs muted">(${av.length})</span></summary><p class="xs muted" style="margin:6px 0">Hit in 8+ of the last 10, but the longer record does not back it up, so the model rates them below 55%. In PropLab's test on 2025/26 games the model's figure was a better guide than a recent hit rate (see Model Performance); the hit rate on its own over-states plays like these.</p>${av.map(x => `<p class="small" style="margin:4px 0"><b>${esc(x.c.name)}</b> ${esc(ladderName(x.c, x.rep))} · last 10: <b>${x.rep.hr.l10.hit}/10</b> · all games: ${x.rep.hr.all.hit}/${x.rep.hr.all.n} (${x.rep.hr.all.pct}%) · model <b>${(x.rep.p * 100).toFixed(0)}%</b></p>`).join('')}</details>` : ''; })()}
+      ${(() => { const av = streaks(mine, o); return av.length ? `<details class="card recavoid"><summary><b>Avoid: hot streaks the model does not trust</b> <span class="xs muted">(${av.length})</span></summary><p class="xs muted" style="margin:6px 0">Hit in 8+ of the last 10, but the longer record does not back it up, so the model rates them below 55%. In PropLab's test on 2025/26 games the model's figure was a better guide than a recent hit rate (see Model Performance); the hit rate on its own over-states plays like these.</p>${av.map(x => `<p class="small" style="margin:4px 0"><b>${esc(x.c.name)}</b> ${esc(ladderName(x.c, x.rep))} · last 10: <b>${x.rep.hr.l10.hit}/10</b> · all games: ${x.rep.hr.all.hit}/${x.rep.hr.all.n} (${x.rep.hr.all.pct}%) · model <b>${(x.rep.p * 100).toFixed(0)}%</b></p>`).join('')}</details>` : ''; })()}
       <p class="xs muted">Model probability: PropLab's estimate for this side at this line (NBA player props: model v2, checked on 2025/26 games it never saw). Fair odds = 1 ÷ probability. It is not the hit rate, and it cannot know news after the data update. These are research estimates, not tips; there is no bookmaker price until you type one in Compare. <a href="${sport === 'football' ? '#/model' : `#/${sport}/model`}">Model Performance ›</a> · <a href="${sport === 'football' ? '#/myplays' : `#/${sport}/myplays`}">My Plays ›</a> · <a href="${sport === 'football' ? '#/finder' : `#/${sport}/finder`}">Hit-rate list ›</a></p>`;
+    syncButtons();
   };
   const tierWord = { g: 'easy', y: 'medium', r: 'tough' };
   const TIP = (title, text) => `data-info="rtip" data-title="${esc(title)}" data-text="${esc(text)}" aria-haspopup="dialog"`;
@@ -7350,7 +7759,8 @@ async function viewRecommended(root, sport) {
       <header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> ${tag}${c.newTeam ? '<button type="button" class="newteam" data-info="newteam">NEW TEAM</button>' : ''}<div class="rmk">${esc(ladderName(c, r))}${c.def.binary ? '' : ` <span class="muted">(${esc(fmtLineName(c, r))})</span>`}</div>
         <div class="xs muted">${vs} · ${esc(fmtKick(g))}${bo ? ` · <button type="button" class="bo bo-${bo.level.toLowerCase()}" ${TIP(`Blowout risk: ${bo.level}`, bo.text)}>blowout risk: ${bo.level}</button>` : ''}</div></div>
         <button type="button" class="rprob" ${TIP(`Model probability ${(r.p * 100).toFixed(1)}%`, `PropLab's estimated chance that ${c.name} goes ${word} ${c.def.label.toLowerCase()}${lo != null ? ` (likely range ${(lo * 100).toFixed(0)}-${(hi * 100).toFixed(0)}%)` : ''}. It comes from his whole record (recent games count more${sport === 'nba' ? ', each game scaled to the minutes he is expected to play, plus teammates out and the matchup' : ''}) and is calibrated: in tests on a season it never saw, plays given about this figure hit about this often. It is not the hit rate, and it cannot know news after the data update.`)}><b>${(r.p * 100).toFixed(0)}%</b><small>model ⓘ</small></button></header>
-      ${x.keptOut ? '<p class="xs warn" style="margin:4px 0">Outside your filters (kept on screen because you changed this play)</p>' : ''}
+      ${x.keptOut ? `<p class="xs warn" style="margin:4px 0">Outside your filters${String(s.f.q || '').trim() ? '' : ' (kept on screen because you changed this play)'}</p>` : ''}
+      ${inPlay(g, sport) ? '<p class="xs warn" style="margin:4px 0" data-inplay><span class="inplay">IN PLAY</span> This game has started. The figures are the pre-game estimate: in-play prices move with the score, so the model probability and fair odds no longer describe an in-play bet, and nor does any price you type.</p>' : ''}
       <div class="rtiles"><button type="button" class="rt" ${TIP(`Fair odds ${fmtOdds(r.fair)}`, `Fair odds = 1 ÷ model probability: the price at which this play breaks even if the probability is right. A bookmaker price above it suggests value (type it below); below it, the bookmaker is charging more than the model thinks the bet is worth.`)}><small>Fair odds ⓘ</small><b>${esc(fmtOdds(r.fair))}</b></button><button type="button" class="rt" data-info="conf" data-title="Confidence: ${r.conf.level}" data-text="${esc(['How much the probability rests on, separate from the probability itself:', ...r.conf.why].join('\n'))}" aria-haspopup="dialog"><small>Confidence ⓘ</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></button><button type="button" class="rt" data-info="rank" data-title="Rank score ${Math.round(r.rank * 100)} (not a probability)" data-text="${esc(rankText(c, r))}" aria-haspopup="dialog"><small>Rank score ⓘ</small><b>${Math.round(r.rank * 100)}</b></button>${r.tier ? `<button type="button" class="rt" ${TIP(`Matchup: ${tierWord[r.tier]}`, sport === 'nba' ? 'From the chips below: what the opponent allows to his position (and pace). All green = easy, any red = tough, otherwise medium. The NBA matchup adjustment is part of the model probability (it was tested on 2025/26 games).' : 'What the opponent\'s defence allowed to his position this season (chip below). Experimental: colours and filters only.')}><small>Matchup ⓘ</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></button>` : ''}</div>
       <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
@@ -7358,29 +7768,48 @@ async function viewRecommended(root, sport) {
       <p class="rwhy"><b>Why:</b> ${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p>
       ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="chip" data-ralt>Other lines ▾</button></div>`}
       ${evHtml(x)}
+      <div class="rslip"><button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button></div>
       <div class="ralt" hidden></div></article>`;
   }
   const findX = el => { const id = el.closest('.rcard').dataset.rid; return current.find(x => `${x.c.id}|${x.side}` === id); };
-  const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); el.replaceWith(t.firstElementChild); };
+  const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); el.replaceWith(t.firstElementChild); syncButtons(); };
   // ---------------- events ----------------
   pg.addEventListener('change', e => {
     const t = e.target;
     if (t.matches('[data-recfx]')) { t.checked ? s.fx.add(t.value) : s.fx.delete(t.value); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-rsort]')) { s.sort = t.value; save(sport, s); render(); return; }
+    if (t.matches('[data-mk]')) { const off = new Set(s.f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); s.f.mkOff = [...off]; s.kept.clear(); s.shown = 30; save(sport, s); render(); return; }
     if (t.matches('[data-rck]')) { s.f[t.dataset.rck] = t.checked; s.kept.clear(); save(sport, s); render(); return; }
   });
   const tIn = {}; // one pause per box: typing in a second box never cancels the first one's change
   pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value);
       const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout')); return; } });
-  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); render(); }, 300); });
+  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
+  // suggestions as you type: names from every listed game (players and teams), best first: names that start with what you typed
+  const showSug = v => { const box = pg.querySelector('#recsug'), inp = pg.querySelector('[data-rf="q"]'); if (!box) return; const H = suggest(v);
+    box.innerHTML = H.map(h => `<button type="button" role="option" data-rsug="${esc(h.label)}"><b>${esc(h.label)}</b> <small>${esc(h.kind === 'team' ? `team · ${h.sub}` : h.sub)}</small></button>`).join('');
+    box.hidden = !H.length || norm(v) === (H[0] && H[0].n) && H.length === 1; if (inp) inp.setAttribute('aria-expanded', String(!box.hidden)); };
+  const hideSug = () => { const box = pg.querySelector('#recsug'); if (box) box.hidden = true; const inp = pg.querySelector('[data-rf="q"]'); if (inp) inp.setAttribute('aria-expanded', 'false'); };
+  pg.addEventListener('focusin', e => { if (e.target.matches('[data-rf="q"]') && e.target.value) showSug(e.target.value); });
+  pg.addEventListener('focusout', e => { if (e.target.matches('[data-rf="q"]')) setTimeout(() => { if (!pg.querySelector('#recsug:hover') && document.activeElement && !document.activeElement.closest('#recsug')) hideSug(); }, 200); });
+  pg.addEventListener('keydown', e => { if (e.target.matches('[data-rf="q"]')) { if (e.key === 'Escape') hideSug(); if (e.key === 'Enter') { e.preventDefault(); const first = pg.querySelector('#recsug:not([hidden]) [data-rsug]'); if (first) first.click(); else { clearTimeout(tIn.q); s.f.q = e.target.value; save(sport, s); hideSug(); run(); } } } });
+  pg.addEventListener('toggle', e => { if (e.target.matches('#recmk')) s.mkOpen = e.target.open; else if (e.target.matches('.recadv')) s.adv = e.target.open; }, true);
   pg.addEventListener('click', e => {
     const t = e.target;
-    const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall; s.fx.clear(); if (v === 'all') all.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = all.length ? ukDay(all[0]) : null; all.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
+    const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall, vis = all.filter(shownF); s.fx.clear(); if (v === 'all') vis.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = vis.length ? ukDay(vis[0]) : null; vis.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); fxCount(); save(sport, s); run(); return; }
-    const lgb = t.closest('[data-fxlg]'); if (lgb) { for (const f of all) if (f.league === lgb.dataset.fxlg) s.fx.add(fxIdOf(sport, f)); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.kept.clear(); fxCount(); save(sport, s); run(); return; }
+    const lgb = t.closest('[data-fxlg]'); if (lgb) { const l = lgb.dataset.fxlg, on = !s.lg.has(l); on ? s.lg.add(l) : s.lg.delete(l);
+      if (on) for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); /* a competition you add: its games ticked, untick any you do not want */
+      for (const f of all) if (!shownF(f)) s.fx.delete(fxIdOf(sport, f)); applyLg(); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.kept.clear(); fxCount(); save(sport, s); run(); return; }
     const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
+    if (t.closest('[data-rreset]')) { s.f = { ...DEF, ...RECO(), mkOff: [], q: '' }; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
+    if (t.closest('[data-mkall]')) { s.f.mkOff = []; s.kept.clear(); save(sport, s); render(); return; }
+    if (t.closest('[data-mknone]')) { s.f.mkOff = [...pg.querySelectorAll('[data-mk]')].map(i => i.value); s.kept.clear(); save(sport, s); render(); return; }
+    const mg = t.closest('[data-mkgrp]'); if (mg) { const ks = [...mg.closest('.mkgrp').querySelectorAll('[data-mk]')].map(i => i.value), off = new Set(s.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); s.f.mkOff = [...off]; s.kept.clear(); save(sport, s); render(); return; }
     const gb = t.closest('[data-rgrps] button'); if (gb) { const v = gb.dataset.v, a = new Set(s.f.grps); a.has(v) ? a.delete(v) : a.add(v); s.f.grps = [...a]; save(sport, s); drawFilters(); render(); return; }
-    if (t.closest('.recadv > summary')) { setTimeout(() => { s.adv = pg.querySelector('.recadv').open; }, 0); return; }
+    const sgb = t.closest('[data-rsug]'); if (sgb) { s.f.q = sgb.dataset.rsug; const i = pg.querySelector('[data-rf="q"]'); if (i) i.value = s.f.q; clearTimeout(tIn.q); hideSug(); s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
+    if (t.closest('[data-rqclear]')) { s.f.q = ''; clearTimeout(tIn.q); hideSug(); s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
+    if (t.closest('[data-rslip]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { slipToggle(x0.c, x0.side, x0.rep); } return; }
     if (t.closest('[data-rmore]')) { s.shown += 30; render(true); return; }
     if (t.closest('[data-resort]')) { s.kept.clear(); render(); return; }
     const card = t.closest('.rcard'); if (!card) return; const x = findX(card); if (!x) return;
@@ -7399,153 +7828,43 @@ async function viewRecommended(root, sport) {
     if (false && t.closest('[data-rhist]')) { const box = card.querySelector('.rhistbox'); box.hidden = !box.hidden; if (!box.hidden) { const r = x.rep, rows = x.c.rows.slice(0, 20), ok = v => (x.side === 'under' ? v < r.L : v > r.L);
       box.innerHTML = `<p class="xs muted" style="margin:6px 0 4px">${x.c.kind === 'player' ? 'His' : 'The'} last ${rows.length} ${sport === 'football' ? 'matches' : 'games'}, newest first (${x.side === 'under' ? 'under' : 'over'} ${r.L} in green):</p><div class="rhv">${rows.map(q => `<span class="${ok(q.value) ? 'h' : 'm'}" title="${esc(q.date)}">${q.value}</span>`).join('')}</div>`; } return; }
   });
-  drawFilters(); run();
+  // "View play" in the Acca slip: its game is selected and the card is kept on screen (even outside the filters) and scrolled to
+  const focus = hooks.recFocus && hooks.recFocus.sport === sport ? hooks.recFocus : null; hooks.recFocus = null;
+  if (focus && byId.has(focus.fid)) { s.fx.add(focus.fid); s.kept.set(focus.cid, { L: focus.L, side: focus.side }); fxCount(); const box = pg.querySelector(`[data-recfx][value="${CSS.escape(focus.fid)}"]`); if (box) box.checked = true; }
+  drawFilters(); await run();
+  if (focus) { const sel = `[data-rid="${CSS.escape(`${focus.cid}|${focus.side}`)}"]`; let card = pg.querySelector(sel);
+    if (!card) { const i = current.findIndex(x => x.c.id === focus.cid && x.side === focus.side); if (i >= s.shown) { s.shown = i + 1; render(true); card = pg.querySelector(sel); } }
+    if (card) setTimeout(() => { toCard(card); card.classList.add('rflash'); setTimeout(() => card.classList.remove('rflash'), 1600); }, 60); }
 }
 void oddsFmt;
 
-return { viewRecommended };
-})();
-__m['accabuild'] = (() => {
-// Acca Builder engine (owner request 2 Nov 2026). Builds an accumulator close to a target fair price from the same plays, lines,
-// calibrated probabilities, hit rates, matchup colours and confidence as Recommended Plays (recplays.js). Pure apart from the
-// candidates it is given; the page (v-acca.js) keeps locks, exclusions and the saved state.
-//
-// Objective (stated on the page): among combinations whose combined FAIR odds are within the tolerance of the target, choose the one
-// with the most SUPPORT: the sum over legs of log(Best Overall score / probability) + log(cautious probability / probability), less 3%
-// for every leg (the cautious figure is one standard error below the probability, so thin evidence costs more). Every combination at
-// the target has about the same model probability (1 / target), so this picks legs whose probability is backed by their own season,
-// recent and opponent record, matchup and confidence, and it prefers fewer legs (each one adds its own model risk). Ties go to the
-// higher average Best Overall score. The search is a beam search over a shortlist of legs; it is not a guarantee of the best possible
-// combination and nothing about it says the acca will win.
-//
-// Joint probability:
-//  * legs from DIFFERENT games: the product of the leg probabilities (different events);
-//  * the SAME player twice: never (his figures move together: it is one bet in disguise);
-//  * two legs from the SAME game (NBA / NFL players): only when the two players share at least MIN_SHARED earlier games, from which
-//    the historical joint hit rate at these lines is compared with what independence would give; the ratio, pulled towards 1 with
-//    SHRINK pretend games, scales the product. Fewer shared games, or a team / match market in the same game: "unpriced" - shown as
-//    research, never priced, never generated automatically;
-//  * football: one leg per match (same-match team / match markets are left unpriced).
-// Nothing here is a bookmaker price. EV appears only for a price the user types for the whole acca.
-const { evalAt, passes } = __m['recplays'];
-
-const ACCA = { legCost: 0.03, tol: 0.15, maxLegs: 8, beam: 160, shortlist: 140, MIN_SHARED: 30, SHRINK: 30 };
-const RARE_ACCA = new Set(['stl', 'blk', 'sb', 'dd', 'td', 'atd', 'rush_td', 'rec_td', 'tds', 'ftd']);
-const legId = (c, side, L) => `${c.id}|${side}|${L}`;
-const gameKey = c => `${c.sport}|${c.fid}`;
-
-/** Every eligible leg: each candidate at every line whose fair odds are inside [minFair, maxFair] and passes the other filters. The fair
- *  odds rise with the line (Over; fall for Under), so the range is found by halving and only those few lines are priced. */
-function legPool(cands, o, excluded = new Set()) {
-  const out = [], q = { ...o, minProb: 0, minHit: 0, minFair: 0, maxFair: 0 };
-  for (const c of cands) { if (o.grps && o.grps.size && !o.grps.has(c.grp)) continue; if (o.noRare && RARE_ACCA.has(c.def.key)) continue; if (!o.injOk && c.inj && c.inj.cls === 'warn') continue;
-    for (const side of c.def.binary ? ['over'] : o.sides || ['over']) {
-      const Ls = side === 'under' ? c.lines.slice().reverse() : c.lines, F = k => { const r = evalAt(c, Ls[k], side); return r ? r.fair : null; };
-      const first = (test) => { let lo = 0, hi = Ls.length - 1, b = Ls.length; while (lo <= hi) { const m = (lo + hi) >> 1, f = F(m); if (f != null && test(f)) { b = m; hi = m - 1; } else lo = m + 1; } return b; };
-      const a = o.minFair ? first(f => f >= o.minFair - 1e-9) : 0, z = o.maxFair ? first(f => f > o.maxFair + 1e-9) - 1 : Ls.length - 1;
-      for (let k = a; k <= z && k < Ls.length; k++) { const r = evalAt(c, Ls[k], side); if (!r || !passes(r, q)) continue; const id = legId(c, side, r.L); if (!excluded.has(id)) out.push(mkLeg(c, side, r)); } } }
-  return out;
-}
-function mkLeg(c, side, r) {
-  const cautious = Math.max(0.01, r.score + 0), p = r.p;
-  // support: the leg's Best Overall score (cautious probability blended with its season, recent and opponent record, matchup and
-  // confidence) as a share of its model probability, less ACCA.legCost for every leg (each leg adds its own model risk)
-  const sup = Math.log(Math.max(0.01, Math.min(p, r.rank)) / p) + Math.log(Math.max(0.01, Math.min(p, cautious)) / p) - ACCA.legCost;
-  return { id: legId(c, side, r.L), c, side, r, p, fair: r.fair, cautious: Math.min(p, cautious), rank: r.rank, sup, game: gameKey(c), subj: `${c.sport}|${c.pid || c.team || c.name}` };
-}
-/** Historical same-game dependence of two player legs: { ok, ratio, n, joint, indep } or { ok:false, why }. */
-function sameGame(a, b) {
-  if (a.c.kind !== 'player' || b.c.kind !== 'player') return { ok: false, why: 'a team or match market in the same game: how it moves with the other leg cannot be measured from PropLab\'s data' };
-  if (a.c.sport === 'football') return { ok: false, why: 'football: one leg per match' };
-  const ra = new Map(a.c.rows.filter(x => x.game).map(x => [x.game, x.value])), shared = b.c.rows.filter(x => x.game && ra.has(x.game)); // the same GAME (not just the same date)
-  if (shared.length < ACCA.MIN_SHARED) return { ok: false, why: `only ${shared.length} earlier games together (at least ${ACCA.MIN_SHARED} are needed to measure how their figures move together)` };
-  const hit = (v, leg) => (leg.side === 'under' ? v < leg.r.L : v > leg.r.L);
-  let ha = 0, hb = 0, hab = 0; for (const x of shared) { const A = hit(ra.get(x.game), a), B = hit(x.value, b); ha += A; hb += B; hab += A && B; }
-  const n = shared.length, pa = ha / n, pb = hb / n, ind = pa * pb;
-  if (!(ind > 0)) return { ok: false, why: 'one of the two never hit in their shared games' };
-  const raw = (hab / n) / ind, ratio = (n * raw + ACCA.SHRINK * 1) / (n + ACCA.SHRINK);
-  return { ok: true, ratio, n, joint: hab / n, indep: ind };
-}
-/** Joint probability of a set of legs: { p, pCaut, fair, priced, notes, pairs }. */
-function jointOf(legs) {
-  let p = 1, pc = 1; const notes = [], pairs = []; let priced = true;
-  const bySubj = new Map(); for (const l of legs) { if (bySubj.has(l.subj)) { priced = false; notes.push(`${l.c.name} appears twice: not priced (one player's legs move together)`); } bySubj.set(l.subj, l); }
-  const byGame = new Map(); for (const l of legs) { if (!byGame.has(l.game)) byGame.set(l.game, []); byGame.get(l.game).push(l); }
-  for (const l of legs) { p *= l.p; pc *= l.cautious; }
-  for (const gl of byGame.values()) { if (gl.length < 2) continue;
-    for (let i = 0; i < gl.length; i++) for (let j = i + 1; j < gl.length; j++) { if (gl[i].subj === gl[j].subj) continue; const d = sameGame(gl[i], gl[j]);
-      if (!d.ok) { priced = false; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): unpriced, ${d.why}`); continue; }
-      p *= d.ratio; pc *= Math.min(1, d.ratio); pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
-      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)}. EXPERIMENTAL and hypothetical: this adjustment has not been tested on real outcomes`); } }
-  p = Math.min(0.999, p); return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs };
-}
-/**
- * Build: locked legs first, then a beam search over the shortlist for the best set of extra legs whose combined fair odds land within
- * the tolerance of target (decimal). allowSame: may two legs share a game (only priced pairs are ever generated).
- * Returns { legs, joint, hit (within tolerance), note }.
- */
-function buildAcca(pool, locked, target, opts = {}) {
-  const A = { ...ACCA, ...opts }, skip = opts.skip || new Set(), lockIds = new Set(locked.map(l => l.id)), lockSubj = new Set(locked.map(l => l.subj)), lockGames = new Set(locked.map(l => l.game));
-  const base = jointOf(locked), lt = Math.log(target), logF0 = base.priced ? -Math.log(base.p) : 0;
-  if (base.priced && logF0 > lt + Math.log(1 + A.tol)) return { legs: locked, joint: base, hit: false, over: true, note: 'Your locked legs already go past the target on their own.' };
-  const cand = pool.filter(l => !lockIds.has(l.id) && !skip.has(l.id) && !lockSubj.has(l.subj) && (opts.allowSame || !lockGames.has(l.game)))
-    .sort((x, y) => y.sup / Math.log(y.fair) - x.sup / Math.log(x.fair) || y.rank - x.rank).slice(0, A.shortlist); // most support per unit of price first
-  const need = lt - logF0; // log fair still to add
-  if (need <= Math.log(1 + A.tol) - 1e-9 && locked.length) return { legs: locked, joint: base, hit: true, note: 'Your locked legs already reach the target.' };
-  // beam: states { legs, lf (log fair), lc (sum log cautious/p), rk }
-  let beam = [{ legs: [], lf: 0, lc: 0, rk: 0, subj: new Set(), games: new Set() }], done = [];
-  const lo = need + Math.log(1 - A.tol), hi = need + Math.log(1 + A.tol);
-  for (let depth = 0; depth < A.maxLegs - locked.length && beam.length; depth++) {
-    const next = [];
-    for (const s of beam) for (const l of cand) {
-      if (s.subj.has(l.subj)) continue; if (!opts.allowSame && s.games.has(l.game)) continue;
-      if (s.legs.length && cand.indexOf(l) <= cand.indexOf(s.legs[s.legs.length - 1])) continue; // each set once (shortlist order)
-      const lf = s.lf + Math.log(l.fair); if (lf > hi + 1e-9) continue;
-      const t = { legs: [...s.legs, l], lf, lc: s.lc + l.sup, rk: s.rk + l.rank, subj: new Set([...s.subj, l.subj]), games: new Set([...s.games, l.game]) };
-      if (lf >= lo - 1e-9) done.push(t); else next.push(t); }
-    // keep the most promising partial sets: highest cautious ratio per unit of log odds still to go, then rank
-    next.sort((x, y) => (y.lc / Math.max(0.05, y.lf)) - (x.lc / Math.max(0.05, x.lf)) || y.rk - x.rk); beam = next.slice(0, A.beam);
-  }
-  const score = t => { const legs = [...locked, ...t.legs], j = jointOf(legs); return { legs, j, v: j.priced ? t.lc : -Infinity, rk: (t.rk + locked.reduce((a, l) => a + l.rank, 0)) / legs.length }; };
-  const scored = done.map(score).filter(x => x.j.priced && Math.abs(Math.log(x.j.fair) - lt) <= Math.log(1 + A.tol) + 1e-9).sort((a, b) => b.v - a.v || b.rk - a.rk);
-  if (scored.length) return { legs: scored[0].legs, joint: scored[0].j, hit: true, note: '' };
-  // nothing within the tolerance: the closest priced set below and above, from everything tried
-  const all = [...done, ...beam].map(score).filter(x => x.j.priced).sort((a, b) => Math.abs(Math.log(a.j.fair) - lt) - Math.abs(Math.log(b.j.fair) - lt));
-  if (all.length) return { legs: all[0].legs, joint: all[0].j, hit: false, note: `No combination of the eligible legs lands within ${Math.round(A.tol * 100)}% of the target; this is the closest one found.` };
-  return { legs: locked, joint: base, hit: false, note: 'No eligible legs: widen the per-leg fair-odds range, add sports or days, or clear exclusions.' };
-}
-/** Is a saved leg still valid now? '' or the reason. */
-function legProblem(l, now = Date.now()) {
-  const f = l.c.f; if (f && f.ko_utc && Date.parse(f.ko_utc) <= now) return 'its game has started';
-  if (l.c.inj && l.c.inj.unavailable) return `${l.c.name} is now listed ${l.c.inj.label}`;
-  return '';
-}
-
-return { ACCA, RARE_ACCA, legId, legPool, mkLeg, sameGame, jointOf, buildAcca, legProblem };
+return { inPlay, viewRecommended };
 })();
 __m['v-acca'] = (() => {
 // Acca Builder (owner request 2 Nov 2026): the second tab of Recommended Plays. Choose sports, days, a target price and the per-leg fair-odds
 // range; Build Acca picks the legs (accabuild.js); tick Include to lock a leg, Exclude to throw one out; Replace Unlocked Plays rebuilds
 // around the locks as often as you like. Everything is kept on this phone only (localStorage), never sent anywhere.
 const { buildCandidates } = __m['recplays'];
-const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId } = __m['accabuild'];
+const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
+const { slipAddMany } = __m['accaslip'];
 const { evalAt, ladderName } = __m['recplays'];
 const { usAdapter } = __m['v-hiwi'];
 const { nba, loadNba, loadNbaInjuries } = __m['nba-data'];
 const { nfl, loadNfl } = __m['nfl-data'];
-const { store, loadCore, selectableFixtures } = __m['data'];
+const { store, loadCore, selectableFixtures, leagueName } = __m['data'];
 const { hooks } = __m['shared'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick, koUK, fixtureId } = __m['util'];
 const { nightOf } = __m['nightdate'];
 
 const KEY = 'proplab.acca.v1', SPORTS = [['nba', 'NBA'], ['nfl', 'NFL'], ['football', 'Football']];
-const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all' };
-let ST = null; // { f, locks: Map(id -> snapshot), excl: Set, skip: Set, current: [ids], pool cache }
+const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all', minProb: 0, minLegs: 2, maxLegs: 8, gsel: null, lgs: [], mkOff: [] };
+const LEGS_CAP = ACCA.LEGS_CAP;
+let ST = null; // { f, locks: Map(id -> snapshot), excl: Set (leg ids and `${candidate}|${side}` keys), xp: Map(subj -> { name, sport, team }) excluded players, skip: Set, current: [ids], cands: Map(`${sport}|${fid}` -> candidates) }
 const load = () => { if (ST) return ST; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; }
-  ST = { f: { ...DEF, ...(j.f || {}) }, locks: new Map(j.locks || []), excl: new Set(j.excl || []), skip: new Set(j.skip || []), current: j.current || [], cands: new Map(), built: null, bookTxt: '' };
+  ST = { f: { ...DEF, ...(j.f || {}) }, locks: new Map(j.locks || []), excl: new Set(j.excl || []), xp: new Map(j.xp || []), skip: new Set(j.skip || []), current: j.current || [], cands: new Map(), built: null, bookTxt: '', advOpen: false, gOpen: false, xpOpen: false, mkOpen: false };
   if (!ST.f.targetTxt) ST.f.targetTxt = inputText(11); if (!ST.f.legMinTxt) ST.f.legMinTxt = inputText(1.3); if (ST.f.legMaxTxt === '' && !j.f) ST.f.legMaxTxt = inputText(2.5); return ST; };
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ f: ST.f, locks: [...ST.locks], excl: [...ST.excl], skip: [...ST.skip], current: ST.current })); } catch { /* this visit only */ } };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ f: ST.f, locks: [...ST.locks], excl: [...ST.excl], xp: [...ST.xp], skip: [...ST.skip], current: ST.current })); } catch { /* this visit only */ } };
 const dec = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? (r.exact ?? r.dec) : null; };
 const PRESET_T = [4, 6, 11, 21], PRESET_L = [1.2, 1.333, 1.5, 1.8, 2];
 
@@ -7566,69 +7885,143 @@ function fixtures(sp, days, now = new Date()) {
 const updated = sp => { const at = sp === 'nba' ? nba.meta && nba.meta.updated : sp === 'nfl' ? nfl.meta && nfl.meta.updated : store.manifest && store.manifest.generated;
   try { return at ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at)) + ' UK' : 'unknown'; } catch { return at || 'unknown'; } };
 
+const gk = (sp, f) => (sp === 'football' ? `football|${fixtureId(f)}` : `${sp}|${f.id}`);
+const intIn = (v, lo, hi) => { const n = Math.round(Number(String(v).trim())); return String(v).trim() !== '' && Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
+/** min / max legs problem: '' or the message (min must not be above max, both 1-LEGS_CAP). */
+const legsProblem = (mn, mx) => (mn == null || mx == null ? `Legs: type whole numbers from 1 to ${LEGS_CAP}.` : mn > mx ? `Minimum legs (${mn}) is above maximum legs (${mx}): lower the minimum or raise the maximum.` : '');
+
 async function viewAcca(root, sport) {
   const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav>`;
   if (!S.f.sports.length) S.f.sports = [sport];
   root.innerHTML = `${tabs}<div id="accapg"><h1>Acca Builder</h1>
-    <p class="muted" style="margin-top:-4px">Choose a target price. PropLab picks the legs from the same plays and probabilities as Recommended Plays. Tick <b>Include</b> on legs you like, <b>Exclude</b> on legs you don't, then <b>Replace Unlocked Plays</b> as often as you like. Fair odds are not bookmaker odds: a 10/1 fair acca is not a 10/1 bet, and it is not value unless your bookmaker pays more.</p>
+    <p class="muted" style="margin-top:-4px">Choose a target price. PropLab picks the legs from the same plays and probabilities as Recommended Plays. Tick <b>Include</b> on legs you like; <b>Exclude</b> a leg (or a whole player) and it is replaced straight away; <b>Replace Unlocked Plays</b> as often as you like. Fair odds are not bookmaker odds: a 10/1 fair acca is not a 10/1 bet, and it is not value unless your bookmaker pays more.</p>
     <div class="card stack" id="accaf"></div><div id="accaout" style="margin-top:12px"></div></div>`;
   const pg = root.querySelector('#accapg'), out = pg.querySelector('#accaout');
-  const drawF = () => { const f = S.f, fm = oddsFmt();
+  const legsBad = () => legsProblem(intIn(S.f.minLegs, 1, LEGS_CAP), intIn(S.f.maxLegs, 1, LEGS_CAP));
+  const drawF = () => { const f = S.f, fm = oddsFmt(), y = scrollY; // redraw keeps the open panels open and the page where it was
     pg.querySelector('#accaf').innerHTML = `<div class="field"><span class="xs muted">Sports</span><div class="seg wrap" data-asp>${SPORTS.map(([k, l]) => `<button type="button" data-v="${k}" class="${f.sports.includes(k) ? 'on' : ''}" aria-pressed="${f.sports.includes(k)}">${l}</button>`).join('')}</div></div>
       <div class="field"><span class="xs muted">Games</span><div class="seg" data-adays>${[[1, 'Today / tonight'], [3, 'Next 3 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.days === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <details class="recadv accagames" data-agames ${S.gOpen ? 'open' : ''}><summary class="small"><b>Choose games</b> <span class="xs muted" data-agcount>(all games)</span></summary><div data-agbody><p class="xs muted">Loading games…</p></div></details>
+      <details class="recadv accamk" data-amkd ${S.mkOpen ? 'open' : ''}><summary class="small"><b>Choose markets</b> <span class="xs muted" data-amkcount>(every market)</span></summary><div data-amkbody><p class="xs muted">Open this to list the markets in your games (every market is on until you untick it).</p></div></details>
       <label class="field"><span>Target acca price (fair odds)</span><input class="in" data-af="targetTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.targetTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
       <div class="row" style="border:0;padding:0;gap:6px;flex-wrap:wrap">${PRESET_T.map(d => `<button type="button" class="chip" data-aset="targetTxt" data-d="${d}">${esc(fmtOdds(d))}</button>`).join('')}</div>
       <div class="recrow"><label class="field"><span>Min fair odds per leg</span><input class="in" data-af="legMinTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.legMinTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
         <label class="field"><span>Max per leg (optional)</span><input class="in" data-af="legMaxTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.legMaxTxt)}" placeholder="3/1 if empty"></label></div>
       <div class="row" style="border:0;padding:0;gap:6px;flex-wrap:wrap"><span class="xs muted">Min per leg:</span>${PRESET_L.map(d => `<button type="button" class="chip" data-aset="legMinTxt" data-d="${d}">${esc(fmtOdds(d))}</button>`).join('')}</div>
-      <details class="recadv"><summary class="small"><b>More options</b></summary>
+      <div class="recrow"><label class="field"><span>Min model probability per leg</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="99" step="1" data-afn="minProb" value="${esc(String(f.minProb))}"> %</span></label>
+        <label class="field"><span>Min legs</span><input class="in" type="number" inputmode="numeric" min="1" max="${LEGS_CAP}" step="1" data-afn="minLegs" value="${esc(String(f.minLegs))}"></label>
+        <label class="field"><span>Max legs</span><input class="in" type="number" inputmode="numeric" min="1" max="${LEGS_CAP}" step="1" data-afn="maxLegs" value="${esc(String(f.maxLegs))}"></label></div>
+      <p class="xs warn" data-alegerr style="margin:0" ${legsBad() ? '' : 'hidden'}>${esc(legsBad())}</p>
+      <details class="recadv" data-aadv ${S.advOpen ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
         <div class="field"><span class="xs muted">Minimum confidence per leg</span><div class="seg wrap" data-aseg="minConf">${[['0', 'Any'], ['2', 'Medium+'], ['3', 'High']].map(([v, l]) => `<button type="button" data-v="${v}" class="${String(f.minConf) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <div class="field"><span class="xs muted">Matchup (NBA / NFL legs)</span><div class="seg wrap" data-aseg="mu">${[['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.mu === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <label class="hcheck"><input type="checkbox" data-ack="noRare" ${f.noRare ? 'checked' : ''}><span>Leave out rare-event markets <span class="xs muted">(steals, blocks, steals + blocks, double / triple-doubles, anytime touchdowns: one lucky or unlucky play decides them)</span></span></label>
         <label class="hcheck"><input type="checkbox" data-ack="unders" ${f.unders ? 'checked' : ''}><span>Include Under / No legs</span></label>
         <label class="hcheck"><input type="checkbox" data-ack="allowSame" ${f.allowSame ? 'checked' : ''}><span>Allow two legs from the same game <span class="xs muted">(only pairs whose players have ${ACCA.MIN_SHARED}+ earlier games together are priced, from how their figures moved together; bookmakers may only offer these as a Bet Builder, at their own price)</span></span></label>
       </details>
-      <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-abuild><b>Build Acca</b></button><button type="button" class="btn" data-areplace>Replace Unlocked Plays</button></div>
+      ${S.xp.size ? `<details class="recadv" data-axplist ${S.xpOpen ? 'open' : ''}><summary class="small"><b>Excluded players (${S.xp.size})</b> <span class="xs muted">left out of every acca, at every line and market, until you restore them</span></summary>
+        ${[...S.xp].map(([k, v]) => `<div class="row" style="border:0;padding:4px 0;gap:8px;align-items:center"><span class="small"><b>${esc(v.name)}</b> <span class="xs muted">${esc(String(v.sport || '').toUpperCase())}${v.team ? ' · ' + esc(v.team) : ''}</span></span><button type="button" class="chip" data-axrest="${esc(k)}">Restore</button></div>`).join('')}
+        <button type="button" class="chip" data-axrestall>Restore all players</button></details>` : ''}
+      <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-abuild ${legsBad() ? 'disabled' : ''}><b>Build Acca</b></button><button type="button" class="btn" data-areplace ${legsBad() ? 'disabled' : ''}>Replace Unlocked Plays</button></div>
       <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-aclearx>Clear Exclusions (${S.excl.size + S.skip.size})</button><button type="button" class="chip" data-anew>Start New Acca</button></div>
-      <p class="xs muted" style="margin:0" data-afresh>${f.sports.map(sp => `${SPORTS.find(x => x[0] === sp)[1]} data updated ${esc(updated(sp))}`).join(' · ')} (every night at about 23:00).</p>`; };
+      <p class="xs muted" style="margin:0" data-afresh>${f.sports.map(sp => `${SPORTS.find(x => x[0] === sp)[1]} data updated ${esc(updated(sp))}`).join(' · ')} (every night at about 23:00).</p>`;
+    scrollTo(0, y); drawGames(); drawMarkets(); };
+  // ---------- markets (owner, 3 Nov): every market on by default, for every sport; untick the ones you do not want ----------
+  const mkKey = c => `${c.sport}|${c.def.key}`;
+  const drawMarkets = (load = false) => { const body = pg.querySelector('[data-amkbody]'); if (!body) return; const sel = selected(), M = new Map();
+    for (const [k, cs] of S.cands) { const sp = k.split('|')[0]; if (!S.f.sports.includes(sp) || (sel && !sel.has(k))) continue; for (const c of cs) { const e = M.get(mkKey(c)) || { key: mkKey(c), label: c.def.label, sp, grp: c.grp || c.def.grp || '' }; M.set(mkKey(c), e); } }
+    const L = [...M.values()], off = new Set(S.f.mkOff), on = L.filter(m => !off.has(m.key)).length, cnt = pg.querySelector('[data-amkcount]');
+    if (cnt) cnt.textContent = !L.length ? (off.size ? `(${off.size} unticked)` : '(every market)') : on === L.length ? `(all ${L.length} on)` : `(${on} of ${L.length} on)`;
+    if (!L.length) { if (load && !busy) { body.innerHTML = '<p class="xs muted">Working out the markets in your games…</p>'; busy = true; pool(true).finally(() => { busy = false; drawMarkets(); }); } return; }
+    const SP = { nba: 'NBA', nfl: 'NFL', football: 'Football' };
+    body.innerHTML = `<div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap"><button type="button" class="chip" data-amkall>All markets</button><button type="button" class="chip" data-amknone>Clear all</button></div>
+      ${S.f.sports.map(sp => { const ms = L.filter(m => m.sp === sp).sort((a, b) => (a.grp + a.label).localeCompare(b.grp + b.label)); if (!ms.length) return ''; const all = ms.every(m => !off.has(m.key));
+        return `<div class="mkgrp"><p class="xs muted" style="margin:8px 0 2px"><b>${SP[sp]}</b> <button type="button" class="linkbtn xs" data-amkgrp="${sp}">${all ? 'untick all' : 'tick all'}</button></p>${ms.map(m => `<label class="hcheck"><input type="checkbox" data-amk value="${esc(m.key)}" ${off.has(m.key) ? '' : 'checked'}><span>${esc(m.label)}${m.grp ? ` <span class="xs muted">${esc(m.grp)}</span>` : ''}</span></label>`).join('')}</div>`; }).join('')}
+      <p class="xs muted" style="margin:6px 0 0">Markets in the games you have chosen. Legs and replacements only come from ticked markets. Remembered on this phone.</p>`; };
+  // ---------- games ----------
+  let gList = []; // [{ sp, f, key }] for the chosen sports and days
+  const selected = () => (S.f.gsel == null ? null : new Set(S.f.gsel));
+  const isOn = key => S.f.gsel == null || S.f.gsel.includes(key);
+  async function drawGames() {
+    const body = pg.querySelector('[data-agbody]'); if (!body) return; const my = (drawGames.n = (drawGames.n || 0) + 1);
+    const L = []; for (const sp of S.f.sports) { if (!(await ready(sp))) continue; for (const f of fixtures(sp, S.f.days)) L.push({ sp, f, key: gk(sp, f) }); }
+    if (my !== drawGames.n) return; gList = L;
+    if (Array.isArray(S.f.gsel) && S.f.gsel.length && !L.some(x => S.f.gsel.includes(x.key))) { S.f.gsel = null; save(); } // the games you chose have all been played: back to every game
+    const n = L.filter(x => isOn(x.key)).length, cnt = pg.querySelector('[data-agcount]'); if (cnt) cnt.textContent = S.f.gsel == null ? `(all ${L.length} games)` : `(${n} of ${L.length} selected)`;
+    const lg = [...new Set(L.filter(x => x.sp === 'football').map(x => x.f.league))];
+    S.f.lgs = (S.f.lgs || []).filter(l => lg.includes(l)); // competitions first (football): only their games are listed and used
+    const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league);
+    if (S.f.lgs.length) { const keep = L.filter(x => vis(x) && isOn(x.key)).map(x => x.key); if (S.f.gsel == null || S.f.gsel.some(k => !keep.includes(k) && L.some(x => x.key === k))) { S.f.gsel = keep; save(); } }
+    const shown = L.filter(vis);
+    body.innerHTML = !L.length ? '<p class="xs muted">No upcoming games for these sports and days.</p>' : `<div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap"><button type="button" class="chip" data-agall>Select All</button><button type="button" class="chip" data-agnone>Clear All</button></div>
+      ${lg.length ? `<div class="row" style="border:0;padding:0 0 6px;gap:6px;flex-wrap:wrap"><span class="xs muted">Football competitions (tap to show; none = all), then tick the games:</span>${lg.map(l => { const on = S.f.lgs.includes(l); return `<button type="button" class="chip${on ? ' on' : ''}" aria-pressed="${on}" data-aglg="${esc(l)}">${esc(leagueName(l))}</button>`; }).join('')}</div>` : ''}
+      ${!n ? '<p class="xs warn" data-agnonemsg style="margin:4px 0">No games selected: no acca can be built. Tick at least one game, or tap Select All.</p>' : ''}
+      <div class="recfxlist">${shown.map(x => `<label class="hcheck hfxrow"><input type="checkbox" data-agame value="${esc(x.key)}" ${isOn(x.key) ? 'checked' : ''}><span><b>${esc(fmtKick(x.f))}</b> ${esc(x.sp === 'football' ? `${x.f.home} v ${x.f.away}` : `${x.f.away} at ${x.f.home}`)} <span class="hfxlg">${esc(x.sp === 'football' ? leagueName(x.f.league) : x.sp.toUpperCase())}</span></span></label>`).join('')}</div>`;
+  }
+  const setGames = keys => { const all = gList.map(x => x.key); S.f.gsel = keys.length === all.length && all.every(k => keys.includes(k)) ? null : keys; save(); drawGames(); };
   // ---------- pool ----------
   let busy = false;
-  const pool = async () => {
-    const all = [];
+  const pool = async (quiet = false) => { // candidates for the selected games only (worked out once per game, kept for this visit); quiet: keep the legs on screen
+    const all = [], sel = selected();
     for (const sp of S.f.sports) {
-      out.innerHTML = `<div class="card"><b>Loading ${SPORTS.find(x => x[0] === sp)[1]}…</b></div>`;
+      if (!quiet) out.innerHTML = `<div class="card"><b>Loading ${SPORTS.find(x => x[0] === sp)[1]}…</b></div>`;
       if (!(await ready(sp))) { out.insertAdjacentHTML('beforeend', `<div class="banner bad">${sp} data could not be loaded.</div>`); continue; }
-      const A = sp === 'football' ? null : usAdapter(sp), fx = fixtures(sp, S.f.days), k = `${sp}|${S.f.days}|${fx.map(f => sp === 'football' ? fixtureId(f) : f.id).join(',')}`;
-      if (!S.cands.has(k)) { const cs = []; let i = 0;
-        for (const f of fx) { const bar = `Working out ${SPORTS.find(x => x[0] === sp)[1]} plays… ${Math.round((i / Math.max(1, fx.length)) * 100)}%`; out.innerHTML = `<div class="card"><b>${bar}</b></div>`; cs.push(...await buildCandidates(sp, A, [f])); i++; await new Promise(r => setTimeout(r, 0)); }
-        S.cands.set(k, cs); }
-      all.push(...S.cands.get(k)); }
+      const A = sp === 'football' ? null : usAdapter(sp), fx = fixtures(sp, S.f.days).filter(f => !sel || sel.has(gk(sp, f))); let i = 0;
+      for (const f of fx) { const k = gk(sp, f); if (!S.cands.has(k)) { if (!quiet) out.innerHTML = `<div class="card"><b>Working out ${SPORTS.find(x => x[0] === sp)[1]} plays… ${Math.round((i / Math.max(1, fx.length)) * 100)}%</b></div>`; S.cands.set(k, await buildCandidates(sp, A, [f])); await new Promise(r => setTimeout(r, 0)); }
+        all.push(...S.cands.get(k)); i++; } }
     return all;
   };
-  const opts = () => ({ noRare: S.f.noRare, sides: S.f.unders ? ['over', 'under'] : ['over'], minFair: dec(S.f.legMinTxt), maxFair: dec(S.f.legMaxTxt) || 4, /* no per-leg max typed: legs longer than 3/1 are not generated (long shots are where the model is least sure) */ minConf: Number(S.f.minConf) || 0, mu: S.f.mu, grps: null, injOk: true });
+  const opts = () => ({ noRare: S.f.noRare, sides: S.f.unders ? ['over', 'under'] : ['over'], minFair: dec(S.f.legMinTxt), maxFair: dec(S.f.legMaxTxt) || 4, /* no per-leg max typed: legs longer than 3/1 are not generated (long shots are where the model is least sure) */ minConf: Number(S.f.minConf) || 0, mu: S.f.mu, grps: null, injOk: true, minProb: Number(S.f.minProb) || 0, xsubj: new Set(S.xp.keys()), games: selected(), mkOff: new Set(S.f.mkOff || []) });
+  const legN = () => ({ minLegs: intIn(S.f.minLegs, 1, LEGS_CAP) || 1, maxLegs: intIn(S.f.maxLegs, 1, LEGS_CAP) || ACCA.maxLegs });
   // a locked leg: its live version (re-priced now) if its play still exists, otherwise the saved snapshot, flagged
-  const liveLock = (cands, snap) => { const c = cands.find(x => x.id === snap.cid); if (!c) return { snap, problem: 'no longer in the published plays (game finished, player out or data changed)' }; const r = evalAt(c, snap.L, snap.side); if (!r) return { snap, problem: 'can no longer be priced' }; const l = mkLeg(c, snap.side, r); return { leg: l, problem: legProblem(l) }; };
+  const liveLock = (cands, snap) => { const c = cands.find(x => x.id === snap.cid); if (!c) return { snap, problem: 'no longer in the published plays (game finished, player out, data changed, or its game is not selected)' }; const r = evalAt(c, snap.L, snap.side); if (!r) return { snap, problem: 'can no longer be priced' }; const l = mkLeg(c, snap.side, r); return { leg: l, problem: legProblem(l) }; };
   const snapOf = l => ({ cid: l.c.id, side: l.side, L: l.r.L, name: l.c.name, label: ladderName(l.c, l.r), fair: l.fair, p: l.p, sport: l.c.sport });
   const parseId = id => { const a = id.split('|'), L = Number(a.pop()), side = a.pop(); return { cid: a.join('|'), side, L }; };
+  const noGames = () => { const g = selected(); return g && !g.size; };
   async function restore() { // back on the page: the same legs as before, re-priced on the data loaded now (locks kept; anything gone is flagged)
     if (busy) return; busy = true;
     try { const cands = await pool(), L = [...S.locks.values()].map(sn => liveLock(cands, sn)); if (L.some(x => x.problem)) { draw(cands, null, L); return; }
       const legs = []; for (const id of S.current) { const q = parseId(id), c = cands.find(x => x.id === q.cid), r = c && evalAt(c, q.L, q.side); if (r) { const l = mkLeg(c, q.side, r); if (!legProblem(l)) legs.push(l); } }
-      const lost = S.current.length - legs.length; S.built = { legs, joint: jointOf(legs), hit: true, note: lost ? `${lost} leg${lost === 1 ? '' : 's'} of your last acca can no longer be offered (game started, player out or data updated) and ${lost === 1 ? 'was' : 'were'} dropped: tap Replace Unlocked Plays to fill the gap.` : '' };
+      const lost = S.current.length - legs.length; S.built = { legs, joint: jointOf(legs), hit: true, note: lost ? `${lost} leg${lost === 1 ? '' : 's'} of your last acca can no longer be offered (game started, player out, data updated or game not selected) and ${lost === 1 ? 'was' : 'were'} dropped: tap Replace Unlocked Plays to fill the gap.` : '' };
       S.current = legs.map(l => l.id); save(); draw(cands, S.built, L, null);
     } finally { busy = false; }
   }
   async function build(replace) {
     if (busy) return; busy = true;
     try {
+      const lp = legsBad(); if (lp) { out.innerHTML = `<div class="banner warnb">${esc(lp)}</div>`; return; }
+      if (S.cands.size && (() => { const off = new Set(S.f.mkOff || []); if (!off.size) return false; for (const [k, cs] of S.cands) if (S.f.sports.includes(k.split('|')[0]) && cs.some(c => !off.has(mkKey(c)))) return false; return true; })()) { out.innerHTML = '<div class="banner info"><b>No markets selected.</b> Open Choose markets and tick at least one (or tap All markets).</div>'; return; }
+      if (noGames()) { out.innerHTML = '<div class="banner info"><b>No games selected.</b> Open Choose games and tick at least one game (or tap Select All).</div>'; return; }
       const target = dec(S.f.targetTxt); if (!target || target <= 1) { out.innerHTML = '<div class="banner info"><b>Type a target price</b> (for example 10/1).</div>'; return; }
       const cands = await pool(); const L = [...S.locks.values()].map(sn => liveLock(cands, sn));
       const bad = L.filter(x => x.problem); if (bad.length) { draw(cands, null, L); return; } // a locked leg needs a decision first
-      const locked = L.map(x => x.leg), o = opts();
+      const locked = L.map(x => x.leg), o = opts(), N = legN();
       if (replace) for (const id of S.current) if (!S.locks.has(id)) S.skip.add(id); // just replaced: not offered again straight away
-      const P = legPool(cands, o, new Set([...S.excl])), res = buildAcca(P, locked, target, { allowSame: S.f.allowSame, skip: S.skip });
-      if (replace && !res.hit && S.skip.size) { const res2 = buildAcca(P, locked, target, { allowSame: S.f.allowSame }); if (res2.hit) { res2.note = 'Every fresh combination had been shown already, so legs you replaced earlier may come back (they are not excluded: tick Exclude to keep one out).'; Object.assign(res, res2); } }
+      const P = legPool(cands, o, S.excl), res = buildAcca(P, locked, target, { allowSame: S.f.allowSame, skip: S.skip, ...N });
+      if (replace && !res.hit && S.skip.size) { const res2 = buildAcca(P, locked, target, { allowSame: S.f.allowSame, ...N }); if (res2.hit) { res2.note = 'Every fresh combination had been shown already, so legs you replaced earlier may come back (they are not excluded: tap Exclude to keep one out).'; Object.assign(res, res2); } }
       S.current = res.legs.map(l => l.id); S.built = res; save(); const per = {}; for (const l of P) per[l.c.sport] = (per[l.c.sport] || 0) + 1; draw(cands, res, L, `${P.length} (${Object.entries(per).map(([k, v]) => `${{ nba: 'NBA', nfl: 'NFL', football: 'football' }[k]} ${v}`).join(', ') || 'none'})`);
+    } finally { busy = false; }
+  }
+  // Exclude (a leg or a whole player): the leg goes and a replacement is found straight away, keeping the number of legs, every filter,
+  // the locks and the games chosen; nothing excluded or just replaced comes back. If nothing fits, the acca says so (and never pretends).
+  async function excludeAndReplace(removeIds, anchor) {
+    if (busy || !S.built) return; busy = true;
+    try {
+      const before = S.built.legs, count = before.length, gone = new Set(removeIds), keep = before.filter(l => !gone.has(l.id)), N = legN();
+      for (const id of removeIds) { S.locks.delete(id); S.skip.add(id); }
+      const target = dec(S.f.targetTxt), cands = await pool(true), P = legPool(cands, opts(), S.excl);
+      let res = keep.length >= count ? null : buildAcca(P, keep, target || 2, { allowSame: S.f.allowSame, skip: S.skip, minLegs: count, maxLegs: count, exact: true });
+      if (res && res.legs.length < count && S.skip.size > removeIds.length) { const skip2 = new Set(removeIds); res = buildAcca(P, keep, target || 2, { allowSame: S.f.allowSame, skip: skip2, minLegs: count, maxLegs: count, exact: true }); }
+      const fresh = res ? res.legs.filter(l => !keep.some(k => k.id === l.id)) : [], legs = []; let fi = 0;
+      for (const l of before) { if (!gone.has(l.id)) legs.push(l); else if (fi < fresh.length) legs.push(fresh[fi++]); } while (fi < fresh.length) legs.push(fresh[fi++]);
+      const missing = count - legs.length, names = before.filter(l => gone.has(l.id)).map(l => l.c.name);
+      let note = fresh.length ? `Replaced ${names.join(', ')} with ${fresh.map(l => `${l.c.name} (${ladderName(l.c, l.r)})`).join(', ')}.` : '';
+      if (missing > 0) note += ` No replacement available for ${missing} leg${missing === 1 ? '' : 's'}: no eligible leg is left that passes all your filters, is from ${S.f.allowSame ? 'the selected games' : 'a game not already in the acca'} and has not been excluded or just shown.${legs.length < N.minLegs ? ` Your acca now has ${legs.length} leg${legs.length === 1 ? '' : 's'}, fewer than your minimum of ${N.minLegs}: widen a filter, select more games or restore an exclusion.` : ''}`;
+      const J = jointOf(legs); if (fresh.length && target && J.priced && Math.abs(Math.log(J.fair / target)) > Math.log(1 + ACCA.tol)) note += ` The new combined price is ${fmtOdds(J.fair)}, outside ${Math.round(ACCA.tol * 100)}% of your target: the closest replacement was used.`;
+      S.built = { legs, joint: J, hit: true, note: note.trim(), over: false }; S.current = legs.map(l => l.id); save();
+      const top = anchor ? anchor.top : null, idx = anchor ? anchor.idx : -1;
+      draw(null, S.built, [], null); drawF();
+      if (top != null) { const el = pg.querySelectorAll('[data-aleg]')[Math.min(idx, legs.length - 1)]; if (el) scrollBy(0, el.getBoundingClientRect().top - top); } // the page does not jump
     } finally { busy = false; }
   }
   const tw = { g: 'easy', y: 'medium', r: 'tough' };
@@ -7636,51 +8029,72 @@ async function viewAcca(root, sport) {
     const target = dec(S.f.targetTxt), lockRows = L.filter(x => x.problem);
     if (lockRows.length) { out.innerHTML = `<div class="banner warnb"><b>A locked leg needs your decision:</b>${lockRows.map(x => `<p style="margin:4px 0">${esc(x.snap.name)} · ${esc(x.snap.label)}: ${esc(x.problem)}. <button type="button" class="chip" data-aunlock="${esc(legId({ id: x.snap.cid }, x.snap.side, x.snap.L))}">Remove it from the acca</button></p>`).join('')}</div>`; return; }
     if (!res) return; const legs = res.legs, J = res.joint, lo = opts();
-    const outside = legs.filter(l => S.locks.has(l.id) && ((lo.minFair && l.fair < lo.minFair - 1e-9) || (lo.maxFair && l.fair > lo.maxFair + 1e-9)));
+    const outside = legs.filter(l => S.locks.has(l.id) && ((lo.minFair && l.fair < lo.minFair - 1e-9) || (lo.maxFair && l.fair > lo.maxFair + 1e-9) || (lo.minProb && l.p * 100 < lo.minProb - 1e-9)));
     const minConf = legs.reduce((m, l) => Math.min(m, l.r.conf.rank), 3), confW = { 3: 'High', 2: 'Medium', 1: 'Low' }[minConf];
     const book = dec(S.bookTxt), ev = book && J.priced ? (J.p * book - 1) * 100 : null;
-    out.innerHTML = `${res.note ? `<div class="banner ${res.over ? 'warnb' : 'info'}">${esc(res.note)}${res.over ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
-      ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg fair-odds range now: kept because you locked it.`).join('<br>')}</div>` : ''}
+    out.innerHTML = `${res.note ? `<div class="banner ${res.over || res.short ? 'warnb' : 'info'}" data-anote>${esc(res.note)}${res.over && !/maximum/.test(res.note) ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
+      ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg filters now: kept because you locked it.`).join('<br>')}</div>` : ''}
       ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds, a model estimate (not a bookmaker price)${target ? ` · target ${esc(fmtOdds(target))}` : ''}</span></div>
         <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.pairs.length ? 'Joint probability: experimental estimate (independence, adjusted for the same-game pair)' : 'Joint probability: independence estimate (legs treated as unrelated), not a verified joint probability'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${confW}</b><span>Lowest leg confidence</span></div></div>
         ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is estimated by multiplying the leg probabilities, which assumes the legs are unrelated (an independence estimate). It has not been checked against real acca results, and different games can still be linked (the same news, the same evening).</p>'}
         <label class="field"><span>Bookmaker's price for this acca (optional)</span><input class="in" data-abook inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" value="${esc(S.bookTxt)}" placeholder="${esc(PLACEHOLDER[oddsFmt()])}"></label>
-        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p></div>` : ''}
+        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p>
+        <button type="button" class="chip" data-atoslip style="margin-top:6px">＋ Put these legs in the Acca slip</button></div>` : ''}
       <div id="alegs">${legs.map(l => { const r = l.r, c = l.c, locked = S.locks.has(l.id), g = c.f, vs = c.sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
         return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}</div></div>
           <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
           <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><span class="rt"><small>This season</small><b>${r.hr.season.n ? `${r.hr.season.hit}/${r.hr.season.n}` : '–'}</b></span><span class="rt"><small>Last 10</small><b>${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</b></span>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tw[r.tier]}</b></span>` : ''}<span class="rt"><small>Confidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></span></div>
-          <div class="row" style="border:0;padding:6px 0 0;gap:14px"><label class="hcheck"><input type="checkbox" data-alock ${locked ? 'checked' : ''}><span><b>Include</b> (lock)</span></label><label class="hcheck"><input type="checkbox" data-aexcl><span><b>Exclude</b></span></label>${locked ? '<span class="xs hit">Locked: kept when you replace</span>' : '<span class="xs muted">Replaceable</span>'}</div></article>`; }).join('')}</div>
-      <p class="xs muted">How legs are chosen: among combinations within ${Math.round(ACCA.tol * 100)}% of your target, the one whose legs are best backed: each leg's Best Overall score (its season, recent and opponent record, matchup and confidence around the model probability) compared with its probability, with a small cost for every extra leg, so fewer, better-supported legs win. ${n != null ? `${n} eligible legs were considered.` : ''} A high combined hit rate is not proof of a profitable acca, and nothing here says it will win.</p>`;
+          <div class="row" style="border:0;padding:6px 0 0;gap:12px;flex-wrap:wrap;align-items:center"><label class="hcheck"><input type="checkbox" data-alock ${locked ? 'checked' : ''}><span><b>Include</b> (lock)</span></label><label class="hcheck"><input type="checkbox" data-aexcl><span><b>Exclude</b></span></label><button type="button" class="chip" data-axp>Exclude ${c.kind === 'player' ? 'player' : 'team'}</button>${locked ? '<span class="xs hit">Locked: kept when you replace</span>' : '<span class="xs muted">Replaceable</span>'}</div></article>`; }).join('')}</div>
+      <p class="xs muted">How legs are chosen: among combinations of ${legN().minLegs === legN().maxLegs ? legN().minLegs : `${legN().minLegs}-${legN().maxLegs}`} legs within ${Math.round(ACCA.tol * 100)}% of your target, the one whose legs are best backed: each leg's Best Overall score (its season, recent and opponent record, matchup and confidence around the model probability) compared with its probability, with a small cost for every extra leg, so fewer, better-supported legs win. ${n != null ? `${n} eligible legs were considered.` : ''} A high combined hit rate is not proof of a profitable acca, and nothing here says it will win.</p>`;
   }
   // ---------- events ----------
+  pg.addEventListener('toggle', e => { const d = e.target; if (d.matches('[data-amkd]')) { S.mkOpen = d.open; if (d.open) drawMarkets(true); } if (d.matches('[data-aadv]')) S.advOpen = d.open; if (d.matches('[data-agames]')) S.gOpen = d.open; if (d.matches('[data-axplist]')) S.xpOpen = d.open; }, true);
   pg.addEventListener('click', e => { const t = e.target;
     const sp = t.closest('[data-asp] button'); if (sp) { const v = sp.dataset.v, a = new Set(S.f.sports); a.has(v) ? a.delete(v) : a.add(v); if (!a.size) a.add(v); S.f.sports = SPORTS.map(x => x[0]).filter(k => a.has(k)); save(); drawF(); return; }
     const dd = t.closest('[data-adays] button'); if (dd) { S.f.days = Number(dd.dataset.v); save(); drawF(); return; }
-    const sg = t.closest('[data-aseg] button'); if (sg) { const k = sg.closest('[data-aseg]').dataset.aseg; S.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; save(); drawF(); return; }
-    const ps = t.closest('[data-aset]'); if (ps) { S.f[ps.dataset.aset] = inputText(Number(ps.dataset.d)); save(); drawF(); return; }
+    const sg = t.closest('[data-aseg] button'); if (sg) { const k = sg.closest('[data-aseg]').dataset.aseg; S.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; save(); // in place: the panel stays open and nothing moves
+      sg.closest('[data-aseg]').querySelectorAll('button').forEach(b => b.classList.toggle('on', b === sg)); return; }
+    const ps = t.closest('[data-aset]'); if (ps) { S.f[ps.dataset.aset] = inputText(Number(ps.dataset.d)); save(); const i = pg.querySelector(`[data-af="${ps.dataset.aset}"]`); if (i) i.value = S.f[ps.dataset.aset]; return; }
+    if (t.closest('[data-amkall]')) { S.f.mkOff = []; save(); drawMarkets(); return; }
+    if (t.closest('[data-amknone]')) { S.f.mkOff = [...new Set([...(S.f.mkOff || []), ...[...pg.querySelectorAll('[data-amk]')].map(i => i.value)])]; save(); drawMarkets(); return; }
+    const amg = t.closest('[data-amkgrp]'); if (amg) { const ks = [...amg.closest('.mkgrp').querySelectorAll('[data-amk]')].map(i => i.value), off = new Set(S.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); S.f.mkOff = [...off]; save(); drawMarkets(); return; }
+    if (t.closest('[data-agall]')) { const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league); if (S.f.lgs.length) { S.f.gsel = gList.filter(vis).map(x => x.key); save(); drawGames(); } else setGames(gList.map(x => x.key)); return; }
+    if (t.closest('[data-agnone]')) { S.f.gsel = []; save(); drawGames(); return; }
+    const lgb = t.closest('[data-aglg]'); if (lgb) { const l = lgb.dataset.aglg, add = !S.f.lgs.includes(l); S.f.lgs = add ? [...S.f.lgs, l] : S.f.lgs.filter(x => x !== l);
+      const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league), cur = gList.filter(x => isOn(x.key)).map(x => x.key), ks = gList.filter(x => x.sp === 'football' && x.f.league === l).map(x => x.key);
+      const next = [...new Set([...cur, ...(add ? ks : [])])].filter(k => vis(gList.find(x => x.key === k))); S.f.gsel = S.f.lgs.length ? next : (next.length === gList.length ? null : next); save(); drawGames(); return; }
     if (t.closest('[data-abuild]')) { build(false); return; }
     if (t.closest('[data-areplace]')) { build(true); return; }
     if (t.closest('[data-aclearx]')) { S.excl.clear(); S.skip.clear(); save(); drawF(); return; }
     if (t.closest('[data-anew]')) { S.locks.clear(); S.excl.clear(); S.skip.clear(); S.current = []; S.built = null; S.bookTxt = ''; save(); drawF(); out.innerHTML = ''; return; }
+    const xr = t.closest('[data-axrest]'); if (xr) { S.xp.delete(xr.dataset.axrest); save(); drawF(); return; }
+    if (t.closest('[data-axrestall]')) { S.xp.clear(); save(); drawF(); return; }
+    if (t.closest('[data-atoslip]') && S.built) { const n = slipAddMany(S.built.legs.map(l => ({ c: l.c, side: l.side, r: l.r }))); const b = t.closest('[data-atoslip]'); b.textContent = n ? `✓ ${n} added to the Acca slip` : '✓ Already in the Acca slip'; return; }
     const ul = t.closest('[data-aunlock]'); if (ul) { S.locks.delete(ul.dataset.aunlock); save(); build(false); return; }
+    const xpb = t.closest('[data-axp]'); if (xpb && S.built) { const art = xpb.closest('[data-aleg]'), l = S.built.legs.find(x => x.id === art.dataset.aleg); if (!l) return; const subj = subjOf(l.c);
+      S.xp.set(subj, { name: l.c.name, sport: l.c.sport, team: l.c.kind === 'player' ? l.c.team : '' }); save();
+      const idx = [...pg.querySelectorAll('[data-aleg]')].indexOf(art); excludeAndReplace(S.built.legs.filter(x => x.subj === subj).map(x => x.id), { top: art.getBoundingClientRect().top, idx }); return; }
   });
   pg.addEventListener('change', e => { const t = e.target;
     const ck = t.closest('[data-ack]'); if (ck) { S.f[ck.dataset.ack] = ck.checked; save(); return; }
+    if (t.matches('[data-amk]')) { const off = new Set(S.f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); S.f.mkOff = [...off]; save(); const c = pg.querySelector('[data-amkcount]'); if (c) { const all = pg.querySelectorAll('[data-amk]').length, on = pg.querySelectorAll('[data-amk]:checked').length; c.textContent = on === all ? `(all ${all} on)` : `(${on} of ${all} on)`; } return; }
+    if (t.matches('[data-agame]')) { const cur = gList.filter(x => isOn(x.key)).map(x => x.key); setGames(t.checked ? [...new Set([...cur, t.value])] : cur.filter(k => k !== t.value)); return; }
     const art = t.closest('[data-aleg]'); if (!art || !S.built) return; const id = art.dataset.aleg, l = S.built.legs.find(x => x.id === id); if (!l) return;
-    if (t.matches('[data-alock]')) { if (t.checked) { S.locks.set(id, snapOf(l)); S.excl.delete(id); art.querySelector('[data-aexcl]').checked = false; } else S.locks.delete(id); save(); art.classList.toggle('locked', t.checked); return; }
-    if (t.matches('[data-aexcl]') && t.checked) { S.locks.delete(id); S.excl.add(id); art.querySelector('[data-alock]').checked = false; save(); // gone now; the acca re-prices without it (Replace fills the gap)
-      S.built = { ...S.built, legs: S.built.legs.filter(x => x.id !== id) }; S.built.joint = jointOf(S.built.legs); S.current = S.built.legs.map(x => x.id); save(); draw(null, S.built, [], null); drawF(); }
+    if (t.matches('[data-alock]')) { if (t.checked) { S.locks.set(id, snapOf(l)); S.excl.delete(id); S.excl.delete(`${l.c.id}|${l.side}`); art.querySelector('[data-aexcl]').checked = false; } else S.locks.delete(id); save(); art.classList.toggle('locked', t.checked); return; }
+    if (t.matches('[data-aexcl]') && t.checked) { art.querySelector('[data-alock]').checked = false; S.excl.add(id); S.excl.add(`${l.c.id}|${l.side}`); save(); // this market for this player, at any line; replaced at once
+      const idx = [...pg.querySelectorAll('[data-aleg]')].indexOf(art); excludeAndReplace([id], { top: art.getBoundingClientRect().top, idx }); }
   });
   pg.addEventListener('input', e => { const t = e.target;
     const af = t.closest('[data-af]'); if (af) { S.f[af.dataset.af] = af.value; save(); return; }
+    const an = t.closest('[data-afn]'); if (an) { S.f[an.dataset.afn] = an.dataset.afn === 'minProb' ? Math.max(0, Math.min(99, Number(an.value) || 0)) : an.value; save();
+      const m = legsBad(), el = pg.querySelector('[data-alegerr]'); if (el) { el.hidden = !m; el.textContent = m; } pg.querySelectorAll('[data-abuild],[data-areplace]').forEach(b => { b.disabled = !!m; }); return; }
     if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = !b ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : !J.priced ? 'No EV: this acca has an unpriced same-game pair.' : (ev => `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(b))} against the estimated joint probability ${(J.p * 100).toFixed(1)}%. Hypothetical: it assumes that estimate is right (not verified), so it is not evidence of profit.`)((J.p * b - 1) * 100); } }
   });
   drawF();
   if (S.current.length || S.locks.size) restore();
 }
 
-return { viewAcca };
+return { legsProblem, viewAcca };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
@@ -7983,6 +8397,102 @@ async function viewNbaMatchups(root, r) {
 }
 
 return { viewNbaMatchups };
+})();
+__m['v-nfl-matchups'] = (() => {
+// NFL Matchups (owner request 3 Nov 2026): the NFL counterpart of NBA Matchups, in the American Football menu.
+//  * Player v opponent: pick a team, an opponent (its next opponent to start with) and a player; then a market and a line. Every game the
+//    player has a stat line for against that opponent is listed (all seasons PropLab holds), with his average, median and hit rate at the
+//    line, next to the same figures for this season and for all his games, each with its sample size.
+//  * Defence v position: what every defence allowed to QBs, RBs, WRs or TEs in a market this regular season, ranked 1-32 (the same table
+//    that colours the NFL plays in Hiwi's Section; experimental: it colours and filters plays, it never changes a probability).
+// Only published figures are used. A game he did not play has no stat line and is not listed or counted (never a 0); a game where he was
+// on the roster but no stat line was recorded is counted separately as "no recorded stat line"; a stat that is missing from a stat line is
+// shown as not recorded and left out of every average and hit rate. Hit rates are what happened, not probabilities.
+const { nfl, loadGroup, teamName, latestSeason, nflUpcoming, teamGameRows, GROUP_NAMES } = __m['nfl-data'];
+const { NFL_MARKETS, marketsForGroup } = __m['nfl-markets'];
+const { nflDefTable } = __m['nflmatchups'];
+const { usAdapter } = __m['v-hiwi'];
+const { esc, fmtKick } = __m['util'];
+
+const KEY = 'proplab.nflmu.v1', GROUPS = ['qb', 'rb', 'wr', 'te', 'def', 'k'], DEF_GROUPS = ['qb', 'rb', 'wr', 'te'];
+let ui = null;
+const load = () => { if (ui) return ui; let j = {}; try { j = JSON.parse(sessionStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } ui = { view: 'player', team: '', opp: '', pid: '', m: '', line: null, pos: 'wr', dm: 'rec_yds', ...j }; return ui; };
+const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(ui)); } catch { /* this visit only */ } };
+const seg = (name, items, cur) => `<div class="seg wrap" data-nseg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
+const f1 = x => (x == null || !Number.isFinite(x) ? '–' : Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : x.toFixed(1));
+const median = a => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+const nextOpp = t => { const g = nflUpcoming().find(x => x.home === t || x.away === t); return g ? { opp: g.home === t ? g.away : g.home, g } : null; };
+/** Pure: figures for rows ({ value }) at a line: { n, avg, med, hit, pct }. Rows with no value are not counted. */
+function summarise(rows, line, side = 'over') {
+  const v = rows.map(r => r.value).filter(x => x != null && Number.isFinite(x)), hit = v.filter(x => (side === 'under' ? x < line : x > line)).length;
+  return { n: v.length, avg: v.length ? v.reduce((a, b) => a + b, 0) / v.length : null, med: median(v), hit, pct: v.length ? Math.round((hit / v.length) * 100) : null };
+}
+
+async function viewNflMatchups(root, r) {
+  const U = load(), teams = [...nfl.teams.keys()].sort((a, b) => teamName(a).localeCompare(teamName(b)));
+  if (r && r.q) { const t = (r.q.get('team') || '').toUpperCase(), o = (r.q.get('opp') || '').toUpperCase(), p = r.q.get('player'); if (nfl.teams.has(t)) U.team = t; if (nfl.teams.has(o)) U.opp = o; if (p && nfl.playerById.has(p)) { U.pid = p; U.team = nfl.playerById.get(p).team; } }
+  if (!U.team || !nfl.teams.has(U.team)) { const g = nflUpcoming()[0]; U.team = g ? g.home : teams[0]; }
+  if (!U.opp || !nfl.teams.has(U.opp) || U.opp === U.team) U.opp = (nextOpp(U.team) || {}).opp || teams.find(t => t !== U.team);
+  root.innerHTML = `<div id="nmupage"><h1 style="margin:0 0 4px">NFL Matchups</h1><p class="muted" style="margin:0 0 10px">How a player has done against an opponent, and what each defence allows to every position. Updated with the nightly data.</p>
+    ${seg('view', [['player', 'Player v opponent'], ['defence', 'Defence v position']], U.view)}<div id="nmubody" style="margin-top:10px"></div></div>`;
+  const pg = root.querySelector('#nmupage'), body = pg.querySelector('#nmubody');
+  const roster = t => nfl.players.filter(p => p.current && p.team === t && GROUPS.includes(p.group)).sort((a, b) => GROUPS.indexOf(a.group) - GROUPS.indexOf(b.group) || (b.n || 0) - (a.n || 0) || a.name.localeCompare(b.name));
+  let token = 0;
+  async function drawPlayer() {
+    const my = ++token, R = roster(U.team); if (!R.some(p => p.id === U.pid)) U.pid = (R.find(p => p.group === 'qb') || R[0] || {}).id || '';
+    const p = nfl.playerById.get(U.pid), nx = nextOpp(U.team);
+    const ctl = `<div class="card stack" id="nmuctl"><div class="recrow"><label class="field"><span>Team</span><select class="in" data-nsel="team">${teams.map(t => `<option value="${t}" ${t === U.team ? 'selected' : ''}>${esc(teamName(t))}</option>`).join('')}</select></label>
+      <label class="field"><span>Opponent</span><select class="in" data-nsel="opp">${teams.filter(t => t !== U.team).map(t => `<option value="${t}" ${t === U.opp ? 'selected' : ''}>${esc(teamName(t))}${nx && nx.opp === t ? ' (next game)' : ''}</option>`).join('')}</select></label></div>
+      <label class="field"><span>Player</span><select class="in" data-nsel="pid">${GROUPS.map(g => { const ps = R.filter(x => x.group === g); return ps.length ? `<optgroup label="${esc(GROUP_NAMES[g])}">${ps.map(x => `<option value="${esc(x.id)}" ${x.id === U.pid ? 'selected' : ''}>${esc(x.name)} (${esc(x.pos || '')})</option>`).join('')}</optgroup>` : ''; }).join('')}</select></label>
+      ${nx ? `<p class="xs muted" style="margin:0">Next game: ${esc(teamName(nx.g.away))} at ${esc(teamName(nx.g.home))} · ${esc(fmtKick(nx.g))}</p>` : ''}</div>`;
+    if (!p) { body.innerHTML = `${ctl}<div class="banner info">No current players listed for ${esc(teamName(U.team))}.</div>`; return; }
+    body.innerHTML = `${ctl}<div class="card"><b>Loading ${esc(p.name)}'s games…</b></div>`;
+    let rows; try { rows = (await loadGroup(p.group)).get(p.id) || []; } catch { rows = null; } if (my !== token) return;
+    if (!rows) { body.innerHTML = `${ctl}<div class="banner bad">The ${esc(GROUP_NAMES[p.group])} game logs could not be loaded.</div>`; return; }
+    const ms = marketsForGroup(p.group).filter(d => rows.some(x => d.get(x) != null)); if (!ms.some(d => d.key === U.m)) U.m = (ms[0] || {}).key || '';
+    const def = NFL_MARKETS.find(d => d.key === U.m);
+    if (!def) { body.innerHTML = `${ctl}<div class="banner info">PropLab has no recorded statistics for ${esc(p.name)} yet (no game with a stat line).</div>`; save(); return; }
+    const val = x => { const v = def.get(x); return v == null ? null : v; }, cur = latestSeason();
+    const all = rows.map(x => ({ ...x, value: val(x) })), vs = all.filter(x => x.opp === U.opp), season = all.filter(x => x.season === cur);
+    if (U.line == null || !Number.isFinite(U.line) || U._m !== U.m || U._p !== U.pid) { const md = median(season.filter(x => x.value != null).map(x => x.value)) ?? median(all.filter(x => x.value != null).map(x => x.value)); U.line = def.binary ? 0.5 : md == null ? 0.5 : Math.max(0.5, Math.floor(md) + 0.5); U._m = U.m; U._p = U.pid; }
+    const L = U.line, word = def.binary ? 'Yes' : `over ${L}`, sV = summarise(vs, L), sS = summarise(season, L), sA = summarise(all, L), gone = all.length;
+    const noStat = (p.nostat || []).filter(id => { const g = nfl.gameById.get(id); return g && (g.home === U.opp || g.away === U.opp); }).length;
+    const tile = (lbl, S) => `<div class="tile"><b>${S.n ? `${S.hit}/${S.n}` : '–'}</b><span>${lbl}: ${word}${S.n ? ` (${S.pct}%)` : ''} · average ${f1(S.avg)} · median ${f1(S.med)} · <b>${S.n}</b> game${S.n === 1 ? '' : 's'}</span></div>`;
+    const tg = teamGameRows(U.team).filter(x => x.opp === U.opp);
+    save();
+    body.innerHTML = `${ctl}<div class="card stack"><div class="field"><span class="xs muted">Statistic</span><select class="in" data-nsel="m">${[...new Set(ms.map(d => d.grp))].map(g => `<optgroup label="${esc(g)}">${ms.filter(d => d.grp === g).map(d => `<option value="${d.key}" ${d.key === U.m ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      ${def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-nline="-1" aria-label="Lower the line">−</button><b data-nlinev>Over ${L}</b><button type="button" class="hstep" data-nline="1" aria-label="Raise the line">+</button><span class="xs muted">line for the hit rates</span></div>`}
+      <div class="tiles evtiles" data-nsum>${tile(`v ${teamName(U.opp)}`, sV)}${tile(`${cur} season`, sS)}${tile('All games', sA)}</div>
+      <p class="xs muted" style="margin:0">${esc(def.desc)} Hit rates and averages are what happened (not probabilities). Games he did not play have no stat line and are not counted${noStat ? `; ${noStat} game${noStat === 1 ? '' : 's'} against ${esc(teamName(U.opp))} where he was listed but has no recorded stat line ${noStat === 1 ? 'is' : 'are'} left out too` : ''}. A missing figure is never counted as 0.</p></div>
+      <h2 style="margin:14px 0 6px">${esc(p.name)} v ${esc(teamName(U.opp))} <span class="xs muted">${esc(def.label)}, every game PropLab holds (since ${Math.min(...(nfl.meta.seasons || [cur]))})</span></h2>
+      ${vs.length ? `<div class="nmuwrap"><table class="ralttb nmut" data-nrows><tr><th>Game</th><th>Score</th><th class="n">${esc(def.label)}</th><th>${esc(word)}</th></tr>${vs.map(x => { const ok = x.value == null ? null : x.value > L; const g = nfl.gameById.get(x.game);
+        return `<tr><td>${esc(x.date || '')}<br><span class="xs muted">${x.season} ${x.type === 'R' ? `wk ${x.week}` : 'playoffs'} · ${esc(x.team)} ${x.home ? 'v' : '@'} ${esc(x.opp)}</span></td><td>${g && g.final ? `${x.home ? g.hs : g.as}-${x.home ? g.as : g.hs}` : '–'}</td><td class="n"><b>${x.value == null ? '<span class="muted">not recorded</span>' : f1(x.value)}</b></td><td>${ok == null ? '–' : ok ? '<b class="hit">✓</b>' : '<b class="miss">✗</b>'}</td></tr>`; }).join('')}</table></div>`
+        : `<div class="banner info">${esc(p.name)} has no recorded game against ${esc(teamName(U.opp))} in PropLab's data (${gone} game${gone === 1 ? '' : 's'} in all). Pick another opponent, or see his figures for this season above.</div>`}
+      ${tg.length ? `<details class="card" style="margin-top:10px"><summary class="small"><b>${esc(teamName(U.team))} v ${esc(teamName(U.opp))}: every result (${tg.length})</b></summary><table class="ralttb">${tg.map(x => `<tr><td>${esc(x.date)}</td><td>${x.season} · ${x.type === 'R' ? `wk ${x.week}` : 'playoffs'}</td><td>${x.home ? 'v' : '@'} ${esc(x.opp)}</td><td class="n"><b>${x.pts}-${x.ptsA}</b> ${x.pts > x.ptsA ? 'W' : x.pts < x.ptsA ? 'L' : 'T'}</td></tr>`).join('')}</table></details>` : ''}
+      <p class="xs muted">Source: nflverse (CC-BY 4.0). Research figures, not a prediction and not betting advice.</p>`;
+  }
+  async function drawDefence() {
+    const my = ++token, A = usAdapter('nfl'), ms = marketsForGroup(DEF_GROUPS.includes(U.pos) ? U.pos : (U.pos = 'wr')); if (!ms.some(d => d.key === U.dm)) U.dm = ms[0].key;
+    const ctl = `<div class="card stack"><div><span class="xs muted">Position</span>${seg('pos', DEF_GROUPS.map(g => [g, g.toUpperCase()]), U.pos)}</div><label class="field"><span>Statistic</span><select class="in" data-nsel="dm">${ms.map(d => `<option value="${d.key}" ${d.key === U.dm ? 'selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label></div>`;
+    body.innerHTML = `${ctl}<div class="card"><b>Working out every defence…</b></div>`;
+    let T; try { T = await nflDefTable(A, latestSeason(), ms); } catch { T = null; } if (my !== token) return;
+    const M = T && T.get(`${U.pos}|${U.dm}`), def = ms.find(d => d.key === U.dm); save();
+    if (!M) { body.innerHTML = `${ctl}<div class="banner info">Not enough ${latestSeason()} regular-season games yet to rank the defences for ${esc(def.label)} (each defence needs games against ${esc(GROUP_NAMES[U.pos])}).</div>`; return; }
+    const rows = [...M].sort((a, b) => b[1].rank - a[1].rank), n = rows.length, tierOf = rk => (rk > (2 * n) / 3 ? 'g' : rk <= n / 3 ? 'r' : 'y'), lg = rows[0][1].lg;
+    body.innerHTML = `${ctl}<p class="xs muted" style="margin:8px 0"><span class="mup mu-g">Green</span> easy (allows the most) &nbsp;<span class="mup mu-y">Yellow</span> middle &nbsp;<span class="mup mu-r">Red</span> tough (allows the fewest). League average ${f1(lg)} a game. Experimental: early-season figures are pulled towards the average (3 pretend games).</p>
+      <div class="nmuwrap"><table class="ralttb nmut" data-ndef><tr><th>Defence</th><th class="n">Rank</th><th class="n">Allowed a game</th><th class="n">Games</th></tr>${rows.map(([t, x]) => `<tr><td><b>${esc(teamName(t))}</b></td><td class="n"><span class="mup mu-${tierOf(x.rank)}">${x.rank}</span></td><td class="n">${f1(x.per)}</td><td class="n">${x.games}</td></tr>`).join('')}</table></div>
+      <p class="xs muted">Every ${esc(GROUP_NAMES[U.pos].toLowerCase().replace(/s$/, ''))} who faced the defence, added up per game, ${latestSeason()} regular season only. Rank 1 allows the fewest. Source: nflverse game logs.</p>`;
+  }
+  const draw = () => { pg.querySelectorAll('[data-nseg="view"] button').forEach(b => b.classList.toggle('on', b.dataset.v === U.view)); return U.view === 'defence' ? drawDefence() : drawPlayer(); };
+  pg.addEventListener('click', e => { const b = e.target.closest('[data-nseg] button'); if (b) { const k = b.closest('[data-nseg]').dataset.nseg; U[k] = b.dataset.v; save(); draw(); return; }
+    const st = e.target.closest('[data-nline]'); if (st) { U.line = Math.max(0.5, U.line + Number(st.dataset.nline)); save(); drawPlayer(); } });
+  pg.addEventListener('change', e => { const t = e.target.closest('[data-nsel]'); if (!t) return; const k = t.dataset.nsel; U[k] = t.value;
+    if (k === 'team') { U.pid = ''; if (U.opp === U.team) U.opp = ''; U.opp = (nextOpp(U.team) || {}).opp || U.opp || teams.find(x => x !== U.team); }
+    save(); draw(); });
+  await draw();
+}
+
+return { summarise, viewNflMatchups };
 })();
 __m['search'] = (() => {
 const { normName, teamAliases } = __m['teams'];
@@ -10865,6 +11375,8 @@ const { viewMyPlays } = __m['myplays'];
 const { viewModel } = __m['v-model'];
 const { viewNbaPlays } = __m['v-nba-plays'];
 const { viewNbaMatchups } = __m['v-nba-matchups'];
+const { viewNflMatchups } = __m['v-nfl-matchups'];
+const { slipRoute } = __m['accaslip'];
 const { $, esc, TZ_CHOICES, tzPref, setTzPref, detectTz, tzAbbr } = __m['util'];
 const { route, hooks, getSport, setSport } = __m['shared'];
 const { ICON, LOGO, BEAR_ICON } = __m['icons'];
@@ -10902,7 +11414,7 @@ const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'A
 // Find Plays = Finder (and Plays) ranked by hit rate; Find Your Own = advanced research; Value = compare a price.
 const TABS = {
   football: [['start', 'Start', '#/start', 'home'], ['fixtures', 'Matches', '#/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/rec', 'bear'], ['hiwi', 'Find Your Own', '#/hiwi', 'search'], ['myplays', 'My Plays', '#/myplays', 'value']],
-  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nfl/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nfl/hiwi', 'search'], ['myplays', 'My Plays', '#/nfl/myplays', 'value']],
+  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nfl/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nfl/hiwi', 'search'], ['myplays', 'My Plays', '#/nfl/myplays', 'value'], ['matchups', 'Matchups', '#/nfl/matchups', 'matchups']],
   nba: [['start', 'Start', '#/nba/start', 'home'], ['fixtures', 'Matches', '#/nba/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nba/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nba/hiwi', 'search'], ['myplays', 'My Plays', '#/nba/myplays', 'value'], ['matchups', 'Matchups', '#/nba/matchups', 'matchups']],
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
@@ -10910,7 +11422,7 @@ const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search'
 const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', acca: 'acca', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', rec: '#/rec', myplays: '#/myplays', model: '#/model', value: '#/value', about: '#/about' };
 const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', rec: '#/nba/rec', myplays: '#/nba/myplays', model: '#/nba/model', value: '#/nba/value', about: '#/about' };
-const NFL_HREF = { start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
+const NFL_HREF = { matchups: '#/nfl/matchups', start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
 const TITLES = { acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
@@ -11011,7 +11523,7 @@ async function render() {
   if (w.sport) setSport(w.sport);
   // Matches Used (owner request 21 Oct, late): a new visit starts on All Games (v-hiwi.js), and the choice is now KEPT while the visitor
   // moves between pages (it used to reset on every page). It is still never saved on the device.
-  chrome(w);
+  chrome(w); slipRoute(w);
   document.title = w.page === 'sports' ? 'PropLab – choose a sport' : `${TITLES[w.page] || 'PropLab'} · ${SPORTS[w.sport].label} – PropLab`;
   if (note) { root.insertAdjacentHTML('afterbegin', `<div class="banner info switchnote">${esc(note)}</div>`); }
   { const fp = fpNav(w); if (fp) root.insertAdjacentHTML('beforeend', fp); }
@@ -11030,7 +11542,7 @@ async function render() {
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       await V(body); return finish();
     }
     const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
