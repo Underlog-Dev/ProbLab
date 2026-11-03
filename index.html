@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="9af097ba61ed">
+<meta name="proplab-build" content="f613f7f33413">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -696,6 +696,13 @@ html.slipopen body{overflow-anchor:none}
 .rbuy .rodds .in{width:96px}
 /* the slip tab never covers a play on a phone: a narrow strip on the right of Hiwi's Section and the Acca Builder */
 @media (max-width:700px){html.hasslip main#view{padding-right:30px}.sliptab{padding:10px 4px;width:28px}.sliptab b{min-width:20px;height:20px;font-size:11px}}
+/* games grouped by sport and competition (3 Nov, 10:47) */
+.aggroups .agsport{margin-top:10px;padding-top:6px;border-top:1px solid var(--line)}.aggroups .agsport:first-child{border-top:0;margin-top:0}
+.aghead{font-size:15px}.aghead b{font-size:15px}.agleague{margin-top:4px}.agleague .hfxrow{padding-left:18px}.aggroups .agleague .aghead{padding-left:8px}
+.agleague+.agleague{border-top:1px dashed var(--line)}
+/* anything scrolled into view stops clear of the top bar and the bottom menu */
+html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
+@media (max-width:859px){html{scroll-padding-bottom:calc(var(--navh) + env(safe-area-inset-bottom) + 16px)}}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7588,19 +7595,19 @@ const KEY = sport => `proplab.rec.v1.${sport}`;
 const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Medium+ confidence, high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
-const DEFV = 2, RECO = () => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 2, hideBlowout: true });
+const DEFV = 3, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 2, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy' }); // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
 const S = {}; // per sport: { fx: Set, f: filters, sort, adv, kept: Map(id -> { L, side }), shown, cands: Map(fid -> candidates) }
 function stateOf(sport) {
   if (S[sport]) return S[sport];
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY(sport)) || '{}') || {}; } catch { saved = {}; }
   // first visit: fair odds of at least 1.30 (no near-certain 1+ lines nobody prices) and, for NBA, the markets bookmakers usually offer
-  const first = saved.f && saved.defv === DEFV ? {} : RECO(), once = saved.f && saved.defv !== DEFV;
-  S[sport] = { odds: new Map(), lg: new Set(saved.lg || []), fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: saved.sort || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  const first = saved.f && saved.defv === DEFV ? {} : RECO(sport), once = saved.f && saved.defv !== DEFV;
+  S[sport] = { odds: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: (saved.defv === DEFV && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
   S[sport].f.grps = []; /* owner, 3 Nov: every market is on by default; the Markets list below the filters replaces the market-type buttons */ if (!Array.isArray(S[sport].f.mkOff)) S[sport].f.mkOff = [];
   if (once) save(sport, S[sport]); /* the recommended settings, once */
   return S[sport];
 }
-const save = (sport, s) => { try { localStorage.setItem(KEY(sport), JSON.stringify({ fx: [...s.fx], lg: [...(s.lg || [])], f: s.f, sort: s.sort, defv: DEFV })); } catch { /* this visit only */ } };
+const save = (sport, s) => { try { localStorage.setItem(KEY(sport), JSON.stringify({ fx: [...s.fx], lgOff: [...(s.lg || [])], f: s.f, sort: s.sort, defv: DEFV })); } catch { /* this visit only */ } };
 const seg = (name, items, cur) => `<div class="seg wrap" data-rseg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
 const GRPS = { nba: ['Core', 'Combined', 'Double & triple-double', 'First quarter'], nfl: null, football: ['Match', 'Team'] };
 const ukDay = g => koUK(g).ymd;
@@ -7644,18 +7651,20 @@ async function viewRecommended(root, sport) {
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
       <button type="button" class="chip" data-fxall="today">Today's games</button><button type="button" class="chip" data-fxall="all">Select all upcoming</button><button type="button" class="chip" data-fxall="none">Clear all</button></div>
-      ${sport === 'football' ? `<div class="row" style="border:0;padding:0 0 6px;gap:6px;flex-wrap:wrap"><span class="xs muted">1a. Competitions (tap to show; none = all):</span>${[...new Set(all.map(f => f.league))].map(l => `<button type="button" class="chip${s.lg.has(l) ? ' on' : ''}" aria-pressed="${s.lg.has(l)}" data-fxlg="${esc(l)}">${esc(leagueName(l))}</button>`).join('')}</div><p class="xs muted" style="margin:0 0 4px">Then tick the games you want from those competitions.</p>` : ''}
-      <div class="recfxlist">${days.map(([d, fs]) => `<div data-fxday><p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
+      <div class="recfxlist">${sport === 'football' ? (() => { const fx1 = f => { const id = fxIdOf(sport, f); return `<label class="hcheck hfxrow" data-lg="${esc(f.league || '')}"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f))}</b> ${inPlay(f, sport) ? '<span class="inplay">IN PLAY</span> ' : ''}${esc(fxLabel(sport, f, A))}</span></label>`; };
+        /* owner, 3 Nov (10:47): one section per competition, with a tick box; untick it and its games are hidden and left out */
+        return [...new Set(all.map(f => f.league))].map(l => { const fs = all.filter(f => f.league === l); return `<div class="agleague" data-fxsec="${esc(l)}"><label class="hcheck aghead"><input type="checkbox" data-fxlg="${esc(l)}" ${s.lg.has(l) ? '' : 'checked'}><span><b>⚽ ${esc(leagueName(l))}</b> <span class="xs muted" data-fxlgn></span></span></label>${fs.map(fx1).join('')}</div>`; }).join('') || '<p class="small muted">No upcoming games published.</p>'; })() : days.map(([d, fs]) => `<div data-fxday><p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
         return `<label class="hcheck hfxrow" data-lg="${esc(f.league || '')}"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f).split(' · ')[1] || '')}</b> ${inPlay(f, sport) ? '<span class="inplay">IN PLAY</span> ' : ''}${esc(fxLabel(sport, f, A))}${sport === 'football' ? ` <span class="hfxlg">${esc(leagueName(f.league))}</span>` : ''}${bo ? ` <span class="bo bo-${bo.level.toLowerCase()}" title="${esc(bo.text)}">blowout risk: ${bo.level}</span>` : ''}</span></label>`; }).join('')}</div>`).join('') || '<p class="small muted">No upcoming games published.</p>'}</div></details>
     <div class="card stack recflt" id="recflt"></div>
     <details class="card recadv recmk" id="recmk" ${s.mkOpen ? 'open' : ''}><summary><b>3. Markets</b> <span class="muted small" data-mkcount>(every market)</span></summary><div data-mkbody><p class="xs muted">The markets appear once your games are worked out.</p></div></details>
     <div id="recout" style="margin-top:12px"></div></div>`;
   const pg = root.querySelector('#recpg'), out = pg.querySelector('#recout');
-  const fxCount = () => { const el = pg.querySelector('[data-fxcount]'); if (el) el.textContent = `${s.fx.size} selected${s.lg.size ? ` · ${[...s.lg].map(leagueName).join(', ')}` : ''}`; };
+  const fxCount = () => { const el = pg.querySelector('[data-fxcount]'); if (el) el.textContent = `${s.fx.size} selected`; applyLg(); };
   // competitions first (football): only the chosen competitions' games are listed and used; none chosen = every competition
-  const shownF = f => sport !== 'football' || !s.lg.size || s.lg.has(f.league);
-  const applyLg = () => { pg.querySelectorAll('.hfxrow[data-lg]').forEach(r => { r.hidden = sport === 'football' && s.lg.size > 0 && !s.lg.has(r.dataset.lg); }); pg.querySelectorAll('[data-fxday]').forEach(d => { d.hidden = ![...d.querySelectorAll('.hfxrow')].some(r => !r.hidden); }); pg.querySelectorAll('[data-fxlg]').forEach(b => { const on = s.lg.has(b.dataset.fxlg); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); };
-  if (s.lg.size) { const known = new Set(all.map(f => f.league)); for (const l of [...s.lg]) if (!known.has(l)) s.lg.delete(l); }
+  const shownF = f => sport !== 'football' || !s.lg.has(f.league);
+  const applyLg = () => { if (sport !== 'football') return; pg.querySelectorAll('[data-fxsec]').forEach(sec => { const l = sec.dataset.fxsec, off = s.lg.has(l), rows = [...sec.querySelectorAll('.hfxrow')], n = rows.filter(r => r.querySelector('input').checked).length;
+    rows.forEach(r => { r.hidden = off; }); const cb = sec.querySelector('[data-fxlg]'); cb.checked = !off && n > 0; cb.indeterminate = !off && n > 0 && n < rows.length; const t = sec.querySelector('[data-fxlgn]'); if (t) t.textContent = off ? `${rows.length} game${rows.length === 1 ? '' : 's'} hidden` : `${n} of ${rows.length}`; }); };
+
   for (const f of all) if (!shownF(f)) s.fx.delete(fxIdOf(sport, f));
   if (!s.fx.size) { const vis = all.filter(shownF), d = vis.length ? ukDay(vis[0]) : null; for (const f of vis) if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); }
   applyLg(); fxCount();
@@ -7801,6 +7810,8 @@ async function viewRecommended(root, sport) {
   // ---------------- events ----------------
   pg.addEventListener('change', e => {
     const t = e.target;
+    if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
+      pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-recfx]')) { t.checked ? s.fx.add(t.value) : s.fx.delete(t.value); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-rsort]')) { s.sort = t.value; save(sport, s); render(); return; }
     if (t.matches('[data-mk]')) { const off = new Set(s.f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); s.f.mkOff = [...off]; s.kept.clear(); s.shown = 30; save(sport, s); render(); return; }
@@ -7823,11 +7834,8 @@ async function viewRecommended(root, sport) {
     const t = e.target;
     const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall, vis = all.filter(shownF); s.fx.clear(); if (v === 'all') vis.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = vis.length ? ukDay(vis[0]) : null; vis.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); fxCount(); save(sport, s); run(); return; }
-    const lgb = t.closest('[data-fxlg]'); if (lgb) { const l = lgb.dataset.fxlg, on = !s.lg.has(l); on ? s.lg.add(l) : s.lg.delete(l);
-      if (on) for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); /* a competition you add: its games ticked, untick any you do not want */
-      for (const f of all) if (!shownF(f)) s.fx.delete(fxIdOf(sport, f)); applyLg(); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.kept.clear(); fxCount(); save(sport, s); run(); return; }
     const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
-    if (t.closest('[data-rreset]')) { s.f = { ...DEF, ...RECO(), mkOff: [], q: '' }; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
+    if (t.closest('[data-rreset]')) { s.f = { ...DEF, ...RECO(sport), mkOff: [], q: '' }; s.sort = 'best'; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
     if (t.closest('[data-mkall]')) { s.f.mkOff = []; s.kept.clear(); save(sport, s); render(); return; }
     if (t.closest('[data-mknone]')) { s.f.mkOff = [...pg.querySelectorAll('[data-mk]')].map(i => i.value); s.kept.clear(); save(sport, s); render(); return; }
     const mg = t.closest('[data-mkgrp]'); if (mg) { const ks = [...mg.closest('.mkgrp').querySelectorAll('[data-mk]')].map(i => i.value), off = new Set(s.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); s.f.mkOff = [...off]; s.kept.clear(); save(sport, s); render(); return; }
@@ -7910,6 +7918,8 @@ function fixtures(sp, days, now = new Date()) {
 const updated = sp => { const at = sp === 'nba' ? nba.meta && nba.meta.updated : sp === 'nfl' ? nfl.meta && nfl.meta.updated : store.manifest && store.manifest.generated;
   try { return at ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at)) + ' UK' : 'unknown'; } catch { return at || 'unknown'; } };
 
+const SP_ICON = { nba: '🏀', nfl: '🏈', football: '⚽' };
+const grpOfF = (sp, f) => (sp === 'football' ? `football|${f.league}` : sp);
 const gk = (sp, f) => (sp === 'football' ? `football|${fixtureId(f)}` : `${sp}|${f.id}`);
 const intIn = (v, lo, hi) => { const n = Math.round(Number(String(v).trim())); return String(v).trim() !== '' && Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
 /** min / max legs problem: '' or the message (min must not be above max, both 1-LEGS_CAP). */
@@ -7966,22 +7976,27 @@ async function viewAcca(root, sport) {
   // ---------- games ----------
   let gList = []; // [{ sp, f, key }] for the chosen sports and days
   const selected = () => (S.f.gsel == null ? null : new Set(S.f.gsel));
-  const isOn = key => S.f.gsel == null || S.f.gsel.includes(key);
+  const grpOf = x => grpOfF(x.sp, x.f), keyGrp = new Map();
+  const isOn = key => !(S.f.goff || []).includes(keyGrp.get(key)) && (S.f.gsel == null || S.f.gsel.includes(key));
   async function drawGames() {
     const body = pg.querySelector('[data-agbody]'); if (!body) return; const my = (drawGames.n = (drawGames.n || 0) + 1);
     const L = []; for (const sp of S.f.sports) { if (!(await ready(sp))) continue; for (const f of fixtures(sp, S.f.days)) L.push({ sp, f, key: gk(sp, f) }); }
-    if (my !== drawGames.n) return; gList = L;
+    if (my !== drawGames.n) return; gList = L; for (const x of L) keyGrp.set(x.key, grpOf(x));
     if (Array.isArray(S.f.gsel) && S.f.gsel.length && !L.some(x => S.f.gsel.includes(x.key))) { S.f.gsel = null; save(); } // the games you chose have all been played: back to every game
-    const n = L.filter(x => isOn(x.key)).length, cnt = pg.querySelector('[data-agcount]'); if (cnt) cnt.textContent = S.f.gsel == null ? `(all ${L.length} games)` : `(${n} of ${L.length} selected)`;
-    const lg = [...new Set(L.filter(x => x.sp === 'football').map(x => x.f.league))];
-    S.f.lgs = (S.f.lgs || []).filter(l => lg.includes(l)); // competitions first (football): only their games are listed and used
-    const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league);
-    if (S.f.lgs.length) { const keep = L.filter(x => vis(x) && isOn(x.key)).map(x => x.key); if (S.f.gsel == null || S.f.gsel.some(k => !keep.includes(k) && L.some(x => x.key === k))) { S.f.gsel = keep; save(); } }
-    const shown = L.filter(vis);
+    // owner, 3 Nov (10:47): every sport together under its own title (🏀 NBA, 🏈 NFL, ⚽ Football by competition), each with a tick box:
+    // untick a sport or competition and its games are hidden and left out; tick it again and they are back (all ticked)
+    const on = L.filter(x => isOn(x.key)), cnt = pg.querySelector('[data-agcount]'); if (cnt) cnt.textContent = on.length === L.length ? `(all ${L.length} games)` : `(${on.length} of ${L.length} selected)`;
+    const G = []; for (const sp of ['nba', 'nfl', 'football']) { const xs = L.filter(x => x.sp === sp); if (!xs.length) continue;
+      if (sp !== 'football') { G.push({ key: sp, title: `${SP_ICON[sp]} ${sp.toUpperCase()}`, xs, top: true }); continue; }
+      G.push({ key: 'football', title: '⚽ Football', xs, top: true, head: true }); for (const l of [...new Set(xs.map(x => x.f.league))]) G.push({ key: `football|${l}`, title: leagueName(l), xs: xs.filter(x => x.f.league === l), sub: true }); }
+    const gOff = k => (S.f.goff || []).includes(k);
+    const row = x => `<label class="hcheck hfxrow"><input type="checkbox" data-agame value="${esc(x.key)}" ${isOn(x.key) ? 'checked' : ''}><span><b>${esc(fmtKick(x.f))}</b> ${esc(x.sp === 'football' ? `${x.f.home} v ${x.f.away}` : `${x.f.away} at ${x.f.home}`)}</span></label>`;
+    const head = g => { const n = g.xs.filter(x => isOn(x.key)).length, off = g.head ? g.xs.every(x => gOff(grpOf(x))) : gOff(g.key);
+      return `<label class="hcheck aghead${g.sub ? ' agsub' : ''}"><input type="checkbox" data-aggrp="${esc(g.key)}" ${!off && n ? 'checked' : ''} data-part="${!off && n && n < g.xs.length ? 1 : 0}"><span><b>${esc(g.title)}</b> <span class="xs muted">${off ? `${g.xs.length} game${g.xs.length === 1 ? '' : 's'} hidden` : `${n} of ${g.xs.length}`}</span></span></label>`; };
     body.innerHTML = !L.length ? '<p class="xs muted">No upcoming games for these sports and days.</p>' : `<div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap"><button type="button" class="chip" data-agall>Select All</button><button type="button" class="chip" data-agnone>Clear All</button></div>
-      ${lg.length ? `<div class="row" style="border:0;padding:0 0 6px;gap:6px;flex-wrap:wrap"><span class="xs muted">Football competitions (tap to show; none = all), then tick the games:</span>${lg.map(l => { const on = S.f.lgs.includes(l); return `<button type="button" class="chip${on ? ' on' : ''}" aria-pressed="${on}" data-aglg="${esc(l)}">${esc(leagueName(l))}</button>`; }).join('')}</div>` : ''}
-      ${!n ? '<p class="xs warn" data-agnonemsg style="margin:4px 0">No games selected: no acca can be built. Tick at least one game, or tap Select All.</p>' : ''}
-      <div class="recfxlist">${shown.map(x => `<label class="hcheck hfxrow"><input type="checkbox" data-agame value="${esc(x.key)}" ${isOn(x.key) ? 'checked' : ''}><span><b>${esc(fmtKick(x.f))}</b> ${esc(x.sp === 'football' ? `${x.f.home} v ${x.f.away}` : `${x.f.away} at ${x.f.home}`)} <span class="hfxlg">${esc(x.sp === 'football' ? leagueName(x.f.league) : x.sp.toUpperCase())}</span></span></label>`).join('')}</div>`;
+      ${!on.length ? '<p class="xs warn" data-agnonemsg style="margin:4px 0">No games selected: no acca can be built. Tick at least one game, or tap Select All.</p>' : ''}
+      <div class="recfxlist aggroups">${G.map(g => g.head ? `<div class="agsport">${head(g)}</div>` : `<div class="${g.top ? 'agsport' : 'agleague'}" data-agg="${esc(g.key)}">${head(g)}${gOff(g.key) ? '' : g.xs.map(row).join('')}</div>`).join('')}</div>`;
+    body.querySelectorAll('[data-part="1"]').forEach(i => { i.indeterminate = true; });
   }
   const setGames = keys => { const all = gList.map(x => x.key); S.f.gsel = keys.length === all.length && all.every(k => keys.includes(k)) ? null : keys; save(); drawGames(); };
   // ---------- pool ----------
@@ -7991,7 +8006,7 @@ async function viewAcca(root, sport) {
     for (const sp of S.f.sports) {
       if (!quiet) out.innerHTML = `<div class="card"><b>Loading ${SPORTS.find(x => x[0] === sp)[1]}…</b></div>`;
       if (!(await ready(sp))) { out.insertAdjacentHTML('beforeend', `<div class="banner bad">${sp} data could not be loaded.</div>`); continue; }
-      const A = sp === 'football' ? null : usAdapter(sp), fx = fixtures(sp, S.f.days).filter(f => !sel || sel.has(gk(sp, f))); let i = 0;
+      const A = sp === 'football' ? null : usAdapter(sp), fx = fixtures(sp, S.f.days).filter(f => !(S.f.goff || []).includes(grpOfF(sp, f)) && (!sel || sel.has(gk(sp, f)))); let i = 0;
       for (const f of fx) { const k = gk(sp, f); if (!S.cands.has(k)) { if (!quiet) out.innerHTML = `<div class="card"><b>Working out ${SPORTS.find(x => x[0] === sp)[1]} plays… ${Math.round((i / Math.max(1, fx.length)) * 100)}%</b></div>`; S.cands.set(k, await buildCandidates(sp, A, [f])); await new Promise(r => setTimeout(r, 0)); }
         all.push(...S.cands.get(k)); i++; } }
     return all;
@@ -8002,7 +8017,7 @@ async function viewAcca(root, sport) {
   const liveLock = (cands, snap) => { const c = cands.find(x => x.id === snap.cid); if (!c) return { snap, problem: 'no longer in the published plays (game finished, player out, data changed, or its game is not selected)' }; const r = evalAt(c, snap.L, snap.side); if (!r) return { snap, problem: 'can no longer be priced' }; const l = mkLeg(c, snap.side, r); return { leg: l, problem: legProblem(l) }; };
   const snapOf = l => ({ cid: l.c.id, side: l.side, L: l.r.L, name: l.c.name, label: ladderName(l.c, l.r), fair: l.fair, p: l.p, sport: l.c.sport });
   const parseId = id => { const a = id.split('|'), L = Number(a.pop()), side = a.pop(); return { cid: a.join('|'), side, L }; };
-  const noGames = () => { const g = selected(); return g && !g.size; };
+  const noGames = () => { const g = selected(); return (g && !g.size) || (gList.length > 0 && !gList.some(x => isOn(x.key))); };
   async function restore() { // back on the page: the same legs as before, re-priced on the data loaded now (locks kept; anything gone is flagged)
     if (busy) return; busy = true;
     try { const cands = await pool(), L = [...S.locks.values()].map(sn => liveLock(cands, sn)); if (L.some(x => x.problem)) { draw(cands, null, L); return; }
@@ -8083,11 +8098,8 @@ async function viewAcca(root, sport) {
     if (t.closest('[data-amkall]')) { S.f.mkOff = []; save(); drawMarkets(); return; }
     if (t.closest('[data-amknone]')) { S.f.mkOff = [...new Set([...(S.f.mkOff || []), ...[...pg.querySelectorAll('[data-amk]')].map(i => i.value)])]; save(); drawMarkets(); return; }
     const amg = t.closest('[data-amkgrp]'); if (amg) { const ks = [...amg.closest('.mkgrp').querySelectorAll('[data-amk]')].map(i => i.value), off = new Set(S.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); S.f.mkOff = [...off]; save(); drawMarkets(); return; }
-    if (t.closest('[data-agall]')) { const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league); if (S.f.lgs.length) { S.f.gsel = gList.filter(vis).map(x => x.key); save(); drawGames(); } else setGames(gList.map(x => x.key)); return; }
+    if (t.closest('[data-agall]')) { S.f.goff = []; S.f.gsel = null; save(); drawGames(); return; }
     if (t.closest('[data-agnone]')) { S.f.gsel = []; save(); drawGames(); return; }
-    const lgb = t.closest('[data-aglg]'); if (lgb) { const l = lgb.dataset.aglg, add = !S.f.lgs.includes(l); S.f.lgs = add ? [...S.f.lgs, l] : S.f.lgs.filter(x => x !== l);
-      const vis = x => x.sp !== 'football' || !S.f.lgs.length || S.f.lgs.includes(x.f.league), cur = gList.filter(x => isOn(x.key)).map(x => x.key), ks = gList.filter(x => x.sp === 'football' && x.f.league === l).map(x => x.key);
-      const next = [...new Set([...cur, ...(add ? ks : [])])].filter(k => vis(gList.find(x => x.key === k))); S.f.gsel = S.f.lgs.length ? next : (next.length === gList.length ? null : next); save(); drawGames(); return; }
     if (t.closest('[data-abuild]')) { build(false); return; }
     if (t.closest('[data-areplace]')) { build(true); return; }
     if (t.closest('[data-aclearx]')) { S.excl.clear(); S.skip.clear(); save(); drawF(); return; }
@@ -8103,6 +8115,10 @@ async function viewAcca(root, sport) {
   pg.addEventListener('change', e => { const t = e.target;
     const ck = t.closest('[data-ack]'); if (ck) { S.f[ck.dataset.ack] = ck.checked; save(); return; }
     if (t.matches('[data-amk]')) { const off = new Set(S.f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); S.f.mkOff = [...off]; save(); const c = pg.querySelector('[data-amkcount]'); if (c) { const all = pg.querySelectorAll('[data-amk]').length, on = pg.querySelectorAll('[data-amk]:checked').length; c.textContent = on === all ? `(all ${all} on)` : `(${on} of ${all} on)`; } return; }
+    if (t.matches('[data-aggrp]')) { const k = t.dataset.aggrp, xs = gList.filter(x => (k === 'football' ? x.sp === 'football' : grpOf(x) === k)), grs = k === 'football' ? [...new Set(xs.map(grpOf))] : [k];
+      const off = new Set(S.f.goff || []), cur = new Set(gList.filter(x => isOn(x.key)).map(x => x.key));
+      if (t.checked) { grs.forEach(g => off.delete(g)); xs.forEach(x => cur.add(x.key)); } else { grs.forEach(g => off.add(g)); xs.forEach(x => cur.delete(x.key)); }
+      S.f.goff = [...off]; const keys = [...cur]; S.f.gsel = keys.length === gList.length && !off.size ? null : keys; save(); drawGames(); return; }
     if (t.matches('[data-agame]')) { const cur = gList.filter(x => isOn(x.key)).map(x => x.key); setGames(t.checked ? [...new Set([...cur, t.value])] : cur.filter(k => k !== t.value)); return; }
     const art = t.closest('[data-aleg]'); if (!art || !S.built) return; const id = art.dataset.aleg, l = S.built.legs.find(x => x.id === id); if (!l) return;
     if (t.matches('[data-alock]')) { if (t.checked) { S.locks.set(id, snapOf(l)); S.excl.delete(id); S.excl.delete(`${l.c.id}|${l.side}`); art.querySelector('[data-aexcl]').checked = false; } else S.locks.delete(id); save(); art.classList.toggle('locked', t.checked); return; }
