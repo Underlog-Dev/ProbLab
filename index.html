@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="9f6b0637f3c8">
+<meta name="proplab-build" content="76b29c874ea0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -626,6 +626,28 @@ button.mumod .ii{font-size:10px;border:1px solid currentColor;border-radius:50%;
 #mypg .tile.pos b{color:var(--hit)}#mypg .tile.neg b{color:var(--miss)}
 .hteamsel{display:flex;flex-direction:column;gap:4px;margin-top:6px}.hteamrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.hteamrow b{min-width:90px}
 .fpnav{flex-wrap:wrap;min-width:0}.fpnav .seg{flex-wrap:wrap;min-width:0;max-width:100%}.fpnav .seg a{white-space:nowrap}
+/* Recommended Plays card v2 (2 Nov late): odds box, mini bars, tappable tiles */
+.rcard button.rh,.rcard button.rt,.rcard button.rprob{font:inherit;color:inherit;cursor:pointer}
+.rcard button.rprob{display:block}
+.rbars{position:relative;display:flex;align-items:flex-end;gap:3px;height:56px;margin-top:8px;padding:0 2px;border-bottom:1px solid var(--line)}
+.rbars span{flex:1 1 0;min-width:0;border-radius:3px 3px 0 0;position:relative}.rbars span.h{background:var(--hit)}.rbars span.m{background:var(--miss)}
+.rbars span em{position:absolute;top:-14px;left:0;right:0;text-align:center;font-style:normal;font-size:9px;color:var(--muted)}
+.rbars .rbline{position:absolute;left:0;right:0;border-top:1px dashed var(--text);opacity:.6;pointer-events:none}
+.rev{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.rodds{display:flex;align-items:center;gap:6px}.rodds .in{width:110px}
+.revout{flex:1 1 180px;min-width:0;font-size:13px;overflow-wrap:anywhere}
+.rcard .bo{cursor:pointer;font:inherit;font-size:11px}
+.navback{font-size:30px;line-height:1;color:var(--text);padding:0 10px 2px 0;margin-right:2px;background:none;border:0}
+.navback[hidden]{display:none}
+#recpg .recrow>.field:has(.seg){flex:1 1 100%}#recpg .seg.wrap{display:flex;flex-wrap:wrap}#recpg .seg.wrap button{flex:1 1 auto}
+.aleg.locked{border-color:var(--hit);box-shadow:0 0 0 1px var(--hit) inset}
+.accasum .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.top-in:has(.navback:not([hidden])) .brand>span{display:none}.top-in .navback{flex:0 0 auto}
+/* tab labels always readable (owner, 2 Nov late): solid bar (no page text showing through), labels wrap to two centred lines, never cut */
+@media (max-width:859px){nav.tabbar{background:#11161d;-webkit-backdrop-filter:none;backdrop-filter:none}
+  nav.tabbar a .s{white-space:normal;text-align:center;line-height:1.1;max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none}
+  nav.tabbar a{padding:4px 1px}}
+@media (max-width:360px){nav.tabbar a .s{font-size:10.5px}}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1608,7 +1630,7 @@ async function viewNbaPlayer(root, id) {
     <p class="muted">${esc(p.pos)} · ${p.current ? esc(teamName(p.team)) : 'not on a current roster'}${p.notable ? ` · ★ ${esc(p.prom_why)}` : ''}</p>
     <div class="card"><p class="small" style="margin:0">${av(p.base) || 'No regular-season games last season.'}</p>${p.now ? `<p class="small" style="margin:4px 0 0">${av(p.now)}</p>` : ''}
       <p class="xs muted" style="margin:6px 0 0">Teams (from box scores): ${(p.stints || []).map(s => `${esc(s.team)} ${fmtShort(s.from)} ${s.from.slice(0, 4)} – ${fmtShort(s.to)} ${s.to.slice(0, 4)}`).join(' · ')}</p>
-      <a class="btn" style="margin-top:8px" href="#/nba/hiwi?player=${encodeURIComponent(p.id)}">Research in Hiwi's Section ›</a></div>
+      <a class="btn" style="margin-top:8px" href="#/nba/hiwi?player=${encodeURIComponent(p.id)}">Research in Find Your Own ›</a></div>
     <h2 style="margin:14px 0 6px">Recent games</h2><div class="scroll"><table class="fxstats"><tr><th>Date</th><th>Opp</th><th>Min</th><th>Pts</th><th>Reb</th><th>Ast</th><th>3PM</th><th>Team</th></tr>${rows.slice(0, 25).map(r => `<tr><td>${esc(fmtShort(r.date))} ${r.date.slice(2, 4)}</td><td class="${r.type === 'P' ? 'potxt' : r.type === 'PI' ? 'pitxt' : ''}">${r.home ? 'v' : '@'}${esc(r.opp)}</td>${r.dnp ? `<td colspan="5" class="muted">DNP: ${esc(r.dnp)}</td>` : `<td>${r.min ?? '–'}</td><td>${r.pts ?? '–'}</td><td>${r.reb ?? '–'}</td><td>${r.ast ?? '–'}</td><td>${r.tpm ?? '–'}</td>`}<td>${esc(r.team)}</td></tr>`).join('')}</table></div>
     <p class="xs muted">Gold opponent = playoff game; teal = Play-In. ${esc(TYPE_NAME.R)} unless marked.</p>${nbaCredit()}`;
 }
@@ -1775,7 +1797,7 @@ if (typeof document !== 'undefined') {
 return { minFair, minFairHtml, muFilter, muFilterHtml, filtersOn, applyMinFair, scheduleNote };
 })();
 __m['rank'] = (() => {
-// Ranking, evidence labels and plain-English card sentences (redesign, 21 Oct 2026). One set of rules for Hiwi's Section, Finder and Plays.
+// Ranking, evidence labels and plain-English card sentences (redesign, 21 Oct 2026). One set of rules for Find Your Own, Finder and Plays.
 //
 // RANKING (default: Highest Percentage First)
 //  * A card "qualifies" for the main ranking when its sample has at least the Minimum Qualifying Games (default 10, 1-50, remembered on
@@ -1846,7 +1868,7 @@ function rankList(list, order, name, want, other) {
   const k = x => (order === 'ev' ? wilson(x.hr.hits, x.hr.n) : order === 'n' ? x.hr.n : x.hr.hits / x.hr.n);
   return list.slice().sort((a, b) => (a._lim !== b._lim ? (a._lim ? 1 : -1) : (order === 'lo' ? k(a) - k(b) : k(b) - k(a)) || (order === 'n' ? b.hr.hits / b.hr.n - a.hr.hits / a.hr.n : b.hr.n - a.hr.n) || name(a).localeCompare(name(b))));
 }
-const RANK_ORDERS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z']];
+const RANK_ORDERS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z']]; // Largest Sample removed (owner, 2 Nov): sample size is weighed inside Strongest Evidence instead
 
 return { QMIN, QMAX, getMinQual, setMinQual, getExcludeOut, setExcludeOut, isConfirmedOut, wilson, qualMin, sideCounts, evidence, plainSentence, rankList, RANK_ORDERS };
 })();
@@ -1880,6 +1902,8 @@ const NBA_MARKETS = [
   { key: 'q1pts', label: 'First-Quarter Points', grp: 'Halves & quarters', get: v('q1'), range: [0.5, 11.5], desc: 'Points the player scored in the first quarter (from play-by-play).' },
   { key: 'h1reb', label: 'First-Half Rebounds', grp: 'Halves & quarters', get: v('reb1h'), range: [0.5, 8.5], desc: 'Rebounds the player took in the first half (from play-by-play).' },
   { key: 'h1ast', label: 'First-Half Assists', grp: 'Halves & quarters', get: v('ast1h'), range: [0.5, 6.5], desc: 'Assists the player made in the first half (from play-by-play: assisted field goals naming him).' },
+  { key: 'q1reb', label: 'First-Quarter Rebounds', grp: 'Halves & quarters', get: v('reb1q'), range: [0.5, 5.5], desc: 'Rebounds the player took in the first quarter (from play-by-play; only games where his whole-game rebounds in the play-by-play equal his box score, otherwise missing, never 0).' },
+  { key: 'q1ast', label: 'First-Quarter Assists', grp: 'Halves & quarters', get: v('ast1q'), range: [0.5, 4.5], desc: 'Assists the player made in the first quarter (from play-by-play; only games where his whole-game assists in the play-by-play equal his box score, otherwise missing, never 0).' },
 ];
 const marg = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] - r[b]);
 const win = (a, b) => r => (r[a] == null || r[b] == null ? null : r[a] > r[b] ? 1 : r[a] < r[b] ? 0 : 0.5);
@@ -1916,13 +1940,17 @@ const NBA_TEAM_MARKETS = [
   ...[1, 2, 3, 4].map(q => ({ key: 'hcpq' + q, label: `Handicap (Q${q})`, grp: 'Handicaps', scope: 'team', hcp: true, get: marg('q' + q, 'q' + q + 'A'), range: [-5.5, 5.5], desc: `As the full-game handicap, using quarter ${q} points only.` })),
 ];
 for (const m of [...NBA_MARKETS, ...NBA_TEAM_MARKETS]) { m.group = m.grp; if (!m.scope) m.scope = 'player'; }
-// 2 Nov (owner): turnovers and personal fouls are not betting markets he researches: kept as statistics (player pages, bar details) but
-// left out of every market picker, Plays, Recommended Plays and Value. NBA_BET_MARKETS is the list those use.
-const NO_BET = new Set(['tov', 'pf']);
+// Research-only statistics (owner, 2 Nov 2026, twice): kept in the data, the player pages, the game-by-game breakdowns and Detailed
+// analysis, but never offered as a betting market. This ONE list decides it for every page: market pickers, Plays, Recommended Plays,
+// Hiwi, Finder, player research and Value all build their market lists from NBA_BET_MARKETS / NBA_GROUPS below, so a research-only
+// statistic cannot reappear on one page by accident. (fga is not a market today; it is listed so it can never become one by mistake.)
+const NO_BET = new Set(['tpa', 'fga', 'oreb', 'dreb', 'h1pts', 'h1reb', 'h1ast', 'pf', 'tov', 'ttov']); // ttov: team turnovers, the same statistic for a team
+const isBetMarket = key => !NO_BET.has(key);
 const NBA_BET_MARKETS = NBA_MARKETS.filter(m => !NO_BET.has(m.key));
 const NBA_PLAYER_GROUPS = ['Core', 'Combined', 'Additional', 'Halves & quarters'].map(g => [g, NBA_BET_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
-const NBA_TEAM_GROUPS = ['Points', 'Halves & quarters', 'Team stats', 'Result', 'Handicaps'].map(g => [`Team: ${g}`, NBA_TEAM_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
-const NBA_GROUPS = [...NBA_TEAM_GROUPS, ...NBA_PLAYER_GROUPS.map(([g, ks]) => [`Player: ${g}`, ks])];
+const NBA_TEAM_BET_MARKETS = NBA_TEAM_MARKETS.filter(m => !NO_BET.has(m.key));
+const NBA_TEAM_GROUPS = ['Points', 'Halves & quarters', 'Team stats', 'Result', 'Handicaps'].map(g => [`Team: ${g}`, NBA_TEAM_BET_MARKETS.filter(m => m.grp === g).map(m => m.key)]);
+const NBA_GROUPS = [...NBA_PLAYER_GROUPS.map(([g, ks]) => [`Player: ${g}`, ks]), ...NBA_TEAM_GROUPS]; // player props first, then team and match markets (owner, 2 Nov)
 const R = (a, b) => { const o = []; for (let x = a; x <= b + 1e-9; x += 1) o.push(x); return o; };
 const nbaLines = def => (def.binary ? [0.5] : def.range ? R(def.range[0], def.range[1]) : []);
 const nbaMarket = key => [...NBA_MARKETS, ...NBA_TEAM_MARKETS].find(m => m.key === key);
@@ -1957,7 +1985,7 @@ function nbaGameDetailHtml(r) {
   return `<table class="fxstats nfldet">${row('Minutes', r.min)}${row('Points', r.pts)}${row('Rebounds', r.reb)}${row('Assists', r.ast)}${row('3PM / 3PA', r.tpm == null ? null : `${r.tpm} / ${r.tpa}`)}${row('Steals', r.stl)}${row('Blocks', r.blk)}${row('Turnovers', r.tov)}${row('Fouls', r.pf)}${row('FG', r.fgm == null ? null : `${r.fgm} / ${r.fga}`)}${row('Q1 / Q2 / Q3 / Q4 points', r.q1 == null ? null : `${r.q1} / ${r.q2} / ${r.q3} / ${r.q4}${r.ot ? ` (+${r.ot} OT)` : ''}`)}${row('Started', r.st == null ? null : r.st ? 'Yes' : 'No')}</table>`;
 }
 
-return { NBA_MARKETS, NBA_TEAM_MARKETS, NO_BET, NBA_BET_MARKETS, NBA_PLAYER_GROUPS, NBA_TEAM_GROUPS, NBA_GROUPS, nbaLines, nbaMarket, nbaDef, halfLine, baselineLine, nbaGameDetailHtml };
+return { NBA_MARKETS, NBA_TEAM_MARKETS, NO_BET, isBetMarket, NBA_BET_MARKETS, NBA_PLAYER_GROUPS, NBA_TEAM_BET_MARKETS, NBA_TEAM_GROUPS, NBA_GROUPS, nbaLines, nbaMarket, nbaDef, halfLine, baselineLine, nbaGameDetailHtml };
 })();
 __m['markets'] = (() => {
 // Which statistics can be researched. Player markets read fields of a published player row; team markets read the derived team rows.
@@ -2636,7 +2664,7 @@ const rangeText = (ranges, key) => { const r = ranges[key]; return !r ? '' : r[0
 return { FOOTBALL_RANGES, researchLines, rangeText };
 })();
 __m['hiwi-markets'] = (() => {
-// Market catalogue for Hiwi's Section: groups, scopes, starting lines, line bounds and bar composition.
+// Market catalogue for Find Your Own: groups, scopes, starting lines, line bounds and bar composition.
 // A market is only offered when the selected league's (or NFL's) own data records it; nothing here creates values.
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketName, marketDesc, splitParts, hasSplit } = __m['markets'];
 const { NFL_MARKETS, NFL_TEAM_MARKETS } = __m['nfl-markets'];
@@ -3406,7 +3434,7 @@ function classify(row, mate) {
 return { loadTeammates, classify };
 })();
 __m['uscards'] = (() => {
-// One NBA / NFL player-prop result card, shared by Hiwi's Section, Finder and Plays (owner request 21 Oct: the same card everywhere).
+// One NBA / NFL player-prop result card, shared by Find Your Own, Finder and Plays (owner request 21 Oct: the same card everywhere).
 //  * Recent Form: the player's own games, newest first, whichever team he played for. NBA: a DNP is never a game; the Minimum Minutes
 //    filter (global, or this card's own slider) is applied BEFORE Last 5 / 10 / 20 is taken: Last 10 + 30 minutes = the 10 latest games
 //    in which he played 30+ minutes. If fewer qualify, the card shows how many and why.
@@ -3516,7 +3544,7 @@ return { usRows, returningInfo, newTeamText, nflBaseline, buildUsPlayerCard };
 })();
 __m['usprice'] = (() => {
 // Value pages for the NBA and the NFL (owner request 21 Oct, evening): one search box with suggestions for every current player and every team
-// of the sport, and the same result card as Hiwi's Section for the chosen player or team and market, ready for Compare Price.
+// of the sport, and the same result card as Find Your Own for the chosen player or team and market, ready for Compare Price.
 const { normName } = __m['teams'];
 const { nflSearchTerms } = __m['aliases'];
 const { buildUsPlayerCard, usRows } = __m['uscards'];
@@ -4411,7 +4439,7 @@ if (typeof document !== 'undefined') {
 return { HYPO_UPLIFT, HYPO_RULE, hypoOdds, hypoCalc, hypoModel, fillHypo, hypoSlot, queueHypo, setHypoSource, hypoFor };
 })();
 __m['barinfo'] = (() => {
-// The "tap a bar" game sheet (Milestone 5), shared by Hiwi's Section and any other place a result card is shown on its own
+// The "tap a bar" game sheet (Milestone 5), shared by Find Your Own and any other place a result card is shown on its own
 // (the NBA / NFL Find Plays row card, 26 Oct). Recorded figures only; a dash means the source did not record it (never 0).
 const { esc, fmtLong } = __m['util'];
 const { leagueName } = __m['data'];
@@ -4602,7 +4630,7 @@ function wireTable(out, ctx) {
 return { dirWord, lineText, suggestRows, rankRows, atLine, rowHtml, tableHtml, wireTable };
 })();
 __m['fbscan'] = (() => {
-// Football helpers shared by Plays and Hiwi's Section: which markets a league really records, the research lines, and labels.
+// Football helpers shared by Plays and Find Your Own: which markets a league really records, the research lines, and labels.
 const { store, teamsOfLeague, teamRowsFor, loadAllPlayerRows, teamSlugOf, currentSeason } = __m['data'];
 const { TEAM_MARKETS, PLAYER_MARKETS, marketsWithData, marketScope } = __m['markets'];
 const { TEAM_PLAY_MARKETS, PLAYER_PLAY_MARKETS } = __m['plays'];
@@ -4728,7 +4756,7 @@ const combinedPct = (a, b) => (a.pct == null || b.pct == null ? null : Math.roun
 return { mdef, COMP, compDef, NOUNS, ROLES, isMatchKey, hitsAt, combinedPct };
 })();
 __m['combinedcore'] = (() => {
-// Highest Combined % (owner Phase 1 request, 27 Oct 2026): the shared matchup engine used by Find Plays and Hiwi's Section.
+// Highest Combined % (owner Phase 1 request, 27 Oct 2026): the shared matchup engine used by Find Plays and Find Your Own.
 //
 //  TEAM markets: the selected team's statistic against the opponent's CORRESPONDING statistic (matchup.js COMP): goals scored v goals
 //    conceded, first-half goals v first-half goals conceded, corners won v corners conceded, shots v shots allowed, shots on target v shots
@@ -4945,39 +4973,6 @@ function mountPlays(box, ctx) {
 
 return { setClubRows, MATCH_KEYS, TEAM_KEYS, COMBINED_KEYS, PERS, perTxt, sideW, teamName, SMALL_N, rowsOf, sample, hit, startLine, supportedKeys, evalPlay, buildPlays, CMP, sortPlays, playHtml, paintPlay, NOTE, teamCard, openDetail, priceEvent, priceCard, mountPlays };
 })();
-__m['icons'] = (() => {
-const s = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
-const ICON = {
-  matchups: s('<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.3h16M4 14.6h16M9.5 4v16"/>'),
-  home: s('<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>'),
-  players: s('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.4-.2 4 1.2 4.5 4.3"/>'),
-  fixtures: s('<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>'),
-  plays: s('<path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>'),
-  finder: s('<path d="M5 20V10M12 20V4M19 20v-7"/>'),
-  value: s('<path d="M4 17l5-5 3.5 3.5L20 8"/><path d="M15 8h5v5"/>'),
-  search: s('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>'),
-  chev: s('<path d="m9 6 6 6-6 6"/>', 'class="chev"'),
-};
-// Wordmark mark: three bars with a dashed betting line across them.
-const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#2f6df0"/><rect x="7" y="17" width="4.6" height="8" rx="1.3" fill="#fff"/><rect x="13.7" y="11" width="4.6" height="14" rx="1.3" fill="#fff"/><rect x="20.4" y="14" width="4.6" height="11" rx="1.3" fill="#fff" opacity=".9"/><path d="M5 15.5h22" stroke="#f5b83d" stroke-width="1.8" stroke-dasharray="3 2.4" stroke-linecap="round"/></svg>`;
-// Hiwi's Section mascot: an original, simple white bear drawn for PropLab (round head, rounded ears, dot eyes, a PropLab-blue scarf).
-// Small nav version: just the head, readable at 22px.
-const BEAR_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" class="bear-ic"><circle cx="5.6" cy="6.4" r="3.1" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="18.4" cy="6.4" r="3.1" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="5.6" cy="6.4" r="1.3" fill="#c9d9f7"/><circle cx="18.4" cy="6.4" r="1.3" fill="#c9d9f7"/><ellipse cx="12" cy="13" rx="8.4" ry="7.6" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="9" cy="12.3" r="1.05" fill="#1d2633"/><circle cx="15" cy="12.3" r="1.05" fill="#1d2633"/><ellipse cx="12" cy="14.6" rx="1.35" ry="1" fill="#1d2633"/><path d="M10.6 16.3q1.4 1 2.8 0" fill="none" stroke="#1d2633" stroke-width=".9" stroke-linecap="round"/></svg>`;
-// Larger illustration beside the Hiwi's Section heading.
-const BEAR_ART = `<svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Hiwi's Section bear" class="bear-art">
-  <ellipse cx="60" cy="112" rx="34" ry="5" fill="#000" opacity=".25"/>
-  <ellipse cx="60" cy="88" rx="30" ry="24" fill="#f6f8fc"/>
-  <ellipse cx="38" cy="104" rx="10" ry="7" fill="#eef2f8"/><ellipse cx="82" cy="104" rx="10" ry="7" fill="#eef2f8"/>
-  <path d="M33 70q27 14 54 0l2 9q-29 15-58 0z" fill="#2f6df0"/><path d="M74 76l8 16-9-2-3-11z" fill="#2459c9"/>
-  <circle cx="33" cy="26" r="13" fill="#f6f8fc"/><circle cx="87" cy="26" r="13" fill="#f6f8fc"/><circle cx="33" cy="26" r="6" fill="#c9d9f7"/><circle cx="87" cy="26" r="6" fill="#c9d9f7"/>
-  <ellipse cx="60" cy="47" rx="33" ry="29" fill="#f6f8fc"/>
-  <circle cx="48" cy="45" r="3.6" fill="#1d2633"/><circle cx="72" cy="45" r="3.6" fill="#1d2633"/><circle cx="49.2" cy="43.8" r="1.1" fill="#fff"/><circle cx="73.2" cy="43.8" r="1.1" fill="#fff"/>
-  <ellipse cx="60" cy="54" rx="9" ry="6.5" fill="#e9eef6"/><ellipse cx="60" cy="51.5" rx="3.6" ry="2.6" fill="#1d2633"/>
-  <path d="M55.5 57q4.5 3.4 9 0" fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round"/>
-  <ellipse cx="40" cy="56" rx="4.6" ry="2.8" fill="#f7b9c8" opacity=".75"/><ellipse cx="80" cy="56" rx="4.6" ry="2.8" fill="#f7b9c8" opacity=".75"/></svg>`;
-
-return { ICON, LOGO, BEAR_ICON, BEAR_ART };
-})();
 __m['shared'] = (() => {
 const { store, freshness, NEWS_STATUS, LEAGUE_NAMES, leaguesPresent } = __m['data'];
 const { esc, daysBetween, todayYmd, fmtLong, fmtShort } = __m['util'];
@@ -5016,7 +5011,7 @@ function setSport(s) { try { localStorage.setItem('proplab.sport', s); } catch {
 return { hooks, route, dataBanner, problemsBanner, pill, newsItem, loading, getLeague, setLeague, leagueSelect, prefs, savePrefs, getSport, setSport };
 })();
 __m['gameweek'] = (() => {
-// "This Gameweek" for Hiwi's Section. Membership never depends on the viewer's time zone: it uses official round / week numbers,
+// "This Gameweek" for Find Your Own. Membership never depends on the viewer's time zone: it uses official round / week numbers,
 // UTC kick-off instants and fixed reference dates (UK dates for the European round calendars; the league's home time zone for the
 // date-based fallback). Only the displayed date and time are converted for the viewer (util.js koLocal).
 //
@@ -5143,7 +5138,7 @@ function mlsProminence(players, season) {
 return { getPopular, setPopular, getPlayerSort, setPlayerSort, nflHasProminence, mlsProminence };
 })();
 __m['leaguepick'] = (() => {
-// Football league multi-selection shared by Hiwi's Section and the Hit Rate Finder: one checkbox per league, "All Leagues", and
+// Football league multi-selection shared by Find Your Own and the Hit Rate Finder: one checkbox per league, "All Leagues", and
 // "Today's Games Only" (today = the UK calendar date, from each fixture's UTC kick-off, so British Summer Time is handled). Football only:
 // NFL is a separate sport and never mixed in. The choice is remembered on this device.
 const { LEAGUE_NAMES, LEAGUE_ORDER, leaguesPresent } = __m['data'];
@@ -5210,7 +5205,7 @@ if (typeof document !== 'undefined' && !globalThis.__lgpickBtns) {
 return { getLeagues, setLeagues, leaguesLabel, todayUKymd, isTodayUK, leaguePickHtml, leaguePickChange };
 })();
 __m['v-hiwi'] = (() => {
-// Hiwi's Section: the main research page for football and NFL. Two selection modes:
+// Find Your Own: the main research page for football and NFL. Two selection modes:
 //  * Individual Teams: tick teams (and players); every selected team x market gets ONE card with that team's own history.
 //  * Upcoming Matches: Current / Next Gameweek toggles (or Today's Games Only), fixture checkboxes; every selected fixture x market gets
 //    TWO cards on the results page: the home team's own history and the away team's own history (20 Oct owner request).
@@ -5228,7 +5223,6 @@ const { nflSeasonGames: nfl_nflSeasonGames, injuryStatus: nfl_injuryStatus, late
 const { NBA_POS: nba_NBA_POS, TYPE_NAME: nba_TYPE_NAME, injuryStatus: nba_injuryStatus, latestSeason: nba_latestSeason, nba: nba_nba, nbaSelectable: nba_nbaSelectable, nbaUpcoming: nba_nbaUpcoming, nextGameOf: nba_nextGameOf, playerRows: nba_playerRows, seasonLabel: nba_seasonLabel, teamGameRows: nba_teamGameRows, teamName: nba_teamName } = __m['nba-data'];
 const { NBA_GROUPS, nbaDef, nbaGameDetailHtml, baselineLine } = __m['nba-markets'];
 const { openGraphModal } = __m['panel'];
-const { BEAR_ART } = __m['icons'];
 const { $, esc, koUK, koLocal, fmtDay, fixtureId, tzNow, fmtLong, fxStatus, usStatus, statusBadge, SCROLLERS } = __m['util'];
 const { normName, teamAliases } = __m['teams'];
 const { setLeague, hooks } = __m['shared'];
@@ -5259,7 +5253,7 @@ const usAdapter = sport => (sport === 'nba' ? NBA_A : NFL_A);
 
 // Form period: Season = this season only; Last 5/10/20 = the latest 5/10/20 completed matches across seasons (five-year records).
 const PERIODS = [['season', 'Season'], [5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20']];
-const SORTS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
+const SORTS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
 const POP_TEXT = {
   nba: 'Rule-based, recomputed every night from the box scores (no fixed number, no paid or social-media data): a current-roster player averaging 15+ points, 9+ rebounds or 6+ assists, this season (5+ games) or last season (20+ games), or the season before (40+ games) if he missed most of last season. Since 27 Oct also regular starters (started at least half of his games) and consistent rotation players (10+ minutes in at least 70% of his games and played in at least 60% of his team\'s games): this season once he has 5 games for his current team, otherwise last season (20+ games, his role wherever he played, named). Since 29 Oct, when those seasons are each too short (early in the season, or after an injury), his latest 40 games across this season and the two before (at least 10) are used instead: the same marks, a regular starter, or a rotation player (10+ minutes in 70% of them, median 16+ minutes, still in the rotation this season); a rookie counts after 3 games on the same marks or a 20+ minute median; and anyone with a median of 22+ minutes in 3+ games this season counts straight away. Every team also has at least its leading scorer. The count follows from the rules (about 9–16 a team).',
   nfl: 'Rule-based, recomputed every night from the game logs (no fixed number, no paid or social-media data): a QB with 50%+ of his team\'s pass attempts; an RB with 30%+ of the carries (or 15%+ of carries and 10%+ of targets); a WR or TE with 13%+ of the targets; or anyone producing 12+ fantasy-style points a game. Met this season (2+ games) or last season (6+ games). Kickers and defenders are never included. The count follows from the rules (about 200).',
@@ -5349,7 +5343,7 @@ async function viewHiwi(root, r, sport) {
   let restoring = !!(hooks.restore && SNAP[sport]); // back from a player page: same selections, same cards, same order, same place
   if (!restoring) { st.gw = { cur: true, next: false }; st.linked = null; } // Current Gameweek every time the page opens (its fixtures are ticked below)
   const ready = usMode ? A.d.status === 'ready' : store.status === 'ready';
-  root.innerHTML = `<div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0">Research a team's own record, or an upcoming match. Each result card has its own line: move it and the hit rate and bars update. Detailed analysis compares both teams and their head-to-head.</p></div></div>
+  root.innerHTML = `<div class="hiwihead"><div><h1 style="margin:0">Find Your Own</h1><p class="muted" style="margin:4px 0 0">Research a team's own record, or an upcoming match. Each result card has its own line: move it and the hit rate and bars update. Detailed analysis compares both teams and their head-to-head.</p></div></div>
     ${isNba ? '<p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p>' : ''}<div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
   if (!ready) return;
   const hf = $('#hf', root), out = $('#hout', root);
@@ -6236,7 +6230,7 @@ const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, loadLogs, teamG
 const { minFairHtml, muFilterHtml } = __m['minfair'];
 const { nightOf, viewingNight, ukTip, nightSpan } = __m['nightdate'];
 const { rankList, RANK_ORDERS, getExcludeOut, setExcludeOut, isConfirmedOut, getMinQual } = __m['rank'];
-const { NBA_MARKETS, NBA_BET_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef, nbaGameDetailHtml } = __m['nba-markets'];
+const { NBA_BET_MARKETS: NBA_MARKETS, NBA_BET_MARKETS, NBA_TEAM_BET_MARKETS: NBA_TEAM_MARKETS, nbaLines, nbaDef, nbaGameDetailHtml } = __m['nba-markets'];
 const { defaultLine } = __m['markets'];
 const { hitRate } = __m['analytics'];
 const { dotsFor } = __m['plays'];
@@ -6263,7 +6257,7 @@ const dirWord = (m, sd) => (m.binary ? (sd === 'under' ? 'No' : 'Yes') : m.hcp ?
 async function viewNbaFinder(root) {
   if (nbaLoading(root)) return;
   await loadNbaInjuries();
-  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Which NBA players (or teams) clear a line most often. For one player or game, use <a href="#/nba/hiwi">Hiwi's Section</a>.</p>
+  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Which NBA players (or teams) clear a line most often. For one player or game, use <a href="#/nba/hiwi">Find Your Own</a>.</p>
     <p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p><div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>${nbaCredit()}`;
   const ctl = $('#ctl', root), out = $('#out', root), now = new Date(), cs = latestSeason(); let shown = [];
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up)
@@ -6364,6 +6358,46 @@ async function viewNbaFinder(root) {
 
 return { viewNbaFinder };
 })();
+__m['nflmatchups'] = (() => {
+// NFL matchup colours for Recommended Plays (owner, 2 Nov 2026: green / yellow matchup filters for NBA AND NFL). The NBA has nightly
+// defence-v-position ranks (nbamatchups.js); the NFL had none, so this works them out from the published game logs, the same way:
+// for one market and one position group, what each defence allowed to that group per game this regular season (every player of the
+// group who faced it, added up per game), shrunk towards the league average for the first weeks (3 pretend games), ranked 1-32.
+// Rank 1 allows the fewest (tough), 32 the most (easy); the top third is green for an Over, the bottom third red (reversed for an
+// Under), as the NBA chips. EXPERIMENTAL: unlike the NBA matchup adjustment it has not been backtested, so it colours and filters only;
+// it never changes a probability.
+const { loadGroup } = __m['nfl-data'];
+
+const memo = new Map();
+/** Table for one season: Map(`${group}|${market}`) -> Map(team -> { rank, n, per, lg, games }). defs: the market definitions in use. */
+async function nflDefTable(A, season, defs) {
+  const key = `${season}|${A.d.games.length}`; if (memo.has(key)) return memo.get(key);
+  const P = (async () => {
+    const out = new Map(), groups = ['qb', 'rb', 'wr', 'te'];
+    for (const g of groups) {
+      let by; try { by = await loadGroup(g); } catch { continue; }
+      for (const def of defs) { if (def.for && !def.for.includes(g)) continue;
+        const tot = new Map(); // `${opp}|${game}` -> sum
+        for (const rows of by.values()) for (const r of rows) { if (r.season !== season || r.type !== 'R') continue; let v; try { v = def.get(r); } catch { v = null; } if (v == null) continue;
+          const k = `${r.opp}|${r.game}`; tot.set(k, (tot.get(k) || 0) + v); }
+        const per = new Map(); for (const [k, v] of tot) { const t = k.split('|')[0]; const e = per.get(t) || { s: 0, n: 0 }; e.s += v; e.n++; per.set(t, e); }
+        if (per.size < 16) continue; let S = 0, N = 0; for (const e of per.values()) { S += e.s; N += e.n; } const lg = S / N;
+        const shr = [...per].map(([t, e]) => [t, (e.s + 3 * lg) / (e.n + 3), e.n]).sort((a, b) => a[1] - b[1]);
+        const m = new Map(); shr.forEach(([t, v, n], i) => m.set(t, { rank: i + 1, n: shr.length, per: v, lg, games: n }));
+        out.set(`${g}|${def.key}`, m); }
+    }
+    return out;
+  })();
+  memo.set(key, P); return P;
+}
+/** 'g' | 'y' | 'r' | '' for a player candidate at a side. */
+function nflTier(info, side) {
+  if (!info) return ''; const third = info.n / 3, easyOver = info.rank > 2 * third, toughOver = info.rank <= third;
+  const under = side === 'under'; return (under ? toughOver : easyOver) ? 'g' : (under ? easyOver : toughOver) ? 'r' : 'y';
+}
+
+return { nflDefTable, nflTier };
+})();
 __m['recplays'] = (() => {
 // Recommended Plays engine (owner request 2 Nov 2026: replaces Find Plays). For the fixtures chosen, it builds every eligible play (NBA and
 // NFL player props, football team and match markets), works out the model probability at a range of sensible lines ONCE, and the page then
@@ -6377,6 +6411,7 @@ const { buildPlays, supportedKeys, priceCard } = __m['combinedcore'];
 const { muInfo, muTierOf, POS_NAME } = __m['matchupui'];
 const { nba } = __m['nba-data'];
 const { confidence } = __m['confidence'];
+const { nflDefTable, nflTier } = __m['nflmatchups'];
 
 const NFL_SKIP = new Set(['k.fg', 'k.xp']);
 const stOf = (def, L, side) => ({ line: def.binary ? 0.5 : L, side: def.binary ? (side === 'under' ? 'no' : 'yes') : side, userLine: true, userSide: true, persp: 'h', per: 'all' });
@@ -6398,6 +6433,34 @@ function candidateLines(def, values) {
 }
 /** Confidence: High / Medium / Low, with the reasons (confidence.js, the same rule as every card). */
 const confidenceOf = (c, r) => confidence({ def: c.def, inj: c.inj, newTeam: c.newTeam, curN: c.curN, isPlayer: c.kind === 'player' }, r.e);
+/**
+ * Best Overall ranking score (owner, 2 Nov 2026, second request). A transparent blend, NOT a probability:
+ *   45%  the model probability at its cautious end (one standard error below it), the only calibrated figure
+ *   20%  his hit rate at this line THIS season          } each shrunk towards the model probability with a few "pretend games"
+ *   15%  his hit rate at this line in his last 10 games  } (6, 6 and 8), so a 2-from-2 or a 3-from-3 against one opponent
+ *   10%  his hit rate at this line against THIS opponent } cannot dominate: with few games the figure stays near the model
+ *   10%  the matchup: the model probability moved +8 points for a green (easy) matchup, -8 for a red (tough) one
+ * then less 3 points for Medium and 6 for Low confidence (sample size, rare-event market, injury, new team, few games this season).
+ * Shown as a 0-100 "rank score" with the parts behind it; the probability and the hit rates are shown separately.
+ */
+const RANK_W = { model: 0.45, season: 0.2, form: 0.15, opp: 0.1, matchup: 0.1, k: { season: 6, form: 6, opp: 8 }, tier: 0.08, conf: 0.03 };
+function overallOf(c, r) {
+  const W = RANK_W, p = r.p, shr = (h, n, k) => (h + k * p) / (n + k);
+  const ok = v => (r.side === 'under' ? v < r.L : v > r.L);
+  const vs = c.opp ? c.rows.filter(x => x.opp === c.opp).slice(0, 10) : [], vh = vs.filter(x => ok(x.value)).length;
+  const parts = { model: Math.max(0, r.score), season: shr(r.hr.season.hit, r.hr.season.n, W.k.season), form: shr(r.hr.l10.hit, r.hr.l10.n, W.k.form), opp: shr(vh, vs.length, W.k.opp),
+    matchup: Math.min(0.99, Math.max(0.01, p + (r.tier === 'g' ? W.tier : r.tier === 'r' ? -W.tier : 0))) };
+  let score = W.model * parts.model + W.season * parts.season + W.form * parts.form + W.opp * parts.opp + W.matchup * parts.matchup;
+  score -= (3 - r.conf.rank) * W.conf;
+  const pct = x => `${Math.round(x * 100)}`, why = [];
+  why.push(`model ${pct(p)}% (cautious ${pct(parts.model)}%)`);
+  if (r.hr.season.n) why.push(`this season ${r.hr.season.hit}/${r.hr.season.n}`);
+  if (r.hr.l10.n) why.push(`last 10 ${r.hr.l10.hit}/${r.hr.l10.n}`);
+  if (vs.length) why.push(`v ${c.opp} ${vh}/${vs.length}`);
+  if (r.tier) why.push(`${{ g: 'easy', y: 'neutral', r: 'tough' }[r.tier]} matchup`);
+  why.push(`${r.conf.level.toLowerCase()} confidence`);
+  return { rank: Math.max(0, score), rankParts: parts, vsOpp: { hit: vh, n: vs.length }, why: why.join(' · ') };
+}
 /** Evaluate one candidate at a line (memoised). */
 function evalAt(c, L, side) {
   const k = `${L}|${side}`; c.memo = c.memo || new Map(); if (c.memo.has(k)) return c.memo.get(k);
@@ -6406,10 +6469,8 @@ function evalAt(c, L, side) {
   if (e && e.ok && Number.isFinite(e.win) && e.win > 0) {
     const se = Math.max(0, (e.q - (e.lo / Math.max(1e-9, 1 - (e.push || 0)))) / 1.96);
     out = { L, side, st, e, p: e.win, push: e.push || 0, fair: (1 - (e.push || 0)) / e.win, score: Math.max(0, e.win - se * (1 - (e.push || 0))), hr: hitRates(c.rows, L, side, c.cur) };
-    out.conf = confidenceOf(c, out); out.tier = c.sport === 'nba' ? muTierOf(c.card, st) : '';
-    // Best overall: the cautious end of the probability (minus one standard error), less 3 points for each confidence step below High,
-    // so a well-supported 72% ranks above a thin 75%
-    out.score -= (3 - out.conf.rank) * 0.03; out.why = `cautious probability ${(Math.max(0, out.score + (3 - out.conf.rank) * 0.03) * 100).toFixed(0)}%${out.conf.rank < 3 ? `, less ${(3 - out.conf.rank) * 3} for ${out.conf.level.toLowerCase()} confidence` : ''}`;
+    out.conf = confidenceOf(c, out); out.tier = c.sport === 'nba' ? muTierOf(c.card, st) : c.sport === 'nfl' ? nflTier(c.nflMu, side) : '';
+    Object.assign(out, overallOf(c, out));
   }
   c.memo.set(k, out); return out;
 }
@@ -6431,7 +6492,7 @@ async function usCandidates(sport, A, games, onProgress) {
       if (played.length < 8) continue;
       const curN = played.filter(x => x.season === cur).length; if (!curN && teamCur.get(t) >= 3) continue; // not played this season while his team has: injured or out of the rotation
       for (const def of defsFor(p)) {
-        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min })).filter(r => r.value !== null && r.value !== undefined);
+        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game })).filter(r => r.value !== null && r.value !== undefined);
         if (rows.length < 8) continue;
         const card = buildUsPlayerCard({ sport, A, p, def, key: def.key, raw, game: g, period: () => 10, periodText: () => 'this season', cid: `rec|${sport}|${p.id}|${def.key}` });
         out.push({ id: `${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: t, opp: t === g.home ? g.away : g.home, home: t === g.home, f: g, fid: String(g.id), def, card, p, inj, cur,
@@ -6440,6 +6501,9 @@ async function usCandidates(sport, A, games, onProgress) {
     }
     done++; if (onProgress) await onProgress(done / teams.length);
   }
+  if (sport === 'nfl' && out.length) { // matchup colours from what each defence allowed to the position (nflmatchups.js, experimental)
+    let T = null; try { T = await nflDefTable(A, cur, [...new Set(out.map(c => c.def))]); } catch { T = null; }
+    if (T) for (const c of out) { const m = T.get(`${c.p.group}|${c.def.key}`); c.nflMu = m ? m.get(c.opp) || null : null; } }
   return out;
 }
 async function footballCandidates(fixtures, onProgress) {
@@ -6447,7 +6511,7 @@ async function footballCandidates(fixtures, onProgress) {
   const out = [], seen = new Set();
   for (const x of xs) {
     const id = `football|${x.fid}|${x.key}|${x.sj.sel}`; if (seen.has(id)) continue; seen.add(id);
-    const { c } = priceCard(x, 'all'); const rows = x.A.map(r => ({ value: r.value, season: r.season, date: r.date }));
+    const { c } = priceCard(x, 'all'); const rows = x.A.map(r => ({ value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null }));
     out.push({ id, sport: 'football', kind: x.kind === 'MATCH' ? 'match' : 'team', name: x.label, team: x.sj.sel, opp: x.sj.other, f: x.f, fid: x.fid, def: x.def, card: c, x, cur: Math.max(0, ...rows.map(r => r.season || 0)),
       rows, lines: candidateLines(x.def, rows.map(r => r.value)), grp: x.kind === 'MATCH' ? 'Match' : 'Team' });
   }
@@ -6494,14 +6558,15 @@ function passes(r, o) {
   if (r.p * 100 < (o.minProb || 0) - 1e-9) return false;
   if (o.minFair && r.fair < o.minFair - 1e-9) return false; if (o.maxFair && r.fair > o.maxFair + 1e-9) return false;
   if (o.minConf && r.conf.rank < o.minConf) return false;
+  if (o.mu === 'g' && r.tier !== 'g') return false; if (o.mu === 'gy' && r.tier !== 'g' && r.tier !== 'y') return false; // matchup colour (unrated never passes a colour filter)
   const h = r.hr[o.hitWin || 'l10']; if (o.minHit && !(h.pct != null && h.pct >= o.minHit)) return false;
   if (o.minSample && r.hr.all.n < o.minSample) return false;
   return true;
 }
 const SORTS = [['best', 'Best overall'], ['prob', 'Highest probability'], ['conf', 'Highest confidence'], ['hist', 'Highest hit rate'], ['short', 'Shortest fair odds'], ['long', 'Longest fair odds']];
 function sortPlays(list, how, hitWin = 'l10') {
-  const by = { best: (a, b) => b.rep.score - a.rep.score, prob: (a, b) => b.rep.p - a.rep.p, conf: (a, b) => b.rep.conf.rank - a.rep.conf.rank || b.rep.score - a.rep.score,
-    hist: (a, b) => (b.rep.hr[hitWin].pct ?? -1) - (a.rep.hr[hitWin].pct ?? -1) || b.rep.score - a.rep.score, short: (a, b) => a.rep.fair - b.rep.fair, long: (a, b) => b.rep.fair - a.rep.fair }[how] || ((a, b) => b.rep.score - a.rep.score);
+  const by = { best: (a, b) => b.rep.rank - a.rep.rank, prob: (a, b) => b.rep.p - a.rep.p, conf: (a, b) => b.rep.conf.rank - a.rep.conf.rank || b.rep.rank - a.rep.rank,
+    hist: (a, b) => (b.rep.hr[hitWin].pct ?? -1) - (a.rep.hr[hitWin].pct ?? -1) || b.rep.rank - a.rep.rank, short: (a, b) => a.rep.fair - b.rep.fair, long: (a, b) => b.rep.fair - a.rep.fair }[how] || ((a, b) => b.rep.rank - a.rep.rank);
   return list.slice().sort((a, b) => by(a, b) || a.c.name.localeCompare(b.c.name));
 }
 
@@ -6533,7 +6598,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, confidenceOf, evalAt, linesOf, buildCandidates, pickPlays, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -6895,6 +6960,126 @@ function wireCarry(root) {
 
 return { carryPrice, hasCarry, setCarried, carryHtml, wireCarry };
 })();
+__m['myplays'] = (() => {
+// My Plays (owner model audit, 2 Nov 2026): the plays you add from Compare Price, kept on this device, with the exposure limits the audit
+// found missing. Each play keeps the price you typed, PropLab's probability and the final stake (risk.js) at the time you added it.
+//  * Limits (warnings, never blocks): total units per day, units on one player, units on one game.
+//  * Correlation: plays on the same player, or the same game, are not independent. If he has a big night, several of his Overs win together
+//    (and lose together), so their combined chance is NOT the product of the single chances, and PropLab never prices them as a parlay.
+//  * Ladders (the same player and market at several Over lines): one table of what you win or lose for each range of outcomes, with the
+//    model's chance of each range taken from the probabilities of the lines themselves (one distribution, so it is consistent).
+//  * Tracker: mark each play Won / Lost / Void; profit is counted in units and in £ at £10 a unit. These are YOUR bets: they are kept
+//    apart from the model's own test results (Model Performance), which never include anything you typed.
+const { esc, koUK } = __m['util'];
+const { fmtOdds } = __m['oddsfmt'];
+const { RISK } = __m['risk'];
+const { fmtU } = __m['kelly'];
+
+const KEY = 'proplab.myplays.v1';
+const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
+const save = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch { return false; } };
+const myPlays = load;
+const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
+const sideTxt = x => (x.binary ? (x.side === 'under' ? 'No' : 'Yes') : `${x.side === 'under' ? 'Under' : 'Over'} ${x.line}`);
+
+/**
+ * Room left for a new play under the ENFORCED limits (owner, 2 Nov 2026: the limits were advisory only). Counted over the open plays of
+ * the same day, leaving out the play itself when it is being updated:
+ *   daily total RISK.daily (10u) · one player RISK.perPlayer (3u, all his markets: they are correlated) · one game RISK.perGame (5u)
+ *   · one player AND market at several lines (a ladder) RISK.cap (2u, the per-selection cap: the lines share one outcome).
+ * Returns { units, why } with units = the most that may be added (never more than asked).
+ */
+function roomFor(list, info, ask) {
+  const id = playId(info), day = info.date || today(), open = list.filter(x => x.day === day && !x.result && x.id !== id);
+  const sum = f => open.reduce((t, x) => t + (f(x) ? x.units : 0), 0), why = [];
+  const caps = [[RISK.daily - sum(() => true), `daily limit ${RISK.daily}u`], [RISK.perPlayer - sum(x => x.sport === info.sport && x.subj === info.subj), `${RISK.perPlayer}u limit for one player (all his markets together)`],
+    [info.gameId ? RISK.perGame - sum(x => x.sport === info.sport && x.gameId === info.gameId) : Infinity, `${RISK.perGame}u limit for one game`],
+    [RISK.cap - sum(x => x.sport === info.sport && x.subj === info.subj && x.key === info.key), `${RISK.cap}u for one player and market at several lines (one outcome)`]];
+  let u = ask; for (const [room, w] of caps) { const r = Math.max(0, Math.floor(room * 100 + 1e-9) / 100); if (r < u - 1e-9) { u = r; why.push(w); } }
+  return { units: u, why };
+}
+const playId = info => `${info.sport}|${info.gameId}|${info.subj}|${info.key}|${info.line}|${info.side}`;
+function addPlay(info, odds, ask) {
+  const a = load(), id = playId(info), room = roomFor(a, info, ask), units = room.units;
+  if (!(units > 0)) return { r: 'blocked', units: 0, why: room.why };
+  const item = { ...info, id, odds, units, asked: ask, limited: room.why, day: info.date || today(), added: new Date().toISOString(), result: '' };
+  const i = a.findIndex(x => x.id === id); if (i >= 0) a[i] = { ...a[i], ...item, result: a[i].result }; else a.push(item);
+  return { r: save(a) ? (i >= 0 ? 'updated' : 'added') : 'failed', units, why: room.why };
+}
+/** Warnings for one day's open plays. */
+function checks(list) {
+  const out = [], sum = f => list.reduce((t, x) => t + (f(x) ? x.units : 0), 0), tot = sum(() => true);
+  if (tot > RISK.daily + 1e-9) out.push(`Total ${fmtU(tot)}u on this day is above the ${RISK.daily}u daily limit.`);
+  const by = (k) => { const m = new Map(); for (const x of list) { const v = k(x); if (!m.has(v)) m.set(v, []); m.get(v).push(x); } return m; };
+  for (const [, g] of by(x => `${x.sport}|${x.subj}`)) { const u = g.reduce((t, x) => t + x.units, 0);
+    if (u > RISK.perPlayer + 1e-9) out.push(`${g[0].name}: ${fmtU(u)}u in total, above the ${RISK.perPlayer}u limit for one player.`);
+    const mk = new Set(g.map(x => x.key)); if (g.length > 1 && mk.size > 1) out.push(`${g[0].name}: ${g.length} plays on different markets (${[...new Set(g.map(x => x.market))].join(', ')}). They move together, so they are not independent bets: one quiet night can lose them all.`); }
+  for (const [, g] of by(x => `${x.sport}|${x.gameId}`)) { if (!g[0].gameId) continue; const u = g.reduce((t, x) => t + x.units, 0);
+    if (u > RISK.perGame + 1e-9) out.push(`${g[0].game || 'One game'}: ${fmtU(u)}u in total, above the ${RISK.perGame}u limit for one game.`);
+    else if (new Set(g.map(x => x.subj)).size > 2) out.push(`${g[0].game || 'One game'}: plays on ${new Set(g.map(x => x.subj)).size} players. Pace, blowouts and overtime affect them all at once.`); }
+  return out;
+}
+/** Ladders: same player, market and Over side at two or more lines. Returns [{ name, market, rows: [{ range, p, pl }] }]. */
+function ladders(list) {
+  const m = new Map(); for (const x of list) if (!x.binary && x.side === 'over') { const k = `${x.sport}|${x.subj}|${x.key}`; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }
+  const out = [];
+  for (const [, g0] of m) { if (g0.length < 2) continue; const g = g0.slice().sort((a, b) => a.line - b.line);
+    const rows = []; for (let i = 0; i <= g.length; i++) {
+      const lo = i ? g[i - 1].line : null, hi = i < g.length ? g[i].line : null;
+      const pAbove = j => (j < g.length ? g[j].p : 0), p = i === 0 ? 1 - g[0].p : Math.max(0, pAbove(i - 1) - pAbove(i));
+      const pl = g.reduce((t, x, j) => t + (j < i ? x.units * (x.odds - 1) : -x.units), 0);
+      const range = lo == null ? `${Math.ceil(hi) - 1} or fewer` : hi == null ? `${Math.floor(lo) + 1} or more` : Math.floor(lo) + 1 === Math.ceil(hi) - 1 ? `exactly ${Math.floor(lo) + 1}` : `${Math.floor(lo) + 1} to ${Math.ceil(hi) - 1}`;
+      rows.push({ range, p, pl }); }
+    const evU = rows.reduce((t, r) => t + r.p * r.pl, 0);
+    out.push({ name: g[0].name, market: g[0].market, rows, evU, n: g.length }); }
+  return out;
+}
+const money = u => `${u >= 0 ? '+' : '−'}£${Math.abs(u * RISK.unitGBP).toFixed(2)}`;
+const uu = u => `${u >= 0 ? '+' : '−'}${fmtU(Math.abs(u))}u`;
+
+function viewMyPlays(root) {
+  const draw = () => {
+    const a = load(), days = [...new Set(a.map(x => x.day))].sort().reverse();
+    const settled = a.filter(x => x.result), pl = settled.reduce((t, x) => t + (x.result === 'won' ? x.units * (x.odds - 1) : x.result === 'lost' ? -x.units : 0), 0), staked = settled.filter(x => x.result !== 'void').reduce((t, x) => t + x.units, 0);
+    root.innerHTML = `<div id="mypg"><h1>My Plays</h1>
+      <p class="muted" style="margin-top:-4px">Plays you added from Compare Price, with the price you typed and the stake after PropLab's risk controls. Kept on this device only. 1 unit = £${RISK.unitGBP}.</p>
+      <div class="tiles evtiles"><div class="tile"><b>${a.length}</b><span>Plays</span></div><div class="tile"><b>${settled.length}</b><span>Settled</span></div><div class="tile ${pl >= 0 ? 'pos' : 'neg'}"><b>${uu(pl)}</b><span>Profit / loss (${money(pl)})</span></div><div class="tile"><b>${staked ? `${((pl / staked) * 100).toFixed(1)}%` : '–'}</b><span>Return on units staked</span></div></div>
+      <details class="card"><summary class="small"><b>Limits</b> <span class="xs muted">(what is enforced)</span></summary><ul class="small" style="margin:6px 0;padding-left:18px"><li><b>Enforced</b> when you add a play (the stake is cut to fit, or the play is not added): ${RISK.daily}u a day; ${RISK.perPlayer}u on one player across all his markets; ${RISK.perGame}u on one game; ${RISK.cap}u on one player and market at several lines (a ladder is one outcome); per selection ${RISK.cap}u, and 0.50u from odds 4.00 / 0.25u from 8.00 (Compare's final stake).</li><li><b>Advisory</b> (a warning, the stake is not changed): several players in one game; one player on several different markets.</li><li><b>Unavailable</b>: doubles and other multiples. PropLab does not price them, because the legs are not independent and it has no reliable way to measure how they move together; it never multiplies single chances for them.</li></ul></details>
+      <p class="xs muted">Your own bets only. They are never mixed into the model's test results on Model Performance, and a short run of results says little either way.</p>
+      ${!a.length ? '<div class="banner info"><b>No plays yet.</b> Open a play, tap <b>Compare</b>, type the price you can see and tap <b>Add to My Plays</b>.</div>' : ''}
+      ${days.map(d => { const L = a.filter(x => x.day === d), open = L.filter(x => !x.result), W = checks(open), LD = ladders(open), tot = L.reduce((t, x) => t + x.units, 0);
+        return `<section class="card stack mpday"><b>${esc(d)}</b> <span class="xs muted">${L.length} play${L.length === 1 ? '' : 's'} · ${fmtU(tot)}u (£${(tot * RISK.unitGBP).toFixed(2)})</span>
+        ${W.length ? `<div class="banner warnb">${W.map(w => `<p style="margin:2px 0">⚠ ${esc(w)}</p>`).join('')}</div>` : ''}
+        ${L.map(x => `<div class="mprow" data-mp="${esc(x.id)}"><div><b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}<div class="xs muted">${esc(x.game || '')} · ${esc(fmtOdds(x.odds))} · model ${(x.p * 100).toFixed(1)}% · ${fmtU(x.units)}u (£${(x.units * RISK.unitGBP).toFixed(2)})${x.limited && x.limited.length ? ` · cut from ${fmtU(x.asked)}u by the ${esc(x.limited.join(', '))}` : ''}</div></div>
+          <div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void']].map(([v, l]) => `<button type="button" data-mpres="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}<button type="button" data-mpdel aria-label="Remove">✕</button></div></div>`).join('')}
+        ${LD.map(l => `<div class="mpladder"><p class="small" style="margin:6px 0 2px"><b>Ladder: ${esc(l.name)} ${esc(l.market)}</b> (${l.n} lines). What you win or lose for each result, with PropLab's chance of each:</p>
+          <table class="risktb"><tr><th>${esc(l.market)}</th><th>Chance</th><th>Profit / loss</th></tr>${l.rows.map(r => `<tr><td>${esc(r.range)}</td><td>${(r.p * 100).toFixed(1)}%</td><td class="${r.pl >= 0 ? 'hit' : 'miss'}">${uu(r.pl)} (${money(r.pl)})</td></tr>`).join('')}</table>
+          <p class="xs muted" style="margin:2px 0 0">Expected result of the whole ladder: ${uu(l.evU)} (${money(l.evU)}). The lines share one outcome, so this is one bet with steps, not ${l.n} separate chances.</p></div>`).join('')}
+        </section>`; }).join('')}
+      ${a.length ? '<button type="button" class="btn" data-mpclear>Remove settled plays</button>' : ''}</div>`;
+  };
+  root.addEventListener('click', e => {
+    const a = load(), row = e.target.closest('[data-mp]');
+    if (e.target.closest('[data-mpclear]')) { save(a.filter(x => !x.result)); draw(); return; }
+    if (!row) return; const i = a.findIndex(x => x.id === row.dataset.mp); if (i < 0) return;
+    const r = e.target.closest('[data-mpres]'); if (r) { a[i].result = a[i].result === r.dataset.mpres ? '' : r.dataset.mpres; save(a); draw(); return; }
+    if (e.target.closest('[data-mpdel]')) { a.splice(i, 1); save(a); draw(); }
+  });
+  draw();
+}
+// "Add to My Plays" on the Compare Price / EV page (risk.js draws the button with the play's details)
+if (typeof document !== 'undefined') document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-slipadd]'); if (!b) return; const box = b.closest('[data-risk]'); if (!box) return;
+  let d; try { d = JSON.parse(box.dataset.rk); } catch { return; }
+  const units = Number(box.dataset.final); const msg = box.querySelector('[data-slipmsg]');
+  if (!d.info || !(units > 0)) { if (msg) msg.textContent = 'No stake at this price, so nothing to add.'; return; }
+  const res = addPlay(d.info, d.dec, units), day = d.info.date || today(), W = checks(load().filter(x => x.day === day && !x.result));
+  if (msg) msg.textContent = res.r === 'failed' ? 'Could not save on this device (private browsing?).' : res.r === 'blocked' ? `Not added: no room left (${res.why.join('; ')}).`
+    : `${res.r === 'added' ? 'Added' : 'Updated'}: ${fmtU(res.units)}u${res.units < units - 1e-9 ? ` (cut from ${fmtU(units)}u: ${res.why.join('; ')})` : ''}.${W.length ? ' ⚠ ' + W[0] : ''}`;
+});
+
+return { myPlays, roomFor, addPlay, checks, ladders, viewMyPlays };
+})();
 __m['blowout'] = (() => {
 // Blowout risk (owner request 2 Nov 2026): how likely a game is to be decided by a big margin, which cuts starters' minutes late on.
 // Each team's strength = its recent average winning margin this season (regular season, newest games count more), shrunk towards 0
@@ -6942,6 +7127,39 @@ function blowoutOf(g, sport = 'nba') {
 
 return { BLOW, strengths, blowoutRisk, blowoutOf };
 })();
+__m['icons'] = (() => {
+const s = (d, extra = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+const ICON = {
+  matchups: s('<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.3h16M4 14.6h16M9.5 4v16"/>'),
+  home: s('<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>'),
+  players: s('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.4-.2 4 1.2 4.5 4.3"/>'),
+  fixtures: s('<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>'),
+  plays: s('<path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>'),
+  finder: s('<path d="M5 20V10M12 20V4M19 20v-7"/>'),
+  value: s('<path d="M4 17l5-5 3.5 3.5L20 8"/><path d="M15 8h5v5"/>'),
+  search: s('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>'),
+  chev: s('<path d="m9 6 6 6-6 6"/>', 'class="chev"'),
+};
+// Wordmark mark: three bars with a dashed betting line across them.
+const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#2f6df0"/><rect x="7" y="17" width="4.6" height="8" rx="1.3" fill="#fff"/><rect x="13.7" y="11" width="4.6" height="14" rx="1.3" fill="#fff"/><rect x="20.4" y="14" width="4.6" height="11" rx="1.3" fill="#fff" opacity=".9"/><path d="M5 15.5h22" stroke="#f5b83d" stroke-width="1.8" stroke-dasharray="3 2.4" stroke-linecap="round"/></svg>`;
+// Hiwi's Section mascot: an original, simple white bear drawn for PropLab (round head, rounded ears, dot eyes, a PropLab-blue scarf).
+// Small nav version: just the head, readable at 22px.
+const BEAR_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true" class="bear-ic"><circle cx="5.6" cy="6.4" r="3.1" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="18.4" cy="6.4" r="3.1" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="5.6" cy="6.4" r="1.3" fill="#c9d9f7"/><circle cx="18.4" cy="6.4" r="1.3" fill="#c9d9f7"/><ellipse cx="12" cy="13" rx="8.4" ry="7.6" fill="#f6f8fc" stroke="currentColor" stroke-width="1.3"/><circle cx="9" cy="12.3" r="1.05" fill="#1d2633"/><circle cx="15" cy="12.3" r="1.05" fill="#1d2633"/><ellipse cx="12" cy="14.6" rx="1.35" ry="1" fill="#1d2633"/><path d="M10.6 16.3q1.4 1 2.8 0" fill="none" stroke="#1d2633" stroke-width=".9" stroke-linecap="round"/></svg>`;
+// Larger illustration beside the Hiwi's Section heading.
+const BEAR_ART = `<svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Hiwi's Section bear" class="bear-art">
+  <ellipse cx="60" cy="112" rx="34" ry="5" fill="#000" opacity=".25"/>
+  <ellipse cx="60" cy="88" rx="30" ry="24" fill="#f6f8fc"/>
+  <ellipse cx="38" cy="104" rx="10" ry="7" fill="#eef2f8"/><ellipse cx="82" cy="104" rx="10" ry="7" fill="#eef2f8"/>
+  <path d="M33 70q27 14 54 0l2 9q-29 15-58 0z" fill="#2f6df0"/><path d="M74 76l8 16-9-2-3-11z" fill="#2459c9"/>
+  <circle cx="33" cy="26" r="13" fill="#f6f8fc"/><circle cx="87" cy="26" r="13" fill="#f6f8fc"/><circle cx="33" cy="26" r="6" fill="#c9d9f7"/><circle cx="87" cy="26" r="6" fill="#c9d9f7"/>
+  <ellipse cx="60" cy="47" rx="33" ry="29" fill="#f6f8fc"/>
+  <circle cx="48" cy="45" r="3.6" fill="#1d2633"/><circle cx="72" cy="45" r="3.6" fill="#1d2633"/><circle cx="49.2" cy="43.8" r="1.1" fill="#fff"/><circle cx="73.2" cy="43.8" r="1.1" fill="#fff"/>
+  <ellipse cx="60" cy="54" rx="9" ry="6.5" fill="#e9eef6"/><ellipse cx="60" cy="51.5" rx="3.6" ry="2.6" fill="#1d2633"/>
+  <path d="M55.5 57q4.5 3.4 9 0" fill="none" stroke="#1d2633" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40" cy="56" rx="4.6" ry="2.8" fill="#f7b9c8" opacity=".75"/><ellipse cx="80" cy="56" rx="4.6" ry="2.8" fill="#f7b9c8" opacity=".75"/></svg>`;
+
+return { ICON, LOGO, BEAR_ICON, BEAR_ART };
+})();
 __m['v-recommended'] = (() => {
 // Recommended Plays (owner request 2 Nov 2026; replaces Find Plays in NBA, NFL and football). 1. choose games; 2. set the minimum
 // model probability and the fair-odds range (more filters folded away); 3. PropLab evaluates every eligible market at a range of lines
@@ -6955,26 +7173,35 @@ const { usAdapter } = __m['v-hiwi'];
 const { nba, loadNbaInjuries } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { store, selectableFixtures, leagueName } = __m['data'];
-const { fmtOdds, parseIn, oddsFmt, inputText } = __m['oddsfmt'];
+const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
+const { stakePlan, RISK } = __m['risk'];
+const { fmtU } = __m['kelly'];
+const { addPlay } = __m['myplays'];
 const { esc, fmtKick, fmtDay, fixtureId, koUK } = __m['util'];
 const { nightOf } = __m['nightdate'];
 const { blowoutOf } = __m['blowout'];
+const { BEAR_ART } = __m['icons'];
 
 const RANK_TXT = ['Every eligible player (or team) and market in your games is priced by the model at a range of lines.',
   'For each one, the line shown is the most demanding line that still meets your filters (the highest Over line, or the lowest Under line), so you do not get near-certain lines with no price. Other lines are under Other lines.',
-  'Best overall ranks by the cautious end of the model probability (one standard error below it), less 3 points for Medium and 6 for Low confidence. Highest probability uses the probability alone.',
+  'Best overall ranks by a rank score (0-100, NOT a probability): 45% the model probability at its cautious end, 20% his hit rate at this line this season, 15% in his last 10 games, 10% against this opponent, 10% the matchup (easy +8 points, tough -8), then less 3 points for Medium and 6 for Low confidence. Each hit rate is pulled towards the model probability with a few pretend games (6, 6 and 8), so two or three games against one opponent cannot dominate. Tap a card\'s Rank score to see its parts.',
+  'Three different figures: the hit rate is what happened; the model probability is the calibrated estimate (the one tested on past seasons); the rank score only orders the plays.',
   'Nothing is ranked by EV: there is no bookmaker price until you type one in Compare. Value (EV) exists only for prices you type, so the place to compare value is My Plays.',
   'Avoid (bottom of the list): recent hot streaks the longer record does not support.',
   'NBA player props use model v2 (tested on the 2025/26 season it never saw). Other markets use the calibrated v1 estimate. These are research estimates, not tips.'].join('\n');
+const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 100)}%`;
+  return [`Why it ranks here: ${r.why}.`, `Model probability (cautious end) ${f(P.model)} x 45%`, `This season at this line ${r.hr.season.hit}/${r.hr.season.n}, counted as ${f(P.season)} x 20%`, `Last 10 ${r.hr.l10.hit}/${r.hr.l10.n}, counted as ${f(P.form)} x 15%`,
+    `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
+    r.conf.rank < 3 ? `${r.conf.level} confidence: less ${(3 - r.conf.rank) * 3}` : 'High confidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { minProb: 60, minHit: 0, hitWin: 'l10', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 0, minSample: 0, venue: 'all', grps: [], injOk: true, hideBlowout: false };
+const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'l10', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 0, minSample: 0, venue: 'all', grps: [], injOk: true, hideBlowout: false };
 const S = {}; // per sport: { fx: Set, f: filters, sort, adv, kept: Map(id -> { L, side }), shown, cands: Map(fid -> candidates) }
 function stateOf(sport) {
   if (S[sport]) return S[sport];
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY(sport)) || '{}') || {}; } catch { saved = {}; }
   // first visit: fair odds of at least 1.30 (no near-certain 1+ lines nobody prices) and, for NBA, the markets bookmakers usually offer
   const first = saved.f ? {} : { minFairTxt: inputText(1.3), grps: sport === 'nba' ? ['Core', 'Combined'] : [] };
-  S[sport] = { fx: new Set(saved.fx || []), f: { ...DEF, ...first, ...(saved.f || {}) }, sort: saved.sort || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  S[sport] = { odds: new Map(), fx: new Set(saved.fx || []), f: { ...DEF, ...first, ...(saved.f || {}) }, sort: saved.sort || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
   return S[sport];
 }
 const save = (sport, s) => { try { localStorage.setItem(KEY(sport), JSON.stringify({ fx: [...s.fx], f: s.f, sort: s.sort })); } catch { /* this visit only */ } };
@@ -7011,8 +7238,8 @@ async function viewRecommended(root, sport) {
   if (!s.fx.size) { const d = all.length ? ukDay(all[0]) : null; for (const f of all) if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
-  root.innerHTML = `<div id="recpg"><h1>Recommended Plays</h1>
-    <p class="muted" style="margin-top:-4px">Choose your games and set the minimum chance and fair-odds range. PropLab works out every ${sportName} market it can price and shows the strongest plays. Check the bookmaker yourself, then tap <b>Compare</b>.</p>
+  root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
+    <p class="muted" style="margin-top:-4px">Choose your games and set the minimum chance and fair-odds range. PropLab works out every ${sportName} market it can price and shows the strongest plays. Type the price you can see on any play to get its EV and stake. Tap anything marked ⓘ for what it means.</p>
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
       <button type="button" class="chip" data-fxall="today">Today's games</button><button type="button" class="chip" data-fxall="all">Select all upcoming</button><button type="button" class="chip" data-fxall="none">Clear all</button></div>
@@ -7021,7 +7248,7 @@ async function viewRecommended(root, sport) {
         return `<label class="hcheck hfxrow"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f).split(' · ')[1] || '')}</b> ${esc(fxLabel(sport, f, A))}${sport === 'football' ? ` <span class="hfxlg">${esc(leagueName(f.league))}</span>` : ''}${bo ? ` <span class="bo bo-${bo.level.toLowerCase()}" title="${esc(bo.text)}">blowout risk: ${bo.level}</span>` : ''}</span></label>`; }).join('')}`).join('') || '<p class="small muted">No upcoming games published.</p>'}</div></details>
     <div class="card stack recflt" id="recflt"></div>
     <div id="recout" style="margin-top:12px"></div></div>`;
-  const pg = root.firstElementChild, out = pg.querySelector('#recout');
+  const pg = root.querySelector('#recpg'), out = pg.querySelector('#recout');
   const fxCount = () => { const el = pg.querySelector('[data-fxcount]'); if (el) el.textContent = `${s.fx.size} selected`; };
   fxCount();
   const fair = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? r.exact : null; };
@@ -7033,6 +7260,7 @@ async function viewRecommended(root, sport) {
         <label class="field"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="decimal" placeholder="e.g. 1.50" value="${esc(f.minFairTxt)}"></label>
         <label class="field"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="decimal" placeholder="e.g. 3.00" value="${esc(f.maxFairTxt)}"></label></div>
       <div class="recrow"><div class="field"><span class="xs muted">Side</span>${seg('sides', [['over', 'Over / Yes'], ['under', 'Under / No'], ['both', 'Both']], f.sides)}</div>
+        ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Matchup</span>${seg('mu', [['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']], f.mu || 'all')}</div>`}
         <div class="field"><span class="xs muted">Sort</span><select class="in" data-rsort>${SORTS.map(([v, l]) => `<option value="${v}" ${s.sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
       <details class="recadv" ${s.adv ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
         <div class="recrow"><label class="field"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
@@ -7086,26 +7314,48 @@ async function viewRecommended(root, sport) {
       <p class="xs muted">Model probability: PropLab's estimate for this side at this line (NBA player props: model v2, checked on 2025/26 games it never saw). Fair odds = 1 ÷ probability. It is not the hit rate, and it cannot know news after the data update. These are research estimates, not tips; there is no bookmaker price until you type one in Compare. <a href="${sport === 'football' ? '#/model' : `#/${sport}/model`}">Model Performance ›</a> · <a href="${sport === 'football' ? '#/myplays' : `#/${sport}/myplays`}">My Plays ›</a> · <a href="${sport === 'football' ? '#/finder' : `#/${sport}/finder`}">Hit-rate list ›</a></p>`;
   };
   const tierWord = { g: 'easy', y: 'medium', r: 'tough' };
+  const TIP = (title, text) => `data-info="rtip" data-title="${esc(title)}" data-text="${esc(text)}" aria-haspopup="dialog"`;
+  const WIN = { season: 'Season', l5: 'Last 5', l10: 'Last 10', l20: 'Last 20', all: 'All' };
+  const unitWord = sport === 'football' ? 'matches' : 'games';
+  function evHtml(x) { // the odds box on every play (owner, 2 Nov: check EV+ / EV- on the play itself)
+    const r = x.rep, id = `${x.c.id}|${x.side}`, txt = s.odds.get(id) || '', od = txt.trim() ? parseIn(txt) : null, f = oddsFmt();
+    let out = '<span class="xs muted">Type the price you can see at your bookmaker.</span>';
+    if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
+    else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (£${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? '<b data-rstake>0.00u</b>: positive at the model figure, but not at its cautious end, so no stake' : '<b data-rstake>0.00u</b>: no bet at this price')}
+        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the cautious probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+    return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="${f === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
+  }
+  function barsHtml(x) { // mini bar chart: his last 10 at this line (green = hit, red = miss), newest on the right
+    const r = x.rep, rows = x.c.rows.slice(0, 10).reverse(); if (!rows.length || x.c.def.binary) return '';
+    const ok = v => (x.side === 'under' ? v < r.L : v > r.L), mx = Math.max(r.L * 1.25, ...rows.map(q => q.value), 1);
+    return `<div class="rbars" role="img" aria-label="Last ${rows.length} ${unitWord} against the line ${r.L}"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<span class="${ok(q.value) ? 'h' : 'm'}" style="height:${Math.max(4, (q.value / mx) * 100)}%" title="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}`)}"><em>${q.value}</em></span>`).join('')}</div>`;
+  }
+  function nflMuHtml(c, r) {
+    const m = c.nflMu; if (!m) return ''; const pos = { qb: 'QBs', rb: 'RBs', wr: 'WRs', te: 'TEs' }[c.p.group] || 'his position';
+    return `<div class="mugrid"><button type="button" class="mub mu-${r.tier || 'y'}" ${TIP(`${c.opp} v ${pos}: rank ${m.rank} of ${m.n}`, `${c.opp}'s defence allowed ${m.per.toFixed(1)} ${c.def.label.toLowerCase()} a game to ${pos} this regular season (league average ${m.lg.toFixed(1)}; early-season figures pulled towards the average). Rank 1 = allows the fewest. Green = an easy matchup for this side, red = tough. Experimental for the NFL: it colours and filters the plays but does not change the probability.`)}><b>${m.rank}</b><span>${esc(c.opp)} v ${pos}<br>${m.per.toFixed(1)} a game (avg ${m.lg.toFixed(1)})</span></button></div>`;
+  }
   function cardHtml(x) {
     const { c, rep: r } = x, id = `${c.id}|${x.side}`, h = r.hr, why = reasonOf(c, r), g = c.f;
-    const hit = k => (h[k].n ? `<span class="rh"><b>${h[k].hit}/${h[k].n}</b><small>${{ season: 'Season', l5: 'Last 5', l10: 'Last 10', l20: 'Last 20', all: 'All' }[k]}</small></span>` : '');
-    const hiwi = sport === 'football' ? `#/hiwi?fx=${encodeURIComponent(c.fid)}&team=${encodeURIComponent(c.team)}&m=${encodeURIComponent(c.def.key)}&line=${r.L}&side=${x.side}`
-      : `#/${sport}/hiwi?fx=${encodeURIComponent(c.fid)}&player=${encodeURIComponent(c.pid)}&m=${encodeURIComponent(c.def.key)}&line=${r.L}&side=${x.side}`;
+    const word = c.def.binary ? (x.side === 'under' ? 'No' : 'Yes') : `${x.side === 'under' ? 'under' : 'over'} ${r.L}`;
+    const hit = k => (h[k].n ? `<button type="button" class="rh" ${TIP(`${WIN[k]}: ${h[k].hit} of ${h[k].n}`, `${k === 'season' ? 'This season' : k === 'all' ? 'Every game PropLab holds' : `His ${WIN[k].toLowerCase()} ${unitWord}`}: ${word} in ${h[k].hit} of ${h[k].n} (${h[k].pct}%). This is what happened, not a probability. Games with no recorded figure are left out, never counted as misses.`)}><b>${h[k].hit}/${h[k].n}</b><small>${WIN[k]}</small></button>` : '');
     const tag = c.inj && c.inj.cls && c.inj.cls !== 'none' && c.inj.cls !== 'na' ? `<span class="injb inj-warn">${esc(c.inj.label)}</span>` : '';
     const vs = sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
     const bo = sport !== 'football' ? blowoutOf(g, sport) : null;
+    const lo = r.e && Number.isFinite(r.e.lo) ? r.e.lo : null, hi = r.e && Number.isFinite(r.e.hi) ? r.e.hi : null;
     return `<article class="rcard${x.keptOut ? ' rkept' : ''}" data-rid="${esc(id)}">
-      <header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> ${tag}${c.newTeam ? '<span class="newteam">NEW TEAM</span>' : ''}<div class="rmk">${esc(ladderName(c, r))}${c.def.binary ? '' : ` <span class="muted">(${esc(fmtLineName(c, r))})</span>`}</div>
-        <div class="xs muted">${vs} · ${esc(fmtKick(g))}${bo ? ` · <span class="bo bo-${bo.level.toLowerCase()}">blowout risk: ${bo.level}</span>` : ''}</div></div>
-        <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
+      <header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> ${tag}${c.newTeam ? '<button type="button" class="newteam" data-info="newteam">NEW TEAM</button>' : ''}<div class="rmk">${esc(ladderName(c, r))}${c.def.binary ? '' : ` <span class="muted">(${esc(fmtLineName(c, r))})</span>`}</div>
+        <div class="xs muted">${vs} · ${esc(fmtKick(g))}${bo ? ` · <button type="button" class="bo bo-${bo.level.toLowerCase()}" ${TIP(`Blowout risk: ${bo.level}`, bo.text)}>blowout risk: ${bo.level}</button>` : ''}</div></div>
+        <button type="button" class="rprob" ${TIP(`Model probability ${(r.p * 100).toFixed(1)}%`, `PropLab's estimated chance that ${c.name} goes ${word} ${c.def.label.toLowerCase()}${lo != null ? ` (likely range ${(lo * 100).toFixed(0)}-${(hi * 100).toFixed(0)}%)` : ''}. It comes from his whole record (recent games count more${sport === 'nba' ? ', each game scaled to the minutes he is expected to play, plus teammates out and the matchup' : ''}) and is calibrated: in tests on a season it never saw, plays given about this figure hit about this often. It is not the hit rate, and it cannot know news after the data update.`)}><b>${(r.p * 100).toFixed(0)}%</b><small>model ⓘ</small></button></header>
       ${x.keptOut ? '<p class="xs warn" style="margin:4px 0">Outside your filters (kept on screen because you changed this play)</p>' : ''}
-      <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><button type="button" class="rt" data-info="conf" data-title="Confidence: ${r.conf.level}" data-text="${esc([...r.conf.why, `Rank score: ${r.why}`].join('\n'))}" aria-haspopup="dialog"><small>Confidence ⓘ</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></button>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></span>` : ''}</div>
-      <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}</div>
-      ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}
-      ${why.length ? `<p class="rwhy">${esc(why.join(' · '))}.</p>` : ''}
-      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="chip" data-rflip>${x.side === 'under' ? 'Switch to Over' : 'Switch to Under'}</button></div>`}
-      <div class="racts2"><a class="chip" href="${esc(hiwi)}">Hiwi ›</a><button type="button" class="chip hprice" data-rcmp>Compare ›</button><button type="button" class="chip" data-ralt>Other lines ▾</button><button type="button" class="chip" data-rhist>History ▾</button></div>
-      <div class="ralt" hidden></div><div class="rhistbox" hidden></div></article>`;
+      <div class="rtiles"><button type="button" class="rt" ${TIP(`Fair odds ${fmtOdds(r.fair)}`, `Fair odds = 1 ÷ model probability: the price at which this play breaks even if the probability is right. A bookmaker price above it suggests value (type it below); below it, the bookmaker is charging more than the model thinks the bet is worth.`)}><small>Fair odds ⓘ</small><b>${esc(fmtOdds(r.fair))}</b></button><button type="button" class="rt" data-info="conf" data-title="Confidence: ${r.conf.level}" data-text="${esc(['How much the probability rests on, separate from the probability itself:', ...r.conf.why].join('\n'))}" aria-haspopup="dialog"><small>Confidence ⓘ</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></button><button type="button" class="rt" data-info="rank" data-title="Rank score ${Math.round(r.rank * 100)} (not a probability)" data-text="${esc(rankText(c, r))}" aria-haspopup="dialog"><small>Rank score ⓘ</small><b>${Math.round(r.rank * 100)}</b></button>${r.tier ? `<button type="button" class="rt" ${TIP(`Matchup: ${tierWord[r.tier]}`, sport === 'nba' ? 'From the chips below: what the opponent allows to his position (and pace). All green = easy, any red = tough, otherwise medium. The NBA matchup adjustment is part of the model probability (it was tested on 2025/26 games).' : 'What the opponent\'s defence allowed to his position this season (chip below). Experimental: colours and filters only.')}><small>Matchup ⓘ</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></button>` : ''}</div>
+      <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
+      ${barsHtml(x)}
+      ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
+      <p class="rwhy"><b>Why:</b> ${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p>
+      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="chip" data-ralt>Other lines ▾</button></div>`}
+      ${evHtml(x)}
+      <div class="ralt" hidden></div></article>`;
   }
   const findX = el => { const id = el.closest('.rcard').dataset.rid; return current.find(x => `${x.c.id}|${x.side}` === id); };
   const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); el.replaceWith(t.firstElementChild); };
@@ -7117,6 +7367,8 @@ async function viewRecommended(root, sport) {
     if (t.matches('[data-rck]')) { s.f[t.dataset.rck] = t.checked; s.kept.clear(); save(sport, s); render(); return; }
   });
   const tIn = {}; // one pause per box: typing in a second box never cancels the first one's change
+  pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value);
+      const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout')); return; } });
   pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); render(); }, 300); });
   pg.addEventListener('click', e => {
     const t = e.target;
@@ -7130,15 +7382,18 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-resort]')) { s.kept.clear(); render(); return; }
     const card = t.closest('.rcard'); if (!card) return; const x = findX(card); if (!x) return;
     const stp = t.closest('[data-rstepl]'); if (stp) { const L = Math.max(0.5, x.rep.L + Number(stp.dataset.rstepl)); const r = evalAt(x.c, L, x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
-    if (t.closest('[data-rflip]')) { const side = x.side === 'under' ? 'over' : 'under', r = evalAt(x.c, x.rep.L, side); if (!r) return; x.side = side; x.rep = r; s.kept.set(x.c.id, { L: r.L, side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
-    if (t.closest('[data-rcmp]')) { // the Value page draws the card itself: give it the rows for the games used (Last 10 for players, as Hiwi opens)
+    if (false && t.closest('[data-rflip]')) { const side = x.side === 'under' ? 'over' : 'under', r = evalAt(x.c, x.rep.L, side); if (!r) return; x.side = side; x.rep = r; s.kept.set(x.c.id, { L: r.L, side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
+    if (false && t.closest('[data-rcmp]')) { // the Value page draws the card itself: give it the rows for the games used (Last 10 for players, as Hiwi opens)
       const st = { ...x.rep.st, per: sport === 'football' ? x.rep.st.per : (x.c.card.perDefault || '10') }, cd = x.c.card;
       try { if (cd.rebuild) Object.assign(cd, cd.rebuild(st)); else if (cd.perFn) Object.assign(cd, cd.perFn(st)); } catch (err) { console.error(err); }
       carryPrice(cd, st, sport); return; }
+    if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: r.p }, D, r.conf), g = x.c.f;
+      const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
+      const res = addPlay(info, D, P ? P.final : 0), b = t.closest('[data-radd]'); b.textContent = res.r === 'blocked' ? `Not added: ${res.why[0]}` : res.r === 'failed' ? 'Could not save' : `✓ ${fmtU(res.units)}u in My Plays${res.why.length ? ` (cut: ${res.why[0]})` : ''}`; b.disabled = true; return; }
     if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'); box.hidden = !box.hidden; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
       box.innerHTML = `<table class="ralttb"><tr><th>Line</th><th>Model</th><th>Fair</th><th>Last 10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${esc(ladderName(x.c, r))}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
     const pk = t.closest('[data-rpick]'); if (pk) { const r = evalAt(x.c, Number(pk.dataset.rpick), x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L: r.L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
-    if (t.closest('[data-rhist]')) { const box = card.querySelector('.rhistbox'); box.hidden = !box.hidden; if (!box.hidden) { const r = x.rep, rows = x.c.rows.slice(0, 20), ok = v => (x.side === 'under' ? v < r.L : v > r.L);
+    if (false && t.closest('[data-rhist]')) { const box = card.querySelector('.rhistbox'); box.hidden = !box.hidden; if (!box.hidden) { const r = x.rep, rows = x.c.rows.slice(0, 20), ok = v => (x.side === 'under' ? v < r.L : v > r.L);
       box.innerHTML = `<p class="xs muted" style="margin:6px 0 4px">${x.c.kind === 'player' ? 'His' : 'The'} last ${rows.length} ${sport === 'football' ? 'matches' : 'games'}, newest first (${x.side === 'under' ? 'under' : 'over'} ${r.L} in green):</p><div class="rhv">${rows.map(q => `<span class="${ok(q.value) ? 'h' : 'm'}" title="${esc(q.date)}">${q.value}</span>`).join('')}</div>`; } return; }
   });
   drawFilters(); run();
@@ -7147,105 +7402,282 @@ void oddsFmt;
 
 return { viewRecommended };
 })();
-__m['myplays'] = (() => {
-// My Plays (owner model audit, 2 Nov 2026): the plays you add from Compare Price, kept on this device, with the exposure limits the audit
-// found missing. Each play keeps the price you typed, PropLab's probability and the final stake (risk.js) at the time you added it.
-//  * Limits (warnings, never blocks): total units per day, units on one player, units on one game.
-//  * Correlation: plays on the same player, or the same game, are not independent. If he has a big night, several of his Overs win together
-//    (and lose together), so their combined chance is NOT the product of the single chances, and PropLab never prices them as a parlay.
-//  * Ladders (the same player and market at several Over lines): one table of what you win or lose for each range of outcomes, with the
-//    model's chance of each range taken from the probabilities of the lines themselves (one distribution, so it is consistent).
-//  * Tracker: mark each play Won / Lost / Void; profit is counted in units and in £ at £10 a unit. These are YOUR bets: they are kept
-//    apart from the model's own test results (Model Performance), which never include anything you typed.
-const { esc, koUK } = __m['util'];
-const { fmtOdds } = __m['oddsfmt'];
-const { RISK } = __m['risk'];
-const { fmtU } = __m['kelly'];
+__m['accabuild'] = (() => {
+// Acca Builder engine (owner request 2 Nov 2026). Builds an accumulator close to a target fair price from the same plays, lines,
+// calibrated probabilities, hit rates, matchup colours and confidence as Recommended Plays (recplays.js). Pure apart from the
+// candidates it is given; the page (v-acca.js) keeps locks, exclusions and the saved state.
+//
+// Objective (stated on the page): among combinations whose combined FAIR odds are within the tolerance of the target, choose the one
+// with the most SUPPORT: the sum over legs of log(Best Overall score / probability) + log(cautious probability / probability), less 3%
+// for every leg (the cautious figure is one standard error below the probability, so thin evidence costs more). Every combination at
+// the target has about the same model probability (1 / target), so this picks legs whose probability is backed by their own season,
+// recent and opponent record, matchup and confidence, and it prefers fewer legs (each one adds its own model risk). Ties go to the
+// higher average Best Overall score. The search is a beam search over a shortlist of legs; it is not a guarantee of the best possible
+// combination and nothing about it says the acca will win.
+//
+// Joint probability:
+//  * legs from DIFFERENT games: the product of the leg probabilities (different events);
+//  * the SAME player twice: never (his figures move together: it is one bet in disguise);
+//  * two legs from the SAME game (NBA / NFL players): only when the two players share at least MIN_SHARED earlier games, from which
+//    the historical joint hit rate at these lines is compared with what independence would give; the ratio, pulled towards 1 with
+//    SHRINK pretend games, scales the product. Fewer shared games, or a team / match market in the same game: "unpriced" - shown as
+//    research, never priced, never generated automatically;
+//  * football: one leg per match (same-match team / match markets are left unpriced).
+// Nothing here is a bookmaker price. EV appears only for a price the user types for the whole acca.
+const { evalAt, passes } = __m['recplays'];
 
-const KEY = 'proplab.myplays.v1';
-const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
-const save = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch { return false; } };
-const myPlays = load;
-const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
-const sideTxt = x => (x.binary ? (x.side === 'under' ? 'No' : 'Yes') : `${x.side === 'under' ? 'Under' : 'Over'} ${x.line}`);
+const ACCA = { legCost: 0.03, tol: 0.15, maxLegs: 8, beam: 160, shortlist: 140, MIN_SHARED: 30, SHRINK: 30 };
+const RARE_ACCA = new Set(['stl', 'blk', 'sb', 'dd', 'td', 'atd', 'rush_td', 'rec_td', 'tds', 'ftd']);
+const legId = (c, side, L) => `${c.id}|${side}|${L}`;
+const gameKey = c => `${c.sport}|${c.fid}`;
 
-function addPlay(info, odds, units) {
-  const a = load(), id = `${info.sport}|${info.gameId}|${info.subj}|${info.key}|${info.line}|${info.side}`;
-  const item = { ...info, id, odds, units, day: info.date || today(), added: new Date().toISOString(), result: '' };
-  const i = a.findIndex(x => x.id === id); if (i >= 0) a[i] = { ...a[i], ...item, result: a[i].result }; else a.push(item);
-  return save(a) ? (i >= 0 ? 'updated' : 'added') : 'failed';
-}
-/** Warnings for one day's open plays. */
-function checks(list) {
-  const out = [], sum = f => list.reduce((t, x) => t + (f(x) ? x.units : 0), 0), tot = sum(() => true);
-  if (tot > RISK.daily + 1e-9) out.push(`Total ${fmtU(tot)}u on this day is above the ${RISK.daily}u daily limit.`);
-  const by = (k) => { const m = new Map(); for (const x of list) { const v = k(x); if (!m.has(v)) m.set(v, []); m.get(v).push(x); } return m; };
-  for (const [, g] of by(x => `${x.sport}|${x.subj}`)) { const u = g.reduce((t, x) => t + x.units, 0);
-    if (u > RISK.perPlayer + 1e-9) out.push(`${g[0].name}: ${fmtU(u)}u in total, above the ${RISK.perPlayer}u limit for one player.`);
-    const mk = new Set(g.map(x => x.key)); if (g.length > 1 && mk.size > 1) out.push(`${g[0].name}: ${g.length} plays on different markets (${[...new Set(g.map(x => x.market))].join(', ')}). They move together, so they are not independent bets: one quiet night can lose them all.`); }
-  for (const [, g] of by(x => `${x.sport}|${x.gameId}`)) { if (!g[0].gameId) continue; const u = g.reduce((t, x) => t + x.units, 0);
-    if (u > RISK.perGame + 1e-9) out.push(`${g[0].game || 'One game'}: ${fmtU(u)}u in total, above the ${RISK.perGame}u limit for one game.`);
-    else if (new Set(g.map(x => x.subj)).size > 2) out.push(`${g[0].game || 'One game'}: plays on ${new Set(g.map(x => x.subj)).size} players. Pace, blowouts and overtime affect them all at once.`); }
+/** Every eligible leg: each candidate at every line whose fair odds are inside [minFair, maxFair] and passes the other filters. The fair
+ *  odds rise with the line (Over; fall for Under), so the range is found by halving and only those few lines are priced. */
+function legPool(cands, o, excluded = new Set()) {
+  const out = [], q = { ...o, minProb: 0, minHit: 0, minFair: 0, maxFair: 0 };
+  for (const c of cands) { if (o.grps && o.grps.size && !o.grps.has(c.grp)) continue; if (o.noRare && RARE_ACCA.has(c.def.key)) continue; if (!o.injOk && c.inj && c.inj.cls === 'warn') continue;
+    for (const side of c.def.binary ? ['over'] : o.sides || ['over']) {
+      const Ls = side === 'under' ? c.lines.slice().reverse() : c.lines, F = k => { const r = evalAt(c, Ls[k], side); return r ? r.fair : null; };
+      const first = (test) => { let lo = 0, hi = Ls.length - 1, b = Ls.length; while (lo <= hi) { const m = (lo + hi) >> 1, f = F(m); if (f != null && test(f)) { b = m; hi = m - 1; } else lo = m + 1; } return b; };
+      const a = o.minFair ? first(f => f >= o.minFair - 1e-9) : 0, z = o.maxFair ? first(f => f > o.maxFair + 1e-9) - 1 : Ls.length - 1;
+      for (let k = a; k <= z && k < Ls.length; k++) { const r = evalAt(c, Ls[k], side); if (!r || !passes(r, q)) continue; const id = legId(c, side, r.L); if (!excluded.has(id)) out.push(mkLeg(c, side, r)); } } }
   return out;
 }
-/** Ladders: same player, market and Over side at two or more lines. Returns [{ name, market, rows: [{ range, p, pl }] }]. */
-function ladders(list) {
-  const m = new Map(); for (const x of list) if (!x.binary && x.side === 'over') { const k = `${x.sport}|${x.subj}|${x.key}`; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }
-  const out = [];
-  for (const [, g0] of m) { if (g0.length < 2) continue; const g = g0.slice().sort((a, b) => a.line - b.line);
-    const rows = []; for (let i = 0; i <= g.length; i++) {
-      const lo = i ? g[i - 1].line : null, hi = i < g.length ? g[i].line : null;
-      const pAbove = j => (j < g.length ? g[j].p : 0), p = i === 0 ? 1 - g[0].p : Math.max(0, pAbove(i - 1) - pAbove(i));
-      const pl = g.reduce((t, x, j) => t + (j < i ? x.units * (x.odds - 1) : -x.units), 0);
-      const range = lo == null ? `${Math.ceil(hi) - 1} or fewer` : hi == null ? `${Math.floor(lo) + 1} or more` : Math.floor(lo) + 1 === Math.ceil(hi) - 1 ? `exactly ${Math.floor(lo) + 1}` : `${Math.floor(lo) + 1} to ${Math.ceil(hi) - 1}`;
-      rows.push({ range, p, pl }); }
-    const evU = rows.reduce((t, r) => t + r.p * r.pl, 0);
-    out.push({ name: g[0].name, market: g[0].market, rows, evU, n: g.length }); }
-  return out;
+function mkLeg(c, side, r) {
+  const cautious = Math.max(0.01, r.score + 0), p = r.p;
+  // support: the leg's Best Overall score (cautious probability blended with its season, recent and opponent record, matchup and
+  // confidence) as a share of its model probability, less ACCA.legCost for every leg (each leg adds its own model risk)
+  const sup = Math.log(Math.max(0.01, Math.min(p, r.rank)) / p) + Math.log(Math.max(0.01, Math.min(p, cautious)) / p) - ACCA.legCost;
+  return { id: legId(c, side, r.L), c, side, r, p, fair: r.fair, cautious: Math.min(p, cautious), rank: r.rank, sup, game: gameKey(c), subj: `${c.sport}|${c.pid || c.team || c.name}` };
 }
-const money = u => `${u >= 0 ? '+' : '−'}£${Math.abs(u * RISK.unitGBP).toFixed(2)}`;
-const uu = u => `${u >= 0 ? '+' : '−'}${fmtU(Math.abs(u))}u`;
+/** Historical same-game dependence of two player legs: { ok, ratio, n, joint, indep } or { ok:false, why }. */
+function sameGame(a, b) {
+  if (a.c.kind !== 'player' || b.c.kind !== 'player') return { ok: false, why: 'a team or match market in the same game: how it moves with the other leg cannot be measured from PropLab\'s data' };
+  if (a.c.sport === 'football') return { ok: false, why: 'football: one leg per match' };
+  const ra = new Map(a.c.rows.filter(x => x.game).map(x => [x.game, x.value])), shared = b.c.rows.filter(x => x.game && ra.has(x.game)); // the same GAME (not just the same date)
+  if (shared.length < ACCA.MIN_SHARED) return { ok: false, why: `only ${shared.length} earlier games together (at least ${ACCA.MIN_SHARED} are needed to measure how their figures move together)` };
+  const hit = (v, leg) => (leg.side === 'under' ? v < leg.r.L : v > leg.r.L);
+  let ha = 0, hb = 0, hab = 0; for (const x of shared) { const A = hit(ra.get(x.game), a), B = hit(x.value, b); ha += A; hb += B; hab += A && B; }
+  const n = shared.length, pa = ha / n, pb = hb / n, ind = pa * pb;
+  if (!(ind > 0)) return { ok: false, why: 'one of the two never hit in their shared games' };
+  const raw = (hab / n) / ind, ratio = (n * raw + ACCA.SHRINK * 1) / (n + ACCA.SHRINK);
+  return { ok: true, ratio, n, joint: hab / n, indep: ind };
+}
+/** Joint probability of a set of legs: { p, pCaut, fair, priced, notes, pairs }. */
+function jointOf(legs) {
+  let p = 1, pc = 1; const notes = [], pairs = []; let priced = true;
+  const bySubj = new Map(); for (const l of legs) { if (bySubj.has(l.subj)) { priced = false; notes.push(`${l.c.name} appears twice: not priced (one player's legs move together)`); } bySubj.set(l.subj, l); }
+  const byGame = new Map(); for (const l of legs) { if (!byGame.has(l.game)) byGame.set(l.game, []); byGame.get(l.game).push(l); }
+  for (const l of legs) { p *= l.p; pc *= l.cautious; }
+  for (const gl of byGame.values()) { if (gl.length < 2) continue;
+    for (let i = 0; i < gl.length; i++) for (let j = i + 1; j < gl.length; j++) { if (gl[i].subj === gl[j].subj) continue; const d = sameGame(gl[i], gl[j]);
+      if (!d.ok) { priced = false; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): unpriced, ${d.why}`); continue; }
+      p *= d.ratio; pc *= Math.min(1, d.ratio); pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
+      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)} (experimental)`); } }
+  p = Math.min(0.999, p); return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs };
+}
+/**
+ * Build: locked legs first, then a beam search over the shortlist for the best set of extra legs whose combined fair odds land within
+ * the tolerance of target (decimal). allowSame: may two legs share a game (only priced pairs are ever generated).
+ * Returns { legs, joint, hit (within tolerance), note }.
+ */
+function buildAcca(pool, locked, target, opts = {}) {
+  const A = { ...ACCA, ...opts }, skip = opts.skip || new Set(), lockIds = new Set(locked.map(l => l.id)), lockSubj = new Set(locked.map(l => l.subj)), lockGames = new Set(locked.map(l => l.game));
+  const base = jointOf(locked), lt = Math.log(target), logF0 = base.priced ? -Math.log(base.p) : 0;
+  if (base.priced && logF0 > lt + Math.log(1 + A.tol)) return { legs: locked, joint: base, hit: false, over: true, note: 'Your locked legs already go past the target on their own.' };
+  const cand = pool.filter(l => !lockIds.has(l.id) && !skip.has(l.id) && !lockSubj.has(l.subj) && (opts.allowSame || !lockGames.has(l.game)))
+    .sort((x, y) => y.sup / Math.log(y.fair) - x.sup / Math.log(x.fair) || y.rank - x.rank).slice(0, A.shortlist); // most support per unit of price first
+  const need = lt - logF0; // log fair still to add
+  if (need <= Math.log(1 + A.tol) - 1e-9 && locked.length) return { legs: locked, joint: base, hit: true, note: 'Your locked legs already reach the target.' };
+  // beam: states { legs, lf (log fair), lc (sum log cautious/p), rk }
+  let beam = [{ legs: [], lf: 0, lc: 0, rk: 0, subj: new Set(), games: new Set() }], done = [];
+  const lo = need + Math.log(1 - A.tol), hi = need + Math.log(1 + A.tol);
+  for (let depth = 0; depth < A.maxLegs - locked.length && beam.length; depth++) {
+    const next = [];
+    for (const s of beam) for (const l of cand) {
+      if (s.subj.has(l.subj)) continue; if (!opts.allowSame && s.games.has(l.game)) continue;
+      if (s.legs.length && cand.indexOf(l) <= cand.indexOf(s.legs[s.legs.length - 1])) continue; // each set once (shortlist order)
+      const lf = s.lf + Math.log(l.fair); if (lf > hi + 1e-9) continue;
+      const t = { legs: [...s.legs, l], lf, lc: s.lc + l.sup, rk: s.rk + l.rank, subj: new Set([...s.subj, l.subj]), games: new Set([...s.games, l.game]) };
+      if (lf >= lo - 1e-9) done.push(t); else next.push(t); }
+    // keep the most promising partial sets: highest cautious ratio per unit of log odds still to go, then rank
+    next.sort((x, y) => (y.lc / Math.max(0.05, y.lf)) - (x.lc / Math.max(0.05, x.lf)) || y.rk - x.rk); beam = next.slice(0, A.beam);
+  }
+  const score = t => { const legs = [...locked, ...t.legs], j = jointOf(legs); return { legs, j, v: j.priced ? t.lc : -Infinity, rk: (t.rk + locked.reduce((a, l) => a + l.rank, 0)) / legs.length }; };
+  const scored = done.map(score).filter(x => x.j.priced && Math.abs(Math.log(x.j.fair) - lt) <= Math.log(1 + A.tol) + 1e-9).sort((a, b) => b.v - a.v || b.rk - a.rk);
+  if (scored.length) return { legs: scored[0].legs, joint: scored[0].j, hit: true, note: '' };
+  // nothing within the tolerance: the closest priced set below and above, from everything tried
+  const all = [...done, ...beam].map(score).filter(x => x.j.priced).sort((a, b) => Math.abs(Math.log(a.j.fair) - lt) - Math.abs(Math.log(b.j.fair) - lt));
+  if (all.length) return { legs: all[0].legs, joint: all[0].j, hit: false, note: `No combination of the eligible legs lands within ${Math.round(A.tol * 100)}% of the target; this is the closest one found.` };
+  return { legs: locked, joint: base, hit: false, note: 'No eligible legs: widen the per-leg fair-odds range, add sports or days, or clear exclusions.' };
+}
+/** Is a saved leg still valid now? '' or the reason. */
+function legProblem(l, now = Date.now()) {
+  const f = l.c.f; if (f && f.ko_utc && Date.parse(f.ko_utc) <= now) return 'its game has started';
+  if (l.c.inj && l.c.inj.unavailable) return `${l.c.name} is now listed ${l.c.inj.label}`;
+  return '';
+}
 
-function viewMyPlays(root) {
-  const draw = () => {
-    const a = load(), days = [...new Set(a.map(x => x.day))].sort().reverse();
-    const settled = a.filter(x => x.result), pl = settled.reduce((t, x) => t + (x.result === 'won' ? x.units * (x.odds - 1) : x.result === 'lost' ? -x.units : 0), 0), staked = settled.filter(x => x.result !== 'void').reduce((t, x) => t + x.units, 0);
-    root.innerHTML = `<div id="mypg"><h1>My Plays</h1>
-      <p class="muted" style="margin-top:-4px">Plays you added from Compare Price, with the price you typed and the stake after PropLab's risk controls. Kept on this device only. 1 unit = £${RISK.unitGBP}.</p>
-      <div class="tiles evtiles"><div class="tile"><b>${a.length}</b><span>Plays</span></div><div class="tile"><b>${settled.length}</b><span>Settled</span></div><div class="tile ${pl >= 0 ? 'pos' : 'neg'}"><b>${uu(pl)}</b><span>Profit / loss (${money(pl)})</span></div><div class="tile"><b>${staked ? `${((pl / staked) * 100).toFixed(1)}%` : '–'}</b><span>Return on units staked</span></div></div>
-      <p class="xs muted">Your own bets only. They are never mixed into the model's test results on Model Performance, and a short run of results says little either way.</p>
-      ${!a.length ? '<div class="banner info"><b>No plays yet.</b> Open a play, tap <b>Compare</b>, type the price you can see and tap <b>Add to My Plays</b>.</div>' : ''}
-      ${days.map(d => { const L = a.filter(x => x.day === d), open = L.filter(x => !x.result), W = checks(open), LD = ladders(open), tot = L.reduce((t, x) => t + x.units, 0);
-        return `<section class="card stack mpday"><b>${esc(d)}</b> <span class="xs muted">${L.length} play${L.length === 1 ? '' : 's'} · ${fmtU(tot)}u (£${(tot * RISK.unitGBP).toFixed(2)})</span>
-        ${W.length ? `<div class="banner warnb">${W.map(w => `<p style="margin:2px 0">⚠ ${esc(w)}</p>`).join('')}</div>` : ''}
-        ${L.map(x => `<div class="mprow" data-mp="${esc(x.id)}"><div><b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}<div class="xs muted">${esc(x.game || '')} · ${esc(fmtOdds(x.odds))} · model ${(x.p * 100).toFixed(1)}% · ${fmtU(x.units)}u (£${(x.units * RISK.unitGBP).toFixed(2)})</div></div>
-          <div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void']].map(([v, l]) => `<button type="button" data-mpres="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}<button type="button" data-mpdel aria-label="Remove">✕</button></div></div>`).join('')}
-        ${LD.map(l => `<div class="mpladder"><p class="small" style="margin:6px 0 2px"><b>Ladder: ${esc(l.name)} ${esc(l.market)}</b> (${l.n} lines). What you win or lose for each result, with PropLab's chance of each:</p>
-          <table class="risktb"><tr><th>${esc(l.market)}</th><th>Chance</th><th>Profit / loss</th></tr>${l.rows.map(r => `<tr><td>${esc(r.range)}</td><td>${(r.p * 100).toFixed(1)}%</td><td class="${r.pl >= 0 ? 'hit' : 'miss'}">${uu(r.pl)} (${money(r.pl)})</td></tr>`).join('')}</table>
-          <p class="xs muted" style="margin:2px 0 0">Expected result of the whole ladder: ${uu(l.evU)} (${money(l.evU)}). The lines share one outcome, so this is one bet with steps, not ${l.n} separate chances.</p></div>`).join('')}
-        </section>`; }).join('')}
-      ${a.length ? '<button type="button" class="btn" data-mpclear>Remove settled plays</button>' : ''}</div>`;
+return { ACCA, RARE_ACCA, legId, legPool, mkLeg, sameGame, jointOf, buildAcca, legProblem };
+})();
+__m['v-acca'] = (() => {
+// Acca Builder (owner request 2 Nov 2026): the second tab of Recommended Plays. Choose sports, days, a target price and the per-leg fair-odds
+// range; Build Acca picks the legs (accabuild.js); tick Include to lock a leg, Exclude to throw one out; Replace Unlocked Plays rebuilds
+// around the locks as often as you like. Everything is kept on this phone only (localStorage), never sent anywhere.
+const { buildCandidates } = __m['recplays'];
+const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId } = __m['accabuild'];
+const { evalAt, ladderName } = __m['recplays'];
+const { usAdapter } = __m['v-hiwi'];
+const { nba, loadNba, loadNbaInjuries } = __m['nba-data'];
+const { nfl, loadNfl } = __m['nfl-data'];
+const { store, loadCore, selectableFixtures } = __m['data'];
+const { hooks } = __m['shared'];
+const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
+const { esc, fmtKick, koUK, fixtureId } = __m['util'];
+const { nightOf } = __m['nightdate'];
+
+const KEY = 'proplab.acca.v1', SPORTS = [['nba', 'NBA'], ['nfl', 'NFL'], ['football', 'Football']];
+const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all' };
+let ST = null; // { f, locks: Map(id -> snapshot), excl: Set, skip: Set, current: [ids], pool cache }
+const load = () => { if (ST) return ST; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; }
+  ST = { f: { ...DEF, ...(j.f || {}) }, locks: new Map(j.locks || []), excl: new Set(j.excl || []), skip: new Set(j.skip || []), current: j.current || [], cands: new Map(), built: null, bookTxt: '' };
+  if (!ST.f.targetTxt) ST.f.targetTxt = inputText(11); if (!ST.f.legMinTxt) ST.f.legMinTxt = inputText(1.3); if (ST.f.legMaxTxt === '' && !j.f) ST.f.legMaxTxt = inputText(2.5); return ST; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ f: ST.f, locks: [...ST.locks], excl: [...ST.excl], skip: [...ST.skip], current: ST.current })); } catch { /* this visit only */ } };
+const dec = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? (r.exact ?? r.dec) : null; };
+const PRESET_T = [4, 6, 11, 21], PRESET_L = [1.2, 1.333, 1.5, 1.8, 2];
+
+async function ready(sp) {
+  const gj = hooks.getJson; const D = sp === 'nba' ? nba : sp === 'nfl' ? nfl : store;
+  if (D.status === 'idle') await (sp === 'nba' ? loadNba(gj) : sp === 'nfl' ? loadNfl(gj) : loadCore(gj));
+  for (let i = 0; i < 300 && D.status !== 'ready' && D.status !== 'error'; i++) await new Promise(r => setTimeout(r, 100));
+  if (sp === 'nba' && D.status === 'ready') await loadNbaInjuries();
+  return D.status === 'ready';
+}
+function fixtures(sp, days, now = new Date()) {
+  const ahead = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime();
+  if (sp === 'football') { const all = selectableFixtures('', now).filter(ahead), d0 = koUK({ ko_utc: now.toISOString() }).ymd, lim = new Date(now.getTime() + days * 864e5).toISOString().slice(0, 10);
+    return all.filter(f => koUK(f).ymd >= d0 && koUK(f).ymd < lim).slice(0, 60); }
+  const A = usAdapter(sp), up = A.upcoming(now).filter(ahead); if (!up.length) return [];
+  const nights = [...new Set(up.map(nightOf))].sort().slice(0, sp === 'nfl' ? Math.max(1, days + 2) : days); return up.filter(g => nights.includes(nightOf(g)));
+}
+const updated = sp => { const at = sp === 'nba' ? nba.meta && nba.meta.updated : sp === 'nfl' ? nfl.meta && nfl.meta.updated : store.manifest && store.manifest.generated;
+  try { return at ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at)) + ' UK' : 'unknown'; } catch { return at || 'unknown'; } };
+
+async function viewAcca(root, sport) {
+  const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav>`;
+  if (!S.f.sports.length) S.f.sports = [sport];
+  root.innerHTML = `${tabs}<div id="accapg"><h1>Acca Builder</h1>
+    <p class="muted" style="margin-top:-4px">Choose a target price. PropLab picks the legs from the same plays and probabilities as Recommended Plays. Tick <b>Include</b> on legs you like, <b>Exclude</b> on legs you don't, then <b>Replace Unlocked Plays</b> as often as you like. Fair odds are not bookmaker odds: a 10/1 fair acca is not a 10/1 bet, and it is not value unless your bookmaker pays more.</p>
+    <div class="card stack" id="accaf"></div><div id="accaout" style="margin-top:12px"></div></div>`;
+  const pg = root.querySelector('#accapg'), out = pg.querySelector('#accaout');
+  const drawF = () => { const f = S.f, fm = oddsFmt();
+    pg.querySelector('#accaf').innerHTML = `<div class="field"><span class="xs muted">Sports</span><div class="seg wrap" data-asp>${SPORTS.map(([k, l]) => `<button type="button" data-v="${k}" class="${f.sports.includes(k) ? 'on' : ''}" aria-pressed="${f.sports.includes(k)}">${l}</button>`).join('')}</div></div>
+      <div class="field"><span class="xs muted">Games</span><div class="seg" data-adays>${[[1, 'Today / tonight'], [3, 'Next 3 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.days === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <label class="field"><span>Target acca price (fair odds)</span><input class="in" data-af="targetTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.targetTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
+      <div class="row" style="border:0;padding:0;gap:6px;flex-wrap:wrap">${PRESET_T.map(d => `<button type="button" class="chip" data-aset="targetTxt" data-d="${d}">${esc(fmtOdds(d))}</button>`).join('')}</div>
+      <div class="recrow"><label class="field"><span>Min fair odds per leg</span><input class="in" data-af="legMinTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.legMinTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
+        <label class="field"><span>Max per leg (optional)</span><input class="in" data-af="legMaxTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.legMaxTxt)}" placeholder="3/1 if empty"></label></div>
+      <div class="row" style="border:0;padding:0;gap:6px;flex-wrap:wrap"><span class="xs muted">Min per leg:</span>${PRESET_L.map(d => `<button type="button" class="chip" data-aset="legMinTxt" data-d="${d}">${esc(fmtOdds(d))}</button>`).join('')}</div>
+      <details class="recadv"><summary class="small"><b>More options</b></summary>
+        <div class="field"><span class="xs muted">Minimum confidence per leg</span><div class="seg wrap" data-aseg="minConf">${[['0', 'Any'], ['2', 'Medium+'], ['3', 'High']].map(([v, l]) => `<button type="button" data-v="${v}" class="${String(f.minConf) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="field"><span class="xs muted">Matchup (NBA / NFL legs)</span><div class="seg wrap" data-aseg="mu">${[['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.mu === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <label class="hcheck"><input type="checkbox" data-ack="noRare" ${f.noRare ? 'checked' : ''}><span>Leave out rare-event markets <span class="xs muted">(steals, blocks, steals + blocks, double / triple-doubles, anytime touchdowns: one lucky or unlucky play decides them)</span></span></label>
+        <label class="hcheck"><input type="checkbox" data-ack="unders" ${f.unders ? 'checked' : ''}><span>Include Under / No legs</span></label>
+        <label class="hcheck"><input type="checkbox" data-ack="allowSame" ${f.allowSame ? 'checked' : ''}><span>Allow two legs from the same game <span class="xs muted">(only pairs whose players have ${ACCA.MIN_SHARED}+ earlier games together are priced, from how their figures moved together; bookmakers may only offer these as a Bet Builder, at their own price)</span></span></label>
+      </details>
+      <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-abuild><b>Build Acca</b></button><button type="button" class="btn" data-areplace>Replace Unlocked Plays</button></div>
+      <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-aclearx>Clear Exclusions (${S.excl.size + S.skip.size})</button><button type="button" class="chip" data-anew>Start New Acca</button></div>
+      <p class="xs muted" style="margin:0" data-afresh>${f.sports.map(sp => `${SPORTS.find(x => x[0] === sp)[1]} data updated ${esc(updated(sp))}`).join(' · ')} (every night at about 23:00).</p>`; };
+  // ---------- pool ----------
+  let busy = false;
+  const pool = async () => {
+    const all = [];
+    for (const sp of S.f.sports) {
+      out.innerHTML = `<div class="card"><b>Loading ${SPORTS.find(x => x[0] === sp)[1]}…</b></div>`;
+      if (!(await ready(sp))) { out.insertAdjacentHTML('beforeend', `<div class="banner bad">${sp} data could not be loaded.</div>`); continue; }
+      const A = sp === 'football' ? null : usAdapter(sp), fx = fixtures(sp, S.f.days), k = `${sp}|${S.f.days}|${fx.map(f => sp === 'football' ? fixtureId(f) : f.id).join(',')}`;
+      if (!S.cands.has(k)) { const cs = []; let i = 0;
+        for (const f of fx) { const bar = `Working out ${SPORTS.find(x => x[0] === sp)[1]} plays… ${Math.round((i / Math.max(1, fx.length)) * 100)}%`; out.innerHTML = `<div class="card"><b>${bar}</b></div>`; cs.push(...await buildCandidates(sp, A, [f])); i++; await new Promise(r => setTimeout(r, 0)); }
+        S.cands.set(k, cs); }
+      all.push(...S.cands.get(k)); }
+    return all;
   };
-  root.addEventListener('click', e => {
-    const a = load(), row = e.target.closest('[data-mp]');
-    if (e.target.closest('[data-mpclear]')) { save(a.filter(x => !x.result)); draw(); return; }
-    if (!row) return; const i = a.findIndex(x => x.id === row.dataset.mp); if (i < 0) return;
-    const r = e.target.closest('[data-mpres]'); if (r) { a[i].result = a[i].result === r.dataset.mpres ? '' : r.dataset.mpres; save(a); draw(); return; }
-    if (e.target.closest('[data-mpdel]')) { a.splice(i, 1); save(a); draw(); }
+  const opts = () => ({ noRare: S.f.noRare, sides: S.f.unders ? ['over', 'under'] : ['over'], minFair: dec(S.f.legMinTxt), maxFair: dec(S.f.legMaxTxt) || 4, /* no per-leg max typed: legs longer than 3/1 are not generated (long shots are where the model is least sure) */ minConf: Number(S.f.minConf) || 0, mu: S.f.mu, grps: null, injOk: true });
+  // a locked leg: its live version (re-priced now) if its play still exists, otherwise the saved snapshot, flagged
+  const liveLock = (cands, snap) => { const c = cands.find(x => x.id === snap.cid); if (!c) return { snap, problem: 'no longer in the published plays (game finished, player out or data changed)' }; const r = evalAt(c, snap.L, snap.side); if (!r) return { snap, problem: 'can no longer be priced' }; const l = mkLeg(c, snap.side, r); return { leg: l, problem: legProblem(l) }; };
+  const snapOf = l => ({ cid: l.c.id, side: l.side, L: l.r.L, name: l.c.name, label: ladderName(l.c, l.r), fair: l.fair, p: l.p, sport: l.c.sport });
+  const parseId = id => { const a = id.split('|'), L = Number(a.pop()), side = a.pop(); return { cid: a.join('|'), side, L }; };
+  async function restore() { // back on the page: the same legs as before, re-priced on the data loaded now (locks kept; anything gone is flagged)
+    if (busy) return; busy = true;
+    try { const cands = await pool(), L = [...S.locks.values()].map(sn => liveLock(cands, sn)); if (L.some(x => x.problem)) { draw(cands, null, L); return; }
+      const legs = []; for (const id of S.current) { const q = parseId(id), c = cands.find(x => x.id === q.cid), r = c && evalAt(c, q.L, q.side); if (r) { const l = mkLeg(c, q.side, r); if (!legProblem(l)) legs.push(l); } }
+      const lost = S.current.length - legs.length; S.built = { legs, joint: jointOf(legs), hit: true, note: lost ? `${lost} leg${lost === 1 ? '' : 's'} of your last acca can no longer be offered (game started, player out or data updated) and ${lost === 1 ? 'was' : 'were'} dropped: tap Replace Unlocked Plays to fill the gap.` : '' };
+      S.current = legs.map(l => l.id); save(); draw(cands, S.built, L, null);
+    } finally { busy = false; }
+  }
+  async function build(replace) {
+    if (busy) return; busy = true;
+    try {
+      const target = dec(S.f.targetTxt); if (!target || target <= 1) { out.innerHTML = '<div class="banner info"><b>Type a target price</b> (for example 10/1).</div>'; return; }
+      const cands = await pool(); const L = [...S.locks.values()].map(sn => liveLock(cands, sn));
+      const bad = L.filter(x => x.problem); if (bad.length) { draw(cands, null, L); return; } // a locked leg needs a decision first
+      const locked = L.map(x => x.leg), o = opts();
+      if (replace) for (const id of S.current) if (!S.locks.has(id)) S.skip.add(id); // just replaced: not offered again straight away
+      const P = legPool(cands, o, new Set([...S.excl])), res = buildAcca(P, locked, target, { allowSame: S.f.allowSame, skip: S.skip });
+      if (replace && !res.hit && S.skip.size) { const res2 = buildAcca(P, locked, target, { allowSame: S.f.allowSame }); if (res2.hit) { res2.note = 'Every fresh combination had been shown already, so legs you replaced earlier may come back (they are not excluded: tick Exclude to keep one out).'; Object.assign(res, res2); } }
+      S.current = res.legs.map(l => l.id); S.built = res; save(); const per = {}; for (const l of P) per[l.c.sport] = (per[l.c.sport] || 0) + 1; draw(cands, res, L, `${P.length} (${Object.entries(per).map(([k, v]) => `${{ nba: 'NBA', nfl: 'NFL', football: 'football' }[k]} ${v}`).join(', ') || 'none'})`);
+    } finally { busy = false; }
+  }
+  const tw = { g: 'easy', y: 'medium', r: 'tough' };
+  function draw(cands, res, L, n) {
+    const target = dec(S.f.targetTxt), lockRows = L.filter(x => x.problem);
+    if (lockRows.length) { out.innerHTML = `<div class="banner warnb"><b>A locked leg needs your decision:</b>${lockRows.map(x => `<p style="margin:4px 0">${esc(x.snap.name)} · ${esc(x.snap.label)}: ${esc(x.problem)}. <button type="button" class="chip" data-aunlock="${esc(legId({ id: x.snap.cid }, x.snap.side, x.snap.L))}">Remove it from the acca</button></p>`).join('')}</div>`; return; }
+    if (!res) return; const legs = res.legs, J = res.joint, lo = opts();
+    const outside = legs.filter(l => S.locks.has(l.id) && ((lo.minFair && l.fair < lo.minFair - 1e-9) || (lo.maxFair && l.fair > lo.maxFair + 1e-9)));
+    const minConf = legs.reduce((m, l) => Math.min(m, l.r.conf.rank), 3), confW = { 3: 'High', 2: 'Medium', 1: 'Low' }[minConf];
+    const book = dec(S.bookTxt), ev = book && J.priced ? (J.p * book - 1) * 100 : null;
+    out.innerHTML = `${res.note ? `<div class="banner ${res.over ? 'warnb' : 'info'}">${esc(res.note)}${res.over ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
+      ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg fair-odds range now: kept because you locked it.`).join('<br>')}</div>` : ''}
+      ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds${target ? ` (target ${esc(fmtOdds(target))})` : ''}</span></div>
+        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>Estimated joint probability${J.priced ? ` (cautious ${(J.pCaut * 100).toFixed(1)}%)` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${confW}</b><span>Lowest leg confidence</span></div></div>
+        ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is the product of the leg probabilities.</p>'}
+        <label class="field"><span>Bookmaker's price for this acca (optional)</span><input class="in" data-abook inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" value="${esc(S.bookTxt)}" placeholder="${esc(PLACEHOLDER[oddsFmt()])}"></label>
+        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV assumes the probability is right.`}</p></div>` : ''}
+      <div id="alegs">${legs.map(l => { const r = l.r, c = l.c, locked = S.locks.has(l.id), g = c.f, vs = c.sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
+        return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}</div></div>
+          <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
+          <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><span class="rt"><small>This season</small><b>${r.hr.season.n ? `${r.hr.season.hit}/${r.hr.season.n}` : '–'}</b></span><span class="rt"><small>Last 10</small><b>${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</b></span>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tw[r.tier]}</b></span>` : ''}<span class="rt"><small>Confidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></span></div>
+          <div class="row" style="border:0;padding:6px 0 0;gap:14px"><label class="hcheck"><input type="checkbox" data-alock ${locked ? 'checked' : ''}><span><b>Include</b> (lock)</span></label><label class="hcheck"><input type="checkbox" data-aexcl><span><b>Exclude</b></span></label>${locked ? '<span class="xs hit">Locked: kept when you replace</span>' : '<span class="xs muted">Replaceable</span>'}</div></article>`; }).join('')}</div>
+      <p class="xs muted">How legs are chosen: among combinations within ${Math.round(ACCA.tol * 100)}% of your target, the one whose legs are best backed: each leg's Best Overall score (its season, recent and opponent record, matchup and confidence around the model probability) compared with its probability, with a small cost for every extra leg, so fewer, better-supported legs win. ${n != null ? `${n} eligible legs were considered.` : ''} A high combined hit rate is not proof of a profitable acca, and nothing here says it will win.</p>`;
+  }
+  // ---------- events ----------
+  pg.addEventListener('click', e => { const t = e.target;
+    const sp = t.closest('[data-asp] button'); if (sp) { const v = sp.dataset.v, a = new Set(S.f.sports); a.has(v) ? a.delete(v) : a.add(v); if (!a.size) a.add(v); S.f.sports = SPORTS.map(x => x[0]).filter(k => a.has(k)); save(); drawF(); return; }
+    const dd = t.closest('[data-adays] button'); if (dd) { S.f.days = Number(dd.dataset.v); save(); drawF(); return; }
+    const sg = t.closest('[data-aseg] button'); if (sg) { const k = sg.closest('[data-aseg]').dataset.aseg; S.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; save(); drawF(); return; }
+    const ps = t.closest('[data-aset]'); if (ps) { S.f[ps.dataset.aset] = inputText(Number(ps.dataset.d)); save(); drawF(); return; }
+    if (t.closest('[data-abuild]')) { build(false); return; }
+    if (t.closest('[data-areplace]')) { build(true); return; }
+    if (t.closest('[data-aclearx]')) { S.excl.clear(); S.skip.clear(); save(); drawF(); return; }
+    if (t.closest('[data-anew]')) { S.locks.clear(); S.excl.clear(); S.skip.clear(); S.current = []; S.built = null; S.bookTxt = ''; save(); drawF(); out.innerHTML = ''; return; }
+    const ul = t.closest('[data-aunlock]'); if (ul) { S.locks.delete(ul.dataset.aunlock); save(); build(false); return; }
   });
-  draw();
+  pg.addEventListener('change', e => { const t = e.target;
+    const ck = t.closest('[data-ack]'); if (ck) { S.f[ck.dataset.ack] = ck.checked; save(); return; }
+    const art = t.closest('[data-aleg]'); if (!art || !S.built) return; const id = art.dataset.aleg, l = S.built.legs.find(x => x.id === id); if (!l) return;
+    if (t.matches('[data-alock]')) { if (t.checked) { S.locks.set(id, snapOf(l)); S.excl.delete(id); art.querySelector('[data-aexcl]').checked = false; } else S.locks.delete(id); save(); art.classList.toggle('locked', t.checked); return; }
+    if (t.matches('[data-aexcl]') && t.checked) { S.locks.delete(id); S.excl.add(id); art.querySelector('[data-alock]').checked = false; save(); // gone now; the acca re-prices without it (Replace fills the gap)
+      S.built = { ...S.built, legs: S.built.legs.filter(x => x.id !== id) }; S.built.joint = jointOf(S.built.legs); S.current = S.built.legs.map(x => x.id); save(); draw(null, S.built, [], null); drawF(); }
+  });
+  pg.addEventListener('input', e => { const t = e.target;
+    const af = t.closest('[data-af]'); if (af) { S.f[af.dataset.af] = af.value; save(); return; }
+    if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = !b ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : !J.priced ? 'No EV: this acca has an unpriced same-game pair.' : (ev => `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(b))} against the joint probability ${(J.p * 100).toFixed(1)}%. EV assumes the probability is right.`)((J.p * b - 1) * 100); } }
+  });
+  drawF();
+  if (S.current.length || S.locks.size) restore();
 }
-// "Add to My Plays" on the Compare Price / EV page (risk.js draws the button with the play's details)
-if (typeof document !== 'undefined') document.addEventListener('click', ev => {
-  const b = ev.target.closest('[data-slipadd]'); if (!b) return; const box = b.closest('[data-risk]'); if (!box) return;
-  let d; try { d = JSON.parse(box.dataset.rk); } catch { return; }
-  const units = Number(box.dataset.final); const msg = box.querySelector('[data-slipmsg]');
-  if (!d.info || !(units > 0)) { if (msg) msg.textContent = 'No stake at this price, so nothing to add.'; return; }
-  const r = addPlay(d.info, d.dec, units), day = d.info.date || today(), W = checks(load().filter(x => x.day === day && !x.result));
-  if (msg) msg.textContent = r === 'failed' ? 'Could not save on this device (private browsing?).' : `${r === 'added' ? 'Added' : 'Updated'}: ${fmtU(units)}u.${W.length ? ' ⚠ ' + W[0] : ''}`;
-});
 
-return { myPlays, addPlay, checks, ladders, viewMyPlays };
+return { viewAcca };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
@@ -7344,14 +7776,14 @@ return { scanOne };
 __m['v-nba-plays'] = (() => {
 // NBA Plays: pick one game, player or team. PropLab scans every NBA market with recorded data and keeps, per market and direction, the
 // most ambitious research line that still reached your minimum hit rate (the shared scanner). Each result is shown as the same card as
-// Hiwi's Section (bars with minutes, Recent Form / Vs Opponent, per-card minimum minutes, NEW TEAM, playoff labels).
+// Find Your Own (bars with minutes, Recent Form / Vs Opponent, per-card minimum minutes, NEW TEAM, playoff labels).
 // Players confirmed OUT (or otherwise unavailable) on the Official NBA Injury Report for that game are never in the active results;
 // Doubtful / Questionable players stay, clearly marked. A game not yet on the report is flagged, and nobody is removed for it.
 const { nba, teamName, latestSeason, seasonLabel, nbaSelectable, nbaUpcoming, loadLogs, teamGameRows, injuryStatus, loadNbaInjuries } = __m['nba-data'];
 const { minFairHtml, muFilterHtml } = __m['minfair'];
 const { nightOf, ukTip } = __m['nightdate'];
 const { rankList, getExcludeOut, setExcludeOut, isConfirmedOut } = __m['rank'];
-const { NBA_MARKETS, NBA_BET_MARKETS, NBA_TEAM_MARKETS, nbaLines, nbaDef } = __m['nba-markets'];
+const { NBA_BET_MARKETS: NBA_MARKETS, NBA_BET_MARKETS, NBA_TEAM_BET_MARKETS: NBA_TEAM_MARKETS, nbaLines, nbaDef } = __m['nba-markets'];
 const { scanOne } = __m['scanner'];
 const { $, koLocal, koUK, tzNow, esc, fmtKick, fmtDay, keepScrollIn, fxStatus } = __m['util'];
 const { prefs, savePrefs } = __m['shared'];
@@ -7449,7 +7881,7 @@ async function viewNbaPlays(root, r) {
         <p class="xs muted">${res.scanned} markets with data scanned · minimum ${prefs.minPct}% · ${cards.length} result${cards.length === 1 ? '' : 's'}.</p>${section(esc(p.name), cards, `No market reached ${prefs.minPct}% in this sample.`)}`, cards]);
     } else { const t = teamCards(ui.team, nbaUpcoming(now).find(x => x.home === ui.team || x.away === ui.team)); blocks.push([section(`${esc(teamName(ui.team))} team markets`, t, `No team market reached ${prefs.minPct}% in this sample.`), t]); }
     if (my !== gen) return; globalThis.__plPending = 0;
-    out.innerHTML = blocks.map(b => b[0]).join('') + `<p class="xs muted">How a result is chosen: for each market, ONE line is set from his (or the team's) matches BEFORE the ones shown, by the method that matched the next game best in past seasons (half-point lines; a research line, not a bookmaker line). The matches shown never set their own line, so no line is lowered until a high % appears; the minimum hit rate only filters the results. ${nbaMinGlobal() ? `Only games with ${nbaMinGlobal()}+ minutes count (applied before Last N). ` : ''}A DNP is never a game. Handicap research is in Hiwi's Section and Finder.</p>`;
+    out.innerHTML = blocks.map(b => b[0]).join('') + `<p class="xs muted">How a result is chosen: for each market, ONE line is set from his (or the team's) matches BEFORE the ones shown, by the method that matched the next game best in past seasons (half-point lines; a research line, not a bookmaker line). The matches shown never set their own line, so no line is lowered until a high % appears; the minimum hit rate only filters the results. ${nbaMinGlobal() ? `Only games with ${nbaMinGlobal()}+ minutes count (applied before Last N). ` : ''}A DNP is never a game. Handicap research is in Find Your Own and Finder.</p>`;
     const secs = [...out.querySelectorAll('[data-sec]')];
     blocks.filter(b => b[1].length).forEach((b, i) => { const box = secs[i]; for (const { c, st } of b[1]) { reg.set(c.cid, { card: c, st }); const t = document.createElement('div'); t.innerHTML = cardHtml(c, st); const el = t.firstElementChild; paintHCard(el, c, st); box.appendChild(el); el.querySelectorAll('.hbars-wrap').forEach(w => { w.scrollLeft = w.scrollWidth; }); }
       wireHCards(box, reg, cid => openFull(cid)); wireBarTaps(box, e => reg.get(e.dataset.cid), 'nba', A); });
@@ -7641,7 +8073,7 @@ async function viewHome(root) {
   <div class="tiles2">
     <a class="tool" href="#/players">${ICON.players}<b>Players</b><span>Teams in nine leagues and Europe, players</span></a>
     <a class="tool" href="#/fixtures">${ICON.fixtures}<b>Fixtures</b><span>Upcoming and results</span></a>
-    <a class="tool" href="#/hiwi">${BEAR_ICON}<b>Hiwi's Section</b><span>Pick fixtures, teams and markets; adjust the line</span></a>
+    <a class="tool" href="#/hiwi">${BEAR_ICON}<b>Find Your Own</b><span>Pick fixtures, teams and markets; adjust the line</span></a>
     <a class="tool" href="#/finder">${ICON.finder}<b>Hit Rate Finder</b><span>Discover trends across a league</span></a>
     <a class="tool" href="#/value">${ICON.value}<b>Value Research</b><span>Compare a price with the data</span></a></div>
   ${ready ? `<section class="sec"><h2>Next fixtures <a href="#/fixtures">All fixtures</a></h2><div id="hlg" style="margin-bottom:10px">${leagueSelect()}</div><div class="card">${next.length ? `<div class="list">${next.map(x => `<a class="row" href="#/fixtures"><div class="l"><b>${esc(x.home)} v ${esc(x.away)}</b><span>${esc(fmtKick(x))} · ${esc(leagueName(x.league))}</span></div></a>`).join('')}</div>` : '<p class="muted" style="margin:0">No upcoming fixtures are published right now.</p>'}</div></section>` : ''}`;
@@ -7953,8 +8385,10 @@ async function viewFixtures(root, r) {
       html = list.length ? groups.map(([lg, fs0]) => { const lim = ui.more['u' + lg] || 30, fs = fs0.slice(0, lim); return `<h2 class="lgh" id="lg-${lg}">${esc(leagueName(lg))} <span class="muted small">${fs0.length} fixture${fs0.length === 1 ? '' : 's'}</span></h2><div class="card">${fs.map(f => {
         const rp = f.referee ? refereeProfile(f.referee) : null;
         return `<details class="fx"><summary><span class="time" data-st="${esc(fixtureId(f))}">${timeCell(f, fxStatus(f, now))}</span><span class="teams">${scoreline(f.home, f.away)}<span><span class="fxd">${esc(fmtDay(koLocal(f).ymd))}${koLocal(f).hm ? '' : ' · <span class="tbcw">kick-off time unconfirmed</span>'}</span> · ${f.venue ? esc(f.venue) + ' · ' : ''}${f.referee ? 'Referee ' + esc(f.referee) : (f.league === 'epl' ? 'Referee not yet confirmed' : !koLocal(f).hm ? 'Kick-off time not yet set' : 'Kick-off ' + esc(koLocal(f).hm + ' ' + koLocal(f).abbr))}${newsForTeam(f.home).length + newsForTeam(f.away).length ? ` · ${newsForTeam(f.home).length + newsForTeam(f.away).length} news` : ''}</span></span></summary>
-        <div class="more"><a class="btn" href="#/hiwi?fx=${encodeURIComponent(fixtureId(f))}"><b>Research this match in Hiwi's Section →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}${fs0.length > lim ? `<button type="button" class="btn" data-fmore="u${lg}">Show ${Math.min(30, fs0.length - lim)} more ${esc(leagueName(lg))} fixtures</button>` : ''}</div>`; }).join('')
+        <div class="more"><a class="btn" href="#/hiwi?fx=${encodeURIComponent(fixtureId(f))}"><b>Research this match in Find Your Own →</b></a><a class="btn" href="#/match?d=${f.date}&h=${encodeURIComponent(f.home)}&a=${encodeURIComponent(f.away)}"><b>Match research: form and head to head →</b></a><h3 style="margin:12px 0 0">Lineups</h3>${lineupPanel(f, 'home')}${snap(f.home)}${snap(f.away)}${rp && rp.ref.n ? `<p class="small muted" style="margin:0">Referee ${esc(rp.name)}: ${rp.ref.fouls} fouls and ${rp.ref.yellows} yellows per match over ${rp.ref.n} matches (all referees: ${rp.all.fouls} and ${rp.all.yellows}).</p>` : ''}<p class="xs muted" style="margin:0">Fixture source: ${esc(f.source || 'see Data & sources')}</p></div></details>`; }).join('')}${fs0.length > lim ? `<button type="button" class="btn" data-fmore="u${lg}">Show ${Math.min(30, fs0.length - lim)} more ${esc(leagueName(lg))} fixtures</button>` : ''}</div>`; }).join('')
         : '<div class="banner info"><b>No upcoming fixtures match these filters.</b> Only fixtures that have been published appear here.</div>';
+      { const WEEKLY = ['leagueone', 'leaguetwo', 'proleague', 'eliteserien', 'superlig'].filter(lg => inLeagues(lg)); // 2 Nov audit: no free source publishes their full schedule
+        if (WEEKLY.length) html = `<p class="xs muted" style="margin:0 0 8px" data-weekly>${esc(WEEKLY.map(leagueName).join(', '))}: fixtures appear about a week ahead. PropLab's free sources (football-data.co.uk's weekly list) publish them round by round; openfootball does not cover these leagues and their Wikipedia season articles list no future dates, so later rounds are added as they are announced, never guessed.</p>` + html; }
       if (list.length) html = `<p class="xs muted" style="margin:0 0 8px">Times are in your time zone (${esc(tzNow())}). PropLab has no live scores: after kick-off a match shows "Started – status unconfirmed", then Awaiting result until the verified final score appears under Results.</p>` + html;
     } else {
       // Latest Results (owner request 21 Oct): every competition together, newest first, NOT limited by the league chips. A competition heading
@@ -8003,7 +8437,7 @@ async function viewFixtures(root, r) {
 return { viewFixtures };
 })();
 __m['playcard'] = (() => {
-// One play card, shared by Plays (football and NFL) and Hiwi's Section. Every number on a card comes from one sample:
+// One play card, shared by Plays (football and NFL) and Find Your Own. Every number on a card comes from one sample:
 // hit rate, hits/sample, dots and the match list always agree, and they all move together with the inline line slider.
 const { infoTag } = __m['info'];
 const { playBadge } = __m['markets'];
@@ -8403,9 +8837,9 @@ const { hypoSlot, setHypoSource, hypoFor } = __m['hypo'];
 const ui = shareSelection({ lgOpen: false, gOpen: true, order: 'hi', mode: 'browse', kind: 'all', side: 'both', minPct: 80, period: 10, minN: 1, venue: '', gvH: 'home', gvA: 'away', hvenue: 'all', market: '', lineMode: 'best', exKey: 'm.goals', exSide: 'over', exLine: null, game: '', shown: 40, sel: {}, tq: '' });
 const PCTS = [70, 75, 80, 85, 90, 95, 100];
 const PERIODS = [['season', 'Season'], [3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20']];
-const ORDERS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['n', 'Largest Sample'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
+const ORDERS = [['hi', 'Highest % First'], ['ev', 'Strongest Evidence'], ['lo', 'Lowest % First'], ['az', 'Alphabetical A–Z'], ['market', 'By Market / Fixture']];
 const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
-const fixtureHref = f => `#/hiwi?fx=${encodeURIComponent(fixtureId(f))}`; // the fixture in Hiwi's Section
+const fixtureHref = f => `#/hiwi?fx=${encodeURIComponent(fixtureId(f))}`; // the fixture in Find Your Own
 const sideWord = s => (s === 'under' ? 'Under' : 'Over');
 const mLabel = def => def.label; // the market's full name (Team / Opponent / Match / Player ...), never shortened
 const SCOPE = { team: n => `${n} only`, opp: n => `against ${n}`, match: () => 'both teams combined', player: () => 'this player' };
@@ -8853,7 +9287,7 @@ __m['v-combined'] = (() => {
 // compares one team's statistic with the opponent's CORRESPONDING statistic (goals scored v goals conceded, corners won v corners conceded,
 // shots on target v shots on target allowed, fouls committed v fouls drawn...; MATCH markets: each team's own match totals) and ranks the
 // matchups by Combined % = (team % + opponent %) / 2, a descriptive historical figure, not a probability. Compact cards, no bar charts;
-// Detailed analysis has both teams' bars. Engine: combinedcore.js (shared with Hiwi's Section). Fixture selection: fxsel.js (shared with
+// Detailed analysis has both teams' bars. Engine: combinedcore.js (shared with Find Your Own). Fixture selection: fxsel.js (shared with
 // Highest %).
 const { store, selectableFixtures, teamSlugOf, leagueName, isCup, hasEuropean, fxSort } = __m['data'];
 const { minFairHtml } = __m['minfair'];
@@ -8946,7 +9380,7 @@ const MODES = [['trends', 'Highest %'], ['combined', 'Highest Combined %'], ['ta
 let lastMode = 'combined';
 async function viewFinder(root, r) {
   const m = MODES.some(([k]) => k === r.q.get('m')) ? r.q.get('m') : (r.q.get('tgame') ? 'trends' : lastMode); lastMode = m;
-  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover trends across a whole league or several fixtures. For one team, match or player, use <a href="#/hiwi">Hiwi's Section</a>.</p>
+  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover trends across a whole league or several fixtures. For one team, match or player, use <a href="#/hiwi">Find Your Own</a>.</p>
     <p class="xs muted" style="margin:0 0 4px">Rank by</p><div class="seg wrap" id="fmode" role="tablist">${MODES.map(([k, l]) => `<a role="tab" href="#/finder?m=${k}" class="${k === m ? 'on' : ''}" aria-selected="${k === m}">${esc(l)}</a>`).join('')}</div><div id="fbody" style="margin-top:12px"></div>`;
   const body = $('#fbody', root);
   return m === 'table' ? viewTable(body, r) : m === 'combined' ? viewCombined(body, r) : viewTrends(body, r);
@@ -9171,7 +9605,7 @@ const { usValuePage } = __m['v-nba-value'];
 const valueHref = (p, side, line) => `#/nfl/value?pid=${encodeURIComponent(p.player_id)}&m=${encodeURIComponent(p.market)}&line=${line}&side=${side}`;
 const stamp = () => (model.data ? `Model ${esc(model.data.version)} · trained ${esc(model.data.trained.slice(0, 10))} · predictions updated ${esc(new Date(model.data.generated).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }))}` : '');
 const loading = root => { root.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>'; };
-const missing = (root, title) => { root.innerHTML = `<h1>${title}</h1>${EV_NOTICE}<div class="banner info"><b>Model predictions are not available right now.</b> The model's output file could not be loaded. Historical research is still available in Hiwi's Section.</div>`; };
+const missing = (root, title) => { root.innerHTML = `<h1>${title}</h1>${EV_NOTICE}<div class="banner info"><b>Model predictions are not available right now.</b> The model's output file could not be loaded. Historical research is still available in Find Your Own.</div>`; };
 
 /** The picks rule (documented on the page): an active market (passed its out-of-sample tests), a measured confidence of Medium or
  *  better, at least 6 earlier games, a clear but realistic lean at the reference line (the favoured side between 57% and 80%), no
@@ -9471,7 +9905,7 @@ const LICENSING = [
     action: 'Owner review. Options: ask football-data.co.uk for written permission; or keep the site private (e.g. Cloudflare Pages + Access) so the JSON is not publicly redistributed. Do not add more reliance until resolved.',
     links: ['https://www.football-data.co.uk/data.php', 'https://www.football-data.co.uk/disclaimer.php', 'https://football-dataco.com/betting-data-licence-requirements'] },
   { id: 'openfootball', name: 'openfootball / football.json', url: 'https://github.com/openfootball/football.json', status: 'permitted',
-    data: 'Fixtures, kick-off times and round (matchday) numbers (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie 2026/27; the rounds set Hiwi\'s Section "This Gameweek"); Premier League results 2021/22 to 2025/26 for cross-checks.',
+    data: 'Fixtures, kick-off times and round (matchday) numbers (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie 2026/27; the rounds set Find Your Own "This Gameweek"); Premier League results 2021/22 to 2025/26 for cross-checks.',
     method: 'Download of the JSON files from GitHub.', terms: 'README: "The football.json schema, data and scripts are dedicated to the public domain. Use as you please with no restrictions whatsoever."',
     automated: 'Yes (public GitHub files).', storage: 'Yes.', display: 'Yes.', repo: 'Yes.', reason: 'Explicit public-domain dedication.', action: 'None. Credit kept as a courtesy.',
     links: ['https://github.com/openfootball/football.json/blob/master/README.md'] },
@@ -9588,7 +10022,7 @@ ${coverageHtml()}
   drawRefresh(root.querySelector('#refreshbox')); drawRunNow(root.querySelector('#refreshbox'));
   loadCalib().then(c => { const box = root.querySelector('#calibbox'); if (!box) return; if (!c) { box.innerHTML = '<p class="warn" style="margin:0">The backtest file could not be loaded: Value estimates are shown as uncalibrated.</p>'; return; }
     const N = { nba: 'NBA players', nfl: 'NFL players', football: 'Football team markets', football_players: 'Football players (MLS)' };
-    box.innerHTML = `<div class="scroll"><table><tr><th>Sport</th><th>Tested on</th><th>Predictions</th><th>Brier (estimate)</th><th>Brier (last-10 hit rate)</th><th>Brier (50 / 50)</th><th>Largest calibration gap</th></tr>${Object.entries(c.sports).map(([k, v]) => `<tr><td>${esc(N[k] || k)}</td><td>${esc(v.test_label || String(v.test_season))}</td><td class="n">${v.test_n.toLocaleString('en-GB')}</td><td class="n"><b>${v.score.calibrated.brier}</b></td><td class="n">${v.score.last10.brier}</td><td class="n">${v.score.coin.brier}</td><td class="n">${v.max_bin_gap_pts} pts</td></tr>`).join('')}</table></div><p class="xs muted" style="margin:4px 0 0">Brier score: lower is better (0.25 = a coin flip). Backtest run ${esc(c.generated.slice(0, 10))}. Lines tested: the suggested line and 1 to 2 steps either side.</p>`; });
+    box.innerHTML = `<div class="scroll"><table><tr><th>Sport</th><th>Tested on</th><th>Predictions</th><th>Brier (estimate)</th><th>Brier (last-10 hit rate)</th><th>Brier (50 / 50)</th><th>Largest calibration gap</th></tr>${Object.entries(c.sports).filter(([, v]) => v && v.score && Number.isFinite(v.test_n)).map(([k, v]) => `<tr><td>${esc(N[k] || k)}</td><td>${esc(v.test_label || String(v.test_season))}</td><td class="n">${v.test_n.toLocaleString('en-GB')}</td><td class="n"><b>${v.score.calibrated.brier}</b></td><td class="n">${v.score.last10.brier}</td><td class="n">${v.score.coin.brier}</td><td class="n">${v.max_bin_gap_pts} pts</td></tr>`).join('')}</table></div><p class="xs muted" style="margin:4px 0 0">Brier score: lower is better (0.25 = a coin flip). Backtest run ${esc(c.generated.slice(0, 10))}. Lines tested: the suggested line and 1 to 2 steps either side.</p>`; });
 }
 
 // The daily refresh (GitHub Actions, about 11pm UK time) writes data-refresh-status.json. Read it fresh (no cache).
@@ -9732,7 +10166,7 @@ async function viewNflHome(root) {
   if (nflLoading(root)) return;
   const next = nflUpcoming().slice(0, 8), m = nfl.meta, cur = nfl.players.filter(p => p.current);
   root.innerHTML = `<section class="hero"><h1>NFL player props, game by game.</h1><p>Hit rates for passing, rushing, receiving, touchdown, kicking and defensive props from real game logs (${m.seasons[0]}–${m.seasons[m.seasons.length - 1]}). Research only, not tips.</p>
-    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/hiwi"><b>Hiwi's Section</b><span>Ready-made shortlist</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
+    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/hiwi"><b>Find Your Own</b><span>Ready-made shortlist</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
     <section class="sec"><h2>Next games <a href="#/nfl/fixtures">All games</a></h2><div class="card"><div class="list">${next.length ? next.map(gameRow).join('') : '<p class="muted" style="margin:0">No upcoming games are published.</p>'}</div></div></section>
     ${credit}`;
 }
@@ -9886,7 +10320,7 @@ async function viewNflRecommended(root) {
       <div class="field"><label>Odds shown as</label><div class="seg" id="rpfmt">${[['decimal', 'Decimal'], ['fractional', 'Fractional'], ['american', 'American']].map(([v, l]) => `<button type="button" data-v="${v}" class="${fmt === v ? 'on' : ''}" aria-pressed="${fmt === v}">${l}</button>`).join('')}</div></div>
       <div class="field"><label for="rptgt">EV target for "minimum odds"</label><input class="in hnum" id="rptgt" type="number" inputmode="decimal" min="0" max="50" step="1" value="${target}" style="max-width:110px"><span class="xs muted">%</span></div></div></div>
     <div id="rplist" style="margin-top:12px"></div>
-    <p class="xs muted">Research tools that do not need a bookmaker line: <a href="#/nfl/value">Compare Price</a> (type a line and price you have found yourself), <a href="#/nfl/hiwi">Hiwi's Section</a> (historical hit rates for any line) and <a href="#/nfl/performance">Model Performance</a>.</p>`;
+    <p class="xs muted">Research tools that do not need a bookmaker line: <a href="#/nfl/value">Compare Price</a> (type a line and price you have found yourself), <a href="#/nfl/hiwi">Find Your Own</a> (historical hit rates for any line) and <a href="#/nfl/performance">Model Performance</a>.</p>`;
   const list = $('#rplist', root);
   const draw = async () => {
     if (!offers.length) {
@@ -9965,7 +10399,7 @@ const { nflLoading } = __m['v-nfl'];
 
 // Milestone 4 (owner request): market first, then position CHECKBOXES limited to the positions that market supports (Select all / Clear all),
 // fixture checkboxes in kick-off order (games that have kicked off stay until their final score), Today's Games (UK date), Minimum Games
-// Played (shared with Hiwi's Section, default 10), and the sort options used in Hiwi.
+// Played (shared with Find Your Own, default 10), and the sort options used in Hiwi.
 const ui = { find: '', lines: new Map(), pop: false, market: '__all', groups: null, team: '', games: new Set(), untick: new Set(), today: false, gOpen: false, side: 'over', line: null, last: 10, types: 'R', min: 0, order: 'hi', sort: { key: null, dir: null } };
 const SAMPLES = [[3, 'Last 3'], [5, 'Last 5'], [8, 'Last 8'], [10, 'Last 10'], [20, 'Last 20'], ['season', 'Season']];
 const POS = { qb: 'QB', rb: 'RB', wr: 'WR', te: 'TE', k: 'K', def: 'Defence' };
@@ -9976,7 +10410,7 @@ const PLAYER_MKTS = () => { const seen = new Map(); for (const g of Object.keys(
 async function viewNflFinder(root) {
   if (nflLoading(root)) return;
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under; changing Side here changes this table only
-  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover which players clear a line most often. For one player or game, use <a href="#/nfl/hiwi">Hiwi's Section</a>.</p>
+  root.innerHTML = `<h1>Hit Rate Finder</h1><p class="muted" style="margin-top:-4px">Discover which players clear a line most often. For one player or game, use <a href="#/nfl/hiwi">Find Your Own</a>.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:12px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root); const season = latestSeason(); let shown = []; const now = new Date();
   const ALL = { key: '__all', label: 'All markets', desc: 'Every market recorded for each position, each with its own suggested line per player.', for: Object.keys(POS) };
@@ -10006,7 +10440,7 @@ async function viewNflFinder(root) {
       <p class="xs muted" style="margin:0">No shared line: every player and market gets its own suggested line (explained under the table).</p>
       <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Last N reaches back into earlier seasons (2021 onwards).</span></div>
       <p class="xs muted" style="margin:0">Regular-season games only, the same games as the result cards.</p>
-      <div class="field"><label for="nmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="nmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">Games with a recorded ${esc(m.label.toLowerCase())} figure in the <b>${season} season only</b> (1–20). Earlier seasons still count for Last N. Shared with Hiwi's Section.</span></div></div>
+      <div class="field"><label for="nmin">Minimum games played</label><div class="hminrow"><input class="in hnum" id="nmin" type="number" inputmode="numeric" min="1" max="20" step="1" value="${getMinGames()}"><span class="xs muted">Games with a recorded ${esc(m.label.toLowerCase())} figure in the <b>${season} season only</b> (1–20). Earlier seasons still count for Last N. Shared with Find Your Own.</span></div></div>
       
       <div class="field"><label>Show players at or above</label>${seg('min', [[0, 'Any'], [60, '60%'], [70, '70%'], [80, '80%'], [90, '90%'], [100, '100%']], ui.min, 'grid')}</div>
 <div class="field havail"><label class="hcheck"><input type="checkbox" id="fxout" ${getExcludeOut() ? 'checked' : ''}><span><b>Exclude injured players (OUT only)</b> <span class="xs muted">Questionable, Doubtful and Probable players always stay; a missing or old report never counts as Out.</span></span></label></div>
@@ -10164,17 +10598,17 @@ const SP = {
 function viewStart(root, sport) {
   const s = SP[sport] || SP.football;
   const J = [
-    ['Recommended Plays', `Choose your ${s.unit === 'game' ? 'games' : 'matches'}, set a minimum chance and fair-odds range, and PropLab ranks every market it can price, with the line, the model probability, the fair odds and the record behind it.`, s.plays, 'See recommended plays'],
+    ["Hiwi's Section", `Recommended plays: choose your ${s.unit === 'game' ? 'games' : 'matches'}, set a minimum chance and fair-odds range, and PropLab ranks every market it can price, with the line, the model probability, the fair odds and the record behind it.`, s.plays, "Open Hiwi's Section"],
     ['Choose a Match', `Pick a ${s.unit === 'game' ? 'game' : 'fixture'}, then research both teams and their players.`, s.matches, 'See matches'],
     ['Find a Player or Team', 'Search by name (nicknames work) and open their record.', s.search, 'Search'],
-    ['Advanced Research', "Hiwi's Section: build your own cards for any market and line, with every filter.", s.hiwi, "Open Hiwi's Section"],
+    ['Find Your Own', 'Build your own cards for any market and line, with every filter.', s.hiwi, 'Find your own'],
     ...(sport === 'nba' ? [['Team Matchups', 'Every team ranked 1-30 for what its defence allows to guards, forwards and centres and what its offence produces, updated every night.', '#/nba/matchups', 'See matchups']] : []),
     ['Compare a Price', 'Type the odds you can see at a bookmaker and compare them with what happened in the past.', s.value, 'Compare a price'],
   ];
   root.innerHTML = `<section class="startpg"><h1>${s.em} ${esc(s.name)}: start here</h1>
     <p class="muted" style="margin:4px 0 12px">PropLab counts how often things happened in real past ${s.unit === 'game' ? 'games' : 'matches'}, for example <i>${esc(s.ex)}</i> (an illustration, not a real figure). It is research, not tips: past results never guarantee the next one.</p>
     ${guideHidden() ? '<p class="xs"><button type="button" class="linkbtn" data-guide="show">Show the quick guide</button></p>' : `<div class="card startguide" id="sguide"><div class="row" style="border:0;padding:0;align-items:center"><b>New here? 4 quick steps</b><button type="button" class="chip" data-guide="hide" aria-label="Hide the quick guide">Hide</button></div>
-      <ol class="small" style="margin:6px 0 0;padding-left:20px"><li>Tap <b>Recommended Plays</b> (or choose a match).</li><li>Each card shows a ${gl('hit', 'hit rate')} and the ${gl('qual', 'qualifying games')} behind it: 8 of 10, not just 80%.</li><li>Move the line, pick ${gl('ou', 'Over / Under')}, or change <b>Games used</b> on any card. Cards stay where they are.</li><li>Tap <b>Compare Price</b> to check a bookmaker's ${gl('odds', 'odds')} against that card.</li></ol></div>`}
+      <ol class="small" style="margin:6px 0 0;padding-left:20px"><li>Tap <b>Hiwi's Section</b> for recommended plays (or choose a match).</li><li>Each card shows a ${gl('hit', 'hit rate')} and the ${gl('qual', 'qualifying games')} behind it: 8 of 10, not just 80%.</li><li>Move the line, pick ${gl('ou', 'Over / Under')}, or change <b>Games used</b> on any card. Cards stay where they are.</li><li>Tap <b>Compare Price</b> to check a bookmaker's ${gl('odds', 'odds')} against that card.</li></ol></div>`}
     <div class="journeys">${J.map(([t, d, h, b], i) => `<a class="card journey${i === 0 ? ' main' : ''}" href="${h}"><b>${esc(t)}</b><span class="small muted">${esc(d)}</span><span class="jgo">${esc(b)} →</span></a>`).join('')}</div>
     <details class="card glosscard" style="margin-top:12px"><summary><b>Glossary</b> <span class="muted small">hit rate, qualifying games, Over / Under, H2H, odds, EV…</span></summary>${glossaryHtml()}</details>
     <p class="xs muted" style="margin-top:10px">Switch sport from the menu at the top. ${sport === 'football' ? 'Football covers the Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Liga Portugal, Eredivisie, Scottish Premiership, MLS and the three European competitions.' : ''}</p></section>`;
@@ -10185,7 +10619,7 @@ return { viewStart };
 })();
 __m['v-research'] = (() => {
 // Player research page (owner request 21 Oct, evening): tap a player's name on any result card to see every market PropLab has data for
-// for that player, each as the same card as Hiwi's Section (own line, Over / Under, Games used, NBA minutes, Vs Opponent, NEW TEAM, Compare
+// for that player, each as the same card as Find Your Own (own line, Over / Under, Games used, NBA minutes, Vs Opponent, NEW TEAM, Compare
 // Price). Only markets with recorded games are shown; nothing is invented. "Back to Plays" (top and bottom) returns to the exact list.
 const { usAdapter } = __m['v-hiwi'];
 const { buildUsPlayerCard } = __m['uscards'];
@@ -10202,7 +10636,7 @@ const { badge } = __m['badge'];
 
 const BACK = { football: '#/hiwi', nfl: '#/nfl/hiwi', nba: '#/nba/hiwi' };
 const st = new Map(); // per player+market card state while the visitor stays on the site
-/** "Back to Plays": the page the visitor came from (exact position restored by app.js), else this sport's Hiwi's Section. */
+/** "Back to Plays": the page the visitor came from (exact position restored by app.js), else this sport's Find Your Own. */
 const backHref = sport => (hooks.ret && hooks.ret.sport === sport ? hooks.ret.hash : BACK[sport]);
 const backBtn = (sport, where) => `<button type="button" class="btn rsback" data-rsback="${where}"><b>← Back to Plays</b></button>`;
 
@@ -10262,7 +10696,7 @@ async function viewResearch(root, sport, pid) {
 function wireBack(root, sport) {
   root.querySelectorAll('[data-rsback]').forEach(b => { b.onclick = () => { if (hooks.ret && hooks.ret.sport === sport && history.length > 1 && hooks.ret.viaApp) history.back(); else location.hash = backHref(sport); }; });
 }
-/** Football player card (MLS match logs): the same card as Hiwi's Section, own Games used. */
+/** Football player card (MLS match logs): the same card as Find Your Own, own Games used. */
 function fbCard(p, d, all) {
   const cs = currentSeason(p.league), cur = all.filter(x => x.season === cs), lab = x => `${x.home ? 'v' : '@'}${String(x.opp || '').split(' ').map(w => w[0]).join('').slice(0, 3).toUpperCase()}`;
   const mk = rows => rows.map(x => ({ date: x.date, opp: lab(x), value: d.get(x), raw: x })).filter(x => x.value !== null && x.value !== undefined).reverse();
@@ -10319,7 +10753,7 @@ if (typeof document !== 'undefined') {
     addEventListener('scroll', schedulePlayCount, { passive: true }); addEventListener('resize', schedulePlayCount);
     new MutationObserver(() => { clearTimeout(moT); moT = setTimeout(schedulePlayCount, 150); }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     addEventListener('hashchange', () => { if (pill) pill.hidden = true; document.getElementById('pcbanner')?.remove(); setTimeout(schedulePlayCount, 300); });
-    // a filter turned on in Hiwi's Section: build the remaining cards so every play is checked
+    // a filter turned on in Find Your Own: build the remaining cards so every play is checked
     document.addEventListener('minfair', () => { if (filtersOnNow()) document.querySelector('#view #hcards')?._renderAll?.(); schedulePlayCount(); });
   };
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
@@ -10423,6 +10857,7 @@ const { nba, loadNba } = __m['nba-data'];
 const { viewNbaFixtures, viewNbaSearch, viewNbaPlayer } = __m['v-nba'];
 const { viewNbaFinder } = __m['v-nba-finder'];
 const { viewRecommended } = __m['v-recommended'];
+const { viewAcca } = __m['v-acca'];
 const { viewMyPlays } = __m['myplays'];
 const { viewModel } = __m['v-model'];
 const { viewNbaPlays } = __m['v-nba-plays'];
@@ -10461,24 +10896,25 @@ const { startUpdateChecks, checkForUpdates, currentBuild } = __m['update'];
 const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'American Football', emoji: '🏈' }, nba: { label: 'Basketball (NBA)', emoji: '🏀' } };
 // [page id, short label, href, icon]
 // Redesign (21 Oct): the same five journeys in every sport. Start = plain-English entry page; Matches = fixtures and results;
-// Find Plays = Finder (and Plays) ranked by hit rate; Hiwi's Section = advanced research; Value = compare a price.
+// Find Plays = Finder (and Plays) ranked by hit rate; Find Your Own = advanced research; Value = compare a price.
 const TABS = {
-  football: [['start', 'Start', '#/start', 'home'], ['fixtures', 'Matches', '#/fixtures', 'fixtures'], ['rec', 'Recommended', '#/rec', 'finder'], ['hiwi', "Hiwi's Section", '#/hiwi', 'bear'], ['value', 'Value', '#/value', 'value']],
-  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', 'Recommended', '#/nfl/rec', 'finder'], ['hiwi', "Hiwi's Section", '#/nfl/hiwi', 'bear'], ['value', 'Value', '#/nfl/value', 'value']],
-  nba: [['start', 'Start', '#/nba/start', 'home'], ['fixtures', 'Matches', '#/nba/fixtures', 'fixtures'], ['rec', 'Recommended', '#/nba/rec', 'finder'], ['hiwi', "Hiwi's Section", '#/nba/hiwi', 'bear'], ['matchups', 'Matchups', '#/nba/matchups', 'matchups'], ['value', 'Value', '#/nba/value', 'value']],
+  football: [['start', 'Start', '#/start', 'home'], ['fixtures', 'Matches', '#/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/rec', 'bear'], ['hiwi', 'Find Your Own', '#/hiwi', 'search'], ['myplays', 'My Plays', '#/myplays', 'value']],
+  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nfl/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nfl/hiwi', 'search'], ['myplays', 'My Plays', '#/nfl/myplays', 'value']],
+  nba: [['start', 'Start', '#/nba/start', 'home'], ['fixtures', 'Matches', '#/nba/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nba/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nba/hiwi', 'search'], ['myplays', 'My Plays', '#/nba/myplays', 'value'], ['matchups', 'Matchups', '#/nba/matchups', 'matchups']],
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
-const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
+const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', acca: 'acca', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', rec: '#/rec', myplays: '#/myplays', model: '#/model', value: '#/value', about: '#/about' };
 const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', rec: '#/nba/rec', myplays: '#/nba/myplays', model: '#/nba/model', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
-const TITLES = { model: 'Model Performance', myplays: 'My Plays', rec: 'Recommended Plays', matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Hiwi's Section", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
   if (!r.ok) throw new Error(`${file}: ${r.status}`); return r.json();
 };
+hooks.getJson = getJson; // for pages that need another sport's data too (the Acca Builder mixes sports)
 
 /** Where the current hash belongs: { sport: 'football'|'nfl'|null (hub), page, arg, r }. */
 function where() {
@@ -10488,7 +10924,7 @@ function where() {
   if (r.name === 'about') return { sport: getSport() || 'football', page: 'about', r };
   return { sport: 'football', page: r.name, arg: r.arg, r };
 }
-/** The equivalent page in the other sport (keeps Fixtures, Plays, Finder, Value, Hiwi's Section, Search, Home). */
+/** The equivalent page in the other sport (keeps Fixtures, Plays, Finder, Value, Find Your Own, Search, Home). */
 function equivalentHref(w, to) {
   const id = w.sport === 'football' ? FB[w.page] || 'home' : { player: 'search', team: 'search' }[w.page] || w.page;
   const map = to === 'nfl' ? NFL_HREF : to === 'nba' ? NBA_HREF : FB_HREF;
@@ -10497,7 +10933,7 @@ function equivalentHref(w, to) {
 
 let note = '';
 function shell() {
-  document.body.insertAdjacentHTML('afterbegin', `<header class="top"><div class="top-in"><a class="brand" href="#/sports" aria-label="PropLab: choose a sport">${LOGO}<span>Prop<b>Lab</b></span></a>
+  document.body.insertAdjacentHTML('afterbegin', `<header class="top"><div class="top-in"><button type="button" class="navback" id="navback" aria-label="Back to the previous page" hidden>‹</button><a class="brand" href="#/sports" aria-label="PropLab: choose a sport">${LOGO}<span>Prop<b>Lab</b></span></a>
     <div class="topctl" id="topctl"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
   <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select> <label for="oddsel">Odds shown as</label> <select id="oddsel" class="in" aria-label="Odds format">${ODDS_FORMATS.map(([v, l]) => `<option value="${v}" ${v === oddsFmt() ? 'selected' : ''}>${l}</option>`).join('')}</select></p><p class="xs muted updline">Version <span data-build></span> · <button type="button" class="linkbtn" data-updcheck>Check for updates</button> <span data-updmsg role="status"></span></p></footer>`);
   drawTz();
@@ -10531,9 +10967,9 @@ function chrome(w) {
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
     <a class="searchbtn" href="${SEARCH[sp]}" aria-label="Search ${SPORTS[sp].label}">${ICON.search}</a>` : '';
   const tabs = sp ? TABS[sp] : [];
-  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', performance: 'value' }[w.page] || w.page);
+  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', performance: 'value' }[w.page] || w.page);
   $('#nav').hidden = !sp; $('#nav').style.setProperty('--tabs', String(tabs.length || 5)); // one column per tab (no empty slot)
-  $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
+  $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'rec' || k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
   document.body.dataset.sport = sp || 'hub';
 }
 // The sport-specific home pages were removed: one homepage (the sport hub), and each sport starts on its Fixtures page.
@@ -10543,18 +10979,30 @@ function chrome(w) {
 const HIDDEN_MODEL = w => (w.sport === 'nfl' && ['picks', 'performance', 'plays'].includes(w.page) ? '#/nfl/finder' : null);
 const OLD_HOME = w => (w.sport === 'football' && w.page === 'football' ? '#/start' : w.sport === 'nfl' && w.page === 'home' ? '#/nfl/start' : w.sport === 'nba' && w.page === 'home' ? '#/nba/start' : null);
 // Find Plays groups the ranked hit-rate list (Finder) and the match-by-match lists (Plays) as two tabs of one journey.
-const FP = { football: [['rec', 'Recommended', '#/rec'], ['finder', 'Hit rates', '#/finder'], ['plays', 'By match', '#/plays']], nba: [['rec', 'Recommended', '#/nba/rec'], ['finder', 'Hit rates', '#/nba/finder'], ['plays', 'By match', '#/nba/plays']], nfl: [['rec', 'Recommended', '#/nfl/rec'], ['finder', 'Hit rates', '#/nfl/finder']] };
-const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
+const FP = { football: [['rec', "Hiwi's Section", '#/rec'], ['finder', 'Hit rates', '#/finder'], ['plays', 'By match', '#/plays']], nba: [['rec', "Hiwi's Section", '#/nba/rec'], ['finder', 'Hit rates', '#/nba/finder'], ['plays', 'By match', '#/nba/plays']], nfl: [['rec', "Hiwi's Section", '#/nfl/rec'], ['finder', 'Hit rates', '#/nfl/finder']] };
+const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
   return `<nav class="fpnav" aria-label="Plays"><span class="xs muted">Plays:</span><div class="seg">${t.map(([k, l, h]) => `<a href="${h}" class="${k === pg ? 'on' : ''}" ${k === pg ? 'aria-current="page"' : ''}>${esc(l)}</a>`).join('')}</div></nav>`; };
 // Back to Plays (owner request 21 Oct, evening): tapping a player's name remembers the page and its scroll position; returning to that page
-// (the Back to Plays button or the browser's Back) restores it. Hiwi's Section also restores its exact card order (see v-hiwi.js).
+// (the Back to Plays button or the browser's Back) restores it. Find Your Own also restores its exact card order (see v-hiwi.js).
 document.addEventListener('click', e => { const a = e.target.closest('a[href*="/research/"], a[href^="#/value"], a[href^="#/nba/value"], a[href^="#/nfl/value"]'); if (!a || e.defaultPrevented) return;
   rememberReturn(); if (a.closest('.modal')) closeOverlays(); }, true);
 const restoreScroll = y => { let n = 0; const go = () => { const max = document.documentElement.scrollHeight - innerHeight; if (max >= y - 2 || n > 40) { scrollTo(0, Math.min(y, Math.max(0, max))); return; } n++; setTimeout(go, 200); }; go(); };
 const backBottom = () => { const w0 = where(); if (w0.page === 'value' && hooks.ret && hooks.ret.sport === (w0.sport || 'football') && !document.querySelector('#view [data-backres].bottom')) $('#view').insertAdjacentHTML('beforeend', '<button type="button" class="btn rsback bottom" data-backres style="margin-top:16px"><b>← Back to results</b></button>'); };
 document.addEventListener('click', e => { if (!e.target.closest('[data-backres]')) return; const r0 = hooks.ret; if (!r0) return; if (r0.viaApp && history.length > 1) history.back(); else location.hash = r0.hash; });
-const finish = () => { backBottom(); if (hooks.restore) { const y = hooks.restore.y; hooks.ret = null; hooks.restore = null; restoreScroll(y); return; } window.scrollTo(0, 0); };
+// Back arrow (owner, 2 Nov late): top left, whenever you came to this page from another PropLab page. It (and the phone's own back
+// swipe) returns to the previous page at the same place: every page's scroll position is remembered for this visit.
+const NAV = { stack: [], pos: new Map(), back: false };
+try { const j = JSON.parse(sessionStorage.getItem('proplab.nav') || 'null'); if (j && Array.isArray(j.stack)) { NAV.stack = j.stack; NAV.pos = new Map(j.pos || []); } } catch { /* this visit only */ }
+const navSave = () => { try { sessionStorage.setItem('proplab.nav', JSON.stringify({ stack: NAV.stack.slice(-40), pos: [...NAV.pos].slice(-60) })); } catch { /* fine */ } };
+let navLastY = 0; addEventListener('scroll', () => { navLastY = scrollY; }, { passive: true });
+function navTrack() { const h = location.hash || '#/', st = NAV.stack, prev = st[st.length - 1];
+  if (prev && prev !== h) NAV.pos.set(prev, navLastY);
+  if (st.length >= 2 && st[st.length - 2] === h) { st.pop(); NAV.back = true; } else if (prev !== h) { st.push(h); NAV.back = false; } // the same page drawn again (data arrived): keep the flag
+  navSave(); const b = document.getElementById('navback'); if (b) b.hidden = st.length < 2; }
+document.addEventListener('click', e => { if (e.target.closest('#navback')) { if (NAV.stack.length >= 2) history.back(); } });
+const finish = () => { backBottom(); if (!hooks.restore && NAV.back && NAV.pos.has(location.hash || '#/')) { const y = NAV.pos.get(location.hash || '#/'); NAV.back = false; restoreScroll(y); return; } NAV.back = false; if (hooks.restore) { /* a page's own Back to results (exact place) comes first */ const y = hooks.restore.y; hooks.ret = null; hooks.restore = null; restoreScroll(y); return; } window.scrollTo(0, 0); };
 async function render() {
+  navTrack();
   closeOverlays(); // no page ever changes invisibly behind an overlay
   const w = where(); hooks.restore = hooks.ret && hooks.ret.hash === location.hash && w.page !== 'research' && w.page !== 'value' ? hooks.ret : null; const old = OLD_HOME(w) || HIDDEN_MODEL(w); if (old) { location.replace(location.pathname + location.search + old); return; } const root = $('#view'); root.innerHTML = ''; hooks.redraw = null;
   if (w.sport) setSport(w.sport);
@@ -10574,15 +11022,15 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       await V(body); return finish();
     }
-    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
+    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
     await V(body, w.r);
   } catch (e) { console.error(e); body.innerHTML = `<div class="banner bad"><b>Something went wrong on this page.</b><br>${esc(e.message)}</div>`; }
   finish();
