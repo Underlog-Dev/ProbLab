@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="76b29c874ea0">
+<meta name="proplab-build" content="97b9cf43ddc2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -6990,7 +6990,7 @@ const sideTxt = x => (x.binary ? (x.side === 'under' ? 'No' : 'Yes') : `${x.side
  * Returns { units, why } with units = the most that may be added (never more than asked).
  */
 function roomFor(list, info, ask) {
-  const id = playId(info), day = info.date || today(), open = list.filter(x => x.day === day && !x.result && x.id !== id);
+  const id = playId(info), day = info.date || today(), open = list.filter(x => x.day === day && x.result !== 'void' && x.id !== id); // settled plays still count: marking one Won / Lost never frees room for more that day
   const sum = f => open.reduce((t, x) => t + (f(x) ? x.units : 0), 0), why = [];
   const caps = [[RISK.daily - sum(() => true), `daily limit ${RISK.daily}u`], [RISK.perPlayer - sum(x => x.sport === info.sport && x.subj === info.subj), `${RISK.perPlayer}u limit for one player (all his markets together)`],
     [info.gameId ? RISK.perGame - sum(x => x.sport === info.sport && x.gameId === info.gameId) : Infinity, `${RISK.perGame}u limit for one game`],
@@ -7000,6 +7000,9 @@ function roomFor(list, info, ask) {
 }
 const playId = info => `${info.sport}|${info.gameId}|${info.subj}|${info.key}|${info.line}|${info.side}`;
 function addPlay(info, odds, ask) {
+  // defence in depth: whatever the caller asks, never more than the per-selection cap or the long-odds caps (risk.js), then the room left
+  let cap = RISK.cap; for (const [o, c] of RISK.longOdds) if (odds >= o) { cap = c; break; }
+  ask = Math.min(Number(ask) || 0, cap);
   const a = load(), id = playId(info), room = roomFor(a, info, ask), units = room.units;
   if (!(units > 0)) return { r: 'blocked', units: 0, why: room.why };
   const item = { ...info, id, odds, units, asked: ask, limited: room.why, day: info.date || today(), added: new Date().toISOString(), result: '' };
@@ -7214,7 +7217,7 @@ function fixturesOf(sport, A) {
   const now = new Date();
   // games that have not started yet only: a play on a game already under way (or awaiting its result) is no use
   const ahead = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime();
-  if (sport === 'football') return selectableFixtures('', now).filter(ahead).slice(0, 400);
+  if (sport === 'football') return selectableFixtures('', now).filter(ahead) /* every published upcoming fixture, all competitions */;
   return A.upcoming(now).filter(ahead).slice(0, 60);
 }
 const fxIdOf = (sport, f) => (sport === 'football' ? fixtureId(f) : String(f.id));
@@ -7473,7 +7476,7 @@ function jointOf(legs) {
     for (let i = 0; i < gl.length; i++) for (let j = i + 1; j < gl.length; j++) { if (gl[i].subj === gl[j].subj) continue; const d = sameGame(gl[i], gl[j]);
       if (!d.ok) { priced = false; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): unpriced, ${d.why}`); continue; }
       p *= d.ratio; pc *= Math.min(1, d.ratio); pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
-      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)} (experimental)`); } }
+      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)}. EXPERIMENTAL and hypothetical: this adjustment has not been tested on real outcomes`); } }
   p = Math.min(0.999, p); return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs };
 }
 /**
@@ -7638,11 +7641,11 @@ async function viewAcca(root, sport) {
     const book = dec(S.bookTxt), ev = book && J.priced ? (J.p * book - 1) * 100 : null;
     out.innerHTML = `${res.note ? `<div class="banner ${res.over ? 'warnb' : 'info'}">${esc(res.note)}${res.over ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
       ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg fair-odds range now: kept because you locked it.`).join('<br>')}</div>` : ''}
-      ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds${target ? ` (target ${esc(fmtOdds(target))})` : ''}</span></div>
-        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>Estimated joint probability${J.priced ? ` (cautious ${(J.pCaut * 100).toFixed(1)}%)` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${confW}</b><span>Lowest leg confidence</span></div></div>
-        ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is the product of the leg probabilities.</p>'}
+      ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds, a model estimate (not a bookmaker price)${target ? ` · target ${esc(fmtOdds(target))}` : ''}</span></div>
+        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.pairs.length ? 'Joint probability: experimental estimate (independence, adjusted for the same-game pair)' : 'Joint probability: independence estimate (legs treated as unrelated), not a verified joint probability'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${confW}</b><span>Lowest leg confidence</span></div></div>
+        ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is estimated by multiplying the leg probabilities, which assumes the legs are unrelated (an independence estimate). It has not been checked against real acca results, and different games can still be linked (the same news, the same evening).</p>'}
         <label class="field"><span>Bookmaker's price for this acca (optional)</span><input class="in" data-abook inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" value="${esc(S.bookTxt)}" placeholder="${esc(PLACEHOLDER[oddsFmt()])}"></label>
-        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV assumes the probability is right.`}</p></div>` : ''}
+        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p></div>` : ''}
       <div id="alegs">${legs.map(l => { const r = l.r, c = l.c, locked = S.locks.has(l.id), g = c.f, vs = c.sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
         return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}</div></div>
           <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
@@ -7671,7 +7674,7 @@ async function viewAcca(root, sport) {
   });
   pg.addEventListener('input', e => { const t = e.target;
     const af = t.closest('[data-af]'); if (af) { S.f[af.dataset.af] = af.value; save(); return; }
-    if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = !b ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : !J.priced ? 'No EV: this acca has an unpriced same-game pair.' : (ev => `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(b))} against the joint probability ${(J.p * 100).toFixed(1)}%. EV assumes the probability is right.`)((J.p * b - 1) * 100); } }
+    if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = !b ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : !J.priced ? 'No EV: this acca has an unpriced same-game pair.' : (ev => `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(b))} against the estimated joint probability ${(J.p * 100).toFixed(1)}%. Hypothetical: it assumes that estimate is right (not verified), so it is not evidence of profit.`)((J.p * b - 1) * 100); } }
   });
   drawF();
   if (S.current.length || S.locks.size) restore();
