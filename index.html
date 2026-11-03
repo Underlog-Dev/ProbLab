@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f613f7f33413">
+<meta name="proplab-build" content="a4f34591c10f">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7888,7 +7888,7 @@ const { store, loadCore, selectableFixtures, leagueName } = __m['data'];
 const { hooks } = __m['shared'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick, koUK, fixtureId } = __m['util'];
-const { nightOf } = __m['nightdate'];
+const { nightOf, viewingNight } = __m['nightdate'];
 
 const KEY = 'proplab.acca.v1', SPORTS = [['nba', 'NBA'], ['nfl', 'NFL'], ['football', 'Football']];
 const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all', minProb: 0, minLegs: 2, maxLegs: '', gsel: null, lgs: [], mkOff: [] };
@@ -7908,12 +7908,15 @@ async function ready(sp) {
   if (sp === 'nba' && D.status === 'ready') await loadNbaInjuries();
   return D.status === 'ready';
 }
+// owner, 3 Nov (12:07): the Games tab is a calendar window. Today / tonight = today's football (UK date) and tonight's NBA / NFL games
+// (their US night); Next 3 / 7 days = that many days from today. Before, the NFL took its next three game nights, which spread over a week.
+const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 function fixtures(sp, days, now = new Date()) {
   const ahead = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime();
-  if (sp === 'football') { const all = selectableFixtures('', now).filter(ahead), d0 = koUK({ ko_utc: now.toISOString() }).ymd, lim = new Date(now.getTime() + days * 864e5).toISOString().slice(0, 10);
-    return all.filter(f => koUK(f).ymd >= d0 && koUK(f).ymd < lim).slice(0, 60); }
-  const A = usAdapter(sp), up = A.upcoming(now).filter(ahead); if (!up.length) return [];
-  const nights = [...new Set(up.map(nightOf))].sort().slice(0, sp === 'nfl' ? Math.max(1, days + 2) : days); return up.filter(g => nights.includes(nightOf(g)));
+  if (sp === 'football') { const d0 = koUK({ ko_utc: now.toISOString() }).ymd, lim = addDays(d0, days);
+    return selectableFixtures('', now).filter(ahead).filter(f => koUK(f).ymd >= d0 && koUK(f).ymd < lim); }
+  const n0 = viewingNight(now), lim = addDays(n0, days); // a US night runs past midnight UK: a 02:00 tip-off still belongs to that night
+  return usAdapter(sp).upcoming(now).filter(ahead).filter(g => { const n = nightOf(g); return n >= n0 && n < lim; });
 }
 const updated = sp => { const at = sp === 'nba' ? nba.meta && nba.meta.updated : sp === 'nfl' ? nfl.meta && nfl.meta.updated : store.manifest && store.manifest.generated;
   try { return at ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at)) + ' UK' : 'unknown'; } catch { return at || 'unknown'; } };
@@ -7935,7 +7938,7 @@ async function viewAcca(root, sport) {
   const legsBad = () => legsProblem(intIn(S.f.minLegs, 1, LEGS_CAP), intIn(S.f.maxLegs, 1, LEGS_CAP), S.f.maxLegs);
   const drawF = () => { const f = S.f, fm = oddsFmt(), y = scrollY; // redraw keeps the open panels open and the page where it was
     pg.querySelector('#accaf').innerHTML = `<div class="field"><span class="xs muted">Sports</span><div class="seg wrap" data-asp>${SPORTS.map(([k, l]) => `<button type="button" data-v="${k}" class="${f.sports.includes(k) ? 'on' : ''}" aria-pressed="${f.sports.includes(k)}">${l}</button>`).join('')}</div></div>
-      <div class="field"><span class="xs muted">Games</span><div class="seg" data-adays>${[[1, 'Today / tonight'], [3, 'Next 3 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.days === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <div class="field"><span class="xs muted">Games</span><div class="seg" data-adays>${[[1, 'Today / tonight'], [3, 'Next 3 days'], [7, 'Next 7 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.days === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <details class="recadv accagames" data-agames ${S.gOpen ? 'open' : ''}><summary class="small"><b>Choose games</b> <span class="xs muted" data-agcount>(all games)</span></summary><div data-agbody><p class="xs muted">Loading games…</p></div></details>
       <details class="recadv accamk" data-amkd ${S.mkOpen ? 'open' : ''}><summary class="small"><b>Choose markets</b> <span class="xs muted" data-amkcount>(every market)</span></summary><div data-amkbody><p class="xs muted">Open this to list the markets in your games (every market is on until you untick it).</p></div></details>
       <label class="field"><span>Target acca price (fair odds)</span><input class="in" data-af="targetTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.targetTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
@@ -8135,7 +8138,7 @@ async function viewAcca(root, sport) {
   if (S.current.length || S.locks.size) restore();
 }
 
-return { legsProblem, viewAcca };
+return { fixtures, legsProblem, viewAcca };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
