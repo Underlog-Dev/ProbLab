@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="a4f34591c10f">
+<meta name="proplab-build" content="87a3b9a7d2ab">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -703,6 +703,21 @@ html.slipopen body{overflow-anchor:none}
 /* anything scrolled into view stops clear of the top bar and the bottom menu */
 html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 @media (max-width:859px){html{scroll-padding-bottom:calc(var(--navh) + env(safe-area-inset-bottom) + 16px)}}
+/* 3 Nov (12:42): section titles that stand out; the tick box selects, the rest of the title opens / closes */
+.aghd{display:flex;align-items:center;gap:10px;min-height:46px}
+.aghd input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--accent)}
+.agtog{flex:1;display:flex;align-items:center;gap:8px;min-height:44px;background:none;border:0;color:var(--text);font:inherit;text-align:left;padding:6px 4px;cursor:pointer}
+.agchev{margin-left:auto;color:var(--muted);font-size:14px}
+.aghd.agtop{background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:2px 10px;margin:4px 0}
+.aghd.agtop b{font-size:17px;font-weight:800;letter-spacing:.01em}
+.aghd.agsub{border-left:3px solid var(--accent);padding-left:8px;margin:6px 0 2px}
+.aghd.agsub b{font-size:15px;font-weight:700}.aghd.agsub b::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:middle}
+.aggroups .agsport{border-top:0;margin-top:8px;padding-top:0}
+.seg[data-adays]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.seg[data-adays] button{white-space:normal;line-height:1.15;padding-left:4px;padding-right:4px;font-size:14px}
+/* every line's probability and fair odds: a drop-down of its own on each play (3 Nov, 12:51) */
+.raltbtn{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--s2);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer;min-height:42px}
+.raltbtn b{color:var(--accent);font-size:15px}.raltbtn[aria-expanded="true"]{border-color:var(--accent)}
+.ralt{margin-top:6px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7581,7 +7596,7 @@ const { blowoutOf } = __m['blowout'];
 const { BEAR_ART } = __m['icons'];
 
 const RANK_TXT = ['Every eligible player (or team) and market in your games is priced by the model at a range of lines.',
-  'For each one, the line shown is the most demanding line that still meets your filters (the highest Over line, or the lowest Under line), so you do not get near-certain lines with no price. Other lines are under Other lines.',
+  'For each one, the line shown is the most demanding line that still meets your filters (the highest Over line, or the lowest Under line), so you do not get near-certain lines with no price. Every other line, with its probability and fair odds, is under Probability & fair odds at every line on each play.',
   'Best overall ranks by a rank score (0-100, NOT a probability): 45% the model probability at its cautious end, 20% his hit rate at this line this season, 15% in his last 10 games, 10% against this opponent, 10% the matchup (easy +8 points, tough -8), then less 3 points for Medium and 6 for Low confidence. Each hit rate is pulled towards the model probability with a few pretend games (6, 6 and 8), so two or three games against one opponent cannot dominate. Tap a card\'s Rank score to see its parts.',
   'Three different figures: the hit rate is what happened; the model probability is the calibrated estimate (the one tested on past seasons); the rank score only orders the plays.',
   'Nothing is ranked by EV: there is no bookmaker price until you type one in Compare. Value (EV) exists only for prices you type, so the place to compare value is My Plays.',
@@ -7643,7 +7658,9 @@ async function viewRecommended(root, sport) {
   const ukDay = dayOfFor(sport), all = fixturesOf(sport, A), byId = new Map(all.map(f => [fxIdOf(sport, f), f]));
   // default: today's games (UK), the first time
   for (const id of [...s.fx]) if (!byId.has(id)) s.fx.delete(id);
-  if (!s.fx.size) { const d = all.length ? ukDay(all[0]) : null; for (const f of all) if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }
+  // first selection: today's games; NFL (one game week at a time): every game in the next 7 days (owner, 3 Nov: one Thursday game alone often had no plays)
+  const firstPick = list => { if (sport === 'nfl' && list.length) { const t0 = Date.parse(list[0].ko_utc || 0) || Date.now(); return list.filter(f => (Date.parse(f.ko_utc || 0) || t0) < t0 + 7 * 864e5); } const d = list.length ? ukDay(list[0]) : null; return list.filter(f => ukDay(f) === d); };
+  if (!s.fx.size) for (const f of firstPick(all)) s.fx.add(fxIdOf(sport, f));
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
   root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
@@ -7653,7 +7670,7 @@ async function viewRecommended(root, sport) {
       <button type="button" class="chip" data-fxall="today">Today's games</button><button type="button" class="chip" data-fxall="all">Select all upcoming</button><button type="button" class="chip" data-fxall="none">Clear all</button></div>
       <div class="recfxlist">${sport === 'football' ? (() => { const fx1 = f => { const id = fxIdOf(sport, f); return `<label class="hcheck hfxrow" data-lg="${esc(f.league || '')}"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f))}</b> ${inPlay(f, sport) ? '<span class="inplay">IN PLAY</span> ' : ''}${esc(fxLabel(sport, f, A))}</span></label>`; };
         /* owner, 3 Nov (10:47): one section per competition, with a tick box; untick it and its games are hidden and left out */
-        return [...new Set(all.map(f => f.league))].map(l => { const fs = all.filter(f => f.league === l); return `<div class="agleague" data-fxsec="${esc(l)}"><label class="hcheck aghead"><input type="checkbox" data-fxlg="${esc(l)}" ${s.lg.has(l) ? '' : 'checked'}><span><b>⚽ ${esc(leagueName(l))}</b> <span class="xs muted" data-fxlgn></span></span></label>${fs.map(fx1).join('')}</div>`; }).join('') || '<p class="small muted">No upcoming games published.</p>'; })() : days.map(([d, fs]) => `<div data-fxday><p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
+        return [...new Set(all.map(f => f.league))].map(l => { const fs = all.filter(f => f.league === l); return `<div class="agleague" data-fxsec="${esc(l)}"><div class="aghd agsub"><input type="checkbox" data-fxlg="${esc(l)}" aria-label="Select ${esc(leagueName(l))}" ${s.lg.has(l) ? '' : 'checked'}><button type="button" class="agtog" data-fxtog="${esc(l)}"><b>${esc(leagueName(l))}</b> <span class="xs muted" data-fxlgn></span><span class="agchev" aria-hidden="true">▾</span></button></div>${fs.map(fx1).join('')}</div>`; }).join('') || '<p class="small muted">No upcoming games published.</p>'; })() : days.map(([d, fs]) => `<div data-fxday><p class="xs muted" style="margin:8px 0 2px"><b>${esc(sport === 'football' ? fmtKick(fs[0]).split(' · ')[0] : `${fmtDay(d)} (US night)`)}</b></p>${fs.map(f => { const id = fxIdOf(sport, f), bo = sport !== 'football' ? blowoutOf(f, sport) : null;
         return `<label class="hcheck hfxrow" data-lg="${esc(f.league || '')}"><input type="checkbox" data-recfx value="${esc(id)}" ${s.fx.has(id) ? 'checked' : ''}><span><b>${esc(fmtKick(f).split(' · ')[1] || '')}</b> ${inPlay(f, sport) ? '<span class="inplay">IN PLAY</span> ' : ''}${esc(fxLabel(sport, f, A))}${sport === 'football' ? ` <span class="hfxlg">${esc(leagueName(f.league))}</span>` : ''}${bo ? ` <span class="bo bo-${bo.level.toLowerCase()}" title="${esc(bo.text)}">blowout risk: ${bo.level}</span>` : ''}</span></label>`; }).join('')}</div>`).join('') || '<p class="small muted">No upcoming games published.</p>'}</div></details>
     <div class="card stack recflt" id="recflt"></div>
     <details class="card recadv recmk" id="recmk" ${s.mkOpen ? 'open' : ''}><summary><b>3. Markets</b> <span class="muted small" data-mkcount>(every market)</span></summary><div data-mkbody><p class="xs muted">The markets appear once your games are worked out.</p></div></details>
@@ -7663,10 +7680,10 @@ async function viewRecommended(root, sport) {
   // competitions first (football): only the chosen competitions' games are listed and used; none chosen = every competition
   const shownF = f => sport !== 'football' || !s.lg.has(f.league);
   const applyLg = () => { if (sport !== 'football') return; pg.querySelectorAll('[data-fxsec]').forEach(sec => { const l = sec.dataset.fxsec, off = s.lg.has(l), rows = [...sec.querySelectorAll('.hfxrow')], n = rows.filter(r => r.querySelector('input').checked).length;
-    rows.forEach(r => { r.hidden = off; }); const cb = sec.querySelector('[data-fxlg]'); cb.checked = !off && n > 0; cb.indeterminate = !off && n > 0 && n < rows.length; const t = sec.querySelector('[data-fxlgn]'); if (t) t.textContent = off ? `${rows.length} game${rows.length === 1 ? '' : 's'} hidden` : `${n} of ${rows.length}`; }); };
+    const col = (s.lgCol || new Set()).has(l); rows.forEach(r => { r.hidden = off || col; }); const ch = sec.querySelector('.agchev'); if (ch) ch.textContent = off || col ? '▸' : '▾'; const tb = sec.querySelector('[data-fxtog]'); if (tb) tb.setAttribute('aria-expanded', String(!off && !col)); const cb = sec.querySelector('[data-fxlg]'); cb.checked = !off && n > 0; cb.indeterminate = !off && n > 0 && n < rows.length; const t = sec.querySelector('[data-fxlgn]'); if (t) t.textContent = off ? `${rows.length} game${rows.length === 1 ? '' : 's'} hidden` : `${n} of ${rows.length}`; }); };
 
   for (const f of all) if (!shownF(f)) s.fx.delete(fxIdOf(sport, f));
-  if (!s.fx.size) { const vis = all.filter(shownF), d = vis.length ? ukDay(vis[0]) : null; for (const f of vis) if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); }
+  if (!s.fx.size) { for (const f of firstPick(all.filter(shownF))) s.fx.add(fxIdOf(sport, f)); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); }
   applyLg(); fxCount();
   const fair = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? r.exact : null; };
   const opts = () => ({ ...s.f, sides: s.f.sides === 'both' ? ['over', 'under'] : [s.f.sides], minFair: fair(s.f.minFairTxt), maxFair: fair(s.f.maxFairTxt), grps: new Set(s.f.grps) });
@@ -7750,6 +7767,8 @@ async function viewRecommended(root, sport) {
     const evaluated = want.length, n = list.filter(x => !x.keptOut).length;
     if (!list.length && want.length && !want.some(c => !off.has(c.def.key))) { out.innerHTML = '<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No markets selected.</b> Open 3. Markets and tick at least one (or tap All markets).</div>'; return; }
     if (!list.length) { const hits = q ? suggest(s.f.q) : [];
+      const blowHid = !q && o.hideBlowout && sport !== 'football' && pickPlays(mine, { ...o, hideBlowout: false }, f => blowoutOf(f, sport)).length;
+      if (blowHid) { out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>Every play here is in a game rated high blowout risk</b>, and "Hide games with high blowout risk" is on (More filters), so they are hidden: ${blowHid} play${blowHid === 1 ? '' : 's'} would show without it. Tick more games, or untick that box to see them.</div>`; return; }
       out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info">${q ? (mine.length ? `<b>No line of ${esc(s.f.q)} reaches even a 50% model probability.</b>` : hits.length ? `<b>PropLab has no plays for ${esc(hits.map(h => h.label).slice(0, 3).join(', '))} in the listed games.</b> A player needs at least 8 recorded games and to be playing this season, and players listed OUT are left out.` : `<b>No player or team called "${esc(s.f.q)}" is in the listed games.</b>`) : `<b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.`}</div>`; return; }
     out.innerHTML = `<p class="pcbanner" id="recbanner">${relaxed ? `${list.length} play${list.length === 1 ? '' : 's'} for "${esc(s.f.q)}" <span class="xs muted">(none meets every filter)</span>` : `${n} play${n === 1 ? '' : 's'} match your filters${q ? ` for "${esc(s.f.q)}"` : ''} <span class="xs muted">(from ${evaluated} player / team markets checked)</span>`}</p>
       ${relaxed ? `<div class="banner info"><b>None of the plays for "${esc(s.f.q)}" meets all your filters</b>, so the strongest line of each market is shown without the fair-odds, hit-rate, confidence, matchup and market-type filters (model probability at least ${Math.min(o.minProb || 0, 50)}%). Each card is marked "outside your filters".</div>` : ''}
@@ -7801,7 +7820,7 @@ async function viewRecommended(root, sport) {
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
-      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="chip" data-ralt>Other lines ▾</button></div>`}
+      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button></div><button type="button" class="raltbtn" data-ralt aria-expanded="false"><span>Probability &amp; fair odds at every line</span><b aria-hidden="true">▾</b></button>`}
       <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button></div>
       <div class="ralt" hidden></div></article>`;
   }
@@ -7832,6 +7851,7 @@ async function viewRecommended(root, sport) {
   pg.addEventListener('toggle', e => { if (e.target.matches('#recmk')) s.mkOpen = e.target.open; else if (e.target.matches('.recadv')) s.adv = e.target.open; }, true);
   pg.addEventListener('click', e => {
     const t = e.target;
+    const ft = t.closest('[data-fxtog]'); if (ft) { s.lgCol = s.lgCol || new Set(); const l = ft.dataset.fxtog; s.lgCol.has(l) ? s.lgCol.delete(l) : s.lgCol.add(l); applyLg(); return; } /* open / close a competition (this visit) */
     const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall, vis = all.filter(shownF); s.fx.clear(); if (v === 'all') vis.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = vis.length ? ukDay(vis[0]) : null; vis.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); fxCount(); save(sport, s); run(); return; }
     const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
@@ -7855,8 +7875,8 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: r.p }, D, r.conf), g = x.c.f;
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
       const res = addPlay(info, D, P ? P.final : 0), b = t.closest('[data-radd]'); b.textContent = res.r === 'blocked' ? `Not added: ${res.why[0]}` : res.r === 'failed' ? 'Could not save' : `✓ ${fmtU(res.units)}u in My Plays${res.why.length ? ` (cut: ${res.why[0]})` : ''}`; b.disabled = true; return; }
-    if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'); box.hidden = !box.hidden; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
-      box.innerHTML = `<table class="ralttb"><tr><th>Line</th><th>Model</th><th>Fair</th><th>Last 10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${esc(ladderName(x.c, r))}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
+    if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'), bt = t.closest('[data-ralt]'); box.hidden = !box.hidden; bt.setAttribute('aria-expanded', String(!box.hidden)); bt.querySelector('b').textContent = box.hidden ? '▾' : '▴'; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
+      box.innerHTML = `<table class="ralttb"><tr><th>Line</th><th>Model %</th><th>Fair odds</th><th>Last 10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${esc(ladderName(x.c, r))}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
     const pk = t.closest('[data-rpick]'); if (pk) { const r = evalAt(x.c, Number(pk.dataset.rpick), x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L: r.L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
     if (false && t.closest('[data-rhist]')) { const box = card.querySelector('.rhistbox'); box.hidden = !box.hidden; if (!box.hidden) { const r = x.rep, rows = x.c.rows.slice(0, 20), ok = v => (x.side === 'under' ? v < r.L : v > r.L);
       box.innerHTML = `<p class="xs muted" style="margin:6px 0 4px">${x.c.kind === 'player' ? 'His' : 'The'} last ${rows.length} ${sport === 'football' ? 'matches' : 'games'}, newest first (${x.side === 'under' ? 'under' : 'over'} ${r.L} in green):</p><div class="rhv">${rows.map(q => `<span class="${ok(q.value) ? 'h' : 'm'}" title="${esc(q.date)}">${q.value}</span>`).join('')}</div>`; } return; }
@@ -7980,6 +8000,7 @@ async function viewAcca(root, sport) {
   let gList = []; // [{ sp, f, key }] for the chosen sports and days
   const selected = () => (S.f.gsel == null ? null : new Set(S.f.gsel));
   const grpOf = x => grpOfF(x.sp, x.f), keyGrp = new Map();
+  const gColNow = k => (S.f.gcol || []).includes(k) || (k.startsWith('football|') && (S.f.gcol || []).includes('football'));
   const isOn = key => !(S.f.goff || []).includes(keyGrp.get(key)) && (S.f.gsel == null || S.f.gsel.includes(key));
   async function drawGames() {
     const body = pg.querySelector('[data-agbody]'); if (!body) return; const my = (drawGames.n = (drawGames.n || 0) + 1);
@@ -7992,13 +8013,14 @@ async function viewAcca(root, sport) {
     const G = []; for (const sp of ['nba', 'nfl', 'football']) { const xs = L.filter(x => x.sp === sp); if (!xs.length) continue;
       if (sp !== 'football') { G.push({ key: sp, title: `${SP_ICON[sp]} ${sp.toUpperCase()}`, xs, top: true }); continue; }
       G.push({ key: 'football', title: '⚽ Football', xs, top: true, head: true }); for (const l of [...new Set(xs.map(x => x.f.league))]) G.push({ key: `football|${l}`, title: leagueName(l), xs: xs.filter(x => x.f.league === l), sub: true }); }
-    const gOff = k => (S.f.goff || []).includes(k);
+    const gOff = k => (S.f.goff || []).includes(k), gCol = k => (S.f.gcol || []).includes(k) || (k.startsWith('football|') && (S.f.gcol || []).includes('football'));
     const row = x => `<label class="hcheck hfxrow"><input type="checkbox" data-agame value="${esc(x.key)}" ${isOn(x.key) ? 'checked' : ''}><span><b>${esc(fmtKick(x.f))}</b> ${esc(x.sp === 'football' ? `${x.f.home} v ${x.f.away}` : `${x.f.away} at ${x.f.home}`)}</span></label>`;
     const head = g => { const n = g.xs.filter(x => isOn(x.key)).length, off = g.head ? g.xs.every(x => gOff(grpOf(x))) : gOff(g.key);
-      return `<label class="hcheck aghead${g.sub ? ' agsub' : ''}"><input type="checkbox" data-aggrp="${esc(g.key)}" ${!off && n ? 'checked' : ''} data-part="${!off && n && n < g.xs.length ? 1 : 0}"><span><b>${esc(g.title)}</b> <span class="xs muted">${off ? `${g.xs.length} game${g.xs.length === 1 ? '' : 's'} hidden` : `${n} of ${g.xs.length}`}</span></span></label>`; };
+      const col = gCol(g.key); /* owner, 3 Nov (12:42): the tick box selects; tapping the rest of the title opens / closes the section */
+      return `<div class="aghd ${g.sub ? 'agsub' : 'agtop'}"><input type="checkbox" data-aggrp="${esc(g.key)}" aria-label="Select ${esc(g.title)}" ${!off && n ? 'checked' : ''} data-part="${!off && n && n < g.xs.length ? 1 : 0}"><button type="button" class="agtog" data-agtog="${esc(g.key)}" aria-expanded="${!col && !off}"><b>${esc(g.title)}</b> <span class="xs muted">${off ? `${g.xs.length} game${g.xs.length === 1 ? '' : 's'} hidden` : `${n} of ${g.xs.length}`}</span><span class="agchev" aria-hidden="true">${col || off ? '▸' : '▾'}</span></button></div>`; };
     body.innerHTML = !L.length ? '<p class="xs muted">No upcoming games for these sports and days.</p>' : `<div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap"><button type="button" class="chip" data-agall>Select All</button><button type="button" class="chip" data-agnone>Clear All</button></div>
       ${!on.length ? '<p class="xs warn" data-agnonemsg style="margin:4px 0">No games selected: no acca can be built. Tick at least one game, or tap Select All.</p>' : ''}
-      <div class="recfxlist aggroups">${G.map(g => g.head ? `<div class="agsport">${head(g)}</div>` : `<div class="${g.top ? 'agsport' : 'agleague'}" data-agg="${esc(g.key)}">${head(g)}${gOff(g.key) ? '' : g.xs.map(row).join('')}</div>`).join('')}</div>`;
+      <div class="recfxlist aggroups">${G.map(g => g.head ? `<div class="agsport">${head(g)}</div>` : `<div class="${g.top ? 'agsport' : 'agleague'}" data-agg="${esc(g.key)}">${head(g)}${gOff(g.key) || gCol(g.key) ? '' : g.xs.map(row).join('')}</div>`).join('')}</div>`;
     body.querySelectorAll('[data-part="1"]').forEach(i => { i.indeterminate = true; });
   }
   const setGames = keys => { const all = gList.map(x => x.key); S.f.gsel = keys.length === all.length && all.every(k => keys.includes(k)) ? null : keys; save(); drawGames(); };
@@ -8101,6 +8123,8 @@ async function viewAcca(root, sport) {
     if (t.closest('[data-amkall]')) { S.f.mkOff = []; save(); drawMarkets(); return; }
     if (t.closest('[data-amknone]')) { S.f.mkOff = [...new Set([...(S.f.mkOff || []), ...[...pg.querySelectorAll('[data-amk]')].map(i => i.value)])]; save(); drawMarkets(); return; }
     const amg = t.closest('[data-amkgrp]'); if (amg) { const ks = [...amg.closest('.mkgrp').querySelectorAll('[data-amk]')].map(i => i.value), off = new Set(S.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); S.f.mkOff = [...off]; save(); drawMarkets(); return; }
+    const tg = t.closest('[data-agtog]'); if (tg) { const k = tg.dataset.agtog, c = new Set(S.f.gcol || []); if (gColNow(k)) { c.delete(k); if (k.startsWith('football|')) c.delete('football'); } else c.add(k);
+      if (k === 'football' && !c.has('football')) for (const x of [...c]) if (x.startsWith('football|')) c.delete(x); S.f.gcol = [...c]; save(); drawGames(); return; }
     if (t.closest('[data-agall]')) { S.f.goff = []; S.f.gsel = null; save(); drawGames(); return; }
     if (t.closest('[data-agnone]')) { S.f.gsel = []; save(); drawGames(); return; }
     if (t.closest('[data-abuild]')) { build(false); return; }
