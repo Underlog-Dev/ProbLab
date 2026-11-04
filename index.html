@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="9e9c712d78b9">
+<meta name="proplab-build" content="5618aeec1262">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -1163,6 +1163,8 @@ const upcomingFixtures = (league = '') => store.fixtures.filter(f => isUpcoming(
 const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) === normTeam(name) || normTeam(f.away) === normTeam(name));
 // Selector order: England, the other big European leagues, then Portugal, Netherlands, Scotland, and MLS.
 // 27 Oct: England's EFL divisions follow the Premier League; Belgium and Turkey after the Netherlands; Norway before MLS.
+// the nine main leagues (owner, 4 Nov audit): the default league choice of Plays and the Hit Rate Finder
+const NINE_LEAGUES = ['epl', 'mls', 'laliga', 'ligue1', 'bundesliga', 'seriea', 'ligaportugal', 'scotprem', 'eredivisie'];
 const LEAGUE_ORDER = ['epl', 'championship', 'leagueone', 'leaguetwo', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'ligaportugal', 'eredivisie', 'proleague', 'superlig', 'scotprem', 'eliteserien', 'mls', 'ucl', 'uel', 'uecl'];
 const LEAGUE_COUNTRY = { epl: 'England', laliga: 'Spain', seriea: 'Italy', bundesliga: 'Germany', ligue1: 'France', ligaportugal: 'Portugal', eredivisie: 'Netherlands', scotprem: 'Scotland', mls: 'USA / Canada', ucl: 'Europe', uel: 'Europe', uecl: 'Europe', championship: 'England', leagueone: 'England', leaguetwo: 'England', proleague: 'Belgium', superlig: 'Turkey', eliteserien: 'Norway' };
 const lgRank = k => { const i = LEAGUE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
@@ -1275,7 +1277,7 @@ async function loadAllPlayerRowsNow() {
   return byId;
 }
 
-return { LEAGUE_NAMES, LEAGUE_POP, leagueOrder, CALENDAR_YEAR, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, hasEuropean, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, LEAGUE_POP, leagueOrder, CALENDAR_YEAR, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, hasEuropean, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, NINE_LEAGUES, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['nfl-data'] = (() => {
 // NFL data (nflverse, CC-BY 4.0). Loaded only when an NFL page is opened; game logs are loaded per position group on demand.
@@ -5233,7 +5235,7 @@ __m['leaguepick'] = (() => {
 // Football league multi-selection shared by Find Your Own and the Hit Rate Finder: one checkbox per league, "All Leagues", and
 // "Today's Games Only" (today = the UK calendar date, from each fixture's UTC kick-off, so British Summer Time is handled). Football only:
 // NFL is a separate sport and never mixed in. The choice is remembered on this device.
-const { LEAGUE_NAMES, LEAGUE_ORDER, leaguesPresent } = __m['data'];
+const { LEAGUE_NAMES, LEAGUE_ORDER, leaguesPresent, NINE_LEAGUES } = __m['data'];
 const { esc, koUK, nowUK } = __m['util'];
 const { getLeague } = __m['shared'];
 
@@ -5244,7 +5246,8 @@ function getLeagues() {
   if (!mem) { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s)) mem = s; } catch { /* private mode */ } }
   // owner request 20 Oct: an empty selection is allowed and kept (never turned into All Leagues or back into the default league)
   if (Array.isArray(mem) && mem.length === 0) return [];
-  const out = (mem || [getLeague()]).filter(l => have.includes(l));
+  // nothing saved yet: the nine main leagues (owner audit, 4 Nov), not one league
+  const out = (mem || NINE_LEAGUES).filter(l => have.includes(l));
   return out.length ? out : [have.includes(getLeague()) ? getLeague() : have[0]].filter(Boolean);
 }
 function setLeagues(list) { mem = [...new Set(list)].sort((a, b) => LEAGUE_ORDER.indexOf(a) - LEAGUE_ORDER.indexOf(b)); try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* this visit only */ } }
@@ -6603,7 +6606,9 @@ async function footballCandidates(fixtures, onProgress) {
   const out = [], seen = new Set();
   for (const x of xs) {
     const id = `football|${x.fid}|${x.key}|${x.sj.sel}`; if (seen.has(id)) continue; seen.add(id);
-    const { c } = priceCard(x, 'all'); const rows = x.A.map(r => ({ value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null }));
+    const { c } = priceCard(x, 'all'); const rows = x.A.map(r => { const opp = r.oppSlug || (r.raw && r.raw.oppSlug) || null, lg = r.league || (r.raw && r.raw.league) || x.lg || '';
+      // fixture identity (owner audit, 4 Nov): competition + date + both clubs, so two different matches on one date are never the same match
+      return { value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null, fx: opp && r.date ? `${lg}|${r.date}|${[x.sj.sel, opp].sort().join('~')}` : null }; });
     out.push({ id, sport: 'football', kind: x.kind === 'MATCH' ? 'match' : 'team', name: x.label, team: x.sj.sel, opp: x.sj.other, f: x.f, fid: x.fid, def: x.def, card: c, x, cur: Math.max(0, ...rows.map(r => r.season || 0)),
       rows, lines: candidateLines(x.def, rows.map(r => r.value)), grp: x.kind === 'MATCH' ? 'Match' : 'Team' });
   }
@@ -7230,10 +7235,12 @@ function mkLeg(c, side, r) {
   return { id: legId(c, side, r.L), c, side, r, p, fair: r.fair, cautious: Math.min(p, cautious), rank: r.rank, sup, game: gameKey(c), subj: subjOf(c) };
 }
 /** Historical same-game dependence of two player legs: { ok, ratio, n, joint, indep } or { ok:false, why }. */
-/** Pure: how two selections' results moved together in their shared earlier games. rows: [{ value, game?, date }], keyed by game id when
- *  both have one (players), otherwise by date (football: a team plays once a day). { ok, ratio, n, joint, indep } or { ok:false, why }. */
+/** Pure: how two selections' results moved together in their shared earlier games. rows: [{ value, game? | fx? }], matched by game id
+ *  (players) or football fixture identity (competition|date|both clubs). { ok, ratio, n, joint, indep } or { ok:false, why }. */
 function pairLink(ra0, sa, La, rb0, sb, Lb) {
-  const key = x => (x.game != null ? `g${x.game}` : x.date ? `d${x.date}` : null), ra = new Map(ra0.filter(key).map(x => [key(x), x.value])), shared = rb0.filter(x => key(x) && ra.has(key(x)));
+  // the same MATCH: a game id (NBA / NFL) or a football fixture identity (competition, date and both clubs). Never the date alone: a row
+  // without either is left out of the comparison (owner audit, 4 Nov).
+  const key = x => (x.game != null ? `g${x.game}` : x.fx ? `f${x.fx}` : null), ra = new Map(ra0.filter(key).map(x => [key(x), x.value])), shared = rb0.filter(x => key(x) && ra.has(key(x)));
   if (shared.length < ACCA.MIN_SHARED) return { ok: false, n: shared.length, why: `only ${shared.length} earlier games together (at least ${ACCA.MIN_SHARED} are needed to measure how they move together)` };
   const hit = (v, side, L) => (side === 'under' ? v < L : v > L);
   let ha = 0, hb = 0, hab = 0; for (const x of shared) { const A = hit(ra.get(key(x)), sa, La), B = hit(x.value, sb, Lb); ha += A; hb += B; hab += A && B; }
@@ -7242,7 +7249,7 @@ function pairLink(ra0, sa, La, rb0, sb, Lb) {
   const raw = (hab / n) / ind, ratio = (n * raw + ACCA.SHRINK * 1) / (n + ACCA.SHRINK);
   return { ok: true, ratio, n, joint: hab / n, indep: ind };
 }
-/** Historical same-game dependence of two legs (players by shared game, football markets by shared match date). */
+/** Historical same-game dependence of two legs (players by shared game id, football markets by shared fixture identity). */
 function sameGame(a, b) { return pairLink(a.c.rows, a.side, a.r.L, b.c.rows, b.side, b.r.L); }
 /** Joint probability of a set of legs: { p, pCaut, fair, priced, notes, pairs }. */
 function jointOf(legs) {
@@ -9154,7 +9161,7 @@ __m['v-plays'] = (() => {
 // Plays (football): a targeted scanner. Choose ONE team, ONE upcoming match or ONE player, a sample and a minimum hit rate;
 // PropLab scans every market the league really records and shows each at ONE line set from earlier matches (26 Oct; it used to keep the most ambitious research line that
 // still reaches the minimum (see scanner.js). Lowering the minimum moves results to harder lines; it never adds easier duplicates.
-const { store, teamsOfLeague, teamRowsFor: teamRowsDom, upcomingFixtures, leagueName, teamSlugOf, isCup, teamRowsScoped, hasEuropean } = __m['data'];
+const { store, teamsOfLeague, teamRowsFor: teamRowsDom, upcomingFixtures, leagueName, teamSlugOf, isCup, teamRowsScoped, hasEuropean, NINE_LEAGUES, leaguesPresent, LEAGUE_NAMES, fxSort } = __m['data'];
 const { scopeFor, scopeOpts, getUclScope, setUclScope, clubRows } = __m['v-hiwi'];
 const { marketDesc } = __m['markets'];
 const { h2hSample } = __m['plays'];
@@ -9184,12 +9191,22 @@ async function viewPlays(root, r) {
     <p class="muted" style="margin-top:-4px">Pick one team, match or player. PropLab checks every market with recorded data and shows each market at <b>one line set from his (or the team's) earlier matches</b>, the ones before the matches shown, and lists those that reached your minimum hit rate. Historical hit rates, not predictions or tips.</p>
     <div class="card stack" id="ctl"></div><div id="out" style="margin-top:14px"></div>`;
   const ctl = $('#ctl', root), out = $('#out', root);
+  const deep = r.q.get('game') || r.q.get('team');
   let reg = [], players = [];
-  const league = () => getLeague();
+  // owner audit (4 Nov): "All nine leagues" is the default: the team, match and player lists cover the nine main leagues together, and each
+  // scan uses the league of the team, match or player chosen. A single league can still be picked.
+  const PKEY = 'proplab.plays.lg.v1'; let lgMode = 'nine'; try { const v = localStorage.getItem(PKEY); if (v === 'one') lgMode = 'one'; } catch { /* default */ }
+  const nine = () => NINE_LEAGUES.filter(l => leaguesPresent().includes(l)), allLg = () => lgMode === 'nine';
+  const subjLg = () => { if (ui.kind === 'team') return teamLg.get(ui.team) || store.teams.get(ui.team)?.league || getLeague(); if (ui.kind === 'match') { const f = fixtures().find(x => fixtureId(x) === ui.game); return f ? f.league : getLeague(); } const pp = players.find(x => x.id === ui.player) || players.find(x => x.clubSlug === ui.club); return pp ? pp.lg : getLeague(); };
+  const league = () => (allLg() ? subjLg() : getLeague());
+  const teamLg = new Map();
+  if (deep) { const dl = r.q.get('game') ? r.q.get('game').split(':')[0] : store.teams.get(r.q.get('team'))?.league; if (dl && !NINE_LEAGUES.includes(dl)) lgMode = 'one'; }
+  const loadPlayers = async () => { if (!allLg()) return fbPlayers(getLeague()); const out = []; for (const l of nine()) for (const p of await fbPlayers(l)) out.push({ ...p, lg: l }); return out; };
   // European competitions: All games / competition only (set in Hiwi or Finder); head-to-head: every meeting PropLab holds
   const teamRowsFor = slug => clubRows(slug, league()); // clubs with European matches: the remembered matches-used choice (All games by default)
-  const teams = () => teamsOfLeague(league()).slice().sort((a, b) => a.name.localeCompare(b.name));
-  const fixtures = () => upcomingFixtures(league());
+  const teams = () => { if (!allLg()) return teamsOfLeague(getLeague()).slice().sort((a, b) => a.name.localeCompare(b.name)); const seen = new Set(), out = [];
+    for (const l of nine()) for (const t of teamsOfLeague(l).slice().sort((a, b) => a.name.localeCompare(b.name))) if (!seen.has(t.slug)) { seen.add(t.slug); teamLg.set(t.slug, l); out.push({ ...t, lg: l }); } return out; };
+  const fixtures = () => (allLg() ? nine().flatMap(l => upcomingFixtures(l)).sort(fxSort) : upcomingFixtures(getLeague()));
   const minPct = () => prefs.minPct;
   const sampleOpts = () => ({ last: ui.last === 'season' ? 0 : ui.last, season: ui.last === 'season' ? fbSeason(league()) : null });
   const sampleText = venue => `${ui.last === 'season' ? "this season's" : `last ${ui.last}`} ${venueWord(venue)}matches`;
@@ -9197,7 +9214,7 @@ async function viewPlays(root, r) {
   const lines = def => fbLines(def);
 
   const fixKind = () => {
-    if (ui.kind === 'player' && !hasPlayerLogs(league())) ui.kind = 'team';
+    if (ui.kind === 'player' && !(allLg() ? nine().some(hasPlayerLogs) : hasPlayerLogs(getLeague()))) ui.kind = 'team';
     const ts = teams(); if (!ts.some(x => x.slug === ui.team)) ui.team = ts[0]?.slug || '';
     const fs = fixtures(); if (!fs.some(f => fixtureId(f) === ui.game)) ui.game = fs[0] ? fixtureId(fs[0]) : '';
     if (ui.kind === 'player') { if (!players.some(p => p.clubSlug === ui.club)) ui.club = [...players].sort((a, b) => a.team.localeCompare(b.team))[0]?.clubSlug || ''; const ps = players.filter(p => p.clubSlug === ui.club); if (!ps.some(p => p.id === ui.player)) ui.player = [...ps].sort((a, b) => a.name.localeCompare(b.name))[0]?.id || ''; }
@@ -9206,18 +9223,20 @@ async function viewPlays(root, r) {
   const drawCtl = () => {
     if (ui.mk && !mkList().some(m => m.key === ui.mk)) ui.mk = ''; // a market of another research kind / league
     fixKind(); const lg = league(), ts = teams(), fs = fixtures();
-    const kinds = [['team', 'Team'], ['match', 'Match'], ...(hasPlayerLogs(lg) ? [['player', 'Player']] : [])];
+    const kinds = [['team', 'Team'], ['match', 'Match'], ...((allLg() ? nine().some(hasPlayerLogs) : hasPlayerLogs(lg)) ? [['player', 'Player']] : [])];
+    const grp = (list, lgOf, opt) => (allLg() ? nine().map(l => { const xs = list.filter(x => lgOf(x) === l); return xs.length ? `<optgroup label="${esc(LEAGUE_NAMES[l])}">${xs.map(opt).join('')}</optgroup>` : ''; }).join('') : list.map(opt).join(''));
     const byDay = new Map(); for (const f of fs) { const k = koLocal(f).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(f); }
     const clubs = [...new Map(players.map(p => [p.clubSlug, p.team])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
-    const picker = ui.kind === 'team' ? `<div class="field"><label for="tm">Team</label><select class="in" id="tm">${ts.map(x => `<option value="${esc(x.slug)}" ${x.slug === ui.team ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>`
-      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koLocal(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${esc(leagueName(lg))} fixtures are published right now.</p>`)
-      : `<div class="ctl"><div class="field"><label for="pclub">Club</label><select class="in" id="pclub">${clubs.map(([s, n]) => `<option value="${esc(s)}" ${s === ui.club ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+    const picker = ui.kind === 'team' ? `<div class="field"><label for="tm">Team</label><select class="in" id="tm">${grp(ts, x => x.lg, x => `<option value="${esc(x.slug)}" ${x.slug === ui.team ? 'selected' : ''}>${esc(x.name)}</option>`)}</select></div>`
+      : ui.kind === 'match' ? (fs.length ? `<div class="field"><label for="gm">Upcoming match (your time, ${esc(tzNow())})</label><select class="in" id="gm">${[...byDay.entries()].map(([d, list]) => `<optgroup label="${esc(fmtDay(d))}">${list.map(f => `<option value="${esc(fixtureId(f))}" ${fixtureId(f) === ui.game ? 'selected' : ''}>${esc(koLocal(f).hm || 'TBC')} ${esc(f.home)} v ${esc(f.away)}${allLg() ? ` · ${esc(leagueName(f.league))}` : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>` : `<p class="small muted">No upcoming ${allLg() ? 'fixtures in the nine leagues' : esc(leagueName(lg)) + ' fixtures'} are published right now.</p>`)
+      : `<div class="ctl"><div class="field"><label for="pclub">Club</label><select class="in" id="pclub">${grp(clubs, ([s]) => (players.find(p => p.clubSlug === s) || {}).lg, ([s, n]) => `<option value="${esc(s)}" ${s === ui.club ? 'selected' : ''}>${esc(n)}</option>`)}</select></div>
          <div class="field"><label for="pl">Player</label><select class="in" id="pl">${players.filter(p => p.clubSlug === ui.club).sort((a, b) => a.name.localeCompare(b.name)).map(p => `<option value="${esc(p.id)}" ${p.id === ui.player ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>`;
     const one = ui.kind === 'match' ? fs.find(f => fixtureId(f) === ui.game) : null;
-    ctl.innerHTML = `${globalSideHtml('plgside')}${leagueSelect()}
+    const lgSel = `<div class="field lgf"><label for="lgsel">League</label><select class="in" id="lgsel"><option value="nine" ${allLg() ? 'selected' : ''}>All nine leagues</option>${leaguesPresent().map(l => `<option value="${l}" ${!allLg() && l === getLeague() ? 'selected' : ''}>${esc(LEAGUE_NAMES[l] || l)}</option>`).join('')}</select>${allLg() ? `<span class="xs muted">Teams, matches and players from the nine leagues (${esc(nine().map(l => LEAGUE_NAMES[l]).join(', '))}). Player markets only where PropLab has player match logs (${esc(nine().filter(hasPlayerLogs).map(l => LEAGUE_NAMES[l]).join(', ') || 'none')}). To scan every fixture at once, use Hiwi's Section or the Hit Rate Finder.</span>` : ''}</div>`;
+    ctl.innerHTML = `${globalSideHtml('plgside')}${lgSel}
       <div class="field"><label>Research</label>${seg('kind', kinds, ui.kind)}</div>${picker}
       ${(isCup(lg) || ts.some(t => hasEuropean(t.slug))) && ui.kind !== 'player' ? `<div class="field"><label>Matches used${isCup(lg) ? '' : ' (clubs with European matches)'}</label>${seg('src', scopeOpts(isCup(lg) ? lg : 'eu').map(([v, l]) => [v === 'all' || v === 'dom' ? v : 'cup', l]), getUclScope())}<span class="xs muted">All games (default) = league + European matches; Domestic league only = league matches; ${isCup(lg) ? esc(leagueName(lg)) + ' only' : 'European matches only'} = European matches (goals markets only). Clubs without European matches always use their league matches. Shared with Hiwi and Finder.</span></div>` : ''}
-      <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only.</span></div>
+      <div class="field"><label>Sample</label>${seg('last', SAMPLES, ui.last, 'grid')}<span class="xs muted">Season = the current ${esc(leagueName(lg))} season only${allLg() ? ' (the league of the team, match or player chosen)' : ''}.</span></div>
       <div class="field"><label>Minimum hit rate</label>${seg('pct', PCTS.map(p => [p, p + '%']), minPct(), 'grid')}</div>
       
       <div class="ctl"><div class="field"><label for="pmk">Market</label><select class="in" id="pmk"><option value="">All markets</option>${mkList().map(m => `<option value="${esc(m.key)}" ${ui.mk === m.key ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}</select><p class="xs muted mdesc" id="pmdesc">${esc(ui.mk ? marketDesc(ui.mk) : 'Every market with recorded data is scanned. Pick one to see exactly what it counts and to show only that market.')}</p></div>
@@ -9243,7 +9262,7 @@ async function viewPlays(root, r) {
 
   const draw = async () => {
     reg = []; const lg = league(), pct = minPct();
-    if (ui.kind === 'player' && !players.length) players = await fbPlayers(lg);
+    if (ui.kind === 'player' && !players.length) players = await loadPlayers();
     let html = '';
     if (ui.kind === 'team') {
       const tm = store.teams.get(ui.team); if (!tm) { out.innerHTML = '<div class="banner info">Choose a team.</div>'; return; }
@@ -9277,7 +9296,7 @@ async function viewPlays(root, r) {
         else html += `<section class="sec"><h2>Head to head</h2><div class="banner info"><b>No H2H data.</b> These teams have no meeting in PropLab's published league records.</div></section>`;
       }
       if (hasPlayerLogs(lg)) {
-        if (!players.length) players = await fbPlayers(lg);
+        if (!players.length) players = await loadPlayers();
         const pm = fbPlayerMarkets(players);
         for (const [slug, name, venue] of [[hs, f.home, ui.gvH], [as, f.away, ui.gvA]]) {
           let cards = '', n = 0;
@@ -9313,16 +9332,16 @@ async function viewPlays(root, r) {
     const b = e.target.closest('[data-seg] button'); if (!b) return; const k = b.parentElement.dataset.seg, v = b.dataset.v;
     if (k === 'src') { setUclScope(v); drawCtl(); draw(); return; }
     if (k === 'pct') { prefs.minPct = Number(v); savePrefs(); } else if (k === 'last') ui.last = v === 'season' ? 'season' : Number(v); else ui[k] = v;
-    if (k === 'kind' && v === 'player' && !players.length) players = await fbPlayers(league());
+    if (k === 'kind' && v === 'player' && !players.length) players = await loadPlayers();
     drawCtl(); draw();
   });
   ctl.addEventListener('change', async e => {
     const tg = e.target;
-    if (tg.id === 'lgsel') { setLeague(tg.value); players = []; ui.team = ''; ui.game = ''; ui.club = ''; ui.player = ''; if (ui.kind === 'player') players = await fbPlayers(league()); }
+    if (tg.id === 'lgsel') { if (tg.value === 'nine') lgMode = 'nine'; else { lgMode = 'one'; setLeague(tg.value); } try { localStorage.setItem(PKEY, lgMode); } catch { /* this visit only */ } players = []; ui.team = ''; ui.game = ''; ui.club = ''; ui.player = ''; if (ui.kind === 'player') players = await loadPlayers(); }
     else if (tg.id === 'pmk') ui.mk = tg.value; else if (tg.id === 'pord') ui.order = tg.value; else if (tg.id === 'tm') ui.team = tg.value; else if (tg.id === 'gm') ui.game = tg.value; else if (tg.id === 'pclub') { ui.club = tg.value; ui.player = ''; } else if (tg.id === 'pl') ui.player = tg.value; else return;
     drawCtl(); draw();
   });
-  if (ui.kind === 'player') players = await fbPlayers(league());
+  if (ui.kind === 'player') players = await loadPlayers();
   drawCtl(); draw();
 }
 
@@ -10654,15 +10673,24 @@ ${coverageHtml()}
 
 // The daily refresh (GitHub Actions, about 11pm UK time) writes data-refresh-status.json. Read it fresh (no cache).
 const ukTime = iso => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso)); } catch { return iso; } };
+// 4 Nov 2026 (audit): each kind of data with its own real date, so a file rebuilt tonight is never read as fresh data.
+const dataDates = fr => { if (!fr) return ''; const li = [], inj = fr.nfl?.injuries, lu = fr.lineups, ro = fr.rosters || {}, N = fr.leagues || {};
+  if (inj) li.push(`<li><b>NFL injury reports:</b> ${inj.latest_report_week ? `latest week ${esc(String(inj.latest_report_week))}` : 'none'}${inj.next_game_week && inj.teams_playing_next_week ? ` · week ${esc(String(inj.next_game_week))} report in the data for ${inj.teams_with_that_weeks_report} of ${inj.teams_playing_next_week} teams playing` : ''}${inj.file_written ? ` · checked ${esc(ukTime(inj.file_written))}` : ''}. A player who is not listed is not on the official report; that does not mean fit.</li>`);
+  if (lu) li.push(`<li><b>Confirmed lineups:</b> ${lu.confirmed_for_today_or_later ? `${lu.confirmed_for_today_or_later} for today or later` : 'none for upcoming matches'}${lu.latest_confirmed_check ? ` · last team sheet checked ${esc(ukTime(lu.latest_confirmed_check + 'Z'))}` : ''}. No predicted lineups are shown.</li>`);
+  const rk = Object.keys(ro).filter(k => !k.startsWith('_'));
+  if (rk.length) li.push(`<li><b>Squad lists:</b> directory rebuilt ${esc(ro._directory_rebuilt ? fmtShort(ro._directory_rebuilt) : '–')}; ${rk.map(k => `${esc(leagueName(k))} clubs last stated by Wikipedia between ${esc(ro[k].oldest_as_of ? fmtShort(ro[k].oldest_as_of) : '–')} and ${esc(ro[k].newest_as_of ? fmtShort(ro[k].newest_as_of) : '–')}${ro[k].older_than_75_days?.length ? ` (over 75 days: ${esc(ro[k].older_than_75_days.join(', '))})` : ''}`).join('; ')}.</li>`);
+  const pl = Object.values(N).filter(x => x.latest_player_stats); if (pl.length) li.push(`<li><b>Player match statistics:</b> ${pl.map(x => `${esc(x.name)} to ${esc(fmtShort(x.latest_player_stats))}`).join('; ')}. Other leagues: none (no licensed free source).</li>`);
+  const nd = Object.values(N).filter(x => (x.markets_without_data || []).some(m => m !== 'player props')); if (nd.length) li.push(`<li><b>Markets with no data this season:</b> ${nd.map(x => `${esc(x.name)}: ${esc(x.markets_without_data.filter(m => m !== 'player props').join(', '))}`).join('; ')}. These are never offered.</li>`);
+  return li.length ? `<details style="margin-top:8px"><summary>Data dates</summary><ul style="margin:6px 0 0;padding-left:18px">${li.join('')}</ul></details>` : ''; };
 async function drawRefresh(box) {
   if (!box) return;
   let s = null; try { const r = await fetch(`data-refresh-status.json?t=${Date.now()}`, { cache: 'no-store' }); if (r.ok) s = await r.json(); } catch { /* offline */ }
   if (!s || s.result === 'not-run-yet') { box.innerHTML = '<p style="margin:0">No automatic refresh has run yet. The data shown was published manually; its dates are listed above.</p>'; return; }
-  const res = { ok: 'Data updated', 'ok-no-changes': 'Checked: no new data', failed: 'Failed: the last valid data was kept' }[s.result] || s.result;
+  const res = { ok: 'Data updated', 'ok-with-gaps': 'Data updated, with the gaps listed below', 'ok-no-changes': 'Checked: no new data', 'ok-no-changes-with-gaps': 'Checked: no new data; gaps listed below', failed: 'Failed: the last valid data was kept' }[s.result] || s.result;
   const L = s.freshness?.leagues || {};
   box.innerHTML = `<dl class="kv"><dt>Last successful refresh</dt><dd>${s.last_success ? esc(ukTime(s.last_success)) : 'none yet'}</dd><dt>Last attempt</dt><dd>${esc(ukTime(s.last_run))} · ${esc(res)}</dd>
-    <dt>Schedule</dt><dd>Daily at about 11pm UK time (GitHub may start it a little late)</dd></dl>
-    ${Object.keys(L).length ? `<div class="scroll"><table><tr><th>League</th><th>Latest result</th><th>Upcoming fixtures</th><th>Fixtures until</th></tr>${Object.values(L).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.latest_result ? fmtShort(x.latest_result) : '–')}</td><td class="n">${x.upcoming_fixtures}</td><td>${esc(x.fixtures_until ? fmtShort(x.fixtures_until) : '–')}</td></tr>`).join('')}${s.freshness?.nfl ? `<tr><td>NFL</td><td>${esc(s.freshness.nfl.latest_final ? fmtShort(s.freshness.nfl.latest_final) : '–')}</td><td class="n">${s.freshness.nfl.upcoming_games}</td><td>–</td></tr>` : ''}</table></div>` : ''}
+    <dt>Schedule</dt><dd>${s.schedule_uk?.length ? `Scheduled daily at about ${esc(s.schedule_uk.join(', '))} UK time (an evening catch-up run does nothing if that evening's refresh already succeeded)` : 'Daily at about 11pm UK time'} (GitHub may start a run a little late)</dd></dl>
+    ${Object.keys(L).length ? `<div class="scroll"><table><tr><th>League</th><th>Latest result</th><th>Statistics to</th><th>Upcoming fixtures</th><th>With kick-off time</th><th>Fixtures until</th></tr>${Object.values(L).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.latest_result ? fmtShort(x.latest_result) : '–')}</td><td>${x.latest_team_stats === undefined ? '' : esc(x.latest_team_stats ? fmtShort(x.latest_team_stats) : 'none')}</td><td class="n">${x.upcoming_fixtures}</td><td class="n">${x.with_kickoff_time ?? ''}</td><td>${esc(x.fixtures_until ? fmtShort(x.fixtures_until) : '–')}</td></tr>`).join('')}${s.freshness?.nfl ? `<tr><td>NFL</td><td>${esc(s.freshness.nfl.latest_final ? fmtShort(s.freshness.nfl.latest_final) : '–')}</td><td></td><td class="n">${s.freshness.nfl.upcoming_games}</td><td></td><td>–</td></tr>` : ''}</table></div><p class="xs muted" style="margin:4px 0 0">Upcoming = kick-off still to come (played, postponed and abandoned matches are not counted). Statistics to = the latest match with shots, corners or cards; a later result without them is score-only.</p>${dataDates(s.freshness)}` : ''}
     ${(s.warnings || []).length ? `<p style="margin:8px 0 4px"><b>Known gaps</b></p><ul style="margin:0;padding-left:18px">${s.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
     <details style="margin-top:8px"><summary>Sources checked (${Object.keys(s.sources || {}).length})</summary><ul style="margin:6px 0 0;padding-left:18px">${Object.entries(s.sources || {}).map(([k, v]) => `<li>${v.ok ? '✓' : '✗'} ${esc(k)}${v.last_success ? ` · last OK ${esc(ukTime(v.last_success))}` : ''}${v.ok ? '' : ` · ${esc(v.detail || 'failed')}`}</li>`).join('')}</ul></details>`;
 }
