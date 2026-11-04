@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="5618aeec1262">
+<meta name="proplab-build" content="d699eed5d177">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -730,6 +730,18 @@ html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 .rbars .rbar{flex:1 1 0;min-width:0;border:0;padding:0;border-radius:3px 3px 0 0;position:relative;cursor:pointer;font:inherit}.rbars .rbar.h{background:var(--hit)}.rbars .rbar.m{background:var(--miss)}
 .rbars .rbar em{position:absolute;top:-14px;left:0;right:0;text-align:center;font-style:normal;font-size:9px;color:var(--muted)}
 .rbars .rbar:focus-visible{outline:2px solid var(--accent)}
+/* 4 Nov 2026 (owner): the stake box is the one you type in (white outline); the two payouts are blue; Remove all at the top of the slip */
+.slipstakef{margin:4px 0 8px}.slipstakef>span{font-weight:700;color:var(--text)}
+.slippanel .in.slipstake{border:2px solid #fff;background:var(--bg);font-size:17px;font-weight:700;min-height:46px}
+.slippanel .in.slipstake:focus{outline:2px solid var(--accent);outline-offset:2px}
+.slippay>div{background:rgba(47,109,240,.16);border:1px solid var(--accent2)}.slippay small{color:#cfe0ff}.slippay b{font-size:18px}
+.sliprmall{display:flex;justify-content:flex-end;margin:0 0 8px}.sliprmall .chip{border-color:var(--miss);color:var(--miss)}
+/* 4 Nov 2026 (owner): combo-prop bars in Hiwi's Section, one colour per stat; the top edge keeps green = hit, red = miss */
+.rbars.rstk .rbar{background:transparent!important;display:flex;flex-direction:column;border-top:3px solid var(--hit);border-radius:3px 3px 0 0;overflow:visible}
+.rbars.rstk .rbar.m{border-top-color:var(--miss)}
+.rbars.rstk .rsegs{display:flex;flex-direction:column;flex:1 1 auto;width:100%;overflow:hidden;border-radius:0}
+.rbars.rstk .rsegs .hseg{min-height:0;flex-basis:0}
+.rleg{display:flex;flex-wrap:wrap;gap:4px 10px;margin:4px 0 0}.rleg span{display:inline-flex;align-items:center;gap:4px}.rleg .hseg{width:10px;height:10px;min-height:10px;border-radius:2px;display:inline-block}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -6587,7 +6599,7 @@ async function usCandidates(sport, A, games, onProgress) {
       if (played.length < 8) continue;
       const curN = played.filter(x => x.season === cur).length; if (!curN && teamCur.get(t) >= 3) continue; // not played this season while his team has: injured or out of the rotation
       for (const def of defsFor(p)) {
-        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game })).filter(r => r.value !== null && r.value !== undefined);
+        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game, ...(def.parts ? { parts: def.parts(x) } : {}) /* combo props: each stat's share for coloured bars (owner, 4 Nov) */ })).filter(r => r.value !== null && r.value !== undefined);
         if (rows.length < 8) continue;
         const card = buildUsPlayerCard({ sport, A, p, def, key: def.key, raw, game: g, period: () => 10, periodText: () => 'this season', cid: `rec|${sport}|${p.id}|${def.key}` });
         out.push({ id: `${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: t, opp: t === g.home ? g.away : g.home, home: t === g.home, f: g, fid: String(g.id), def, card, p, inj, cur,
@@ -6608,7 +6620,7 @@ async function footballCandidates(fixtures, onProgress) {
     const id = `football|${x.fid}|${x.key}|${x.sj.sel}`; if (seen.has(id)) continue; seen.add(id);
     const { c } = priceCard(x, 'all'); const rows = x.A.map(r => { const opp = r.oppSlug || (r.raw && r.raw.oppSlug) || null, lg = r.league || (r.raw && r.raw.league) || x.lg || '';
       // fixture identity (owner audit, 4 Nov): competition + date + both clubs, so two different matches on one date are never the same match
-      return { value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null, fx: opp && r.date ? `${lg}|${r.date}|${[x.sj.sel, opp].sort().join('~')}` : null }; });
+      return { value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null, ...(x.def.parts ? { parts: x.def.parts(r.raw || {}) } : {}), fx: opp && r.date ? `${lg}|${r.date}|${[x.sj.sel, opp].sort().join('~')}` : null }; });
     out.push({ id, sport: 'football', kind: x.kind === 'MATCH' ? 'match' : 'team', name: x.label, team: x.sj.sel, opp: x.sj.other, f: x.f, fid: x.fid, def: x.def, card: c, x, cur: Math.max(0, ...rows.map(r => r.season || 0)),
       rows, lines: candidateLines(x.def, rows.map(r => r.value)), grp: x.kind === 'MATCH' ? 'Match' : 'Team' });
   }
@@ -7363,6 +7375,8 @@ const GAME_OVER_MS = { nba: 4 * 3600e3, nfl: 5 * 3600e3, football: 3 * 3600e3 };
 /** Every k-subset of [0..n-1], in order. */
 function combos(n, k) { const out = [], c = []; const go = s => { if (c.length === k) { out.push(c.slice()); return; } for (let i = s; i <= n - (k - c.length); i++) { c.push(i); go(i + 1); c.pop(); } }; if (k >= 1 && k <= n) go(0); return out; }
 const nCk = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
+/** The stake box names the bet it is for (owner, 4 Nov: no per bet / total switch). */
+const stakeLabel = f => { if (!f) return 'Stake (£)'; if (f.id === 'acca') return 'Stake (£)'; if (f.system) return `Stake per bet (£) · ${f.bets} bets`; const k = f.ks[0]; return `Stake per ${k === 1 ? 'single' : k === 2 ? 'double' : k === 3 ? 'treble' : `${k}-fold`} (£) · ${f.bets} bets`; };
 const FOLD = k => (k === 1 ? 'Singles' : k === 2 ? 'Doubles' : k === 3 ? 'Trebles' : `${k}-folds`);
 // full-cover bets: [id, name, selections, smallest fold included]
 const SYSTEMS = [['trixie', 'Trixie', 3, 2], ['patent', 'Patent', 3, 1], ['yankee', 'Yankee', 4, 2], ['lucky15', 'Lucky 15', 4, 1], ['canadian', 'Canadian (Super Yankee)', 5, 2], ['lucky31', 'Lucky 31', 5, 1], ['heinz', 'Heinz', 6, 2], ['lucky63', 'Lucky 63', 6, 1], ['superheinz', 'Super Heinz', 7, 2], ['goliath', 'Goliath', 8, 2]];
@@ -7422,7 +7436,7 @@ function priceSlip(sels, fmtId, stake, per = 'bet', adj = () => null) {
 let ST = null; const reg = new Map(); // candidate id -> candidate (this visit), so a line can be changed inside the slip
 const load = () => { if (ST) return ST; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; }
   if (Array.isArray(j.sel)) for (const x of j.sel) if (x.sport === 'football' && x.cid) x.subj = x.cid; /* older saves keyed football by team, so two markets of one match looked like the same pick twice */
-  ST = { sel: Array.isArray(j.sel) ? j.sel : [], fmt: j.fmt || 'acca', stakeTxt: j.stakeTxt || '', per: j.per === 'total' ? 'total' : 'bet', open: false, armed: 0 }; return ST; };
+  ST = { sel: Array.isArray(j.sel) ? j.sel : [], fmt: j.fmt || 'acca', stakeTxt: j.stakeTxt || '', per: 'bet' /* owner, 4 Nov: the stake is always per bet; the label names the bet */, open: false, armed: 0 }; return ST; };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ sel: ST.sel, fmt: ST.fmt, stakeTxt: ST.stakeTxt, per: ST.per })); } catch { /* this visit only */ } };
 /** A slip selection from a candidate, side and evaluated line (recplays). */
 const bookOf = t => { const r = String(t || '').trim() ? parseIn(t) : null; return r && r.dec ? (r.exact ?? r.dec) : null; };
@@ -7467,17 +7481,16 @@ function drawPanel() {
   const sc = pn.scrollTop;
   pn.innerHTML = `<header class="sliph"><b>Acca slip <span data-slipcount>(${S.sel.length})</span></b><button type="button" class="slipx" data-slipclose aria-label="Close the slip">✕</button></header>
     <p class="xs muted sliphint">PropLab fair odds only: a hypothetical calculator, not a bookmaker quote. Nothing is placed.</p>
-    ${S.sel.length ? `<ol class="sliplist">${S.sel.map((x, i) => { const pr = selProblem(x), c = reg.get(x.cid), started = x.ko && Date.now() > Date.parse(x.ko) && !pr;
+    ${S.sel.length ? `<div class="sliprmall"><button type="button" class="chip" data-slipclear>${S.armed && Date.now() - S.armed < 4000 ? `Tap again to remove all ${S.sel.length}` : `Remove all (${S.sel.length})`}</button></div><ol class="sliplist">${S.sel.map((x, i) => { const pr = selProblem(x), c = reg.get(x.cid), started = x.ko && Date.now() > Date.parse(x.ko) && !pr;
       return `<li class="slipsel${pr ? ' bad' : ''}" data-slipi="${i}"><div class="slipsel-t"><b>${esc(x.name)}</b> <span class="xs muted">${esc(x.sport.toUpperCase())}</span><div class="small">${esc(x.label)} <span class="muted">(${esc(x.market)}, ${esc(x.line)})</span></div><div class="xs muted">${esc(x.fixture)} · ${esc(x.kick || '')}</div>
         ${pr ? `<div class="xs warn">Unavailable for pricing: ${esc(pr)}. Left out of every bet that contains it.</div>` : `<div class="xs">Model <b>${(x.p * 100).toFixed(1)}%</b> · fair odds <b data-slipfair>${esc(fmtOdds(x.fair))}</b>${started ? ' · <span class="warn">game started: pre-game estimate</span>' : ''}</div>`}
         <label class="slipbook"><span class="xs">Your odds</span><input class="in" data-slipbook type="text" inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()])}" value="${esc(x.bookTxt || '')}" aria-label="Bookmaker odds for ${esc(x.name)}"></label>
         <div class="slipsel-a">${c && !c.def.binary ? `<button type="button" class="hstep" data-slipstep="-1" aria-label="Lower the line">−</button><span class="xs">line</span><button type="button" class="hstep" data-slipstep="1" aria-label="Raise the line">+</button>` : ''}<button type="button" class="chip" data-slipview>View play</button><button type="button" class="chip" data-sliprm aria-label="Remove ${esc(x.name)}">Remove</button></div></div></li>`; }).join('')}</ol>
     <label class="field"><span>Bet type</span><select class="in" data-slipfmt>${F.map(f => `<option value="${f.id}" ${f.id === S.fmt ? 'selected' : ''}>${esc(f.name)} · ${f.bets} bet${f.bets === 1 ? '' : 's'}</option>`).join('')}</select></label>
     <p class="xs muted" data-slipfmttext style="margin:2px 0 8px"></p>
-    <div class="recrow"><label class="field"><span>Stake (£)</span><input class="in" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 10" value="${esc(S.stakeTxt)}"></label>
-      <div class="field"><span class="xs muted">The stake is</span><div class="seg" data-slipper><button type="button" data-v="bet" class="${S.per === 'bet' ? 'on' : ''}">Per bet</button><button type="button" data-v="total" class="${S.per === 'total' ? 'on' : ''}">Total</button></div></div></div>
+    <label class="field slipstakef"><span data-sliplabel>${esc(stakeLabel(F.find(f => f.id === S.fmt)))}</span><input class="in slipstake" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="Type your stake, e.g. 10" value="${esc(S.stakeTxt)}"></label>
     <div class="slipout" data-slipout aria-live="polite"></div>
-    <div class="row" style="border:0;padding:8px 0 0;gap:8px"><button type="button" class="chip" data-slipclear>${S.armed && Date.now() - S.armed < 4000 ? `Tap again to clear all ${S.sel.length}` : 'Clear slip'}</button></div>`
+`
     : '<p class="small muted" style="margin:12px 0">Your slip is empty. Tap <b>＋ Add to Acca</b> on any play in Hiwi\'s Section to add it.</p>'}
     <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Picks from the same game (a bet builder) are linked: when PropLab can measure how they moved together in their shared earlier games the price is adjusted for it (experimental); otherwise it is the picks multiplied and marked not adjusted. The same pick twice is never priced. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
   pn.scrollTop = sc; drawOut();
@@ -7488,15 +7501,11 @@ function drawOut() {
   const tx = el.querySelector('[data-slipfmttext]'); if (tx && R) tx.textContent = R.fmt.text + (R.fmt.system ? '. Each bet has the same stake.' : '');
   if (!R) { box.innerHTML = ''; return; }
   const has = R.unit > 0, many = R.n > 1;
-  box.innerHTML = `<div class="sliptiles">
-      <div><small>Bets</small><b data-slipbets>${R.n}</b></div>
-      <div><small>Stake per bet</small><b data-slipunit>${has ? money(R.unit) : '–'}</b></div>
-      <div><small>Total stake</small><b data-sliptotal>${has ? money(R.total) : '–'}</b></div>
-      <div><small>${many ? 'Fair odds if all win (return ÷ total stake)' : 'Combined fair odds'}</small><b data-slipodds>${R.oddsAll != null ? esc(fmtOdds(R.oddsAll)) : 'Unavailable'}</b></div>
-      <div><small>Payout at fair odds${many ? ', if all win' : ''} (incl. stake)</small><b data-slipret>${R.retAll != null ? (has ? money(R.retAll) : '–') : 'Unavailable'}</b></div>
-      <div><small>Profit at fair odds${many ? ', if all win' : ''}</small><b data-slipprofit>${R.profitAll != null ? (has ? money(R.profitAll) : '–') : 'Unavailable'}</b></div></div>
-    <div class="sliptiles slippay"><div><small>Payout with your odds where typed, fair for the rest${R.anyBook ? '' : ' (none typed yet)'}</small><b data-slippaymix>${R.retMix != null ? (has ? money(R.retMix) : '–') : 'Unavailable'}</b></div>
-      <div><small>Profit with your odds where typed</small><b data-slipprofmix>${R.retMix != null ? (has ? money(R.retMix - R.total) : '–') : 'Unavailable'}</b></div></div>
+  const lb = el.querySelector('[data-sliplabel]'); if (lb) lb.textContent = stakeLabel(R.fmt);
+  // owner, 4 Nov: just the two payouts (blue); the stake box is the only white-outlined box
+  box.innerHTML = `<div class="sliptiles slippay"><div><small>Payout at fair odds${many ? ', if all win' : ''} (incl. stake)</small><b data-slipret>${R.retAll != null ? (has ? money(R.retAll) : '–') : 'Unavailable'}</b></div>
+      <div><small>Payout with your odds where typed${R.anyBook ? '' : ' (none typed yet)'}, fair odds where not</small><b data-slippaymix>${R.retMix != null ? (has ? money(R.retMix) : '–') : 'Unavailable'}</b></div></div>
+    <p class="xs muted" data-slipodds style="margin:4px 0 0">${many ? `${R.n} bets · fair odds if all win` : 'Combined fair odds'} ${R.oddsAll != null ? esc(fmtOdds(R.oddsAll)) : 'unavailable'}</p>
     ${R.anyBook ? `<p class="xs muted" style="margin:4px 0 0">${S.sel.filter(x => x.book > 1).length} of ${S.sel.length} picks use your typed odds; the rest use PropLab's fair odds.</p>` : ''}
     ${R.unpriced ? `<p class="xs warn" data-slipunpriced style="margin:6px 0">${R.unpriced} of ${R.n} bet${R.n === 1 ? '' : 's'} cannot be priced (${esc([...new Set(R.bets.filter(b => b.why).map(b => b.why))].slice(0, 2).join('; '))}), so the full return and profit are unavailable. ${R.priced ? `The ${R.priced} priced bet${R.priced === 1 ? '' : 's'} alone would return ${has ? money(R.retPriced) : '–'} if they all won; the total stake above still includes every bet.` : ''}</p>` : ''}
     <div class="slipev" data-slipev>${R.ev != null ? `<b class="${R.ev > 0 ? 'hit' : 'miss'}">${R.ev > 0 ? 'EV+' : 'EV−'} ${R.ev > 0 ? '+' : '−'}${Math.abs(R.ev).toFixed(1)}%</b> at your prices${has ? ` · return if all win at your prices ${money(R.bookRet)}` : ''}<br><span class="xs muted">Average return per £1 staked if the model probabilities are right, treating the selections as unrelated (an independence estimate, not verified on real accas). Hypothetical, not evidence of profit.</span>`
@@ -7511,7 +7520,6 @@ function onClick(e) {
   const t = e.target, S = load();
   if (t.closest('[data-sliptab]')) { setOpen(!S.open); return; }
   if (t.closest('[data-slipclose]')) { setOpen(false); return; }
-  const pb = t.closest('[data-slipper] button'); if (pb) { S.per = pb.dataset.v; save(); pb.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === pb)); drawOut(); return; }
   if (t.closest('[data-slipclear]')) { if (S.armed && Date.now() - S.armed < 4000) { S.sel = []; S.armed = 0; changed(true); } else { S.armed = Date.now(); drawPanel(); setTimeout(() => { if (S.armed && Date.now() - S.armed >= 4000) { S.armed = 0; if (S.open) drawPanel(); } }, 4100); } return; }
   const li = t.closest('[data-slipi]'); if (!li) return; const i = Number(li.dataset.slipi), x = S.sel[i]; if (!x) return;
   if (t.closest('[data-sliprm]')) { S.sel.splice(i, 1); changed(true); return; }
@@ -7678,7 +7686,7 @@ function fixturesOf(sport, A) {
   const ids = new Set(); return [...A.selectable(now), ...A.upcoming(now)].filter(f => ok(f) && f.status !== 'canceled' && !ids.has(f.id) && ids.add(f.id))
     .sort((a, b) => (Date.parse(a.ko_utc || 0) || 0) - (Date.parse(b.ko_utc || 0) || 0)).slice(0, 60);
 }
-// search (owner, 3 Nov): names suggested as you type; a search covers every listed game, not only the ticked ones
+// search (owner, 3 Nov): names suggested as you type from every listed game; since 4 Nov the search only narrows the ticked games
 const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 const fxIdOf = (sport, f) => (sport === 'football' ? fixtureId(f) : String(f.id));
 const fxLabel = (sport, f, A) => (sport === 'football' ? `${f.home} v ${f.away}` : `${A.teamName(f.away)} at ${A.teamName(f.home)}`);
@@ -7761,11 +7769,16 @@ async function viewRecommended(root, sport) {
   const wordStart = (n, q) => n.startsWith(q) || n.includes(' ' + q);
   const suggest = q => { const Q = norm(q); if (!Q) return []; const hits = index().filter(e => e.n.includes(Q)); hits.sort((a, b) => (wordStart(b.n, Q) - wordStart(a.n, Q)) || (b.n.startsWith(Q) - a.n.startsWith(Q)) || (a.kind === 'team') - (b.kind === 'team') || a.label.localeCompare(b.label)); return hits.slice(0, 8); };
   const searchIds = () => { const Q = norm(s.f.q); if (!Q) return []; const ids = new Set(); for (const e of index()) if (e.n.includes(Q)) e.fids.forEach(i => ids.add(i)); return [...ids].filter(id => byId.has(id)); };
-  const scope = () => [...new Set([...s.fx, ...searchIds()])].filter(id => byId.has(id));
+  // owner, 4 Nov: a search narrows the games you have ticked (e.g. Today's games); it never brings in other days' games. A name that is only
+  // in unticked games gets a note with those games, to add one on purpose.
+  const scope = () => { const sel = [...s.fx].filter(id => byId.has(id)); if (!norm(s.f.q)) return sel; const q = new Set(searchIds()); return sel.filter(id => q.has(id)); };
+  const elsewhere = () => searchIds().filter(id => !s.fx.has(id)).map(id => byId.get(id)).sort((a, b) => (Date.parse(a.ko_utc || 0) || 0) - (Date.parse(b.ko_utc || 0) || 0)).slice(0, 4);
   const nmOf = c => norm(`${c.name} ${c.team || ''} ${sport === 'football' ? (c.kind === 'match' ? `${c.f.home} ${c.f.away}` : '') : A.teamName(c.team)}`);
   const run = async () => {
     const my = ++token, want = scope().map(id => byId.get(id)).filter(Boolean);
-    if (!want.length) { out.innerHTML = String(s.f.q || '').trim() ? `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No player or team called "${esc(s.f.q)}" is in the listed games.</b> Check the spelling, or pick a name from the suggestions as you type.</div>` : '<div class="banner info"><b>Choose at least one game</b> above.</div>'; return; }
+    if (!want.length) { const ew = String(s.f.q || '').trim() ? elsewhere() : [];
+      out.innerHTML = ew.length ? `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info" data-recnotsel><b>"${esc(s.f.q)}" is not in the games you have ticked.</b> Their next listed game${ew.length > 1 ? 's' : ''}: ${ew.map(f => `<button type="button" class="chip" data-recaddfx="${esc(fxIdOf(sport, f))}">${esc(fxLabel(sport, f, A))} · ${esc(fmtKick(f))}</button>`).join(' ')} Tap one to add it to your games.</div>`
+      : String(s.f.q || '').trim() ? `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No player or team called "${esc(s.f.q)}" is in the listed games.</b> Check the spelling, or pick a name from the suggestions as you type.</div>` : '<div class="banner info"><b>Choose at least one game</b> above.</div>'; return; }
     const need = want.filter(f => !s.cands.has(fxIdOf(sport, f)));
     if (need.length) {
       out.innerHTML = '<div class="card"><b data-recprog>Working out every market… 0%</b><div class="recbar"><i style="width:0%"></i></div><p class="xs muted" style="margin:6px 0 0">Every eligible player and market is priced at several lines with the same model as the cards. This happens once per game; filters then apply instantly.</p></div>';
@@ -7833,17 +7846,28 @@ async function viewRecommended(root, sport) {
         <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the cautious probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="${f === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
   }
+  /** Names of a combo market's parts, in the order def.parts returns them (null when they cannot be named). */
+  function partNames(def) { if (!def || !def.parts) return null; const CLS = { y: 'Yellow cards', r: 'Red cards', oy: 'Yellow cards', or: 'Red cards' };
+    const lab = String(def.label || '').replace(/^(Match|Team|Opponent|1st Half|2nd Half)\s+/, ''), pl = lab.split(' + ').map(t => t.trim()).filter(Boolean);
+    if (pl.length >= 2) return pl;
+    if (/cards/i.test(lab)) return ['Yellow cards', 'Red cards'];
+    return null; }
   function barsHtml(x) { // mini bar chart: his last 10 at this line (green = hit, red = miss), newest on the right
     const r = x.rep, rows = x.c.rows.slice(0, 10).reverse(); if (!rows.length || x.c.def.binary) return '';
     const ok = v => (x.side === 'under' ? v < r.L : v > r.L), mx = Math.max(r.L * 1.25, ...rows.map(q => q.value), 1);
     // owner, 3 Nov (14:16): tap a bar for that game: date, opponent, home or away, the score, his figure against the line (and minutes)
     const D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : null, word = x.side === 'under' ? `under ${r.L}` : `over ${r.L}`;
-    const tipOf = q => { const g = D && q.game != null ? D.gameById.get(q.game) : null, me = x.c.team, home = g ? g.home === me : null, opp = q.opp || (g ? (home ? g.away : g.home) : '');
+    const tipOf = (q, extra = '') => { const g = D && q.game != null ? D.gameById.get(q.game) : null, me = x.c.team, home = g ? g.home === me : null, opp = q.opp || (g ? (home ? g.away : g.home) : '');
       const score = g && g.hs != null && g.as != null ? (home ? `${g.hs}-${g.as}` : `${g.as}-${g.hs}`) : '', res = score ? (Number(score.split('-')[0]) > Number(score.split('-')[1]) ? 'won' : Number(score.split('-')[0]) < Number(score.split('-')[1]) ? 'lost' : 'drew') : '';
       const lines = [`${x.c.name}${x.c.kind === 'player' && me ? ` (${me})` : ''}: ${q.value} ${x.c.def.label.toLowerCase()}, ${ok(q.value) ? `<b>hit</b> ${word}` : `missed ${word}`}`.replace(/<\/?b>/g, ''),
         opp ? `${home === null ? 'v' : home ? 'Home v' : 'Away at'} ${opp}${score ? `: ${res} ${score}` : ''}` : '', q.min != null && sport === 'nba' ? `${Math.round(q.min)} minutes played` : '', q.season ? `Season ${q.season}${sport === 'football' ? '' : ''}` : ''].filter(Boolean);
-      return TIP(`${fmtDay(q.date)} ${String(q.date || '').slice(0, 4)}${opp ? ` v ${opp}` : ''}`, lines.join('\n')); };
-    return `<div class="rbars" aria-label="Last ${rows.length} ${unitWord} against the line ${r.L} (tap a bar for that game)"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}" style="height:${Math.max(4, (q.value / mx) * 100)}%" ${tipOf(q)} aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}`)}"><em>${q.value}</em></button>`).join('')}</div>`;
+      return TIP(`${fmtDay(q.date)} ${String(q.date || '').slice(0, 4)}${opp ? ` v ${opp}` : ''}`, lines.join('\n') + extra); };
+    // owner, 4 Nov: combo props (Points + Rebounds + Assists, Steals + Blocks, cards...) show each stat in its own colour; the top edge is
+    // green for a hit and red for a miss. Only when every bar's parts add up to its figure and each part can be named.
+    const pn = partNames(x.c.def), stk = pn && rows.every(q => Array.isArray(q.parts) && q.parts.length === pn.length && Math.abs(q.parts.reduce((t, [v]) => t + (Number(v) || 0), 0) - q.value) < 1e-6);
+    const segs = q => q.parts.filter(([v]) => v > 0).map(([v, c]) => `<i class="hseg ${c}" style="flex:${v}"></i>`).reverse().join('');
+    const partTip = q => (stk ? '\n' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(' · ') : '');
+    return `<div class="rbars${stk ? ' rstk' : ''}" aria-label="Last ${rows.length} ${unitWord} against the line ${r.L} (tap a bar for that game)"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}" style="height:${Math.max(4, (q.value / mx) * 100)}%" ${tipOf(q, partTip(q))} aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}${stk ? ' (' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(', ') + ')' : ''}`)}">${stk ? `<span class="rsegs">${segs(q)}</span>` : ''}<em>${q.value}</em></button>`).join('')}</div>${stk ? `<p class="xs muted rleg">${pn.map((nm, i) => `<span><i class="hseg ${rows[0].parts[i][1]}"></i>${esc(nm)}</span>`).join('')}<span class="rlegk">top edge: green hit, red miss</span></p>` : ''}`;
   }
   function nflMuHtml(c, r) {
     const m = c.nflMu; if (!m) return ''; const pos = { qb: 'QBs', rb: 'RBs', wr: 'WRs', te: 'TEs' }[c.p.group] || 'his position';
@@ -7900,6 +7924,7 @@ async function viewRecommended(root, sport) {
   pg.addEventListener('click', e => {
     const t = e.target;
     const ft = t.closest('[data-fxtog]'); if (ft) { s.lgCol = s.lgCol || new Set(); const l = ft.dataset.fxtog; s.lgCol.has(l) ? s.lgCol.delete(l) : s.lgCol.add(l); applyLg(); return; } /* open / close a competition (this visit) */
+    const ad = t.closest('[data-recaddfx]'); if (ad) { s.fx.add(ad.dataset.recaddfx); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; fxCount(); save(sport, s); run(); return; }
     const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall, vis = all.filter(shownF); s.fx.clear(); if (v === 'all') vis.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = vis.length ? ukDay(vis[0]) : null; vis.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); fxCount(); save(sport, s); run(); return; }
     const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
@@ -7946,6 +7971,7 @@ __m['v-acca'] = (() => {
 // range; Build Acca picks the legs (accabuild.js); tick Include to lock a leg, Exclude to throw one out; Replace Unlocked Plays rebuilds
 // around the locks as often as you like. Everything is kept on this phone only (localStorage), never sent anywhere.
 const { buildCandidates } = __m['recplays'];
+const { blowoutOf } = __m['blowout'];
 const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
 const { slipAddMany, slipRegister } = __m['accaslip'];
 const { evalAt, ladderName } = __m['recplays'];
@@ -8159,7 +8185,8 @@ async function viewAcca(root, sport) {
         <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p>
         <button type="button" class="chip" data-atoslip style="margin-top:6px">＋ Put these legs in the Acca slip</button></div>` : ''}
       <div id="alegs">${legs.map(l => { const r = l.r, c = l.c, locked = S.locks.has(l.id), g = c.f, vs = c.sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
-        return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}</div></div>
+        return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}${(() => { const bo = c.sport !== 'football' ? blowoutOf(g, c.sport) : null; /* owner, 4 Nov: blowout chance on built legs, as on the singles */
+            return bo ? ` · <button type="button" class="bo bo-${bo.level.toLowerCase()}" data-ablow data-info="ablow" data-title="Blowout risk: ${esc(bo.level)}" data-text="${esc(bo.text)}" aria-haspopup="dialog">blowout ${Math.round(bo.p * 100)}% · ${esc(bo.level)}</button>` : ''; })()}</div></div>
           <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
           <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><span class="rt"><small>This season</small><b>${r.hr.season.n ? `${r.hr.season.hit}/${r.hr.season.n}` : '–'}</b></span><span class="rt"><small>Last 10</small><b>${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</b></span>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tw[r.tier]}</b></span>` : ''}<span class="rt"><small>Confidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></span></div>
           <div class="row" style="border:0;padding:6px 0 0;gap:12px;flex-wrap:wrap;align-items:center"><label class="hcheck"><input type="checkbox" data-alock ${locked ? 'checked' : ''}><span><b>Include</b> (lock)</span></label><label class="hcheck"><input type="checkbox" data-aexcl><span><b>Exclude</b></span></label><button type="button" class="chip" data-axp>Exclude ${c.kind === 'player' ? 'player' : 'team'}</button>${locked ? '<span class="xs hit">Locked: kept when you replace</span>' : '<span class="xs muted">Replaceable</span>'}</div></article>`; }).join('')}</div>
