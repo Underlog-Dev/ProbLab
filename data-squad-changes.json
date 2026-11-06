@@ -1,6 +1,6 @@
 {
 "schema": 1,
-"updated": "2026-11-04",
+"updated": "2026-11-06",
 "source": "Wikipedia club articles (CC BY-SA 4.0), compared night by night",
 "note": "A player leaving a list may have been sold, released, retired or loaned out: the list does not say which.",
 "items": [
@@ -75,6 +75,14 @@
 "from": null,
 "to": "Seattle Sounders",
 "kind": "joined the squad list"
+},
+{
+"date": "2026-11-06",
+"league": "mls",
+"player": "Shunya Sakai",
+"from": "New York Red Bulls",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
 }
 ]
 }
