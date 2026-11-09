@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="2495b9962925">
+<meta name="proplab-build" content="8e84a77dfe18">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -1052,7 +1052,9 @@ const statusBadge = st => (st === 'live' ? '<span class="live" aria-label="Live"
   : st === 'awaiting' ? '<span class="await">Awaiting result</span>' : st === 'unavailable' ? '<button type="button" class="await unav" data-info="unavailable" aria-haspopup="dialog">No result yet<small>data unavailable</small></button>'
   : st === 'postponed' ? '<button type="button" class="pp" data-info="postponed" aria-haspopup="dialog">Postponed</button>' : st === 'abandoned' ? '<button type="button" class="pp" data-info="abandoned" aria-haspopup="dialog">Abandoned</button>' : '');
 /** Time cell for lists: local time with the zone name underneath, or TBC. */
-const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : '<button type="button" class="tbcb" data-info="tbc" aria-haspopup="dialog">TBC</button>'; };
+/** 9 Nov 2026: a fixture whose source gives only one date for its whole round (no kick-off times) is provisional: the day may change. */
+const isProvisional = f => /provisional date/i.test((f && f.source) || '');
+const timeHtml = f => { const k = koLocal(f); return k.hm ? `${esc(k.hm)}<small class="tzab">${esc(k.abbr)}</small>` : isProvisional(f) ? '<button type="button" class="tbcb" data-info="provdate" aria-haspopup="dialog" title="The source gives one date for the whole round; the day and kick-off time are not confirmed">Date provisional</button>' : '<button type="button" class="tbcb" data-info="tbc" aria-haspopup="dialog">TBC</button>'; };
 /** Runs fn (which rebuilds part of the page inside root) and puts every scrolled element inside root back where it was: each element is
  *  matched by its place (nearest id, tag, class, index), so ticking a box in a long list never jumps the list to the top. */
 // Only the page's own inner scrollers are remembered (Phase 1 performance: reading scrollTop on every element took over 5 s in Safari's engine
@@ -1064,7 +1066,7 @@ const keepScrollIn = (root, fn) => {
   const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
 };
 
-return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, timeHtml, SCROLLERS, keepScrollIn };
+return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, isProvisional, timeHtml, SCROLLERS, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -3170,6 +3172,7 @@ const TEXT = {
   livewin: () => 'LIVE by schedule: the game is within its usual playing time after the scheduled start (NBA about 2 h 30, NFL about 3 h 30). This comes from the schedule only, not a live feed: there are no live scores, and a delayed or suspended game can still show it. A verified LIVE (red, pulsing) is only shown when the data itself confirms the game is in progress. Afterwards it shows Awaiting result until the verified final score is published.',
   unconfirmed: () => 'Started – status unconfirmed: the scheduled kick-off time has passed, but PropLab has no live data feed, so it cannot confirm the match is in play. The final score appears once the verified result is published.',
   tbc: () => 'TBC: the kick-off time has not been confirmed yet. PropLab shows the scheduled date only and never guesses a time.',
+  provdate: () => 'Date provisional: the source (openfootball) gives one date for the whole round and no kick-off times, so the day the match is played may differ. PropLab never invents a time; the confirmed date and time replace it when a source publishes them.',
   pushbin: n => `Tie: ${n} game${n === 1 ? '' : 's'} in this sample ended level for this market (a tied half or quarter), which counts as neither Yes nor No (a push).`,
   newteam: () => 'This player recently joined a new team. Historical averages and projected lines may be less representative because their role, minutes, usage or teammates may have changed.',
   push: n => `Whole-number line: ${n} match${n === 1 ? '' : 'es'} landed exactly on the line, which counts as neither Over nor Under (a "push"). Half-point lines such as 2.5 avoid this.`,
@@ -6543,6 +6546,10 @@ const { muInfo, muTierOf, POS_NAME } = __m['matchupui'];
 const { nba } = __m['nba-data'];
 const { confidence } = __m['confidence'];
 const { nflDefTable, nflTier } = __m['nflmatchups'];
+const { knownPlayers, loadPlayerRows } = __m['data'];
+const { PLAYER_MARKETS } = __m['markets'];
+const { normTeam } = __m['teams'];
+const { fixtureId } = __m['util'];
 
 const NFL_SKIP = new Set(['k.fg', 'k.xp']);
 const stOf = (def, L, side) => ({ line: def.binary ? 0.5 : L, side: def.binary ? (side === 'under' ? 'no' : 'yes') : side, userLine: true, userSide: true, persp: 'h', per: 'all' });
@@ -6647,6 +6654,23 @@ async function footballCandidates(fixtures, onProgress) {
       return { value: r.value, season: r.season, date: r.date, opp: r.opp || (r.raw && r.raw.opp) || null, ...(x.def.parts ? { parts: x.def.parts(r.raw || {}) } : {}), fx: opp && r.date ? `${lg}|${r.date}|${[x.sj.sel, opp].sort().join('~')}` : null }; });
     out.push({ id, sport: 'football', kind: x.kind === 'MATCH' ? 'match' : 'team', name: x.label, team: x.sj.sel, opp: x.sj.other, f: x.f, fid: x.fid, def: x.def, card: c, x, cur: Math.max(0, ...rows.map(r => r.season || 0)),
       rows, lines: candidateLines(x.def, rows.map(r => r.value)), grp: x.kind === 'MATCH' ? 'Match' : 'Team' });
+  }
+  // 9 Nov 2026 (owner): football player markets where PropLab holds player match statistics (MLS). Each player's own matches, every
+  // market he has recorded data for, priced with the same calibrated football-player estimate as Compare Price. 8+ matches needed; a
+  // player who has not played this season while his club has is left out (injured / not in the squad).
+  const PL = new Map(); for (const p of knownPlayers().values()) if (p.hasLogs) { const k = `${p.league}|${normTeam(p.team)}`; if (!PL.has(k)) PL.set(k, []); PL.get(k).push(p); }
+  for (const f of fixtures) for (const [team, opp, home] of [[f.home, f.away, true], [f.away, f.home, false]]) {
+    for (const p of PL.get(`${f.league}|${normTeam(team)}`) || []) {
+      let raw = []; try { raw = await loadPlayerRows(p); } catch { raw = []; }
+      const played = raw.filter(r => typeof r.minutes === 'number' && r.minutes > 0); if (played.length < 8) continue;
+      const cur = Math.max(...played.map(r => r.season)), curN = played.filter(r => r.season === cur).length; if (!curN) continue;
+      for (const m of PLAYER_MARKETS) {
+        const rows = played.map(r => ({ value: m.get(r), season: r.season, date: r.date, opp: r.opp, min: r.minutes, raw: r })).filter(r => r.value !== null && r.value !== undefined); if (rows.length < 8) continue;
+        const def = { ...m, scope: 'player', exposureKey: 'minutes' }, card = { def, title: p.name, rows: rows.map(r => ({ date: r.date, value: r.value, raw: r.raw })).reverse(), tagCls: null, detail: { subjectId: p.id } };
+        out.push({ id: `football|${fixtureId(f)}|${p.id}|${m.key}`, sport: 'football', kind: 'player', name: p.name, pid: p.id, team, opp, home, f, fid: fixtureId(f), def, card, p, cur, curN,
+          rows, lines: candidateLines(def, rows.map(r => r.value)), grp: 'Player' });
+      }
+    }
   }
   if (onProgress) await onProgress(1);
   return out;
@@ -7093,49 +7117,232 @@ function wireCarry(root) {
 
 return { carryPrice, hasCarry, setCarried, carryHtml, wireCarry };
 })();
+__m['settle'] = (() => {
+// Automatic settlement of your logged bets (owner, 9 Nov 2026). PropLab is a static site: there is no server watching your bets. Your bets
+// are kept on this phone; every time My Plays opens (and whenever new data has been published since), each unsettled selection is checked
+// against the published, validated results and statistics. Nothing is ever guessed:
+//  * a selection is settled only from the recorded figure its market needs (points, rebounds, shots, the final score...);
+//  * a finished match whose figure is not published yet stays "Awaiting stats" (never counted as 0, never a loss);
+//  * a player with no stat line in a finished game is "No stat line": bookmakers usually void these, so it waits for you;
+//  * postponed / abandoned matches are "Postponed" (bookmakers' rules differ, so you mark Void when yours does);
+//  * knockout football (MLS play-offs, European knock-out rounds) can go to extra time, and PropLab's statistics may include it while most
+//    bookmakers settle on 90 minutes: those show the figure as "Check" with the likely result, and wait for you;
+//  * whole-number lines push (stake back); quarter lines (2.25, 2.75) split into half bets (half won / half lost).
+// A result you set yourself always wins over the automatic one and is never overwritten (you can hand it back to automatic).
+const { usAdapter } = __m['v-hiwi'];
+const { nba, loadNba } = __m['nba-data'];
+const { nfl, loadNfl } = __m['nfl-data'];
+const { store, loadCore, loadPlayerRows, knownPlayers } = __m['data'];
+const { fbDef } = __m['hiwi-markets'];
+const { NBA_BET_MARKETS } = __m['nba-markets'];
+const { normTeam, teamSlug } = __m['teams'];
+const { hooks } = __m['shared'];
+
+const STATUS_LABEL = { pending: 'Pending', won: 'Won', lost: 'Lost', void: 'Void', halfwon: 'Half won', halflost: 'Half lost', awaiting: 'Awaiting stats',
+  result: 'Awaiting result', nostat: 'No stat line', postponed: 'Postponed', check: 'Check', unknown: 'Cannot settle' };
+const SETTLED = new Set(['won', 'lost', 'void', 'halfwon', 'halflost']);
+
+/** Pure: the result of one whole or half line. */
+const one = (v, L, side) => (v === L ? 'void' : (side === 'under' ? v < L : v > L) ? 'won' : 'lost');
+/** Pure: result of a selection from its recorded figure. Binary markets (yes/no) use 0.5. Quarter lines split in two halves. */
+function resultOf(v, line, side, binary) {
+  if (v == null || !Number.isFinite(Number(v))) return null;
+  if (binary) return (v > 0.5) === (side !== 'under') ? 'won' : 'lost';
+  const fr = Math.round((line - Math.floor(line)) * 100) / 100;
+  if (fr === 0.25 || fr === 0.75) { const a = one(v, line - 0.25, side), b = one(v, line + 0.25, side), s = [a, b].sort().join('|');
+    return a === b ? a : s === 'void|won' ? 'halfwon' : s === 'lost|void' ? 'halflost' : 'lost'; }
+  return one(v, line, side);
+}
+/** Pure: what a stake returns per unit for a result (won = odds, void = 1, half won = (odds + 1) / 2, half lost = 0.5, lost = 0). */
+const factorOf = (res, odds) => (res === 'won' ? odds : res === 'void' ? 1 : res === 'halfwon' ? (odds + 1) / 2 : res === 'halflost' ? 0.5 : res === 'lost' ? 0 : null);
+
+// ---------------------------------------------------------------- data loading (only the sports your open bets need)
+async function ready(sp) {
+  const gj = hooks.getJson, D = sp === 'nba' ? nba : sp === 'nfl' ? nfl : store; if (!gj) return D.status === 'ready';
+  if (D.status === 'idle') { try { await (sp === 'nba' ? loadNba(gj) : sp === 'nfl' ? loadNfl(gj) : loadCore(gj)); } catch { return false; } }
+  for (let i = 0; i < 300 && D.status !== 'ready' && D.status !== 'error'; i++) await new Promise(r => setTimeout(r, 100));
+  return D.status === 'ready';
+}
+const usDef = (sport, A, key) => (sport === 'nba' ? NBA_BET_MARKETS.find(d => d.key === key) : null) || A.def(key);
+const HOURS = 36e5;
+
+/** Settle one selection (a single, or one leg of an acca). Returns { status, result, value, why, at }. */
+async function settleLeg(b, now = Date.now()) {
+  const at = new Date(now).toISOString(), out = (status, why, value = null) => ({ status, result: SETTLED.has(status) ? status : '', value, why, at });
+  if (b.sport === 'nba' || b.sport === 'nfl') {
+    if (!(await ready(b.sport))) return out('pending', 'data not loaded');
+    const A = usAdapter(b.sport), g = A.d.gameById.get(b.gameId) || A.d.gameById.get(String(b.gameId)) || A.d.gameById.get(Number(b.gameId));
+    if (!g) return out('pending', 'game not in the published schedule');
+    if (/postpon|cancel/i.test(g.status || '')) return out('postponed', `game ${g.status}`);
+    if (!g.final) return Date.parse(g.ko_utc || g.date) + 4 * HOURS < now ? out('result', 'no final result published yet') : out('pending', 'not played yet');
+    if (b.scope && b.scope !== 'player') return out('unknown', 'only player markets settle automatically for this sport');
+    const p = A.d.playerById.get(b.pid) || A.d.playerById.get(String(b.pid)); if (!p) return out('unknown', 'player not found');
+    const def = usDef(b.sport, A, b.key); if (!def) return out('unknown', 'market not known');
+    let raw = []; try { raw = await A.playerRowsOf(p); } catch { raw = []; }
+    const row = raw.find(r => String(r.game) === String(g.id));
+    if (!row || row.dnp) return raw.length ? out('nostat', 'no stat line for him in this game (did not play?) — bookmakers usually void these') : out('awaiting', 'player statistics not published yet');
+    const v = def.get(row); if (v == null) return out('awaiting', `${def.label} not recorded for this game`);
+    const res = resultOf(v, b.line, b.side, b.binary || def.binary); return out(res, `${def.label}: ${v}${b.sport === 'nba' ? ' (overtime included)' : b.sport === 'nfl' ? ' (overtime included)' : ''}`, v);
+  }
+  // ---- football
+  if (!(await ready('football'))) return out('pending', 'data not loaded');
+  const fx = b.fx || {}; if (!fx.home || !fx.away) return out('unknown', 'match not recorded with this bet');
+  const day = fx.local_date || fx.date, H = normTeam(fx.home), Aw = normTeam(fx.away);
+  const r = store.teamMatches.find(m => m.league === fx.league && normTeam(m.home) === H && normTeam(m.away) === Aw && Math.abs(Date.parse(m.date) - Date.parse(day)) <= 1.5 * 864e5);
+  if (!r) {
+    const f = store.fixtures.find(x => x.league === fx.league && normTeam(x.home) === H && normTeam(x.away) === Aw && Math.abs(Date.parse(x.date) - Date.parse(fx.date)) <= 864e5);
+    if (f && ['postponed', 'abandoned'].includes(f.status)) return out('postponed', `match ${f.status}`);
+    const ko = Date.parse(fx.ko_utc || fx.date + 'T23:00:00Z'); return ko + 3 * HOURS < now ? out('result', 'no verified final result published yet') : out('pending', 'not played yet');
+  }
+  const def = fbDef(b.key); if (!def) return out('unknown', 'market not known');
+  let v = null;
+  if (def.scope === 'player') {
+    const p = knownPlayers().get(b.pid); if (!p) return out('unknown', 'player not found');
+    let rows = []; try { rows = await loadPlayerRows(p); } catch { rows = []; }
+    const row = rows.find(x => x.date === r.date && normTeam(x.opp) === (normTeam(x.club) === H ? Aw : H));
+    if (!row) { // is the match in the player file at all? then he has no line (did not play); otherwise the player data is not published yet
+      const through = (store.manifest?.player_matches || []).filter(e => e.league === fx.league).map(e => e.through).sort().pop() || '';
+      return through >= r.date ? out('nostat', 'no stat line for him in this match (did not play?) — bookmakers usually void these') : out('awaiting', 'player statistics for this match not published yet'); }
+    v = def.get(row);
+  } else {
+    const side = b.scope === 'team' || b.scope === 'opp' ? normTeam(b.team) : H, rows = store.teamRows.get(teamSlug(side)) || [];
+    const row = rows.find(x => x.date === r.date && x.league === r.league && x.oppSlug === teamSlug(side === H ? Aw : H)); if (!row) return out('awaiting', 'match row not found');
+    v = def.get(row);
+  }
+  if (v == null) return out('awaiting', `${def.label}: not recorded for this match yet (score-only records get their statistics later)`);
+  const res = resultOf(v, b.line, b.side, b.binary || def.binary);
+  const ko = r.stage && !/league|group|regular/i.test(r.stage) || /play-?off|knock|wild card|round one|semi|final/i.test(fx.source || fx.stage || '');
+  if (ko) return { ...out('check', `${def.label}: ${v} as recorded — this is a knockout match: if it went to extra time, check whether your bookmaker counts it`, v), suggest: res };
+  return out(res, `${def.label}: ${v} (90 minutes + stoppage time)`, v);
+}
+
+/** Pure: an acca's state from its legs' results. Returns { status, factor } (factor = what the stake returns, when known). */
+function accaOf(legs) {
+  const res = legs.map(l => l.res); if (res.some(r => r === 'lost')) return { status: 'lost', factor: 0 };
+  if (res.every(r => SETTLED.has(r))) return { status: res.every(r => r === 'void') ? 'void' : 'won', factor: legs.reduce((t, l) => t * factorOf(l.res, l.odds), 1) };
+  return { status: 'pending', factor: null };
+}
+
+return { STATUS_LABEL, SETTLED, resultOf, factorOf, settleLeg, accaOf };
+})();
+__m['betprefill'] = (() => {
+// "Log as a real bet" (owner, 9 Nov 2026): carries a selection from Hiwi's Section, or the whole Acca slip, to the bet log on My Plays,
+// with the match, player / team, market, line and side filled in. You then type the odds and stake you actually got. No heavy imports.
+const PREFILL = 'proplab.betprefill', DRAFT = 'proplab.betdraft.v1';
+const parseDec = t => { const s = String(t || '').trim(); if (!s) return null; if (/^evens?$/i.test(s)) return 2; const f = /^(\d+)\s*\/\s*(\d+)$/.exec(s); if (f) return 1 + Number(f[1]) / Number(f[2]); const n = Number(s.replace(',', '.')); return n > 1 ? n : null; };
+const go = sp => { location.hash = !sp || sp === 'football' ? '#/myplays' : `#/${sp}/myplays`; };
+/** A selection (bet-log shape, no stake) from a Hiwi's Section candidate c, side and evaluated line r. */
+function selFromCandidate(c, side, r) {
+  const g = c.f || {}, def = c.def, base = { sport: c.sport, key: def.key, market: def.label, binary: !!def.binary, line: def.binary ? 0.5 : r.L, side, p: r.p, push: r.push || 0, fair: r.fair, model: "PropLab's model when you logged it" };
+  if (c.sport === 'football') { const scope = def.scope || (String(def.key).startsWith('m.') ? 'match' : String(def.key).startsWith('o.') ? 'opp' : String(def.key).startsWith('t.') ? 'team' : 'player');
+    const fx = { league: g.league, date: g.date, ko_utc: g.ko_utc || '', local_date: g.local_date || '', home: g.home, away: g.away, source: g.source || '', stage: g.stage || '' };
+    return { ...base, fx, scope, team: scope === 'team' || scope === 'opp' ? c.team : '', pid: scope === 'player' ? c.pid : '', name: scope === 'match' ? `${g.home} v ${g.away}` : c.name, game: `${g.home} v ${g.away}`, date: (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date) };
+  }
+  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date, season: g.season };
+}
+function openBetForm(sel, oddsTxt = '') { try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
+function openAccaForm(sels, stakeTxt = '') {
+  const legs = sels.map((x, i) => ({ ...x.sel, id: `leg|${Date.now()}|${i}`, odds: parseDec(x.oddsTxt), oddsTxt: x.oddsTxt || '', result: '' }));
+  try { localStorage.setItem(DRAFT, JSON.stringify({ legs, stake: stakeTxt || '', odds: '' })); sessionStorage.setItem(PREFILL, JSON.stringify({ acca: true })); } catch { /* fine */ }
+  go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
+}
+
+return { PREFILL, selFromCandidate, openBetForm, openAccaForm };
+})();
 __m['betlog'] = (() => {
-// Bet log (owner request 5 Nov 2026), on My Plays: log a bet you placed, after the game. Pick the match, the player, the market and line,
-// type your stake and the odds you got, and mark it Won / Lost / Void. PropLab works out the fair odds AT THE TIME OF THE MATCH, from his
-// games before that match only, and stores them with the bet, so you see whether the bet was EV+ or EV- and, over a season, how much you
-// staked, won, and what your edge was worth (expected profit) against what actually happened.
-//  * "At the time": only games dated before the match are used. Today's injury news and today's matchup table did not exist on the day,
-//    so the log's fair odds use the form model alone (no teammate or matchup adjustment). That is stated on the page.
-//  * EV of a bet = stake x (chance of a win x your odds + chance of a push - 1). Expected profit adds these up; it is what the edge was
-//    worth on average. Actual profit is what happened. The difference is luck over a short run, not skill.
-//  * NBA and NFL player props (the markets the model prices). Kept on this device; a backup file can be saved and restored.
+// Bet log on My Plays: your REAL bets, singles and accas, across NBA, NFL and football (owner requests 5 and 9 Nov 2026).
+//  * Log a bet before the game (or after): match, player / team, market, line, your stake and your bookmaker's odds. "Log as a real bet" on
+//    Hiwi's Section cards and "Log this acca" in the Acca slip fill the form in for you; you type the odds and stake you actually got.
+//  * Automatic settlement (settle.js): every time My Plays opens, unsettled selections are checked against the published, validated
+//    results and statistics: Won, Lost, Void (push), Half won / Half lost (quarter lines), or Pending / Awaiting result / Awaiting stats /
+//    No stat line / Postponed / Check. A missing statistic is never a 0 and never a loss.
+//  * Your own result always comes first: Won, Lost, Void, Half won, Half lost or Pending set by you is never overwritten by a data refresh.
+//    "Automatic" hands it back. Settled-by-you and settled-automatically are labelled.
+//  * Accas: each leg settles on its own; one lost leg loses the acca; a void leg counts as odds 1.00 (standard acca rule); when every leg is
+//    settled the acca pays stake x the product of the legs (half results: (odds + 1) / 2 and 0.5). You can override any leg and the acca.
+//    Same-game, boosted and other special accas may follow different bookmaker rules: set those results yourself.
+//  * Totals count each real bet once: an acca's stake once (not once per leg). Void stakes are returned and leave staked and profit alone.
+//  * Fair odds "at the time" (NBA / NFL player props): from his games before that match only. Kept on this device (backup file below).
+//    There is no server: your bets live in this browser and are reconciled with the shared data whenever My Plays opens; no syncing.
 const { esc, koUK, fmtKick, fmtDay } = __m['util'];
 const { fmtOdds, parseIn } = __m['oddsfmt'];
 const { usAdapter } = __m['v-hiwi'];
 const { buildUsPlayerCard } = __m['uscards'];
 const { cardEstimate, loadCalib } = __m['valueev'];
 const { NBA_BET_MARKETS } = __m['nba-markets'];
+const { settleLeg, accaOf, factorOf, resultOf, STATUS_LABEL, SETTLED } = __m['settle'];
+const { store, knownPlayers, loadPlayerRows, leagueName } = __m['data'];
+const { FB_GROUPS, fbDef, avgLine } = __m['hiwi-markets'];
+const { normTeam, teamSlug } = __m['teams'];
+const { nba } = __m['nba-data'];
+const { nfl } = __m['nfl-data'];
+const { hooks } = __m['shared'];
 
+const { PREFILL, DRAFT } = __m['betprefill'];
 const KEY = 'proplab.betlog.v1';
 const loadLog = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 const saveLog = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch { return false; } };
+const loadDraft = () => { try { const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d && Array.isArray(d.legs) ? d : { legs: [], stake: '', odds: '' }; } catch { return { legs: [], stake: '', odds: '' }; } };
+const saveDraft = d => { try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch { /* this visit only */ } };
 const NFL_SKIP = new Set(['k.fg', 'k.xp']);
 const gbp = x => `${x < 0 ? '−' : ''}£${Math.abs(x).toFixed(2)}`, sgbp = x => `${x >= 0 ? '+' : '−'}£${Math.abs(x).toFixed(2)}`;
 const sideTxt = (b, def) => (def && def.binary || b.binary ? (b.side === 'under' ? 'No' : 'Yes') : `${b.side === 'under' ? 'Under' : 'Over'} ${b.line}`);
+const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
+const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const SPORT_NAME = { nba: 'NBA', nfl: 'NFL', football: 'Football' };
 
-/** Pure: profit of a settled bet (0 for void or unsettled). */
-const profitOf = b => (b.result === 'won' ? b.stake * (b.odds - 1) : b.result === 'lost' ? -b.stake : 0);
-/** Pure: expected profit of a bet at its stored fair chance: stake x (p x odds + push - 1); null when no fair price was available. */
-const evOf = b => (Number.isFinite(b.p) && b.p > 0 ? b.stake * (b.p * b.odds + (b.push || 0) - 1) : null);
-/** Pure: season totals over settled bets (void bets are left out of staked and EV). */
+// ---------------------------------------------------------------- pure: results, profit and totals
+/** The result that counts: yours first, then the automatic one; '' = not settled. */
+const effOf = x => (x.result ? (x.result === 'pending' ? '' : x.result) : (x.auto && SETTLED.has(x.auto.status) ? x.auto.status : ''));
+const isAcca = b => b.type === 'acca';
+/** Pure: an acca's effective result and what it returns. Your acca result first; else from the legs. */
+function accaState(b) {
+  const legs = b.legs.map(l => ({ res: effOf(l), odds: l.odds }));
+  const book = Number(b.bookOdds) > 1 ? Number(b.bookOdds) : null, allWon = legs.every(l => l.res === 'won');
+  if (b.result && b.result !== 'pending') { const f = b.result === 'won' ? (book || legs.reduce((t, l) => t * (SETTLED.has(l.res) ? factorOf(l.res, l.odds) : l.odds), 1)) : factorOf(b.result, 1) ?? 0; return { status: b.result, factor: b.result === 'void' ? 1 : f, manual: true }; }
+  if (b.result === 'pending') return { status: 'pending', factor: null, manual: true };
+  const s = accaOf(legs); return { ...s, factor: s.status === 'won' && allWon && book ? book : s.factor, manual: false };
+}
+/** Pure: profit of a bet (single or acca); 0 for void, null while not settled. */
+function profitOf(b) {
+  if (isAcca(b)) { const s = accaState(b); return s.status === 'pending' ? null : s.status === 'void' ? 0 : b.stake * (s.factor - 1); }
+  const r = effOf(b); if (!r) return null; return b.stake * (factorOf(r, b.odds) - 1);
+}
+const combinedOdds = b => b.legs.reduce((t, l) => t * l.odds, 1);
+/** Pure: expected profit of a single at its stored fair chance: stake x (p x odds + push - 1); null when no fair price was stored. */
+const evOf = b => (!isAcca(b) && Number.isFinite(b.p) && b.p > 0 ? b.stake * (b.p * b.odds + (b.push || 0) - 1) : null);
+const stat = b => (isAcca(b) ? accaState(b).status : effOf(b) || 'pending');
+/** Pure: totals. Each bet's stake is counted once (an acca once, not per leg). Void bets are left out of staked and profit. */
 function totals(list) {
-  const s = list.filter(b => b.result && b.result !== 'void'), priced = s.filter(b => evOf(b) != null);
-  const staked = s.reduce((t, b) => t + b.stake, 0), profit = s.reduce((t, b) => t + profitOf(b), 0), ev = priced.reduce((t, b) => t + evOf(b), 0);
-  const evPlus = priced.filter(b => evOf(b) > 0), plus = evPlus.reduce((t, b) => t + profitOf(b), 0), minus = priced.filter(b => evOf(b) <= 0).reduce((t, b) => t + profitOf(b), 0);
-  return { n: list.length, settled: s.length, voids: list.filter(b => b.result === 'void').length, open: list.filter(b => !b.result).length, staked, returned: staked + profit, profit, ev, luck: profit - ev,
-    roi: staked ? profit / staked : null, evRoi: priced.length ? ev / priced.reduce((t, b) => t + b.stake, 0) : null, evPlusN: evPlus.length, pricedN: priced.length, plusProfit: plus, minusProfit: minus,
-    won: s.filter(b => b.result === 'won').length };
+  const part = L => { const s = L.filter(b => stat(b) !== 'pending' && stat(b) !== 'void'), staked = s.reduce((t, b) => t + b.stake, 0), profit = s.reduce((t, b) => t + profitOf(b), 0);
+    return { n: L.length, won: L.filter(b => ['won', 'halfwon'].includes(stat(b))).length, lost: L.filter(b => ['lost', 'halflost'].includes(stat(b))).length, open: L.filter(b => stat(b) === 'pending').length,
+      voids: L.filter(b => stat(b) === 'void').length, settled: s.length, staked, profit, returned: staked + profit, roi: staked ? profit / staked : null, stakedAll: L.reduce((t, b) => t + b.stake, 0) }; };
+  const singles = list.filter(b => !isAcca(b)), accas = list.filter(isAcca), all = part(list), sg = part(singles), ac = part(accas);
+  const priced = singles.filter(b => stat(b) !== 'pending' && stat(b) !== 'void' && evOf(b) != null), ev = priced.reduce((t, b) => t + evOf(b), 0);
+  const evPlus = priced.filter(b => evOf(b) > 0);
+  return { ...all, singles: sg, accas: ac, ev, luck: priced.reduce((t, b) => t + profitOf(b), 0) - ev, pricedN: priced.length, evPlusN: evPlus.length,
+    evRoi: priced.length ? ev / priced.reduce((t, b) => t + b.stake, 0) : null, plusProfit: evPlus.reduce((t, b) => t + profitOf(b), 0), minusProfit: priced.filter(b => evOf(b) <= 0).reduce((t, b) => t + profitOf(b), 0) };
 }
 
-/** The markets the model prices for this player (same list as Hiwi's Section). */
+// ---------------------------------------------------------------- automatic settlement (never touches a result you set)
+const needsCheck = x => !x.result && !(x.auto && SETTLED.has(x.auto.status));
+/** Check every open selection against the published data. Returns how many changed. */
+async function settleAll(now = Date.now()) {
+  const a = loadLog(); let changed = 0;
+  for (const b of a) {
+    for (const x of isAcca(b) ? b.legs : [b]) { if (!needsCheck(x)) continue; let r; try { r = await settleLeg(x, now); } catch (e) { r = { status: 'pending', why: String(e && e.message || e), at: new Date(now).toISOString() }; }
+      if (!x.auto || x.auto.status !== r.status || x.auto.value !== r.value || x.auto.why !== r.why) changed++; x.auto = r; } }
+  if (changed) { const cur = loadLog(), ids = new Map(a.map(b => [b.id, b])); for (let i = 0; i < cur.length; i++) { const n = ids.get(cur[i].id); if (!n) continue; // keep anything you changed meanwhile
+      if (isAcca(n)) cur[i].legs = cur[i].legs.map((l, j) => ({ ...l, auto: n.legs[j] ? n.legs[j].auto : l.auto })); else cur[i].auto = n.auto; }
+    saveLog(cur); }
+  try { localStorage.setItem('proplab.betlog.checked', new Date(now).toISOString()); } catch { /* fine */ }
+  return changed;
+}
+
+// ---------------------------------------------------------------- fair price at a past or coming game (NBA / NFL player props)
 const defsFor = (sport, A, p) => (sport === 'nba' ? NBA_BET_MARKETS.filter(d => d.scope === 'player') : A.groups().flatMap(([, ks]) => ks).map(k => A.def(k)).filter(d => d && d.scope === 'player' && !NFL_SKIP.has(d.key) && (!d.for || d.for.includes(p.group))));
 const stOf = (def, L, side) => ({ line: def.binary ? 0.5 : L, side: def.binary ? (side === 'under' ? 'no' : 'yes') : side, userLine: true, userSide: true, persp: 'h', per: 'all' });
-
-/** Fair price of a player prop at a past game, from his games before that game only. */
+/** Fair price of a player prop at a game, from his games before that game only. */
 async function priceAtGame(sport, gid, pid, key, line, side) {
   await loadCalib();
   const A = usAdapter(sport), g = A.d.gameById.get(gid), p = A.d.playerById.get(pid); if (!g || !p) return { ok: false, reason: 'game or player not found' };
@@ -7149,145 +7356,255 @@ async function priceAtGame(sport, gid, pid, key, line, side) {
   if (!e || !e.ok || !(e.win > 0)) return { ok: false, reason: (e && e.reason) || 'no fair price', actual: v, played: !!(mine && !mine.dnp), def, games };
   return { ok: true, p: e.win, push: e.push || 0, fair: (1 - (e.push || 0)) / e.win, actual: v, played: !!(mine && !mine.dnp), def, games };
 }
-/** Pure: the result a stat line gives at a line (null when there is no figure). */
-const resultFrom = (v, line, side, binary) => (v == null ? null : binary ? ((v > 0.5) === (side !== 'under') ? 'won' : 'lost') : v === line ? 'void' : (side === 'under' ? v < line : v > line) ? 'won' : 'lost');
+/** Pure (kept for older callers): the result a stat line gives at a line (null when there is no figure). */
+const resultFrom = (v, line, side, binary) => resultOf(v, line, side, binary);
 
 // ---------------------------------------------------------------- the page section
-const F = { sport: '', day: '', gid: '', pid: '', key: '', line: null, side: 'over', stake: '', odds: '', result: '', season: 'all' };
+const F = { view: 'all', sportF: '', season: 'all', league: '', sport: '', day: '', gid: '', pid: '', key: '', line: null, side: 'over', stake: '', odds: '', scope: 'match', fxk: '', team: '', p: null, push: 0, fair: null, model: null };
 let players = null, playersFor = '', priced = null, pricing = 0;
 
 function betLogHtml(sport) {
-  if (F.sport !== sport) { F.sport = sport; F.gid = ''; F.pid = ''; F.key = ''; players = null; playersFor = ''; priced = null; }
+  if (F.sport !== sport) { F.sport = sport; F.gid = ''; F.pid = ''; F.key = ''; F.fxk = ''; players = null; playersFor = ''; priced = null; }
   return `<section class="card stack" id="blog" data-blsport="${esc(sport)}"><div id="bltot"></div>
-    <details class="card blform" id="blform"${F.gid ? ' open' : ''}><summary><b>Log a bet</b> <span class="xs muted">(after the game: match, player, market, your stake and odds)</span></summary><div id="blbody" style="margin-top:8px"></div></details>
+    <details class="card blform" id="blform"${F.gid || F.fxk ? ' open' : ''}><summary><b>Log a bet</b> <span class="xs muted">(before or after the game: match, selection, your stake and odds)</span></summary><div id="blbody" style="margin-top:8px"></div></details>
+    <div id="bldraft"></div>
     <div id="bllist"></div>
     <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-blbackup>Save a backup file</button><label class="chip" style="cursor:pointer">Restore from a file<input type="file" accept="application/json,.json" data-blrestore hidden></label></div>
-    <p class="xs muted" style="margin:0">Your bets are kept on this phone only. Save a backup file now and then (Safari can clear a website's storage if you do not visit for a few weeks, unless PropLab is added to your Home Screen).</p></section>`;
+    <p class="xs muted" style="margin:0">Your bets are kept on this phone only (no account, no syncing between devices). They are checked against the latest published results every time you open My Plays, so they settle even if PropLab was closed when the match finished. Save a backup file now and then (Safari can clear a website's storage if you do not visit for a few weeks, unless PropLab is on your Home Screen).</p></section>`;
 }
 
 function gamesOn(A, day) { return A.d.games.filter(g => koUK(g).ymd === day && g.status !== 'canceled').sort((a, b) => (a.ko_utc || '').localeCompare(b.ko_utc || '')); }
-function lastDayWithFinals(A) { const today = koUK({ ko_utc: new Date().toISOString() }).ymd, f = A.d.games.filter(g => g.final && koUK(g).ymd <= today).map(g => koUK(g).ymd).sort(); return f.length ? f[f.length - 1] : today; }
-
 async function loadPlayers(A, sport, g) {
   const ts = [g.away, g.home], list = A.d.players.filter(p => ts.includes(p.team) && (sport !== 'nba' || p.logs_file)), out = [];
   for (const p of list) { let raw = []; try { raw = await A.playerRowsOf(p); } catch { raw = []; } const r = raw.find(x => String(x.game) === String(g.id)); out.push({ p, played: !!(r && !r.dnp), row: r || null }); }
-  // a player who has moved since: his row for this game is in his new team's file only if he is listed; the current rosters are used
   return out.sort((a, b) => (b.played - a.played) || ts.indexOf(a.p.team) - ts.indexOf(b.p.team) || (b.row?.min || 0) - (a.row?.min || 0) || a.p.name.localeCompare(b.p.name));
 }
+// football: the matches of a UK day (fixtures, plus results of that day), with a stable key
+const fxKeyOf = f => `${f.league}|${f.home}|${f.away}|${f.ko_utc || f.date}`;
+function footballOn(day) {
+  const out = new Map();
+  for (const f of store.fixtures) if (koUK(f).ymd === day && !['postponed', 'abandoned'].includes(f.status)) out.set(`${f.league}|${normTeam(f.home)}|${normTeam(f.away)}`, { league: f.league, date: f.date, ko_utc: f.ko_utc || '', local_date: f.local_date || '', home: f.home, away: f.away, source: f.source || '' });
+  for (const r of store.teamMatches) if ((r.ko_utc ? koUK(r).ymd : r.date) === day) { const k = `${r.league}|${normTeam(r.home)}|${normTeam(r.away)}`; if (!out.has(k)) out.set(k, { league: r.league, date: r.ko_utc ? koUK(r).ymd : r.date, ko_utc: r.ko_utc || '', local_date: r.date, home: r.home, away: r.away, source: r.source || '', stage: r.stage || '' }); }
+  return [...out.values()].sort((a, b) => (a.ko_utc || a.date).localeCompare(b.ko_utc || b.date) || a.league.localeCompare(b.league));
+}
+const hasPlayerData = lg => (store.manifest?.player_matches || []).some(e => e.league === lg);
+const fbKeysFor = scope => FB_GROUPS.flatMap(([, ks]) => ks).filter(k => { const d = fbDef(k); return d && (scope === 'player' ? d.scope === 'player' : scope === 'match' ? d.scope === 'match' : d.scope === 'team' || d.scope === 'opp'); });
 
 function wireBetLog(root, sport) {
-  const A = usAdapter(sport), box = root.querySelector('#blog'); if (!box) return;
-  const body = box.querySelector('#blbody');
+  const box = root.querySelector('#blog'); if (!box) return;
+  const A = sport === 'football' ? null : usAdapter(sport), body = box.querySelector('#blbody');
+  const alertMsg = m => { const p = box.querySelector('#bllist'); if (p) p.insertAdjacentHTML('afterbegin', `<div class="banner info">${esc(m)}</div>`); };
+  // ---- prefill from Hiwi's Section / the Acca slip
+  let pre = null; try { pre = JSON.parse(sessionStorage.getItem(PREFILL) || 'null'); sessionStorage.removeItem(PREFILL); } catch { pre = null; }
+  if (pre && !pre.acca && pre.sport === sport) { Object.assign(F, { gid: '', pid: '', key: '', fxk: '', team: '', p: null, push: 0, fair: null, model: null });
+    if (sport === 'football') { const f = pre.fx; F.day = koUK(f).ymd; F.fxk = fxKeyOf(f); F.scope = pre.scope === 'opp' ? 'team' : pre.scope; F.team = pre.team || ''; F.pid = pre.pid || ''; F._fx = f; }
+    else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? koUK(g).ymd : F.day; F.pid = String(pre.pid); }
+    F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = ''; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
+    box.querySelector('#blform').open = true; }
+  if (pre && pre.acca) setTimeout(() => { const d = box.querySelector('#bldraft'); if (d) d.scrollIntoView({ block: 'start' }); }, 300);
+
+  // ---- totals and list
   const drawTotals = () => {
-    const all = loadLog(), seasons = [...new Set(all.map(b => `${b.sport}|${b.season}`))].sort().reverse();
+    const all0 = loadLog();
+    const all = all0.filter(b => (!F.sportF || (isAcca(b) ? b.legs.some(l => l.sport === F.sportF) : b.sport === F.sportF)) && (F.view === 'all' || (F.view === 'acca') === isAcca(b))
+      && (!F.league || (isAcca(b) ? b.legs.some(l => l.fx && l.fx.league === F.league) : b.fx && b.fx.league === F.league)));
+    const seasons = [...new Set(all0.filter(b => !isAcca(b) && b.season).map(b => `${b.sport}|${b.season}`))].sort().reverse();
     if (F.season !== 'all' && !seasons.includes(F.season)) F.season = 'all';
-    const L = F.season === 'all' ? all : all.filter(b => `${b.sport}|${b.season}` === F.season), T = totals(L);
-    const tile = (v, l, cls = '') => `<div class="tile bltile ${cls}"><b>${v}</b><span>${l}</span></div>`;
+    const L = F.season === 'all' ? all : all.filter(b => !isAcca(b) && `${b.sport}|${b.season}` === F.season), T = totals(L);
+    const tile = (v, l, cls = '') => `<div class="tile bltile ${cls}"><b>${v}</b><span>${l}</span></div>`, roi = r => (r == null ? '–' : `${(r * 100).toFixed(1)}%`);
+    const lgs = [...new Set(all0.flatMap(b => (isAcca(b) ? b.legs : [b]).filter(x => x.fx).map(x => x.fx.league)))];
+    const S = T.singles, Ac = T.accas;
     box.querySelector('#bltot').innerHTML = `<h2 style="margin:0">Bet log</h2>
-      ${seasons.length > 1 ? `<label class="field" style="margin:6px 0"><span class="xs muted">Season</span><select class="in" data-blseason><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${sp.toUpperCase()} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select></label>` : ''}
-      <div class="tiles bltiles">${tile(gbp(T.staked), 'Total staked')}${tile(sgbp(T.profit), 'Profit / loss', T.profit >= 0 ? 'pos' : 'neg')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (EV)', T.ev >= 0 ? 'pos' : 'neg')}${tile(T.pricedN ? sgbp(T.luck) : '–', 'Above / below expected', T.luck >= 0 ? 'pos' : 'neg')}
-        ${tile(T.roi == null ? '–' : `${(T.roi * 100).toFixed(1)}%`, 'Return on stakes')}${tile(`${T.evPlusN} / ${T.pricedN}`, 'Bets that were EV+')}${tile(`${T.won} / ${T.settled}`, 'Won')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
-      ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ bets: ${sgbp(T.plusProfit)} actual · EV− bets: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Your average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} ${T.open ? `${T.open} bet${T.open === 1 ? '' : 's'} not settled yet.` : ''} ${T.voids ? `${T.voids} void.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}`;
+      <div class="row" style="border:0;gap:6px;flex-wrap:wrap;margin:6px 0">
+        <div class="seg" data-blview>${[['all', 'All plays'], ['single', 'Singles'], ['acca', 'Accas']].map(([v, l]) => `<button type="button" data-v="${v}" class="${F.view === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <select class="in" data-blsportf aria-label="Sport"><option value="">Every sport</option>${['football', 'nba', 'nfl'].map(s => `<option value="${s}"${F.sportF === s ? ' selected' : ''}>${SPORT_NAME[s]}</option>`).join('')}</select>
+        ${lgs.length ? `<select class="in" data-blleague aria-label="League"><option value="">Every league</option>${lgs.map(l => `<option value="${esc(l)}"${F.league === l ? ' selected' : ''}>${esc(leagueName(l))}</option>`).join('')}</select>` : ''}
+        ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
+      <div class="tiles bltiles">${tile(gbp(T.staked), 'Total staked (settled)')}${tile(sgbp(T.profit), 'Profit / loss', T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
+        ${tile(String(T.open), 'Pending')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
+      ${F.view === 'all' && L.length ? `<table class="risktb bltypes"><tr><th></th><th>Placed</th><th>Won</th><th>Lost</th><th>Pending</th><th>Void</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
+        ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n}</th><td>${x.n}</td><td>${x.won}</td><td>${x.lost}</td><td>${x.open}</td><td>${x.voids}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table>` : ''}
+      ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
+      <p class="xs muted" style="margin:4px 0 0">Each bet's stake is counted once (an acca once, not once per leg); void stakes are returned and left out. ${(() => { let c = ''; try { c = localStorage.getItem('proplab.betlog.checked') || ''; } catch { c = ''; } return c ? `Results checked ${esc(fmtDay(koUK({ ko_utc: c }).ymd))} ${esc(koUK({ ko_utc: c }).hm)} against data published ${esc(dataStamp())}.` : ''; })()}</p>`;
     const days = [...new Set(L.map(b => b.date))].sort().reverse();
-    box.querySelector('#bllist').innerHTML = L.length ? days.map(d => `<div class="bldat"><b>${esc(fmtDay(d))}</b>${L.filter(b => b.date === d).map(b => { const ev = evOf(b), pl = profitOf(b);
-      return `<div class="blrow" data-bl="${esc(b.id)}"><div><b>${esc(b.name)}</b> · ${esc(b.market)} ${esc(sideTxt(b))}<div class="xs muted">${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))} · fair at the time ${b.fair ? esc(fmtOdds(b.fair)) : 'unavailable'}${b.actual != null ? ` · he had ${esc(String(b.actual))}` : ''}</div>
-        <div class="small">${ev == null ? '<span class="muted">EV unknown (no fair price)</span>' : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</b> <span class="xs muted">(${((b.p * b.odds + (b.push || 0) - 1) * 100).toFixed(1)}%)</span>`}${b.result ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${b.result === 'void' ? 'Void' : sgbp(pl)}</b>` : ''}</div></div>
-        <div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void']].map(([v, l]) => `<button type="button" data-blres="${v}" class="${b.result === v ? 'on' : ''}" aria-pressed="${b.result === v}">${l}</button>`).join('')}<button type="button" data-bldel aria-label="Remove this bet">✕</button></div></div>`; }).join('')}</div>`).join('')
-      : '<div class="banner info"><b>No bets logged yet.</b> Open <b>Log a bet</b> above after a game.</div>';
+    box.querySelector('#bllist').innerHTML = L.length ? days.map(d => `<div class="bldat"><b>${esc(fmtDay(d))}</b>${L.filter(b => b.date === d).map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</div>`).join('')
+      : `<div class="banner info"><b>No bets ${F.view === 'acca' ? 'accas ' : ''}logged${F.sportF ? ` for ${SPORT_NAME[F.sportF]}` : ''} yet.</b> Open <b>Log a bet</b> above.</div>`;
   };
+  const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? `${fmtDay(koUK({ ko_utc: t }).ymd)} ${koUK({ ko_utc: t }).hm}` : 'on this visit'; };
+  const chip = x => { const own = x.result, st = own ? (own === 'pending' ? 'pending' : own) : (x.auto ? x.auto.status : 'pending');
+    return `<span class="blst st-${esc(st)}">${esc(STATUS_LABEL[st] || st)}</span> <span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'not checked yet'}</span>`; };
+  const resBtns = (x, attr) => `<div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
+  const selLine = x => `<b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}`;
+  function singleRow(b) { const ev = evOf(b), pl = profitOf(b);
+    return `<div class="blrow" data-bl="${esc(b.id)}"><div>${selLine(b)}<div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}</div>
+      <div class="small">${chip(b)}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
+      ${resBtns(b, 'data-blres')}<button type="button" class="linkbtn xs" data-bldel aria-label="Remove this bet">✕ Remove</button></div>`; }
+  function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
+    return `<details class="blrow blacca" data-bl="${esc(b.id)}"><summary><div><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
+      <div class="small"><span class="blst st-${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span> <span class="xs muted">${s.manual ? 'set by you' : 'from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot st-${esc(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}</div></div></summary>
+      ${b.legs.map((l, i) => `<div class="blleg" data-blleg="${i}"><div>${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div>${resBtns(l, 'data-bllegres')}</div>`).join('')}
+      <div class="blleg"><div class="small"><b>The whole acca</b> <span class="xs muted">(your bookmaker's result comes first: use it for boosts, same-game accas or any special rule)</span></div>${resBtns(b, 'data-blres')}</div>
+      <p class="xs muted" style="margin:4px 0">A void leg counts as odds 1.00 (standard acca rule); one lost leg loses the acca. Same-game and promotional accas may be settled differently by your bookmaker.</p>
+      <button type="button" class="linkbtn xs" data-bldel aria-label="Remove this acca">✕ Remove acca</button></details>`; }
   const seasonName = (sp, se) => (sp === 'nba' ? `${Number(se) - 1}/${String(se).slice(2)}` : String(se));
 
-  const drawForm = async () => {
-    if (!F.day) F.day = lastDayWithFinals(A);
+  // ---- acca being built
+  const drawDraft = () => { const d = loadDraft(), el = box.querySelector('#bldraft'); if (!d.legs.length) { el.innerHTML = ''; return; }
+    const co = d.legs.reduce((t, l) => t * (l.odds || 1), 1), st = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = d.legs.filter(l => !(l.odds > 1)).length;
+    const games = new Map(); for (const l of d.legs) { const k = l.gameId ? `${l.sport}|${l.gameId}` : l.fx ? `f|${l.fx.league}|${l.fx.home}|${l.fx.away}` : l.id; games.set(k, (games.get(k) || 0) + 1); }
+    const same = [...games.values()].some(n => n > 1);
+    el.innerHTML = `<section class="card stack blbuild"><h3 style="margin:0">Acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'})</h3>
+      ${d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="decimal" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('')}
+      ${same ? '<p class="xs warn" style="margin:4px 0">Two or more legs come from the same match. Bookmakers usually price these as a bet builder, not by multiplying, and settle them under their own rules: type the bookmaker\'s acca odds below and check the result yourself.</p>' : ''}
+      <div class="blgrid"><label class="field"><span>Acca stake (£)</span><input class="in slipstake" data-bldstake inputmode="decimal" value="${esc(d.stake)}" placeholder="e.g. 5"></label>
+      <label class="field"><span>Bookmaker's acca odds <small>(only if different: boosts, bet builders)</small></span><input class="in" data-bldbook inputmode="decimal" value="${esc(d.odds || '')}" placeholder="optional"></label></div>
+      <p class="small" style="margin:4px 0">Legs multiply to <b>${missing ? '–' : esc(fmtOdds(co))}</b>${st > 0 && !missing ? ` · returns <b>${gbp(st * (bo || co))}</b> (profit ${sgbp(st * ((bo || co) - 1))}) if every leg wins` : ''}${missing ? ` · type your odds for ${missing} leg${missing === 1 ? '' : 's'}` : ''}</p>
+      <div class="row" style="border:0;gap:8px"><button type="button" class="btn primary" data-bldsave${d.legs.length < 2 ? ' disabled' : ''}>Save this acca</button><button type="button" class="btn" data-bldclear>Clear</button></div><p class="small" data-bldmsg style="margin:0"></p></section>`; };
+
+  // ---- the form
+  const usForm = async () => {
+    if (!F.day) F.day = today();
     const gs = gamesOn(A, F.day); if (F.gid && !gs.some(g => String(g.id) === String(F.gid))) { F.gid = ''; F.pid = ''; }
-    const g = F.gid ? A.d.gameById.get(F.gid) : null;
-    let html = `<div class="blgrid"><label class="field"><span>Date of the game (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(koUK({ ko_utc: new Date(Date.now() + 864e5).toISOString() }).ymd)}"></label>
+    const g = F.gid ? A.d.gameById.get(F.gid) || A.d.gameById.get(Number(F.gid)) : null;
+    let html = `<div class="blgrid"><label class="field"><span>Date of the game (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 21))}"></label>
       <label class="field"><span>Match</span><select class="in" data-blgame><option value="">${gs.length ? 'Pick the match' : 'No games that day'}</option>${gs.map(x => `<option value="${esc(x.id)}"${String(x.id) === String(F.gid) ? ' selected' : ''}>${esc(`${x.away} at ${x.home} · ${fmtKick(x)}${x.final ? ` · ${x.as}-${x.hs}` : ''}`)}</option>`).join('')}</select></label></div>`;
     if (!g) { body.innerHTML = html; return; }
     if (playersFor !== String(g.id)) { body.innerHTML = html + '<p class="small muted">Loading the players…</p>'; players = await loadPlayers(A, sport, g); playersFor = String(g.id); }
     const pl = players.find(x => String(x.p.id) === String(F.pid));
-    html += `<label class="field"><span>Player</span><select class="in" data-blplayer><option value="">Pick the player</option>${[g.away, g.home].map(t => `<optgroup label="${esc(A.teamName(t))}">${players.filter(x => x.p.team === t).map(x => `<option value="${esc(x.p.id)}"${String(x.p.id) === String(F.pid) ? ' selected' : ''}>${esc(x.p.name)}${x.played ? '' : ' (no stat line in this game)'}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
+    html += `<label class="field"><span>Player</span><select class="in" data-blplayer><option value="">Pick the player</option>${[g.away, g.home].map(t => `<optgroup label="${esc(A.teamName(t))}">${players.filter(x => x.p.team === t).map(x => `<option value="${esc(x.p.id)}"${String(x.p.id) === String(F.pid) ? ' selected' : ''}>${esc(x.p.name)}${g.final && !x.played ? ' (no stat line in this game)' : ''}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
     if (!pl) { body.innerHTML = html; return; }
-    const defs = defsFor(sport, A, pl.p); if (!defs.some(d => d.key === F.key)) { F.key = ''; }
+    const defs = defsFor(sport, A, pl.p); if (!defs.some(d => d.key === F.key)) F.key = '';
     html += `<label class="field"><span>Market</span><select class="in" data-blkey><option value="">Pick the market</option>${defs.map(d => `<option value="${esc(d.key)}"${d.key === F.key ? ' selected' : ''}>${esc(d.label)}</option>`).join('')}</select></label>`;
     const def = defs.find(d => d.key === F.key); if (!def) { body.innerHTML = html; return; }
-    if (F.line == null) { // a starting line from his last 10 games BEFORE this one (never from the result); move it to the line you bet
-      const gd = pl.row ? pl.row.date : (g.local_date || g.date), raw = await A.playerRowsOf(pl.p), v = raw.filter(r => !r.dnp && r.date < gd).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 10).map(r => def.get(r)).filter(Number.isFinite).sort((a, b) => a - b);
+    if (F.line == null) { const gd = pl.row ? pl.row.date : (g.local_date || g.date), raw = await A.playerRowsOf(pl.p), v = raw.filter(r => !r.dnp && r.date < gd).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 10).map(r => def.get(r)).filter(Number.isFinite).sort((a, b) => a - b);
       const med = v.length ? v[Math.floor((v.length - 1) / 2)] : 10; F.line = def.binary ? 0.5 : Math.max(0.5, Math.floor(med) + 0.5); }
-    html += `<div class="blgrid">${def.binary ? `<div><span class="xs muted">Bet</span><div class="seg" data-blside><button type="button" data-v="over" class="${F.side !== 'under' ? 'on' : ''}">Yes</button><button type="button" data-v="under" class="${F.side === 'under' ? 'on' : ''}">No</button></div></div>`
-      : `<div><span class="xs muted">Side</span><div class="seg" data-blside><button type="button" data-v="over" class="${F.side !== 'under' ? 'on' : ''}">Over</button><button type="button" data-v="under" class="${F.side === 'under' ? 'on' : ''}">Under</button></div></div>
-      <div><span class="xs muted">Line</span><div class="blline"><button type="button" class="btn" data-blstep="-0.5" aria-label="Lower line">−</button><input class="in" data-blline inputmode="decimal" value="${esc(String(F.line))}" aria-label="Line"><button type="button" class="btn" data-blstep="0.5" aria-label="Higher line">+</button></div></div>`}</div>
-      <div class="blgrid"><label class="field"><span>Your stake (£)</span><input class="in slipstake" data-blstake inputmode="decimal" placeholder="e.g. 10" value="${esc(F.stake)}"></label>
-      <label class="field"><span>Your odds</span><input class="in slipstake" data-blodds inputmode="decimal" placeholder="e.g. 2.10 or 11/10" value="${esc(F.odds)}"></label></div>
-      <div id="blprice"><p class="small muted">Working out the fair odds at the time…</p></div>`;
-    body.innerHTML = html;
+    body.innerHTML = html + lineStakeHtml(def) + '<div id="blprice"><p class="small muted">Working out the fair odds…</p></div>';
     await drawPrice();
   };
+  const lineStakeHtml = def => `<div class="blgrid">${def.binary ? `<div><span class="xs muted">Bet</span><div class="seg" data-blside><button type="button" data-v="over" class="${F.side !== 'under' ? 'on' : ''}">Yes</button><button type="button" data-v="under" class="${F.side === 'under' ? 'on' : ''}">No</button></div></div>`
+      : `<div><span class="xs muted">Side</span><div class="seg" data-blside><button type="button" data-v="over" class="${F.side !== 'under' ? 'on' : ''}">Over</button><button type="button" data-v="under" class="${F.side === 'under' ? 'on' : ''}">Under</button></div></div>
+      <div><span class="xs muted">Line</span><div class="blline"><button type="button" class="btn" data-blstep="-0.5" aria-label="Lower line">−</button><input class="in" data-blline inputmode="decimal" value="${esc(String(F.line))}" aria-label="Line"><button type="button" class="btn" data-blstep="0.5" aria-label="Higher line">+</button></div></div>`}</div>
+      <div class="blgrid"><label class="field"><span>Your stake (£)</span><input class="in slipstake" data-blstake inputmode="decimal" placeholder="e.g. 10 (leave empty for an acca leg)" value="${esc(F.stake)}"></label>
+      <label class="field"><span>Your odds</span><input class="in slipstake" data-blodds inputmode="decimal" placeholder="e.g. 2.10 or 11/10" value="${esc(F.odds)}"></label></div>`;
+  const fbForm = async () => {
+    if (!F.day) F.day = today();
+    const fxs = footballOn(F.day); let fx = fxs.find(f => fxKeyOf(f) === F.fxk) || (F._fx && fxKeyOf(F._fx) === F.fxk ? F._fx : null); if (!fx) F.fxk = '';
+    let html = `<div class="blgrid"><label class="field"><span>Date (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 60))}"></label>
+      <label class="field"><span>Match</span><select class="in" data-blfx><option value="">${fxs.length ? 'Pick the match' : 'No matches that day'}</option>${fxs.map(f => `<option value="${esc(fxKeyOf(f))}"${fxKeyOf(f) === F.fxk ? ' selected' : ''}>${esc(`${f.home} v ${f.away} · ${leagueName(f.league)}${f.ko_utc ? ` · ${fmtKick(f)}` : ''}`)}</option>`).join('')}</select></label></div>`;
+    if (!fx) { body.innerHTML = html; return; }
+    const scopes = [['match', 'Match'], ['team', 'Team'], ...(hasPlayerData(fx.league) ? [['player', 'Player']] : [])]; if (!scopes.some(s => s[0] === F.scope)) F.scope = 'match';
+    html += `<div><span class="xs muted">Market type</span><div class="seg" data-blscope>${scopes.map(([v, l]) => `<button type="button" data-v="${v}" class="${F.scope === v ? 'on' : ''}">${l}</button>`).join('')}</div>${hasPlayerData(fx.league) ? '' : `<p class="xs muted" style="margin:2px 0 0">Player markets: PropLab has player match statistics for MLS only, so ${esc(leagueName(fx.league))} player bets cannot be settled from data.</p>`}</div>`;
+    let rows = [], subj = '';
+    if (F.scope === 'team') { const teams = [fx.home, fx.away]; if (!teams.includes(F.team)) F.team = fx.home;
+      html += `<label class="field"><span>Team</span><select class="in" data-blteam>${teams.map(t => `<option${t === F.team ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`; rows = store.teamRows.get(teamSlug(F.team)) || []; subj = F.team; }
+    else if (F.scope === 'match') { rows = store.teamRows.get(teamSlug(fx.home)) || []; subj = `${fx.home} v ${fx.away}`; }
+    else { const ps = [...knownPlayers().values()].filter(p => p.league === fx.league && [normTeam(fx.home), normTeam(fx.away)].includes(normTeam(p.team))).sort((a, b) => a.team.localeCompare(b.team) || a.name.localeCompare(b.name));
+      html += `<label class="field"><span>Player</span><select class="in" data-blplayer><option value="">Pick the player</option>${[fx.home, fx.away].map(t => `<optgroup label="${esc(t)}">${ps.filter(p => normTeam(p.team) === normTeam(t)).map(p => `<option value="${esc(p.id)}"${p.id === F.pid ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
+      const p = ps.find(x => x.id === F.pid); if (!p) { body.innerHTML = html; return; } try { rows = await loadPlayerRows(p); } catch { rows = []; } subj = p.name; }
+    const keys = fbKeysFor(F.scope).filter(k => rows.some(r => fbDef(k).get(r) != null)); if (!keys.includes(F.key)) { F.key = ''; }
+    html += `<label class="field"><span>Market</span><select class="in" data-blkey><option value="">${keys.length ? 'Pick the market' : 'No market with recorded data'}</option>${keys.map(k => `<option value="${esc(k)}"${k === F.key ? ' selected' : ''}>${esc(fbDef(k).label)}</option>`).join('')}</select></label>`;
+    const def = F.key ? fbDef(F.key) : null; if (!def) { body.innerHTML = html; return; }
+    if (F.line == null) F.line = def.binary ? 0.5 : avgLine(rows.filter(r => r.date < (fx.local_date || fx.date)).slice(0, 10).map(r => def.get(r)));
+    F._subj = subj; F._fx = fx; F._def = def;
+    body.innerHTML = html + lineStakeHtml(def) + '<div id="blprice"></div>'; drawPrice();
+  };
+  const drawForm = () => (sport === 'football' ? fbForm() : usForm());
   const drawPrice = async () => {
     const el = body.querySelector('#blprice'); if (!el) return;
     const my = ++pricing, line = Number(String(F.line).replace(',', '.'));
-    if (!Number.isFinite(line) || line < 0) { el.innerHTML = '<p class="warn small">Type a line, e.g. 24.5</p>'; return; }
-    const pk = `${F.gid}|${F.pid}|${F.key}|${line}|${F.side}`, r = priced && priced.pk === pk ? priced : { ...(await priceAtGame(sport, F.gid, F.pid, F.key, line, F.side)), pk }; if (my !== pricing) return; priced = r;
-    const auto = resultFrom(r.actual, line, F.side, r.def && r.def.binary), g = A.d.gameById.get(F.gid);
-    if (!F.result && auto && g && g.final) F.result = auto;
+    if (!Number.isFinite(line) || line < 0) { el.innerHTML = '<p class="warn small">Type a line, e.g. 2.5</p>'; return; }
+    let r = { ok: false };
+    if (sport !== 'football') { const pk = `${F.gid}|${F.pid}|${F.key}|${line}|${F.side}`; r = priced && priced.pk === pk ? priced : { ...(await priceAtGame(sport, F.gid, F.pid, F.key, line, F.side)), pk }; if (my !== pricing) return; priced = r; }
+    else if (F.p > 0) r = { ok: true, p: F.p, push: F.push || 0, fair: F.fair, def: F._def };
+    else r = { ok: false, reason: 'football bets keep the fair price only when logged from Hiwi\'s Section', def: F._def };
     const odds = parseIn(F.odds).dec, stake = Number(String(F.stake).replace(/[£,\s]/g, ''));
     const ev = r.ok && odds && stake > 0 ? stake * (r.p * odds + r.push - 1) : null, evp = r.ok && odds ? (r.p * odds + r.push - 1) * 100 : null;
-    el.innerHTML = `<div class="sliptiles slippay"><div><small>Fair odds at the time (${r.games || 0} games before this one)</small><b data-blfair>${r.ok ? esc(fmtOdds(r.fair)) : 'Unavailable'}</b></div>
+    el.innerHTML = `<div class="sliptiles slippay"><div><small>Fair odds${sport !== 'football' ? ` (${r.games || 0} games before this one)` : ''}</small><b data-blfair>${r.ok ? esc(fmtOdds(r.fair)) : 'Unavailable'}</b></div>
         <div><small>${odds ? `Your odds ${esc(fmtOdds(odds))}: ` : ''}value</small><b data-blev class="${evp == null ? '' : evp > 0 ? 'hit' : 'miss'}">${evp == null ? (r.ok ? 'Type your odds' : '–') : `${evp > 0 ? 'EV+' : 'EV−'} ${evp.toFixed(1)}%${ev != null ? ` (${sgbp(ev)})` : ''}`}</b></div></div>
-      <p class="xs muted" style="margin:4px 0">${r.ok ? `Model chance ${(r.p * 100).toFixed(1)}%${r.push >= 0.0005 ? `, push ${(r.push * 100).toFixed(1)}%` : ''}. From his games before this match only (form model; no injury or matchup adjustment, which were not recorded on the day).` : `No fair price: ${esc(r.reason || '')}. You can still log the bet; it is left out of the EV totals.`}
-        ${r.actual != null ? ` He had <b>${esc(String(r.actual))}</b> ${esc(r.def.label.toLowerCase())} in this game${auto ? ` (${sideTxt({ side: F.side, line }, r.def)}: <b>${auto}</b>)` : ''}.` : r.played === false ? ' He has no stat line for this game (did not play?): such bets are usually void.' : ''}</p>
-      <div><span class="xs muted">Result</span><div class="seg" data-blresult>${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['', 'Not settled']].map(([v, l]) => `<button type="button" data-v="${v}" class="${F.result === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-      <button type="button" class="btn primary" data-blsave style="margin-top:8px;width:100%">Log this bet</button><p class="small" data-blmsg style="margin:4px 0 0"></p>`;
+      <p class="xs muted" style="margin:4px 0">${r.ok ? `Model chance ${(r.p * 100).toFixed(1)}%${r.push >= 0.0005 ? `, push ${(r.push * 100).toFixed(1)}%` : ''}.${sport !== 'football' ? ' From his games before this match only (form model; no injury or matchup adjustment, which were not recorded on the day).' : ' As shown in Hiwi\'s Section when you logged it.'}` : `No fair price: ${esc(r.reason || '')}. You can still log the bet; it is left out of the EV totals.`}
+        ${r.actual != null ? ` He had <b>${esc(String(r.actual))}</b> ${esc(((r.def && r.def.label) || 'of this').toLowerCase())} in this game.` : r.played === false ? ' He has no stat line for this game (did not play?): such bets are usually void.' : ''} The result is settled automatically from the published statistics once the match is final (or set it yourself in the list).</p>
+      <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blsave>Log as a single</button><button type="button" class="btn" data-bladdleg>＋ Add to an acca</button></div><p class="small" data-blmsg style="margin:4px 0 0"></p>`;
   };
-  const resetBet = () => { F.pid = ''; F.key = ''; F.line = null; F.side = 'over'; F.stake = ''; F.odds = ''; F.result = ''; priced = null; };
+  const resetBet = () => { F.pid = ''; F.key = ''; F.line = null; F.side = 'over'; F.stake = ''; F.odds = ''; F.p = null; F.push = 0; F.fair = null; F.model = null; F.team = ''; priced = null; };
+  /** The selection described by the form (without stake), or a message. */
+  const selFromForm = () => {
+    const odds = parseIn(F.odds), line = Number(String(F.line).replace(',', '.'));
+    if (sport === 'football') { const fx = F._fx, def = F._def; if (!fx || !def) return { msg: 'Pick the match and market first.' };
+      return { sel: { sport, fx: { league: fx.league, date: fx.date, ko_utc: fx.ko_utc, local_date: fx.local_date, home: fx.home, away: fx.away, source: fx.source, stage: fx.stage || '' }, scope: def.scope, team: F.scope === 'team' ? F.team : '', pid: F.scope === 'player' ? F.pid : '', name: F._subj,
+        key: F.key, market: def.label, binary: !!def.binary, line: def.binary ? 0.5 : line, side: F.side, game: `${fx.home} v ${fx.away}`, date: koUK(fx).ymd, season: null, p: F.p > 0 ? F.p : null, push: F.push || 0, fair: F.p > 0 ? F.fair : null, model: F.model }, odds };
+    }
+    const g = A.d.gameById.get(F.gid) || A.d.gameById.get(Number(F.gid)), pl = players && players.find(x => String(x.p.id) === String(F.pid)), r = priced; if (!g || !pl || !r || !r.def) return { msg: 'Pick the match, player and market first.' };
+    return { sel: { sport, gameId: String(g.id), scope: 'player', date: koUK(g).ymd, season: g.season, game: `${g.away} at ${g.home}`, pid: String(pl.p.id), name: pl.p.name, team: pl.p.team, key: F.key, market: r.def.label, binary: !!r.def.binary, line, side: F.side,
+      p: r.ok ? r.p : null, push: r.ok ? r.push : 0, fair: r.ok ? r.fair : null, model: r.ok ? 'form model, games before the match' : null }, odds };
+  };
 
   box.addEventListener('change', async e => {
     const t = e.target;
     if (t.matches('[data-blseason]')) { F.season = t.value; drawTotals(); return; }
-    if (t.matches('[data-blday]')) { F.day = t.value || F.day; F.gid = ''; resetBet(); return drawForm(); }
+    if (t.matches('[data-blsportf]')) { F.sportF = t.value; drawTotals(); return; }
+    if (t.matches('[data-blleague]')) { F.league = t.value; drawTotals(); return; }
+    if (t.matches('[data-blday]')) { F.day = t.value || F.day; F.gid = ''; F.fxk = ''; resetBet(); return drawForm(); }
     if (t.matches('[data-blgame]')) { F.gid = t.value; resetBet(); return drawForm(); }
-    if (t.matches('[data-blplayer]')) { F.pid = t.value; F.key = ''; F.line = null; F.result = ''; return drawForm(); }
-    if (t.matches('[data-blkey]')) { F.key = t.value; F.line = null; F.result = ''; return drawForm(); }
-    if (t.matches('[data-blline]')) { F.line = t.value; F.result = ''; return drawPrice(); }
+    if (t.matches('[data-blfx]')) { F.fxk = t.value; resetBet(); return drawForm(); }
+    if (t.matches('[data-blteam]')) { F.team = t.value; F.key = ''; F.line = null; return drawForm(); }
+    if (t.matches('[data-blplayer]')) { F.pid = t.value; F.key = ''; F.line = null; return drawForm(); }
+    if (t.matches('[data-blkey]')) { F.key = t.value; F.line = null; F.p = null; return drawForm(); }
+    if (t.matches('[data-blline]')) { F.line = t.value; F.p = null; return drawPrice(); }
     if (t.matches('[data-blrestore]')) { const f = t.files && t.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()), a = Array.isArray(j) ? j : j.bets; if (!Array.isArray(a)) throw new Error('not a PropLab backup');
       const have = loadLog(), ids = new Set(have.map(b => b.id)), add = a.filter(b => b && b.id && !ids.has(b.id)); saveLog(have.concat(add)); alertMsg(`Restored ${add.length} bet${add.length === 1 ? '' : 's'} (${a.length - add.length} already here).`); } catch (err) { alertMsg(`Could not restore: ${err.message}`); } t.value = ''; drawTotals(); }
   });
   let tm = null;
   box.addEventListener('input', e => { const t = e.target;
-    if (t.matches('[data-blstake]')) { F.stake = t.value; clearTimeout(tm); tm = setTimeout(drawPriceKeep, 250); }
-    if (t.matches('[data-blodds]')) { F.odds = t.value; clearTimeout(tm); tm = setTimeout(drawPriceKeep, 250); }
-    if (t.matches('[data-blline]')) { F.line = t.value; F.result = ''; clearTimeout(tm); tm = setTimeout(drawPrice, 400); } });
-  const drawPriceKeep = () => drawPrice(); // stake / odds boxes are outside #blprice, so typing is not interrupted
-  const alertMsg = m => { const p = box.querySelector('#bllist'); if (p) p.insertAdjacentHTML('afterbegin', `<div class="banner info">${esc(m)}</div>`); };
+    if (t.matches('[data-blstake]')) { F.stake = t.value; clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
+    if (t.matches('[data-blodds]')) { F.odds = t.value; clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
+    if (t.matches('[data-blline]')) { F.line = t.value; F.p = null; clearTimeout(tm); tm = setTimeout(drawPrice, 400); }
+    const dl = t.closest('[data-bldl]'), d = loadDraft();
+    if (dl && t.matches('[data-bldodds]')) { const l = d.legs[Number(dl.dataset.bldl)]; if (l) { l.oddsTxt = t.value; const o = parseIn(t.value); l.odds = o.dec ? (o.exact || o.dec) : null; saveDraft(d); clearTimeout(tm); tm = setTimeout(() => { const y = scrollY, ae = document.activeElement && document.activeElement.matches('[data-bldodds]') ? Number(document.activeElement.closest('[data-bldl]').dataset.bldl) : -1; drawDraft(); if (ae >= 0) { const i = box.querySelector(`[data-bldl="${ae}"] [data-bldodds]`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } } scrollTo(0, y); }, 500); } }
+    if (t.matches('[data-bldstake]')) { d.stake = t.value; saveDraft(d); }
+    if (t.matches('[data-bldbook]')) { d.odds = t.value; saveDraft(d); } });
+  box.addEventListener('change', e => { if (e.target.matches('[data-bldstake], [data-bldbook]')) drawDraft(); });
 
   box.addEventListener('click', e => {
     const t = e.target;
-    const st = t.closest('[data-blstep]'); if (st) { const v = Number(String(F.line).replace(',', '.')) || 0; F.line = Math.max(0.5, Math.round((v + Number(st.dataset.blstep)) * 2) / 2); F.result = ''; const i = body.querySelector('[data-blline]'); if (i) i.value = String(F.line); drawPrice(); return; }
-    const sd = t.closest('[data-blside] button'); if (sd) { F.side = sd.dataset.v; F.result = ''; sd.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === sd)); drawPrice(); return; }
-    const rs = t.closest('[data-blresult] button'); if (rs) { F.result = rs.dataset.v; rs.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === rs)); return; }
-    if (t.closest('[data-blsave]')) {
-      const msg = body.querySelector('[data-blmsg]'), odds = parseIn(F.odds), stake = Number(String(F.stake).replace(/[£,\s]/g, '')), line = Number(String(F.line).replace(',', '.'));
-      if (!(stake > 0)) { msg.textContent = 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
-      const g = A.d.gameById.get(F.gid), pl = players && players.find(x => String(x.p.id) === String(F.pid)), r = priced; if (!g || !pl || !r || !r.def) { msg.textContent = 'Pick the match, player and market first.'; return; }
-      const b = { id: `${sport}|${g.id}|${pl.p.id}|${F.key}|${line}|${F.side}|${Date.now()}`, sport, gameId: String(g.id), date: koUK(g).ymd, season: g.season, game: `${g.away} at ${g.home}`, pid: String(pl.p.id), name: pl.p.name, team: pl.p.team,
-        key: F.key, market: r.def.label, binary: !!r.def.binary, line, side: F.side, stake, odds: odds.exact || odds.dec, result: F.result || '', p: r.ok ? r.p : null, push: r.ok ? r.push : 0, fair: r.ok ? r.fair : null, actual: r.actual ?? null,
-        model: r.ok ? 'form model, games before the match' : null, logged: new Date().toISOString() };
-      const a = loadLog(); a.push(b);
-      if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
-      F.key = ''; F.line = null; F.stake = ''; F.odds = ''; F.result = ''; drawTotals(); drawForm().then(() => { const m = body.querySelector('[data-blkey]'); if (m) m.insertAdjacentHTML('beforebegin', `<p class="small hit" data-blsaved>Logged: ${esc(b.name)} ${esc(b.market)} ${esc(sideTxt(b))}, ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` (fair ${esc(fmtOdds(b.fair))})` : ''}. Pick another market or player for the same match.</p>`); });
+    const vw = t.closest('[data-blview] button'); if (vw) { F.view = vw.dataset.v; drawTotals(); return; }
+    const st = t.closest('[data-blstep]'); if (st) { const v = Number(String(F.line).replace(',', '.')) || 0; F.line = Math.max(0.5, Math.round((v + Number(st.dataset.blstep)) * 4) / 4); F.p = null; const i = body.querySelector('[data-blline]'); if (i) i.value = String(F.line); drawPrice(); return; }
+    const sd = t.closest('[data-blside] button'); if (sd) { F.side = sd.dataset.v; F.p = null; sd.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === sd)); drawPrice(); return; }
+    const sc = t.closest('[data-blscope] button'); if (sc) { F.scope = sc.dataset.v; F.key = ''; F.line = null; F.pid = ''; F.p = null; drawForm(); return; }
+    if (t.closest('[data-blsave]') || t.closest('[data-bladdleg]')) {
+      const msg = body.querySelector('[data-blmsg]'), { sel, odds, msg: m } = selFromForm(); if (!sel) { msg.textContent = m; return; }
+      if (t.closest('[data-bladdleg]')) { const d = loadDraft(); d.legs.push({ ...sel, id: `leg|${Date.now()}|${d.legs.length}`, odds: odds.dec ? (odds.exact || odds.dec) : null, oddsTxt: F.odds, result: '' }); saveDraft(d); drawDraft(); msg.textContent = `Added to the acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'}): see below.`; return; }
+      const stake = Number(String(F.stake).replace(/[£,\s]/g, '')); if (!(stake > 0)) { msg.textContent = 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
+      const b = { ...sel, id: `${sport}|${sel.gameId || fxKeyOf(sel.fx)}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`, type: 'single', stake, odds: odds.exact || odds.dec, result: '', logged: new Date().toISOString() };
+      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+      F.key = ''; F.line = null; F.stake = ''; F.odds = ''; F.p = null; drawForm(); settleAll().then(drawTotals); drawTotals();
+      setTimeout(() => { const k = body.querySelector('[data-blkey]'); if (k) k.insertAdjacentHTML('beforebegin', `<p class="small hit" data-blsaved>Logged: ${esc(b.name)} ${esc(b.market)} ${esc(sideTxt(b))}, ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}. It settles automatically once the result is published.</p>`); }, 50);
       return;
     }
+    // acca being built
+    const dl = t.closest('[data-bldl]'); if (dl && t.closest('[data-bldrm]')) { const d = loadDraft(); d.legs.splice(Number(dl.dataset.bldl), 1); saveDraft(d); drawDraft(); return; }
+    if (t.closest('[data-bldclear]')) { saveDraft({ legs: [], stake: '', odds: '' }); drawDraft(); return; }
+    if (t.closest('[data-bldsave]')) { const d = loadDraft(), msg = box.querySelector('[data-bldmsg]'), stake = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec;
+      if (d.legs.length < 2) { msg.textContent = 'An acca needs at least two legs.'; return; } if (d.legs.some(l => !(l.odds > 1))) { msg.textContent = 'Type your odds for every leg.'; return; } if (!(stake > 0)) { msg.textContent = 'Type the acca stake.'; return; }
+      const legs = d.legs.map(({ oddsTxt, ...l }) => ({ ...l, result: '' })), first = legs.map(l => l.date).sort()[0];
+      const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString() };
+      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+      saveDraft({ legs: [], stake: '', odds: '' }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${gbp(stake)}. Each leg settles automatically once its result is published.`); return; }
+    // list
     const row = t.closest('[data-bl]');
     if (row) { const a = loadLog(), i = a.findIndex(x => x.id === row.dataset.bl); if (i < 0) return;
-      const rr = t.closest('[data-blres]'); if (rr) { a[i].result = a[i].result === rr.dataset.blres ? '' : rr.dataset.blres; saveLog(a); drawTotals(); return; }
-      if (t.closest('[data-bldel]')) { if (row.dataset.arm && Date.now() - Number(row.dataset.arm) < 4000) { a.splice(i, 1); saveLog(a); drawTotals(); } else { row.dataset.arm = String(Date.now()); t.closest('[data-bldel]').textContent = 'Remove?'; } return; } }
+      const lr = t.closest('[data-bllegres]'); if (lr) { e.preventDefault(); const j = Number(lr.closest('[data-blleg]').dataset.blleg), leg = a[i].legs[j]; leg.result = lr.dataset.bllegres === 'auto' ? '' : leg.result === lr.dataset.bllegres ? '' : lr.dataset.bllegres; saveLog(a); drawTotals(); reopen(a[i].id); if (!leg.result) settleAll().then(() => { drawTotals(); reopen(a[i].id); }); return; }
+      const rr = t.closest('[data-blres]'); if (rr) { e.preventDefault(); const v = rr.dataset.blres; a[i].result = v === 'auto' ? '' : a[i].result === v ? '' : v; saveLog(a); drawTotals(); if (isAcca(a[i])) reopen(a[i].id); if (!a[i].result) settleAll().then(() => { drawTotals(); if (isAcca(a[i])) reopen(a[i].id); }); return; }
+      if (t.closest('[data-bldel]')) { e.preventDefault(); const b0 = t.closest('[data-bldel]'); if (b0.dataset.arm && Date.now() - Number(b0.dataset.arm) < 4000) { a.splice(i, 1); saveLog(a); drawTotals(); } else { b0.dataset.arm = String(Date.now()); b0.textContent = 'Tap again to remove'; } return; } }
     if (t.closest('[data-blbackup]')) { const blob = new Blob([JSON.stringify({ app: 'PropLab bet log', saved: new Date().toISOString(), bets: loadLog() }, null, 1)], { type: 'application/json' });
-      const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = `proplab-bets-${koUK({ ko_utc: new Date().toISOString() }).ymd}.json`; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+      const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = `proplab-bets-${today()}.json`; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
   });
-  drawTotals(); drawForm();
+  const reopen = id => { const d = box.querySelector(`details[data-bl="${CSS.escape(id)}"]`); if (d) d.open = true; };
+  drawTotals(); drawDraft(); drawForm();
+  settleAll().then(n => { if (n) drawTotals(); }); // reconcile with the latest published data every time My Plays opens
+  hooks.betlogRefresh = () => settleAll().then(n => { if (n && box.isConnected) drawTotals(); });
 }
 
-return { loadLog, profitOf, evOf, totals, priceAtGame, resultFrom, betLogHtml, wireBetLog };
+return { loadLog, effOf, accaState, profitOf, combinedOdds, evOf, totals, settleAll, priceAtGame, resultFrom, betLogHtml, wireBetLog };
 })();
 __m['myplays'] = (() => {
 // My Plays (owner model audit, 2 Nov 2026): the plays you add from Compare Price, kept on this device, with the exposure limits the audit
@@ -7372,9 +7689,10 @@ const uu = u => `${u >= 0 ? '+' : '−'}${fmtU(Math.abs(u))}u`;
 
 function viewMyPlays(root0) {
   // 5 Nov 2026 (owner): the bet log (betlog.js) with its season totals comes first; the Compare Price plays follow in their own box
-  const sp = /^#\/(nba|nfl)\//.exec(location.hash || ''), sport = sp ? sp[1] : '';
-  root0.innerHTML = `<h1>My Plays</h1>${sport ? betLogHtml(sport) : `<section class="card"><h2 style="margin:0">Bet log</h2><p class="small" style="margin:6px 0 0">Logging bets after the game, with the fair odds at the time, covers NBA and NFL player props: open <a href="#/nba/myplays">NBA My Plays</a> or <a href="#/nfl/myplays">NFL My Plays</a>. Football markets are not in the log yet.</p></section>`}<div id="mpwrap"></div>`;
-  if (sport) wireBetLog(root0, sport);
+  const sp = /^#\/(nba|nfl)\//.exec(location.hash || ''), sport = sp ? sp[1] : 'football';
+  // 9 Nov 2026 (owner): one bet log for every sport (football too), settled automatically from the published data
+  root0.innerHTML = `<h1>My Plays</h1>${betLogHtml(sport)}<div id="mpwrap"></div>`;
+  wireBetLog(root0, sport);
   const root = root0.querySelector('#mpwrap');
   const draw = () => {
     const a = load(), days = [...new Set(a.map(x => x.day))].sort().reverse();
@@ -7594,6 +7912,7 @@ const { evalAt, ladderName } = __m['recplays'];
 const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick } = __m['util'];
 const { hooks } = __m['shared'];
+const { selFromCandidate, openAccaForm } = __m['betprefill'];
 
 const KEY = 'proplab.slip.v1';
 const GAME_OVER_MS = { nba: 4 * 3600e3, nfl: 5 * 3600e3, football: 3 * 3600e3 };
@@ -7716,6 +8035,7 @@ function drawPanel() {
     <p class="xs muted" data-slipfmttext style="margin:2px 0 8px"></p>
     <label class="field slipstakef"><span data-sliplabel>${esc(stakeLabel(F.find(f => f.id === S.fmt)))}</span><input class="in slipstake" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="Type your stake, e.g. 10" value="${esc(S.stakeTxt)}"></label>
     <div class="slipout" data-slipout aria-live="polite"></div>
+    <button type="button" class="btn" data-sliplog style="width:100%;margin-top:8px">Placed it? Log this acca as a real bet</button><p class="xs muted" style="margin:2px 0 0">Opens My Plays with these legs and your typed odds; it then settles leg by leg from the published results.</p>
 `
     : '<p class="small muted" style="margin:12px 0">Your slip is empty. Tap <b>＋ Add to Acca</b> on any play in Hiwi\'s Section to add it.</p>'}
     <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Picks from the same game (a bet builder) are linked: when PropLab can measure how they moved together in their shared earlier games the price is adjusted for it (experimental); otherwise it is the picks multiplied and marked not adjusted. The same pick twice is never priced. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
@@ -7747,6 +8067,7 @@ function onClick(e) {
   if (t.closest('[data-sliptab]')) { setOpen(!S.open); return; }
   if (t.closest('[data-slipclose]')) { setOpen(false); return; }
   if (t.closest('[data-slipclear]')) { if (S.armed && Date.now() - S.armed < 4000) { S.sel = []; S.armed = 0; changed(true); } else { S.armed = Date.now(); drawPanel(); setTimeout(() => { if (S.armed && Date.now() - S.armed >= 4000) { S.armed = 0; if (S.open) drawPanel(); } }, 4100); } return; }
+  if (t.closest('[data-sliplog]')) { if (S.sel.length < 2) return; setOpen(false); openAccaForm(S.sel.map(x => ({ sel: selFromSlip(x), oddsTxt: x.bookTxt || '' })), S.stakeTxt || ''); return; }
   const li = t.closest('[data-slipi]'); if (!li) return; const i = Number(li.dataset.slipi), x = S.sel[i]; if (!x) return;
   if (t.closest('[data-sliprm]')) { S.sel.splice(i, 1); changed(true); return; }
   const stp = t.closest('[data-slipstep]'); if (stp) { const c = reg.get(x.cid); if (!c) return; const L = x.L + Number(stp.dataset.slipstep); if (!c.lines.includes(L)) return; const r = evalAt(c, L, x.side); if (!r) return;
@@ -7755,6 +8076,16 @@ function onClick(e) {
     if (card) { if (matchMedia('(max-width: 700px)').matches) setOpen(false); toCard(card); card.classList.add('rflash'); setTimeout(() => card.classList.remove('rflash'), 1600); return; }
     hooks.recFocus = { sport: x.sport, fid: x.fid, cid: x.cid, side: x.side, L: x.L }; if (matchMedia('(max-width: 700px)').matches) setOpen(false);
     location.hash = x.sport === 'football' ? '#/rec' : `#/${x.sport}/rec`; }
+}
+/** A bet-log selection from a slip pick: from its Hiwi's Section play when it is on this visit, else from what the slip stored. */
+function selFromSlip(x) {
+  const c = reg.get(x.cid); if (c) return selFromCandidate(c, x.side, { L: x.L, p: x.p, fair: x.fair, push: 0 });
+  const parts = String(x.cid).split('|'), [home, away] = String(x.fixture).split(x.sport === 'football' ? ' v ' : ' at ');
+  const base = { sport: x.sport, market: x.market, binary: /^(Yes|No)$/.test(x.line), line: Number(String(x.line).replace(/^(Over|Under) /, '')) || 0.5, side: x.side, p: x.p, push: 0, fair: x.fair, model: "PropLab's model when you logged it", name: x.name, game: x.fixture,
+    date: x.ko ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(x.ko)) : '' };
+  if (x.sport === 'football') { const fid = parts[1] || '', [lg, d] = fid.split(':'), key = parts[2], scope = key.startsWith('m.') ? 'match' : key.startsWith('o.') ? 'opp' : key.startsWith('t.') ? 'team' : 'player';
+    return { ...base, key, scope, team: scope === 'team' || scope === 'opp' ? x.team : '', fx: { league: lg, date: d, ko_utc: x.ko || '', local_date: '', home, away, source: '' } }; }
+  return { ...base, gameId: parts[1], pid: parts[2], key: parts[3], scope: 'player', team: x.team, game: `${away} at ${home}`.replace(/^undefined at /, x.fixture) };
 }
 /** Scroll a play's card to just under the header. */
 function toCard(card) { const h = document.querySelector('header.top'), y = card.getBoundingClientRect().top + scrollY - ((h && h.getBoundingClientRect().bottom) || 0) - 8; scrollTo(0, Math.max(0, y)); }
@@ -7880,10 +8211,11 @@ const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { addPlay } = __m['myplays'];
-const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS } = __m['util'];
+const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming } = __m['util'];
 const { legId } = __m['accabuild'];
 const { slipToggle, slipRegister, syncButtons, toCard, slipSetBook } = __m['accaslip'];
 const { hooks } = __m['shared'];
+const { selFromCandidate, openBetForm } = __m['betprefill'];
 const { nightOf } = __m['nightdate'];
 const { isHidden, hide, unhide, hiddenFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
@@ -7927,7 +8259,7 @@ const dayOfFor = sport => (sport === 'football' ? ukDay : nightOf); // US games 
 const PLAY_MS = { nba: US_WINDOW_MS.nba, nfl: US_WINDOW_MS.nfl, football: LIVE_MS + 15 * 60e3 };
 const inPlay = (f, sport, now = Date.now()) => !!(f && f.ko_utc && !f.final && Date.parse(f.ko_utc) <= now && now - Date.parse(f.ko_utc) < PLAY_MS[sport]);
 function fixturesOf(sport, A) {
-  const now = new Date(), ok = f => !f.ko_utc || Date.parse(f.ko_utc) > now.getTime() || inPlay(f, sport, now.getTime());
+  const now = new Date(), ok = f => (f.ko_utc ? Date.parse(f.ko_utc) > now.getTime() : isUpcoming(f, now)) || inPlay(f, sport, now.getTime()); // 9 Nov: a date-only fixture from an earlier day is not offered (it has been played)
   if (sport === 'football') return selectableFixtures('', now).filter(ok) /* every published upcoming fixture (and any in play), all competitions */;
   const ids = new Set(); return [...A.selectable(now), ...A.upcoming(now)].filter(f => ok(f) && f.status !== 'canceled' && !ids.has(f.id) && ids.add(f.id))
     .sort((a, b) => (Date.parse(a.ko_utc || 0) || 0) - (Date.parse(b.ko_utc || 0) || 0)).slice(0, 60);
@@ -8141,7 +8473,7 @@ async function viewRecommended(root, sport) {
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
       ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button></div><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Probability &amp; fair odds at every line</button>`}
       ${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not available? Hide ${esc(c.name.split(' ').slice(-1)[0])} for this game</button>` : ''}
-      <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button></div>
+      <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button><button type="button" class="chip" data-rlog title="Placed this bet? Log it in My Plays: it settles automatically">Log as a real bet</button></div>
       <div class="ralt" hidden></div></article>`;
   }
   const findX = el => { const id = el.closest('.rcard').dataset.rid; return current.find(x => `${x.c.id}|${x.side}` === id); };
@@ -8185,6 +8517,7 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-rqclear]')) { s.f.q = ''; clearTimeout(tIn.q); hideSug(); s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
     if (t.closest('[data-rhide]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { hide(x0.c); render(true); } return; }
     const uh = t.closest('[data-runhide]'); if (uh) { unhide(uh.dataset.runhide); render(); return; }
+    if (t.closest('[data-rlog]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) openBetForm(selFromCandidate(x0.c, x0.side, x0.rep), s.odds.get(`${x0.c.id}|${x0.side}`) || ''); return; }
     if (t.closest('[data-rslip]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { slipToggle(x0.c, x0.side, x0.rep, s.odds.get(`${x0.c.id}|${x0.side}`) || ''); } return; }
     if (t.closest('[data-rmore]')) { s.shown += 30; render(true); return; }
     if (t.closest('[data-resort]')) { s.kept.clear(); render(); return; }
