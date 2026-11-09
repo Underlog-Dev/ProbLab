@@ -1,6 +1,6 @@
 {
 "schema": 1,
-"updated": "2026-11-06",
+"updated": "2026-11-09",
 "source": "Wikipedia club articles (CC BY-SA 4.0), compared night by night",
 "note": "A player leaving a list may have been sold, released, retired or loaned out: the list does not say which.",
 "items": [
@@ -83,6 +83,14 @@
 "from": "New York Red Bulls",
 "to": null,
 "kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-09",
+"league": "mls",
+"player": "Marcelo Ávalos",
+"from": null,
+"to": "San Jose Earthquakes",
+"kind": "joined the squad list"
 }
 ]
 }
