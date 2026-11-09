@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="8e84a77dfe18">
+<meta name="proplab-build" content="18c7bd77d9e1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -764,6 +764,13 @@ html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 .rcard .rhide{display:block;margin:6px 0 0;color:var(--muted);text-decoration:underline;font-size:12px;background:none;border:0;padding:0}
 .rhidden{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}.rhidden .chip{border-color:var(--miss)}
 #blog .btn.primary{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700}.blline .btn{width:auto;margin:0;padding:10px 14px}
+
+/* 9 Nov: My Plays fits an iPhone screen. The Singles/Accas/All table scrolls sideways inside its own box; result buttons wrap. */
+.tblscroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:6px 0}
+.tblscroll .bltypes{min-width:0;font-size:12px}.tblscroll .bltypes th,.tblscroll .bltypes td{padding:4px 5px;white-space:nowrap}
+.mpres{width:100%}.mpres button{padding:7px 9px;font-size:13px;min-height:36px}
+#blog{min-width:0;max-width:100%;overflow-wrap:anywhere}#blog select,#blog input,#blog textarea{max-width:100%}
+.blleg{display:flex;flex-wrap:wrap;gap:6px 10px;padding:6px 0;border-top:1px dashed var(--line)}.blleg>div:first-child{flex:1 1 220px;min-width:0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7422,8 +7429,8 @@ function wireBetLog(root, sport) {
         ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
       <div class="tiles bltiles">${tile(gbp(T.staked), 'Total staked (settled)')}${tile(sgbp(T.profit), 'Profit / loss', T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
         ${tile(String(T.open), 'Pending')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
-      ${F.view === 'all' && L.length ? `<table class="risktb bltypes"><tr><th></th><th>Placed</th><th>Won</th><th>Lost</th><th>Pending</th><th>Void</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
-        ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n}</th><td>${x.n}</td><td>${x.won}</td><td>${x.lost}</td><td>${x.open}</td><td>${x.voids}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table>` : ''}
+      ${F.view === 'all' && L.length ? `<div class="tblscroll"><table class="risktb bltypes"><tr><th></th><th title="won – lost – void">W–L–V</th><th>Pend.</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
+        ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n} <span class="xs muted">(${x.n})</span></th><td>${x.won}–${x.lost}–${x.voids}</td><td>${x.open}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table></div>` : ''}
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
       <p class="xs muted" style="margin:4px 0 0">Each bet's stake is counted once (an acca once, not once per leg); void stakes are returned and left out. ${(() => { let c = ''; try { c = localStorage.getItem('proplab.betlog.checked') || ''; } catch { c = ''; } return c ? `Results checked ${esc(fmtDay(koUK({ ko_utc: c }).ymd))} ${esc(koUK({ ko_utc: c }).hm)} against data published ${esc(dataStamp())}.` : ''; })()}</p>`;
     const days = [...new Set(L.map(b => b.date))].sort().reverse();
@@ -7433,7 +7440,7 @@ function wireBetLog(root, sport) {
   const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? `${fmtDay(koUK({ ko_utc: t }).ymd)} ${koUK({ ko_utc: t }).hm}` : 'on this visit'; };
   const chip = x => { const own = x.result, st = own ? (own === 'pending' ? 'pending' : own) : (x.auto ? x.auto.status : 'pending');
     return `<span class="blst st-${esc(st)}">${esc(STATUS_LABEL[st] || st)}</span> <span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'not checked yet'}</span>`; };
-  const resBtns = (x, attr) => `<div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
+  const resBtns = (x, attr) => `<div class="seg wrap mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
   const selLine = x => `<b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}`;
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b);
     return `<div class="blrow" data-bl="${esc(b.id)}"><div>${selLine(b)}<div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}</div>
