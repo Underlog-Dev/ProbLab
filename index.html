@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="ed26400339f8">
+<meta name="proplab-build" content="fc4e339ea705">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -3914,7 +3914,7 @@ function stakePlan(e, dec, conf, den = getFrac()) {
   const validated = !!(e.cb && e.cb.passed);
   if (Number.isFinite(e.lo) && validated) { const evLo = (Math.min(e.win, e.lo) * dec + push - 1) * 100; why.push(`staked at the model probability ${(e.win * 100).toFixed(1)}% (calibrated); at the cautious end of its range (${(Math.min(e.win, e.lo) * 100).toFixed(1)}%) the EV would be ${evLo >= 0 ? '+' : '−'}${Math.abs(evLo).toFixed(1)}%`); }
   if (!validated) { adj = 0; why.push('market not validated: no stake'); }
-  else if (conf && conf.level === 'Low') { adj /= 2; why.push('Low confidence: halved'); }
+  else if (conf && conf.level === 'Low') { adj /= 2; why.push('Thin evidence: halved'); }
   let cap = RISK.cap, capWhy = `${fmtU(RISK.cap)}u per selection`;
   for (const [o, c] of RISK.longOdds) if (dec >= o) { cap = c; capWhy = `long odds (${o.toFixed(2)}+): at most ${fmtU(c)}u`; break; }
   const fin = Math.min(adj, cap); if (adj > cap) why.push(`capped: ${capWhy}`);
@@ -3948,6 +3948,9 @@ __m['confidence'] = (() => {
 // from the probability: it says how much the estimate rests on (effective games after weighting), and marks what makes it shakier (a
 // rare-event market, an injury report entry, a new team, few games this season, a market whose calibration was never validated).
 const RARE = new Set(['stl', 'blk', 'sb', 'dd', 'td']);
+/** What each level is called on screen. */
+const EVID = { High: 'Strong', Medium: 'Fair', Low: 'Thin' };
+const EVID_INTRO = 'Evidence: how much data the probability rests on, and what makes it shakier. It is NOT how likely the bet is to win (that is the probability) and NOT the size of the edge (that is the EV).';
 /** s: { def, inj, newTeam, curN (games this season, players), isPlayer }; e: the estimate (nEff, cb). */
 function confidence(s, e) {
   // 10 Nov 2026 (owner): bands re-set to what the NBA model can reach. Recent games count more and earlier seasons much less (0.35), so a
@@ -3960,7 +3963,10 @@ function confidence(s, e) {
   if (s.newTeam) { pts--; why.push('new team or returning player'); }
   if (s.isPlayer && s.curN != null && s.curN < 3) { pts--; why.push(s.curN ? `only ${s.curN} game${s.curN === 1 ? '' : 's'} this season` : 'no game yet this season'); }
   if (!(e.cb && e.cb.passed)) { pts = Math.min(pts, 0); why.push('this market is not validated'); }
-  return { level: pts >= 2 ? 'High' : pts === 1 ? 'Medium' : 'Low', rank: pts >= 2 ? 3 : pts === 1 ? 2 : 1, why };
+  // 10 Nov 2026 (owner): shown as EVIDENCE (Strong / Fair / Thin), not "confidence": it measures how much data the probability rests on
+  // and what makes that data shakier, not how likely the bet is to win. `level` stays High / Medium / Low inside the code.
+  const level = pts >= 2 ? 'High' : pts === 1 ? 'Medium' : 'Low';
+  return { level, label: EVID[level], rank: pts >= 2 ? 3 : pts === 1 ? 2 : 1, why };
 }
 /** Confidence for a research card (Hiwi, Plays, Value) and its estimate. */
 function cardConfidence(card, e) {
@@ -3969,7 +3975,7 @@ function cardConfidence(card, e) {
   return confidence({ def: card.def, inj: card.injury, newTeam: !!(pl && pl.p && pl.p.new_team), curN, isPlayer: !!pl }, e);
 }
 
-return { RARE, confidence, cardConfidence };
+return { RARE, EVID, EVID_INTRO, confidence, cardConfidence };
 })();
 __m['teamadj'] = (() => {
 // Teammates OUT tonight (NBA pre-match estimate; owner request 28 Oct 2026). When key teammates (20+ minutes a game over their last 10
@@ -4400,7 +4406,7 @@ function evBlock(card, st, sport, oddsText) {
     ${D ? (() => { let cf = null; try { cf = cardConfidence(card, e); } catch { cf = null; } const g = card.game || null;
       const info = { sport, name: card.title, market: card.def.label, key: card.def.key, line: Number(st.line), side: e.side, binary: !!card.def.binary, sideName,
         gameId: g ? String(g.id) : card.fixture || '', game: g ? `${g.away} at ${g.home}` : card.fixtureLabel || '', date: g ? (g.date || '') : '', subj: (card.detail && card.detail.subjectId) || card.cid || card.title, p: e.win };
-      return `${cf ? `<p class="xs" style="margin:0">Confidence: <b class="cf-${cf.level.toLowerCase()}">${cf.level}</b> <span class="muted">(${esc(cf.why.join('; '))})</span></p>` : ''}${stakeHtml(e, D, cf, info)}`; })() : ''}
+      return `${cf ? `<p class="xs" style="margin:0">Evidence: <b class="cf-${cf.level.toLowerCase()}">${cf.label}</b> <span class="muted">(${esc(cf.why.join('; '))})</span></p>` : ''}${stakeHtml(e, D, cf, info)}`; })() : ''}
     ${od.error ? `<p class="small warn" style="margin:0">${esc(od.error)}</p>` : od.dec ? `<p class="xs muted" style="margin:0">Read as ${esc(od.kind)} odds → decimal ${od.dec}. Entered by you; PropLab has no bookmaker odds.</p>` : ''}
     ${e.adj ? `<p class="small" style="margin:0" data-evadj><b>Teammates OUT tonight:</b> ${esc(e.adj.names.join(', '))} (Official NBA Injury Report). His usual figures are scaled up by ${(e.adj.delta * 100).toFixed(1)}% for the production they leave behind, an adjustment checked on 2025/26 games (it improved accuracy for this market).</p>` : ''}
     ${e.mu ? `<p class="small" style="margin:0" data-evmu><b>Matchup:</b> against ${esc(e.mu.opp)}${e.mu.pos ? ` (what they allow to ${esc(({ G: 'guards', F: 'forwards', C: 'centres' })[e.mu.pos])}` : ' (what they allow'}${e.mu.gp ? ' and their pace)' : ')'} his usual figures are scaled by ×${e.mu.mult.toFixed(3)} (${e.mu.mult >= 1 ? '+' : '−'}${Math.abs((e.mu.mult - 1) * 100).toFixed(1)}%). This adjustment improved accuracy on 2025/26 games for this market (Brier ${e.mu.change}%), so it is used; it is small by design.</p>` : ''}
@@ -4428,7 +4434,7 @@ const { muHtml, muTierOf } = __m['matchupui'];
 const { kellyUnits, fmtU } = __m['kelly'];
 const { paintHooks } = __m['hiwicard'];
 const { esc } = __m['util'];
-const { cardConfidence } = __m['confidence'];
+const { cardConfidence, EVID_INTRO } = __m['confidence'];
 const { applyMinFair, scheduleNote } = __m['minfair'];
 const { fmtOdds, oddsFmt, fmtName, PLACEHOLDER, readInput, convertInput, kindOf } = __m['oddsfmt'];
 
@@ -4505,7 +4511,7 @@ function inner(m) {
     <span class="hyodd">Fair odds: <b data-hy-fair>${esc(fmtOdds(m.fair))}</b> · Example target odds: <b data-hy-ex>${ex}</b></span>
     <span class="hym">${main}</span>
     ${ownHtml(m)}
-    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}%${m.conf ? ` · <button type="button" class="hyconf" data-info="hyconf" data-title="Confidence: ${m.conf.level}" data-text="${esc(m.conf.why.join('\n'))}" aria-haspopup="dialog">Confidence <b class="cf-${m.conf.level.toLowerCase()}">${m.conf.level}</b></button>` : ''}${m.e.adj || m.e.mu ? ` <span class="hyadj">(${[m.e.adj ? `${m.e.adj.names.length} teammate${m.e.adj.names.length === 1 ? '' : 's'} out` : '', m.e.mu ? 'matchup' : ''].filter(Boolean).join(', ')})</span>` : ''} ${hyInfo(m)}</span>`;
+    <span class="hys">Model estimate ${(m.e.win * 100).toFixed(1)}%${m.conf ? ` · <button type="button" class="hyconf" data-info="hyconf" data-title="Evidence: ${m.conf.label}" data-text="${esc([EVID_INTRO, ...m.conf.why].join('\n'))}" aria-haspopup="dialog">Evidence <b class="cf-${m.conf.level.toLowerCase()}">${m.conf.label}</b></button>` : ''}${m.e.adj || m.e.mu ? ` <span class="hyadj">(${[m.e.adj ? `${m.e.adj.names.length} teammate${m.e.adj.names.length === 1 ? '' : 's'} out` : '', m.e.mu ? 'matchup' : ''].filter(Boolean).join(', ')})</span>` : ''} ${hyInfo(m)}</span>`;
 }
 function state(m) {
   if (!m.ok) return { cls: 'na', ev: '', u: '' };
@@ -6631,7 +6637,7 @@ function overallOf(c, r) {
   if (r.hr.l10.n) why.push(`last 10 ${r.hr.l10.hit}/${r.hr.l10.n}`);
   if (vs.length) why.push(`v ${c.opp} ${vh}/${vs.length}`);
   if (r.tier) why.push(`${{ g: 'easy', y: 'neutral', r: 'tough' }[r.tier]} matchup`);
-  why.push(`${r.conf.level.toLowerCase()} confidence`);
+  why.push(`${r.conf.label.toLowerCase()} evidence`);
   return { rank: Math.max(0, score), rankParts: parts, vsOpp: { hit: vh, n: vs.length }, why: why.join(' · ') };
 }
 /** Evaluate one candidate at a line (memoised). */
@@ -6756,7 +6762,7 @@ function passes(r, o) {
   if (o.minSample && r.hr.all.n < o.minSample) return false;
   return true;
 }
-const SORTS = [['best', 'Best overall'], ['prob', 'Highest probability'], ['conf', 'Highest confidence'], ['hist', 'Highest hit rate'], ['short', 'Shortest fair odds'], ['long', 'Longest fair odds']];
+const SORTS = [['best', 'Best overall'], ['prob', 'Highest probability'], ['conf', 'Strongest evidence'], ['hist', 'Highest hit rate'], ['short', 'Shortest fair odds'], ['long', 'Longest fair odds']];
 function sortPlays(list, how, hitWin = 'l10') {
   const by = { best: (a, b) => b.rep.rank - a.rep.rank, prob: (a, b) => b.rep.p - a.rep.p, conf: (a, b) => b.rep.conf.rank - a.rep.conf.rank || b.rep.rank - a.rep.rank,
     hist: (a, b) => (b.rep.hr[hitWin].pct ?? -1) - (a.rep.hr[hitWin].pct ?? -1) || b.rep.rank - a.rep.rank, short: (a, b) => a.rep.fair - b.rep.fair, long: (a, b) => b.rep.fair - a.rep.fair }[how] || ((a, b) => b.rep.rank - a.rep.rank);
@@ -7385,12 +7391,16 @@ async function priceAtGame(sport, gid, pid, key, line, side) {
   const def = defsFor(sport, A, p).find(d => d.key === key); if (!def) return { ok: false, reason: 'market not priced for this player' };
   const raw = await A.playerRowsOf(p), mine = raw.find(r => String(r.game) === String(gid)), gd = mine ? mine.date : (g.local_date || g.date), before = raw.filter(r => r.date < gd && String(r.game) !== String(gid));
   const v = mine && !mine.dnp ? def.get(mine) : null;
-  const card = buildUsPlayerCard({ sport, A, p, def, key, raw: before, game: g, period: () => 10, periodText: () => 'before this game', cid: `log|${sport}|${pid}|${key}|${gid}`, noLink: true });
-  card.historical = true; card.injury = null;
+  // 10 Nov 2026 (owner): a game not yet started is priced exactly like its Hiwi's Section / Recommended card (tonight's matchup and
+  // teammates-OUT adjustments, tonight's injury report), so the fair odds agree. Only a game that has started or finished is priced as
+  // history (games before it only, without those adjustments, which were not known for that day).
+  const ko = Date.parse(g.ko_utc || ''), started = !!(g.final || mine || (Number.isFinite(ko) && ko <= Date.now()));
+  const card = buildUsPlayerCard({ sport, A, p, def, key, raw: before, game: g, period: () => 10, periodText: () => (started ? 'before this game' : 'last 10 games'), cid: `log|${sport}|${pid}|${key}|${gid}`, noLink: true });
+  if (started) { card.historical = true; card.injury = null; }
   let e; try { e = cardEstimate(card, stOf(def, line, side), sport); } catch (err) { e = { ok: false, reason: String(err && err.message || err) }; }
   const games = before.filter(r => !r.dnp).length;
   if (!e || !e.ok || !(e.win > 0)) return { ok: false, reason: (e && e.reason) || 'no fair price', actual: v, played: !!(mine && !mine.dnp), def, games };
-  return { ok: true, p: e.win, push: e.push || 0, fair: (1 - (e.push || 0)) / e.win, actual: v, played: !!(mine && !mine.dnp), def, games };
+  return { ok: true, p: e.win, push: e.push || 0, fair: (1 - (e.push || 0)) / e.win, actual: v, played: !!(mine && !mine.dnp), def, games, started };
 }
 /** Pure (kept for older callers): the result a stat line gives at a line (null when there is no figure). */
 const resultFrom = (v, line, side, binary) => resultOf(v, line, side, binary);
@@ -7557,7 +7567,7 @@ function wireBetLog(root, sport) {
     const ev = r.ok && odds && stake > 0 ? stake * (r.p * odds + r.push - 1) : null, evp = r.ok && odds ? (r.p * odds + r.push - 1) * 100 : null;
     el.innerHTML = `<div class="sliptiles slippay"><div><small>Fair odds${sport !== 'football' ? ` (${r.games || 0} games before this one)` : ''}</small><b data-blfair>${r.ok ? esc(fmtOdds(r.fair)) : 'Unavailable'}</b></div>
         <div><small>${odds ? `Your odds ${esc(fmtOdds(odds))}: ` : ''}value</small><b data-blev class="${evp == null ? '' : evp > 0 ? 'hit' : 'miss'}">${evp == null ? (r.ok ? 'Type your odds' : '–') : `${evp > 0 ? 'EV+' : 'EV−'} ${evp.toFixed(1)}%${ev != null ? ` (${sgbp(ev)})` : ''}`}</b></div></div>
-      <p class="xs muted" style="margin:4px 0">${r.ok ? `Model chance ${(r.p * 100).toFixed(1)}%${r.push >= 0.0005 ? `, push ${(r.push * 100).toFixed(1)}%` : ''}.${sport !== 'football' ? ' From his games before this match only (form model; no injury or matchup adjustment, which were not recorded on the day).' : ' As shown in Hiwi\'s Section when you logged it.'}` : `No fair price: ${esc(r.reason || '')}. You can still log the bet; it is left out of the EV totals.`}
+      <p class="xs muted" style="margin:4px 0">${r.ok ? `Model chance ${(r.p * 100).toFixed(1)}%${r.push >= 0.0005 ? `, push ${(r.push * 100).toFixed(1)}%` : ''}.${sport !== 'football' ? (r.started ? ' From his games before this match only (form model; no injury or matchup adjustment, which were not recorded on the day).' : ' The same price as his Hiwi\'s Section card for this game (form, tonight\'s matchup and teammates out).') : ' As shown in Hiwi\'s Section when you logged it.'}` : `No fair price: ${esc(r.reason || '')}. You can still log the bet; it is left out of the EV totals.`}
         ${r.actual != null ? ` He had <b>${esc(String(r.actual))}</b> ${esc(((r.def && r.def.label) || 'of this').toLowerCase())} in this game.` : r.played === false ? ' He has no stat line for this game (did not play?): such bets are usually void.' : ''} The result is settled automatically from the published statistics once the match is final (or set it yourself in the list).</p>
       <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blsave>Log as a single</button><button type="button" class="btn" data-bladdleg>＋ Add to an acca</button></div><p class="small" data-blmsg style="margin:4px 0 0"></p>`;
   };
@@ -8236,6 +8246,7 @@ __m['v-recommended'] = (() => {
 // and shows, for each player / team and market, the most demanding line that still passes; 4. you check the bookmaker yourself and
 // carry the play to Compare Price. Each card's line can be changed (everything recalculates; the card stays where it is). Nothing is
 // ranked by EV: there are no bookmaker prices until you type one.
+const { EVID_INTRO } = __m['confidence'];
 const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks } = __m['recplays'];
 const { carryPrice } = __m['pricecheck'];
 const { muHtml } = __m['matchupui'];
@@ -8259,7 +8270,7 @@ const { BEAR_ART } = __m['icons'];
 
 const RANK_TXT = ['Every eligible player (or team) and market in your games is priced by the model at a range of lines.',
   'For each one, the line shown is the most demanding line that still meets your filters (the highest Over line, or the lowest Under line), so you do not get near-certain lines with no price. Every other line, with its probability and fair odds, is under Probability & fair odds at every line on each play.',
-  'Best overall ranks by a rank score (0-100, NOT a probability): 45% the model probability at its cautious end, 20% his hit rate at this line this season, 15% in his last 10 games, 10% against this opponent, 10% the matchup (easy +8 points, tough -8), then less 3 points for Medium and 6 for Low confidence. Each hit rate is pulled towards the model probability with a few pretend games (6, 6 and 8), so two or three games against one opponent cannot dominate. Tap a card\'s Rank score to see its parts.',
+  'Best overall ranks by a rank score (0-100, NOT a probability): 45% the model probability at its cautious end, 20% his hit rate at this line this season, 15% in his last 10 games, 10% against this opponent, 10% the matchup (easy +8 points, tough -8), then less 3 points for Fair and 6 for Thin evidence. Each hit rate is pulled towards the model probability with a few pretend games (6, 6 and 8), so two or three games against one opponent cannot dominate. Tap a card\'s Rank score to see its parts.',
   'Three different figures: the hit rate is what happened; the model probability is the calibrated estimate (the one tested on past seasons); the rank score only orders the plays.',
   'Nothing is ranked by EV: there is no bookmaker price until you type one in Compare. Value (EV) exists only for prices you type, so the place to compare value is My Plays.',
   'Avoid (bottom of the list): recent hot streaks the longer record does not support.',
@@ -8267,19 +8278,21 @@ const RANK_TXT = ['Every eligible player (or team) and market in your games is p
 const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 100)}%`;
   return [`Why it ranks here: ${r.why}.`, `Model probability (cautious end) ${f(P.model)} x 45%`, `This season at this line ${r.hr.season.hit}/${r.hr.season.n}, counted as ${f(P.season)} x 20%`, `Last 10 ${r.hr.l10.hit}/${r.hr.l10.n}, counted as ${f(P.form)} x 15%`,
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
-    r.conf.rank < 3 ? `${r.conf.level} confidence: less ${(3 - r.conf.rank) * 3}` : 'High confidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
+    r.conf.rank < 3 ? `${r.conf.label} evidence: less ${(3 - r.conf.rank) * 3}` : 'Strong evidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
 const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
-// recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Medium+ confidence, high blowout risk hidden.
+// recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Strong evidence (was Medium+ until 10 Nov), high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
-const DEFV = 3, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 2, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy' }); // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
+const DEFV = 4, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 3, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy' }); // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
 const S = {}; // per sport: { fx: Set, f: filters, sort, adv, kept: Map(id -> { L, side }), shown, cands: Map(fid -> candidates) }
 function stateOf(sport) {
   if (S[sport]) return S[sport];
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(KEY(sport)) || '{}') || {}; } catch { saved = {}; }
   // first visit: fair odds of at least 1.30 (no near-certain 1+ lines nobody prices) and, for NBA, the markets bookmakers usually offer
-  const first = saved.f && saved.defv === DEFV ? {} : RECO(sport), once = saved.f && saved.defv !== DEFV;
-  S[sport] = { odds: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: (saved.defv === DEFV && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  // 10 Nov (DEFV 4, owner): the default minimum evidence is now Strong. A phone on the previous defaults (DEFV 3) only has that one
+  // setting changed; everything else it saved is kept.
+  const first = saved.f && saved.defv === DEFV ? {} : saved.f && saved.defv === 3 ? { minConf: 3 } : RECO(sport), once = saved.f && saved.defv !== DEFV;
+  S[sport] = { odds: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: ((saved.defv === DEFV || saved.defv === 3) && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
   S[sport].f.grps = []; /* owner, 3 Nov: every market is on by default; the Markets list below the filters replaces the market-type buttons */ if (!Array.isArray(S[sport].f.mkOff)) S[sport].f.mkOff = [];
   if (once) save(sport, S[sport]); /* the recommended settings, once */
   return S[sport];
@@ -8363,7 +8376,7 @@ async function viewRecommended(root, sport) {
       <details class="recadv" ${s.adv ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
         <div class="recrow"><label class="field"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
-        <div class="field"><span class="xs muted">Minimum confidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Medium+'], ['3', 'High']], String(f.minConf))}</div>
+        <div class="field"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
         <label class="field"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
         ${sport === 'nba' ? `<label class="field"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
         ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Home / away</span>${seg('venue', [['all', 'Both'], ['home', 'Home team'], ['away', 'Away team']], f.venue)}</div>`}
@@ -8449,7 +8462,7 @@ async function viewRecommended(root, sport) {
       <p class="xs muted">Model probability: PropLab's estimate for this side at this line (NBA player props: model v2, checked on 2025/26 games it never saw). Fair odds = 1 ÷ probability. It is not the hit rate, and it cannot know news after the data update. These are research estimates, not tips; there is no bookmaker price until you type one in Compare. <a href="${sport === 'football' ? '#/model' : `#/${sport}/model`}">Model Performance ›</a> · <a href="${sport === 'football' ? '#/myplays' : `#/${sport}/myplays`}">My Plays ›</a> · <a href="${sport === 'football' ? '#/finder' : `#/${sport}/finder`}">Hit-rate list ›</a></p>`;
     syncButtons();
   };
-  const tierWord = { g: 'easy', y: 'medium', r: 'tough' };
+  const tierWord = { g: 'Easy', y: 'Medium', r: 'Tough' };
   const TIP = (title, text) => `data-info="rtip" data-title="${esc(title)}" data-text="${esc(text)}" aria-haspopup="dialog"`;
   const WIN = { season: 'Season', l5: 'Last 5', l10: 'Last 10', l20: 'Last 20', all: 'All' };
   const unitWord = sport === 'football' ? 'matches' : 'games';
@@ -8503,7 +8516,7 @@ async function viewRecommended(root, sport) {
         <button type="button" class="rprob" ${TIP(`Model probability ${(r.p * 100).toFixed(1)}%`, `PropLab's estimated chance that ${c.name} goes ${word} ${c.def.label.toLowerCase()}${lo != null ? ` (likely range ${(lo * 100).toFixed(0)}-${(hi * 100).toFixed(0)}%)` : ''}. It comes from his whole record (recent games count more${sport === 'nba' ? ', each game scaled to the minutes he is expected to play, plus teammates out and the matchup' : ''}) and is calibrated: in tests on a season it never saw, plays given about this figure hit about this often. It is not the hit rate, and it cannot know news after the data update.`)}><b>${(r.p * 100).toFixed(0)}%</b><small>model ⓘ</small></button></header>
       ${x.keptOut ? `<p class="xs warn" style="margin:4px 0">Outside your filters${String(s.f.q || '').trim() ? '' : ' (kept on screen because you changed this play)'}</p>` : ''}
       ${inPlay(g, sport) ? '<p class="xs warn" style="margin:4px 0" data-inplay><span class="inplay">IN PLAY</span> This game has started. The figures are the pre-game estimate: in-play prices move with the score, so the model probability and fair odds no longer describe an in-play bet, and nor does any price you type.</p>' : ''}
-      <div class="rtiles"><button type="button" class="rt" ${TIP(`Fair odds ${fmtOdds(r.fair)}`, `Fair odds = 1 ÷ model probability: the price at which this play breaks even if the probability is right. A bookmaker price above it suggests value (type it below); below it, the bookmaker is charging more than the model thinks the bet is worth.`)}><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></button><button type="button" class="rt" data-info="conf" data-title="Confidence: ${r.conf.level}" data-text="${esc(['How much the probability rests on, separate from the probability itself:', ...r.conf.why].join('\n'))}" aria-haspopup="dialog"><small>Confidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></button><button type="button" class="rt" data-info="rank" data-title="Rank score ${Math.round(r.rank * 100)} (not a probability)" data-text="${esc(rankText(c, r))}" aria-haspopup="dialog"><small>Rank score</small><b>${Math.round(r.rank * 100)}</b></button>${r.tier ? `<button type="button" class="rt" ${TIP(`Matchup: ${tierWord[r.tier]}`, sport === 'nba' ? 'From the chips below: what the opponent allows to his position (and pace). All green = easy, any red = tough, otherwise medium. The NBA matchup adjustment is part of the model probability (it was tested on 2025/26 games).' : 'What the opponent\'s defence allowed to his position this season (chip below). Experimental: colours and filters only.')}><small>Matchup</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></button>` : ''}</div>
+      <div class="rtiles"><button type="button" class="rt" ${TIP(`Fair odds ${fmtOdds(r.fair)}`, `Fair odds = 1 ÷ model probability: the price at which this play breaks even if the probability is right. A bookmaker price above it suggests value (type it below); below it, the bookmaker is charging more than the model thinks the bet is worth.`)}><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></button><button type="button" class="rt" data-info="conf" data-title="Evidence: ${r.conf.label}" data-text="${esc([EVID_INTRO, ...r.conf.why].join('\n'))}" aria-haspopup="dialog"><small>Evidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.label}</b></button><button type="button" class="rt" data-info="rank" data-title="Rank score ${Math.round(r.rank * 100)} (not a probability)" data-text="${esc(rankText(c, r))}" aria-haspopup="dialog"><small>Rank score</small><b>${Math.round(r.rank * 100)}</b></button>${r.tier ? `<button type="button" class="rt" ${TIP(`Matchup: ${tierWord[r.tier]}`, sport === 'nba' ? 'From the chips below: what the opponent allows to his position (and pace). All green = easy, any red = tough, otherwise medium. The NBA matchup adjustment is part of the model probability (it was tested on 2025/26 games).' : 'What the opponent\'s defence allowed to his position this season (chip below). Experimental: colours and filters only.')}><small>Matchup</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></button>` : ''}</div>
       <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
@@ -8591,6 +8604,7 @@ __m['v-acca'] = (() => {
 // range; Build Acca picks the legs (accabuild.js); tick Include to lock a leg, Exclude to throw one out; Replace Unlocked Plays rebuilds
 // around the locks as often as you like. Everything is kept on this phone only (localStorage), never sent anywhere.
 const { buildCandidates } = __m['recplays'];
+const { EVID } = __m['confidence'];
 const { blowoutOf } = __m['blowout'];
 const { isHidden } = __m['excl'];
 const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
@@ -8666,7 +8680,7 @@ async function viewAcca(root, sport) {
         <label class="field"><span>Max legs (optional)</span><input class="in" type="number" inputmode="numeric" min="1" step="1" data-afn="maxLegs" placeholder="No max" value="${esc(String(f.maxLegs ?? ''))}"></label></div>
       <p class="xs warn" data-alegerr style="margin:0" ${legsBad() ? '' : 'hidden'}>${esc(legsBad())}</p>
       <details class="recadv" data-aadv ${S.advOpen ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
-        <div class="field"><span class="xs muted">Minimum confidence per leg</span><div class="seg wrap" data-aseg="minConf">${[['0', 'Any'], ['2', 'Medium+'], ['3', 'High']].map(([v, l]) => `<button type="button" data-v="${v}" class="${String(f.minConf) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="field"><span class="xs muted">Minimum evidence per leg</span><div class="seg wrap" data-aseg="minConf">${[['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']].map(([v, l]) => `<button type="button" data-v="${v}" class="${String(f.minConf) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <div class="field"><span class="xs muted">Matchup (NBA / NFL legs)</span><div class="seg wrap" data-aseg="mu">${[['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.mu === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
         <label class="hcheck"><input type="checkbox" data-ack="noRare" ${f.noRare ? 'checked' : ''}><span>Leave out rare-event markets <span class="xs muted">(steals, blocks, steals + blocks, double / triple-doubles, anytime touchdowns: one lucky or unlucky play decides them)</span></span></label>
         <label class="hcheck"><input type="checkbox" data-ack="unders" ${f.unders ? 'checked' : ''}><span>Include Under / No legs</span></label>
@@ -8789,7 +8803,7 @@ async function viewAcca(root, sport) {
       if (top != null) { const el = pg.querySelectorAll('[data-aleg]')[Math.min(idx, legs.length - 1)]; if (el) scrollBy(0, el.getBoundingClientRect().top - top); } // the page does not jump
     } finally { busy = false; }
   }
-  const tw = { g: 'easy', y: 'medium', r: 'tough' };
+  const tw = { g: 'Easy', y: 'Medium', r: 'Tough' };
   function draw(cands, res, L, n) {
     const target = dec(S.f.targetTxt), lockRows = L.filter(x => x.problem);
     if (lockRows.length) { out.innerHTML = `<div class="banner warnb"><b>A locked leg needs your decision:</b>${lockRows.map(x => `<p style="margin:4px 0">${esc(x.snap.name)} · ${esc(x.snap.label)}: ${esc(x.problem)}. <button type="button" class="chip" data-aunlock="${esc(legId({ id: x.snap.cid }, x.snap.side, x.snap.L))}">Remove it from the acca</button></p>`).join('')}</div>`; return; }
@@ -8800,7 +8814,7 @@ async function viewAcca(root, sport) {
     out.innerHTML = `${res.note ? `<div class="banner ${res.over || res.short ? 'warnb' : 'info'}" data-anote>${esc(res.note)}${res.over && !/maximum/.test(res.note) ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
       ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg filters now: kept because you locked it.`).join('<br>')}</div>` : ''}
       ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds, a model estimate (not a bookmaker price)${target ? ` · target ${esc(fmtOdds(target))}` : ''}</span></div>
-        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.pairs.length ? 'Joint probability: experimental estimate (independence, adjusted for the same-game pair)' : 'Joint probability: independence estimate (legs treated as unrelated), not a verified joint probability'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${confW}</b><span>Lowest leg confidence</span></div></div>
+        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.pairs.length ? 'Joint probability: experimental estimate (independence, adjusted for the same-game pair)' : 'Joint probability: independence estimate (legs treated as unrelated), not a verified joint probability'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${EVID[confW]}</b><span>Weakest leg evidence (how much data each probability rests on, not how likely it is to win)</span></div></div>
         ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is estimated by multiplying the leg probabilities, which assumes the legs are unrelated (an independence estimate). It has not been checked against real acca results, and different games can still be linked (the same news, the same evening).</p>'}
         <label class="field"><span>Bookmaker's price for this acca (optional)</span><input class="in" data-abook inputmode="${oddsFmt() === 'dec' ? 'decimal' : 'text'}" value="${esc(S.bookTxt)}" placeholder="${esc(PLACEHOLDER[oddsFmt()])}"></label>
         <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p>
@@ -8809,7 +8823,7 @@ async function viewAcca(root, sport) {
         return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}${(() => { const bo = c.sport !== 'football' ? blowoutOf(g, c.sport) : null; /* owner, 4 Nov: blowout chance on built legs, as on the singles */
             return bo ? ` · <button type="button" class="bo bo-${bo.level.toLowerCase()}" data-ablow data-info="ablow" data-title="Blowout risk: ${esc(bo.level)}" data-text="${esc(bo.text)}" aria-haspopup="dialog">blowout ${Math.round(bo.p * 100)}% · ${esc(bo.level)}</button>` : ''; })()}</div></div>
           <div class="rprob"><b>${(r.p * 100).toFixed(0)}%</b><small>model</small></div></header>
-          <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><span class="rt"><small>This season</small><b>${r.hr.season.n ? `${r.hr.season.hit}/${r.hr.season.n}` : '–'}</b></span><span class="rt"><small>Last 10</small><b>${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</b></span>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tw[r.tier]}</b></span>` : ''}<span class="rt"><small>Confidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.level}</b></span></div>
+          <div class="rtiles"><span class="rt"><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></span><span class="rt"><small>This season</small><b>${r.hr.season.n ? `${r.hr.season.hit}/${r.hr.season.n}` : '–'}</b></span><span class="rt"><small>Last 10</small><b>${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</b></span>${r.tier ? `<span class="rt"><small>Matchup</small><b class="mu-txt-${r.tier}">${tw[r.tier]}</b></span>` : ''}<span class="rt"><small>Evidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.label}</b></span></div>
           <div class="row" style="border:0;padding:6px 0 0;gap:12px;flex-wrap:wrap;align-items:center"><label class="hcheck"><input type="checkbox" data-alock ${locked ? 'checked' : ''}><span><b>Include</b> (lock)</span></label><label class="hcheck"><input type="checkbox" data-aexcl><span><b>Exclude</b></span></label><button type="button" class="chip" data-axp>Exclude ${c.kind === 'player' ? 'player' : 'team'}</button>${locked ? '<span class="xs hit">Locked: kept when you replace</span>' : '<span class="xs muted">Replaceable</span>'}</div></article>`; }).join('')}</div>
       <p class="xs muted">How legs are chosen: among combinations of ${legN().minLegs === legN().maxLegs ? legN().minLegs : legN().maxLegs >= LEGS_CAP ? `${legN().minLegs} or more` : `${legN().minLegs}-${legN().maxLegs}`} legs within ${Math.round(ACCA.tol * 100)}% of your target, the one whose legs are best backed: each leg's Best Overall score (its season, recent and opponent record, matchup and confidence around the model probability) compared with its probability, with a small cost for every extra leg, so fewer, better-supported legs win. ${n != null ? `${n} eligible legs were considered.` : ''} A high combined hit rate is not proof of a profitable acca, and nothing here says it will win.</p>`;
   }
