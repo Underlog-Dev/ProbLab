@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="18c7bd77d9e1">
+<meta name="proplab-build" content="a460ac7bf691">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -3121,12 +3121,29 @@ const getNbaTypes = () => { if (memT) return memT; try { memT = localStorage.get
 const setNbaTypes0 = v => { memT = v === 'R' ? 'R' : 'all'; try { localStorage.setItem(TK, memT); } catch { /* this visit only */ } };
 /** Regular season only = 'R' games (the NBA Cup final does not count in regular-season statistics, so it is left out too). */
 const nbaTypeOk = t => (getNbaTypes() === 'R' ? t === 'R' : true);
-const nbaFiltersHtml = () => { const m = getNbaMin(), t = getNbaTypes();
+// ---- Minimum average minutes this season (owner request 10 Nov): leaves out players who do not average the minutes you want THIS season
+// (bench players), so the lists show the regular rotation. It uses the current season's regular-season average over the games he played
+// (DNPs left out), rebuilt by every data refresh. A player with no game this season has no average and is left out while it is on.
+// It filters WHO is listed; the Minimum Minutes Filter above filters WHICH games count. Off by default. A player you search for by name
+// is always shown. ----
+const AK = 'proplab.nba.minAvg.v1';
+let memA = null;
+const getNbaAvg = () => { if (memA) return memA; try { const o = JSON.parse(localStorage.getItem(AK) || 'null'); memA = o && typeof o.val === 'number' ? { on: !!o.on, val: Math.max(1, Math.min(44, o.val)) } : { on: false, val: 20 }; } catch { memA = { on: false, val: 20 }; } return memA; };
+const setNbaAvg = (on, val) => { memA = { on: !!on, val: Math.max(1, Math.min(44, Math.round(Number(val) || 20))) }; globalThis.__prefRev = (globalThis.__prefRev || 0) + 1; try { localStorage.setItem(AK, JSON.stringify(memA)); } catch { /* this visit only */ } };
+/** His average minutes this season (regular season, games played), or null when he has not played this season. */
+const nbaSeasonAvgMin = p => (p && p.now && p.now.min != null && Number.isFinite(p.now.min) ? p.now.min : null);
+/** True when the player passes the minimum-average filter (always true when it is off). */
+const nbaAvgOk = p => { const a = getNbaAvg(); if (!a.on) return true; const m = nbaSeasonAvgMin(p); return m != null && m >= a.val; };
+const avgHtml = () => { const a = getNbaAvg();
+  return `<div class="field nbaminf"><label class="hcheck"><input type="checkbox" id="nbaavgon" ${a.on ? 'checked' : ''}><span><b>Minimum Average Minutes (this season)</b> <span class="xs muted">${a.on ? 'Enabled' : 'Off: every player is listed'}</span></span></label>
+    ${a.on ? `<div class="hminrow"><label class="xs" for="nbaavgval">Average at least</label> <input class="in hnum" id="nbaavgval" type="number" inputmode="numeric" min="1" max="44" step="1" value="${a.val}" aria-label="Minimum average minutes this season"> <span class="xs muted">minutes a game</span></div>` : ''}
+    <p class="xs muted" style="margin:4px 0 0">Lists only players who average at least this many minutes in the games they have played this regular season (updated with every data refresh), so bench players drop out. A player with no game yet this season is left out while it is on; a player you search for by name is always shown. The Minimum Minutes Filter above is different: it decides which of his games count.</p></div>`; };
+const nbaFiltersHtml = ({ avg = true } = {}) => { const m = getNbaMin(), t = getNbaTypes();
   return `<div class="field"><label>Games used (NBA)</label><div class="seg" id="nbatypes" role="group" aria-label="Games used">${[['all', 'All games'], ['R', 'Regular season only']].map(([v, l]) => `<button type="button" data-nbatypes="${v}" class="${t === v ? 'on' : ''}" aria-pressed="${t === v}">${l}</button>`).join('')}</div>
     <p class="xs muted" style="margin:4px 0 0">All games = regular season, NBA Cup final, Play-In and playoffs (gold / teal opponent labels). Preseason is never used.</p></div>
   <div class="field nbaminf"><label class="hcheck"><input type="checkbox" id="nbaminon" ${m.on ? 'checked' : ''}><span><b>Minimum Minutes Filter</b> <span class="xs muted">${m.on ? 'Enabled' : 'Off: every appearance counts, whatever his minutes'}</span></span></label>
     ${m.on ? `<div class="hminrow"><label class="xs" for="nbaminval">Minimum Minutes</label> <input class="in hnum" id="nbaminval" type="number" inputmode="numeric" min="1" max="48" step="1" value="${m.val}" aria-label="Minimum minutes"></div>` : ''}
-    <p class="xs muted" style="margin:4px 0 0">Applied to every NBA player card before Last 5 / 10 / 20: Last 10 + 30 minutes = his 10 latest games with 30+ minutes. Each card's own slider overrides it for that card only. DNPs never count; a game with unknown minutes never meets a minimum.</p></div>`; };
+    <p class="xs muted" style="margin:4px 0 0">Applied to every NBA player card before Last 5 / 10 / 20: Last 10 + 30 minutes = his 10 latest games with 30+ minutes. Each card's own slider overrides it for that card only. DNPs never count; a game with unknown minutes never meets a minimum.</p></div>${avg ? avgHtml() : ''}`; };
 
 // ---- NFL participation (owner request 21 Oct): snap share instead of basketball minutes. nflverse snap counts (offensive snaps for
 // offensive players, defensive snaps for defenders). Off by default; a game without a snap count never meets a minimum. ----
@@ -3144,7 +3161,7 @@ const nflFiltersHtml = (haveSnaps = true) => { const m = getNflSnap();
 
 const setNbaTypes = (...a) => { globalThis.__prefRev = (globalThis.__prefRev || 0) + 1; return setNbaTypes0(...a); };
 
-return { getNbaMin, setNbaMin, nbaMinGlobal, getNbaTypes, nbaTypeOk, nbaFiltersHtml, getNflSnap, setNflSnap, nflSnapGlobal, nflFiltersHtml, setNbaTypes };
+return { getNbaMin, setNbaMin, nbaMinGlobal, getNbaTypes, nbaTypeOk, getNbaAvg, setNbaAvg, nbaSeasonAvgMin, nbaAvgOk, nbaFiltersHtml, getNflSnap, setNflSnap, nflSnapGlobal, nflFiltersHtml, setNbaTypes };
 })();
 __m['globalside'] = (() => {
 // Global Over / Under (owner request 21 Oct): the side every new result card starts on, chosen at the top of the filters in Football,
@@ -5376,7 +5393,7 @@ const { FB_GROUPS, NFL_GROUPS, fbDef, nflDef, fbSupported, startLine, SCOPE_LABE
 const { cardHtml, paintHCard, wireHCards, headRate, PER_OPTS } = __m['hiwicard'];
 const { getGlobalSide, setGlobalSide, globalSideHtml, startSide } = __m['globalside'];
 const { buildUsPlayerCard } = __m['uscards'];
-const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaTypes, setNbaTypes, getNbaMin, setNbaMin, nflFiltersHtml, getNflSnap, setNflSnap } = __m['nbaprefs'];
+const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaTypes, setNbaTypes, getNbaMin, setNbaMin, nflFiltersHtml, getNflSnap, setNflSnap, getNbaAvg, setNbaAvg, nbaAvgOk } = __m['nbaprefs'];
 const { infoTag } = __m['info'];
 const { nightOf, viewingNight, ukTip, nightSpan } = __m['nightdate'];
 const { wilson, qualMin, getMinQual, setMinQual, QMIN, QMAX, getExcludeOut, setExcludeOut, isConfirmedOut } = __m['rank'];
@@ -5605,7 +5622,7 @@ async function viewHiwi(root, r, sport) {
   const promAvailable = () => (isNfl ? nflHasProminence(A.d.players) : true);
   const playerPoolAll = () => {
     const sel = new Set(st.mode === 'teams' ? [...st.teams] : selFx().flatMap(id => { const f = fxById(id); return f ? homeAway(f) : []; }));
-    if (usMode) return A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (sel.size ? sel.has(p.team) : true) && (!st.ppos || p.group === st.ppos)).map(p => ({ id: p.id, name: p.name, team: p.team, sub: `${p.pos}, ${p.team}`, p }));
+    if (usMode) return A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (sel.size ? sel.has(p.team) : true) && (!st.ppos || p.group === st.ppos) && (!isNba || st.pfind || nbaAvgOk(p))).map(p => ({ id: p.id, name: p.name, team: p.team, sub: `${p.pos}, ${p.team}`, p }));
     // current squad members only (fbscan membership): a player last seen for the club in an earlier season is not offered (owner report 26 Oct)
     return fbPlayerList().filter(p => p.currentClub && (sel.size ? sel.has(p.currentClub) : true)).map(p => ({ id: p.id, name: p.name, team: p.currentClub, sub: `${p.currentTeam}${p.status === 'loan' ? ` (on loan from ${p.loanFrom})` : ''}${p.status === 'verified' || p.status === 'loan' ? (p.stale ? ' · old squad list' : '') : ' · unverified (played this season, not in a current squad list)'}`, p }));
   };
@@ -5916,6 +5933,7 @@ async function viewHiwi(root, r, sport) {
         for (const id of effPls()) {
           const pl = pool.get(id) || (usMode ? (x => x && { id, name: x.name, team: x.team, sub: `${x.pos}, ${x.team}`, p: x })(A.d.playerById.get(id)) : null); if (!pl) continue;
           if (isNfl && def.for && !def.for.includes(pl.p.group)) continue; // e.g. no passing yards card for a receiver
+          if (isNba && !st.pfind && !nbaAvgOk(pl.p)) continue; // Minimum Average Minutes (10 Nov): a player ticked earlier who now falls below it
           if (usMode && getExcludeOut()) { const ij = A.injury(pl.p, gameOfTeam(pl.team)); if (isConfirmedOut(ij)) { if (!excluded.some(x => x.id === id)) excluded.push({ id, name: pl.name, label: ij.label, why: ij.rec && (ij.rec.injury || ij.rec.reason) || '' }); continue; } }
           if (usMode) { const c = await usPlayerCard(pl, def, k, mi, enough, elig); if (c) outc.push(c); continue; }
           // all of the player's own games, newest first, whichever team he played for (a transfer keeps his history); missing values are dropped later
@@ -6263,6 +6281,8 @@ async function viewHiwi(root, r, sport) {
     if (e.target.id === 'hxout') { remember(); setExcludeOut(e.target.checked); draw(); refresh(); return; }
     if (e.target.id === 'nflsnapon') { remember(); setNflSnap(e.target.checked, getNflSnap().val); draw(); refresh(); return; }
     if (e.target.id === 'nflsnapval') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) { setNflSnap(true, n); e.target.value = getNflSnap().val; refresh(); } return; }
+    if (e.target.id === 'nbaavgon') { remember(); setNbaAvg(e.target.checked, getNbaAvg().val); draw(); refresh(); return; }
+    if (e.target.id === 'nbaavgval') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) { setNbaAvg(true, n); e.target.value = getNbaAvg().val; draw(); refresh(); } return; }
     if (e.target.id === 'nbaminon') { remember(); setNbaMin(e.target.checked, getNbaMin().val); resetOverrides(['minMin']); draw(); refresh(); return; }
     if (e.target.id === 'nbaminval') { const n = parseInt(e.target.value, 10); if (Number.isFinite(n)) { setNbaMin(true, n); resetOverrides(['minMin']); e.target.value = getNbaMin().val; refresh(); } return; }
     if (e.target.id === 'hnbtoday') { remember(); const tn = viewingNight(now);
@@ -6380,7 +6400,7 @@ const { nextSort, sortRows, sortTh } = __m['sorttable'];
 const { nameMatches, psearchHtml, attachSuggest } = __m['psearch'];
 const { sampleKey, $, koLocal, koUK, tzNow, fxStatus, usStatus, statusBadge, esc, fmt, keepScrollIn } = __m['util'];
 const { nbaLoading, nbaCredit } = __m['v-nba'];
-const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes } = __m['nbaprefs'];
+const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes, getNbaAvg, setNbaAvg, nbaAvgOk } = __m['nbaprefs'];
 const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
 const { suggestRows, rankRows, tableHtml, wireTable } = __m['usfinder'];
 const { buildUsPlayerCard, returningInfo } = __m['uscards'];
@@ -6449,7 +6469,7 @@ async function viewNbaFinder(root) {
       const bys = new Map(await Promise.all(files.map(async t => [t, await loadLogs(t)])));
       for (const p of nba.players) {
         // temporary player search (owner request 27 Oct): replaces the player filters (positions, Popular) only while text is typed; nothing is ticked or unticked
-        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.find ? (ui.findId ? String(p.id) !== String(ui.findId) : !nameMatches(ui.find, p.name)) : (!ui.pos.has(p.group || 'F') || (ui.pop && !p.notable)))) continue;
+        if (!p.current || !bys.has(p.logs_file) || (ui.team && p.team !== ui.team) || (gTeams && !gTeams.has(p.team)) || (ui.find ? (ui.findId ? String(p.id) !== String(ui.findId) : !nameMatches(ui.find, p.name)) : (!ui.pos.has(p.group || 'F') || (ui.pop && !p.notable))) || (!ui.find && !nbaAvgOk(p))) continue; // Minimum Average Minutes: a searched player is always shown
         const raw = bys.get(p.logs_file).get(p.id) || [], game = games.find(g => g.home === p.team || g.away === p.team) || null, inj = injuryStatus(p, game);
         if (getExcludeOut() && isConfirmedOut(inj)) continue;
         subjects.push({ key: p.id, id: p.id, type: 'player', name: p.name, sub: `${p.pos || ''} · ${p.team}`, href: `#/nba/research/${encodeURIComponent(p.id)}`, game, opp: game ? (game.home === p.team ? game.away : game.home) : null, inj, unavailable: isConfirmedOut(inj), newTeam: !!p.new_team, returning: returningInfo(p, teamName),
@@ -6492,6 +6512,8 @@ async function viewNbaFinder(root) {
     else if (t.matches('[data-g]')) { t.checked ? (ui.games.add(t.value), ui.untick.delete(t.value)) : (ui.games.delete(t.value), ui.untick.add(t.value)); }
     else if (t.id === 'nbaminon') setNbaMin(t.checked, getNbaMin().val);
     else if (t.id === 'nbaminval') setNbaMin(true, parseInt(t.value, 10));
+    else if (t.id === 'nbaavgon') setNbaAvg(t.checked, getNbaAvg().val);
+    else if (t.id === 'nbaavgval') setNbaAvg(true, parseInt(t.value, 10));
     else if (t.id === 'tm') ui.team = t.value; else if (t.id === 'nord') ui.order = t.value; else return;
     redraw(); draw(); });
   drawCtl(); draw();
@@ -6544,6 +6566,7 @@ __m['recplays'] = (() => {
 // NFL player props, football team and match markets), works out the model probability at a range of sensible lines ONCE, and the page then
 // filters and ranks instantly. Probabilities come from the same functions as every card and Compare Price (valueev.cardEstimate: model v2
 // for NBA player props, the calibrated v1 estimate elsewhere), so a play shows the same figure everywhere. Nothing here invents odds.
+const { nbaSeasonAvgMin } = __m['nbaprefs'];
 const { cardEstimate, loadCalib } = __m['valueev'];
 const { buildUsPlayerCard } = __m['uscards'];
 const { isConfirmedOut } = __m['rank'];
@@ -6691,11 +6714,12 @@ async function buildCandidates(sport, A, fixtures, onProgress) {
 /**
  * Pick each candidate's representative play under the filters: among the lines that pass, Over takes the highest line, Under the lowest
  * (the most demanding line that still clears your minimum probability and fair-odds range, so no trivial near-certainties). o: { sides,
- * minProb, minHit, hitWin, minFair, maxFair, minConf, minSample, venue, grps, injOk, hideBlowout }.
+ * minProb, minHit, hitWin, minFair, maxFair, minConf, minSample, venue, grps, injOk, hideBlowout, minAvg (NBA: minimum average minutes this season) }.
  */
 function pickPlays(cands, o, blowout = () => null) {
   const out = [];
   for (const c of cands) {
+    if (o.minAvg && c.sport === 'nba' && c.kind === 'player') { const m = nbaSeasonAvgMin(c.p); if (m == null || m < o.minAvg) continue; } // 10 Nov: bench players out
     if (o.grps && o.grps.size && !o.grps.has(c.grp)) continue;
     if (o.venue === 'home' && c.home === false) continue; if (o.venue === 'away' && c.home === true) continue;
     if (!o.injOk && c.inj && c.inj.cls === 'warn') continue;
@@ -8240,7 +8264,7 @@ const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 1
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
     r.conf.rank < 3 ? `${r.conf.level} confidence: less ${(3 - r.conf.rank) * 3}` : 'High confidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true };
+const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Medium+ confidence, high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
 const DEFV = 3, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 2, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy' }); // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
@@ -8336,6 +8360,7 @@ async function viewRecommended(root, sport) {
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
         <div class="field"><span class="xs muted">Minimum confidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Medium+'], ['3', 'High']], String(f.minConf))}</div>
         <label class="field"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
+        ${sport === 'nba' ? `<label class="field"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
         ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Home / away</span>${seg('venue', [['all', 'Both'], ['home', 'Home team'], ['away', 'Away team']], f.venue)}</div>`}
         ${sport === 'football' ? '' : `<label class="hcheck"><input type="checkbox" data-rck="injOk" ${f.injOk ? 'checked' : ''}><span>Include players listed Questionable / Doubtful</span></label>`}
         ${sport !== 'football' ? `<label class="hcheck"><input type="checkbox" data-rck="hideBlowout" ${f.hideBlowout ? 'checked' : ''}><span>Hide games with high blowout risk</span></label>` : ''}
@@ -8394,7 +8419,7 @@ async function viewRecommended(root, sport) {
     const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key) && !isHidden(c)); // hidden players (owner, 5 Nov): out for this game only
     let list = pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false;
     // a search found him (or them) but no line meets every filter: show the strongest lines anyway, marked, instead of "0 plays"
-    if (q && mine.length && !list.length) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
+    if (q && mine.length && !list.length) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
       list = pickPlays(mine, r).map(x => ({ ...x, keptOut: true })); relaxed = true; }
     // plays you are adjusting stay on screen, at their position, even if they no longer pass
     const kept = [...s.kept.entries()];
@@ -8498,7 +8523,7 @@ async function viewRecommended(root, sport) {
   const tIn = {}; // one pause per box: typing in a second box never cancels the first one's change
   pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value); slipSetBook(legId(x.c, x.side, x.rep.L), oi.value);
       const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout')); return; } });
-  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
+  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample', 'minAvg'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : k === 'minAvg' ? 44 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
   // suggestions as you type: names from every listed game (players and teams), best first: names that start with what you typed
   const showSug = v => { const box = pg.querySelector('#recsug'), inp = pg.querySelector('[data-rf="q"]'); if (!box) return; const H = suggest(v);
     box.innerHTML = H.map(h => `<button type="button" role="option" data-rsug="${esc(h.label)}"><b>${esc(h.label)}</b> <small>${esc(h.kind === 'team' ? `team · ${h.sub}` : h.sub)}</small></button>`).join('');
@@ -8944,7 +8969,7 @@ const { scanOne } = __m['scanner'];
 const { $, koLocal, koUK, tzNow, esc, fmtKick, fmtDay, keepScrollIn, fxStatus } = __m['util'];
 const { prefs, savePrefs } = __m['shared'];
 const { nbaLoading, nbaCredit, teamInjuryHtml } = __m['v-nba'];
-const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes, getNbaTypes } = __m['nbaprefs'];
+const { nbaFiltersHtml, nbaMinGlobal, nbaTypeOk, getNbaMin, setNbaMin, setNbaTypes, getNbaTypes, getNbaAvg, setNbaAvg, nbaAvgOk } = __m['nbaprefs'];
 const { getGlobalSide, setGlobalSide, globalSideHtml } = __m['globalside'];
 const { cardHtml, paintHCard, wireHCards } = __m['hiwicard'];
 const { wireBarTaps } = __m['barinfo'];
@@ -8976,7 +9001,7 @@ async function viewNbaPlays(root, r) {
     if (!nba.teams.has(ui.team)) ui.team = teams()[0].abbr; };
   // game view: who is included. Popular Players ticks every popular player of both teams (not confirmed OUT); anyone can be added or removed.
   const gameOf = () => nba.gameById.get(ui.game);
-  const playersOf = g => [...roster(g.away), ...roster(g.home)];
+  const playersOf = g => [...roster(g.away), ...roster(g.home)].filter(nbaAvgOk); // Minimum Average Minutes (10 Nov); the Player picker still lists everyone
   const outOf = g => playersOf(g).filter(p => injuryStatus(p, g).unavailable);
   const ensurePicked = g => { if (ui.picked && ui.picked.gid === g.id) return; ui.picked = { gid: g.id, set: new Set() }; ui.removed = new Set(); if (ui.pop) for (const p of playersOf(g)) if (p.notable && !injuryStatus(p, g).unavailable) ui.picked.set.add(p.id); };
   const drawCtl = () => { fix(); const gs = games(); const byDay = new Map(); for (const g of gs) { const k = nightOf(g); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
@@ -9061,6 +9086,7 @@ async function viewNbaPlays(root, r) {
     else if (t.id === 'ppop') { ui.pop = t.checked; const g = gameOf(); if (g && ui.picked) for (const p of playersOf(g)) if (p.notable && !injuryStatus(p, g).unavailable) { if (ui.pop) ui.picked.set.add(p.id); else ui.picked.set.delete(p.id); } }
     else if (t.matches('[data-pp]')) { ui.plOpen = true; t.checked ? ui.picked.set.add(t.value) : ui.picked.set.delete(t.value); }
     else if (t.id === 'nbaminon') setNbaMin(t.checked, getNbaMin().val); else if (t.id === 'nbaminval') setNbaMin(true, parseInt(t.value, 10));
+    else if (t.id === 'nbaavgon') setNbaAvg(t.checked, getNbaAvg().val); else if (t.id === 'nbaavgval') setNbaAvg(true, parseInt(t.value, 10));
     else return;
     redraw(); draw(); });
   drawCtl(); draw();
@@ -11967,7 +11993,7 @@ async function viewResearch(root, sport, pid) {
     const s = st.get(k); if (c.rebuild) Object.assign(c, c.rebuild(s)); else Object.assign(c, c.perFn(s)); reg.set(k, { card: c, st: s }); }
   const groups = [...new Set(cards.map(c => c.group))];
   root.innerHTML = `${backBtn(sport, 'top')}${head}
-    ${sport === 'nba' ? `<div class="card stack" style="margin-top:10px">${nbaFiltersHtml()}</div>` : ''}
+    ${sport === 'nba' ? `<div class="card stack" style="margin-top:10px">${nbaFiltersHtml({ avg: false })}</div>` : ''}
     <div class="field" style="margin-top:10px"><label for="rsjump">Markets (${cards.length} with recorded games)</label><select class="in" id="rsjump"><option value="">Jump to a market…</option>${groups.map(g => `<optgroup label="${esc(g)}">${cards.filter(c => c.group === g).map(c => `<option value="${esc(c.cid)}">${esc(c.def.label)}</option>`).join('')}</optgroup>`).join('')}</select></div>
     <p class="xs muted">Every card has its own line, Over / Under and Games used (starting on the last 10 games). Only markets with recorded games for ${esc(p.name)} are shown; missing figures are never counted as 0.</p>
     ${cards.length ? '' : '<div class="banner info">No market has recorded games for this player.</div>'}
