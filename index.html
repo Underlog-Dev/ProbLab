@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="a460ac7bf691">
+<meta name="proplab-build" content="ed26400339f8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -3884,9 +3884,8 @@ __m['risk'] = (() => {
 // Stake risk controls (owner model audit, 2 Nov 2026). The Kelly arithmetic itself was correct (kelly.js); what was missing is everything
 // around it. For a price the visitor typed, PropLab now shows three figures side by side:
 //   1. Theoretical (uncapped): fraction x full Kelly at the model probability, no cap. What the formula says if the model were exact.
-//   2. Risk-adjusted: the same fraction of Kelly at the CAUTIOUS end of the probability (its 95% lower bound), halved for Low confidence,
-//      and nothing at all when the market is not validated. The model is an estimate; staking at its lower bound stops a probability that
-//      is a little too high from producing a big stake.
+//   2. Risk-adjusted: the same fraction of Kelly at the calibrated model probability, halved for Low confidence, and nothing at all when
+//      the market is not validated. (Until 10 Nov it used the 95% lower bound, which left almost every play at 0.00u.)
 //   3. Final: the risk-adjusted figure after the caps: 2.00u per selection, and less on long odds (0.50u from 4.00, 0.25u from 8.00),
 //      where a small error in the probability is a large error in the stake.
 // Kelly fraction: 1/10 (default), 1/15 or 1/20, chosen by the visitor and kept on this device. 1 unit = 1% of bankroll; the My Plays
@@ -3907,10 +3906,13 @@ function stakePlan(e, dec, conf, den = getFrac()) {
   if (!e || !Number.isFinite(e.win) || !Number.isFinite(dec) || dec <= 1) return null;
   const push = e.push || 0, f = 1 / den, why = [];
   const theory = Math.max(0, kelly(e.win, dec, push)) * f * 100;
-  const pLo = Number.isFinite(e.lo) ? Math.min(e.win, e.lo) : e.win;
-  let adj = Math.max(0, kelly(pLo, dec, push)) * f * 100;
-  if (Number.isFinite(e.lo)) why.push(`staked at the cautious probability ${(pLo * 100).toFixed(1)}% instead of ${(e.win * 100).toFixed(1)}%`);
+  // 10 Nov 2026 (owner): staked at the CALIBRATED model probability. Until now the stake used the 95% lower bound of the probability,
+  // which gave 0.00u to practically every positive-EV play (a Medium play at 2.05 needed the model at ~66%). The probability is already
+  // calibrated on a past season (predicted v actual within about 1 point in every 10% band) and 1/10 Kelly already stakes a tenth of
+  // full Kelly; the lower bound counted the same uncertainty a third time. The cautious figure is still shown for information.
+  let adj = Math.max(0, kelly(e.win, dec, push)) * f * 100;
   const validated = !!(e.cb && e.cb.passed);
+  if (Number.isFinite(e.lo) && validated) { const evLo = (Math.min(e.win, e.lo) * dec + push - 1) * 100; why.push(`staked at the model probability ${(e.win * 100).toFixed(1)}% (calibrated); at the cautious end of its range (${(Math.min(e.win, e.lo) * 100).toFixed(1)}%) the EV would be ${evLo >= 0 ? '+' : '−'}${Math.abs(evLo).toFixed(1)}%`); }
   if (!validated) { adj = 0; why.push('market not validated: no stake'); }
   else if (conf && conf.level === 'Low') { adj /= 2; why.push('Low confidence: halved'); }
   let cap = RISK.cap, capWhy = `${fmtU(RISK.cap)}u per selection`;
@@ -3948,8 +3950,11 @@ __m['confidence'] = (() => {
 const RARE = new Set(['stl', 'blk', 'sb', 'dd', 'td']);
 /** s: { def, inj, newTeam, curN (games this season, players), isPlayer }; e: the estimate (nEff, cb). */
 function confidence(s, e) {
-  const why = []; let pts = e.nEff >= 30 ? 2 : e.nEff >= 15 ? 1 : 0;
-  why.push(`${Math.round(e.nEff || 0)} effective games behind it (recent games count more)`);
+  // 10 Nov 2026 (owner): bands re-set to what the NBA model can reach. Recent games count more and earlier seasons much less (0.35), so a
+  // regular player has about 28 effective games 10 games into a season and only passes 30 after about 18 games: with 30 for High, no play
+  // had been High all season. High is now 25+, Medium 12+; the reasons that take a level off are unchanged.
+  const why = []; let pts = e.nEff >= 25 ? 2 : e.nEff >= 12 ? 1 : 0;
+  why.push(`${Math.round(e.nEff || 0)} effective games behind it (recent games count more; High from 25, Medium from 12)`);
   if (RARE.has(s.def.key) || s.def.binary) { pts--; why.push('a rare-event market (more luck involved)'); }
   if (s.inj && s.inj.cls && s.inj.cls !== 'none' && s.inj.cls !== 'na') { pts--; why.push(`injury report: ${s.inj.label}`); }
   if (s.newTeam) { pts--; why.push('new team or returning player'); }
@@ -8453,8 +8458,8 @@ async function viewRecommended(root, sport) {
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
     else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
-      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (£${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? '<b data-rstake>0.00u</b>: positive at the model figure, but not at its cautious end, so no stake' : '<b data-rstake>0.00u</b>: no bet at this price')}
-        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the cautious probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (£${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="${f === 'dec' ? 'decimal' : 'text'}" autocomplete="off" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
   }
   /** Names of a combo market's parts, in the order def.parts returns them (null when they cannot be named). */
