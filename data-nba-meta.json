@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-10T13:02:36Z",
+ "updated": "2026-11-11T13:07:52Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -219,7 +219,7 @@
    "group": "BOS",
    "file": "data-nba-logs-BOS.json",
    "players": 17,
-   "rows": 4637
+   "rows": 4652
   },
   {
    "group": "CHA",
@@ -285,7 +285,7 @@
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
    "players": 19,
-   "rows": 4649
+   "rows": 4661
   },
   {
    "group": "LAL",
@@ -303,13 +303,13 @@
    "group": "MIA",
    "file": "data-nba-logs-MIA.json",
    "players": 17,
-   "rows": 4777
+   "rows": 4792
   },
   {
    "group": "MIL",
    "file": "data-nba-logs-MIL.json",
    "players": 19,
-   "rows": 4365
+   "rows": 4379
   },
   {
    "group": "MIN",
@@ -327,43 +327,43 @@
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5437
+   "rows": 5451
   },
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
-   "players": 19,
-   "rows": 3741
+   "players": 20,
+   "rows": 3839
   },
   {
    "group": "ORL",
    "file": "data-nba-logs-ORL.json",
    "players": 17,
-   "rows": 4463
+   "rows": 4474
   },
   {
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4583
+   "rows": 4595
   },
   {
    "group": "PHX",
    "file": "data-nba-logs-PHX.json",
    "players": 19,
-   "rows": 3868
+   "rows": 3881
   },
   {
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3835
+   "rows": 3847
   },
   {
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
-   "players": 17,
-   "rows": 3112
+   "players": 16,
+   "rows": 3037
   },
   {
    "group": "SAS",
@@ -381,7 +381,7 @@
    "group": "UTA",
    "file": "data-nba-logs-UTA.json",
    "players": 19,
-   "rows": 4725
+   "rows": 4738
   },
   {
    "group": "WAS",
@@ -392,14 +392,14 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7930,
+  "final": 7936,
   "players": 1192,
-  "player_games": 208618,
-  "quarter_points_ok": 169508,
+  "player_games": 208772,
+  "quarter_points_ok": 169649,
   "quarter_points_dropped": 247,
-  "q1_rebounds_ok": 168413,
-  "q1_rebounds_dropped": 1342,
-  "q1_assists_ok": 169236,
+  "q1_rebounds_ok": 168553,
+  "q1_rebounds_dropped": 1343,
+  "q1_assists_ok": 169377,
   "q1_assists_dropped": 519
  },
  "problems": [],
