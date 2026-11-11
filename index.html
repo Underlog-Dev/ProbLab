@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="66b145080762">
+<meta name="proplab-build" content="8f6e2593c483">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7231,6 +7231,8 @@ async function ready(sp) {
   for (let i = 0; i < 300 && D.status !== 'ready' && D.status !== 'error'; i++) await new Promise(r => setTimeout(r, 100));
   return D.status === 'ready';
 }
+/** The published NBA / NFL game (loads that sport's data if needed), or null. */
+async function usGame(sport, gameId) { if (!(await ready(sport))) return null; const A = usAdapter(sport); return A.d.gameById.get(gameId) || A.d.gameById.get(String(gameId)) || A.d.gameById.get(Number(gameId)) || null; }
 const usDef = (sport, A, key) => (sport === 'nba' ? NBA_BET_MARKETS.find(d => d.key === key) : null) || A.def(key);
 const HOURS = 36e5;
 
@@ -7302,7 +7304,7 @@ function accaOf(legs) {
   return { status: 'pending', factor: null };
 }
 
-return { STATUS_LABEL, SETTLED, resultOf, factorOf, settleLeg, accaOf };
+return { STATUS_LABEL, SETTLED, resultOf, factorOf, usGame, settleLeg, accaOf };
 })();
 __m['betprefill'] = (() => {
 // "Log as a real bet" (owner, 9 Nov 2026): carries a selection from Hiwi's Section, or the whole Acca slip, to the bet log on My Plays,
@@ -7350,7 +7352,7 @@ const { usAdapter } = __m['v-hiwi'];
 const { buildUsPlayerCard } = __m['uscards'];
 const { cardEstimate, loadCalib } = __m['valueev'];
 const { NBA_BET_MARKETS } = __m['nba-markets'];
-const { settleLeg, accaOf, factorOf, resultOf, STATUS_LABEL, SETTLED } = __m['settle'];
+const { usGame, settleLeg, accaOf, factorOf, resultOf, STATUS_LABEL, SETTLED } = __m['settle'];
 const { store, knownPlayers, loadPlayerRows, leagueName } = __m['data'];
 const { FB_GROUPS, fbDef, avgLine } = __m['hiwi-markets'];
 const { normTeam, teamSlug } = __m['teams'];
@@ -7378,6 +7380,13 @@ const sideTxt = (b, def) => (b.scope === 'other' || b.key === 'g.win' ? '' : b.k
 const GAME_MKTS = [{ key: 'g.win', label: 'To win (incl. overtime)', team: true }, { key: 'g.hcap', label: 'Handicap / spread (incl. overtime)', team: true },
   { key: 'g.tpts', label: 'Team total points', team: true, ou: true }, { key: 'g.pts', label: 'Game total points', ou: true }];
 const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
+// The US night now: it runs until 6am New York time (11am UK), after the last West Coast games, so at 07:00 UK on Wednesday it is still Tuesday night.
+const usToday = () => { try { return new Date(Date.now() - 6 * 36e5).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); } catch { return today(); } };
+// 11 Nov 2026 (owner): NBA / NFL bets belong to the US night of the game (a 00:30 UK tip-off on Wednesday is Tuesday's game), shown with
+// its UK kick-off time ("Wed 00:30 UK"). Football stays on the UK date.
+const usNight = g => (g && g.date) || (g ? koUK(g).ymd : '');
+const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const ukWhen = ko => { if (!ko) return ''; const k = koUK({ ko_utc: ko }); return k.hm ? `${WD[new Date(`${k.ymd}T12:00:00Z`).getUTCDay()]} ${k.hm} UK` : ''; };
 const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const SPORT_NAME = { nba: 'NBA', nfl: 'NFL', football: 'Football' };
 const NO = ' autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"'; // odds / text boxes: no phone auto-correct
@@ -7420,6 +7429,16 @@ const needsCheck = x => !x.result && !(x.auto && SETTLED.has(x.auto.status));
 /** Check every open selection against the published data. Returns how many changed. */
 async function settleAll(now = Date.now()) {
   const a = loadLog(); let changed = 0;
+  // 11 Nov 2026: NBA / NFL bets logged before this were dated by the UK day of the tip-off; they move to the US night of the game
+  let moved = 0;
+  for (const b of a) { for (const x of isAcca(b) ? b.legs : [b]) { if ((x.sport !== 'nba' && x.sport !== 'nfl') || !x.gameId || (x.ko && x.dateUS)) continue;
+      let g = null; try { g = await usGame(x.sport, x.gameId); } catch { g = null; } if (!g || !g.date) continue;
+      if (x.date !== g.date || x.ko !== (g.ko_utc || '')) moved++; x.date = g.date; x.ko = g.ko_utc || ''; x.dateUS = true; }
+    if (isAcca(b)) { const first = b.legs.map(l => l.date).filter(Boolean).sort()[0]; if (first && b.date !== first) { b.date = first; moved++; } } }
+  if (moved) { const cur = loadLog(), ids = new Map(a.map(b => [b.id, b]));
+    for (let i = 0; i < cur.length; i++) { const n = ids.get(cur[i].id); if (!n) continue; const fix = (c, m) => { if (m && m.dateUS) { c.date = m.date; c.ko = m.ko; c.dateUS = true; } };
+      if (isAcca(n)) { (cur[i].legs || []).forEach((l, j) => fix(l, n.legs[j])); const first = cur[i].legs.map(l => l.date).filter(Boolean).sort()[0]; if (first) cur[i].date = first; } else fix(cur[i], n); }
+    saveLog(cur); changed += moved; }
   for (const b of a) {
     for (const x of isAcca(b) ? b.legs : [b]) { if (!needsCheck(x)) continue; let r; try { r = await settleLeg(x, now); } catch (e) { r = { status: 'pending', why: String(e && e.message || e), at: new Date(now).toISOString() }; }
       if (!x.auto || x.auto.status !== r.status || x.auto.value !== r.value || x.auto.why !== r.why) changed++; x.auto = r; } }
@@ -7468,7 +7487,7 @@ function betLogHtml(sport) {
     <p class="xs muted" style="margin:0">Your bets are kept on this phone only (no account, no syncing between devices). They are checked against the latest published results every time you open My Plays, so they settle even if PropLab was closed when the match finished. Save a backup file now and then (Safari can clear a website's storage if you do not visit for a few weeks, unless PropLab is on your Home Screen).</p></section>`;
 }
 
-function gamesOn(A, day) { return A.d.games.filter(g => koUK(g).ymd === day && g.status !== 'canceled').sort((a, b) => (a.ko_utc || '').localeCompare(b.ko_utc || '')); }
+function gamesOn(A, day) { return A.d.games.filter(g => usNight(g) === day && g.status !== 'canceled').sort((a, b) => (a.ko_utc || '').localeCompare(b.ko_utc || '')); }
 async function loadPlayers(A, sport, g) {
   const ts = [g.away, g.home], list = A.d.players.filter(p => ts.includes(p.team) && (sport !== 'nba' || p.logs_file)), out = [];
   for (const p of list) { let raw = []; try { raw = await A.playerRowsOf(p); } catch { raw = []; } const r = raw.find(x => String(x.game) === String(g.id)); out.push({ p, played: !!(r && !r.dnp), row: r || null }); }
@@ -7495,7 +7514,7 @@ function wireBetLog(root, sport) {
   // and the stake and odds you had before)
   const applyPre = pre => { Object.assign(F, { gid: '', pid: '', key: '', fxk: '', team: '', p: null, push: 0, fair: null, model: null, uscope: 'player', gk: '', gteam: '', gline: '', otext: '' }); priced = null;
     if (sport === 'football') { const f = pre.fx; F.day = koUK(f).ymd; F.fxk = fxKeyOf(f); F.scope = pre.scope === 'opp' ? 'team' : pre.scope; F.team = pre.team || ''; F.pid = pre.pid || ''; F._fx = f; }
-    else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(String(pre.gameId)) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? koUK(g).ymd : (pre.date || F.day); F.pid = String(pre.pid || '');
+    else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(String(pre.gameId)) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? usNight(g) : (pre.date || F.day); F.pid = String(pre.pid || '');
       if (pre.scope === 'game') { F.uscope = 'game'; F.gk = pre.key; F.gteam = pre.team || ''; F.gline = pre.key === 'g.win' ? '' : String(pre.line); }
       else if (pre.scope === 'other') { F.uscope = 'other'; F.otext = pre.name || ''; } }
     F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = pre.stake ? String(pre.stake) : ''; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
@@ -7561,14 +7580,14 @@ function wireBetLog(root, sport) {
       <p class="xs muted" style="margin:0">"Automatic" lets PropLab settle it from the published results; a result you pick stays until you change it. To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again.</p>
       <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button><button type="button" class="linkbtn xs" data-bledel style="margin-left:auto">✕ Remove ${isAcca(b) ? 'this acca' : 'this bet'}</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
-    return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
+    return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)}${b.ko && !b.fx ? ` · ${esc(ukWhen(b.ko))}` : ''} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
       <div class="small">${chip(b)}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
       <div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button></div></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
     return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
 </div>
       <div class="small"><span class="xs muted">${s.manual ? 'set by you' : SETTLED.has(s.status) ? 'from the legs' : 'settles automatically from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot ${resCls(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')} <span class="xs muted">tap to see the legs</span></div></div></summary>
-      ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<div class="blleg ${resCls(r)}" data-blleg="${i}"><div>${badge(r, true)} ${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div></div>`; }).join('')}
+      ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<div class="blleg ${resCls(r)}" data-blleg="${i}"><div>${badge(r, true)} ${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div><div class="small">${chip(l)}</div></div></div>`; }).join('')}
       <p class="xs muted" style="margin:4px 0">A void leg counts as odds 1.00 (standard acca rule); one lost leg loses the acca. Same-game and promotional accas may be settled differently by your bookmaker: set the result yourself in Edit.</p></details>`; }
   const seasonName = (sp, se) => (sp === 'nba' ? `${Number(se) - 1}/${String(se).slice(2)}` : String(se));
 
@@ -7582,7 +7601,7 @@ function wireBetLog(root, sport) {
     const games = new Map(); for (const l of d.legs) { const k = l.gameId ? `${l.sport}|${l.gameId}` : l.fx ? `f|${l.fx.league}|${l.fx.home}|${l.fx.away}` : l.id; games.set(k, (games.get(k) || 0) + 1); }
     const same = [...games.values()].some(n => n > 1);
     el.innerHTML = `<section class="card stack blbuild"><h3 style="margin:0">Acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'})</h3>
-      ${d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('')}
+      ${d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('')}
       ${same ? '<p class="xs warn" style="margin:4px 0">Two or more legs come from the same match. Bookmakers usually price these as a bet builder, not by multiplying, and settle them under their own rules: type the bookmaker\'s acca odds below and check the result yourself.</p>' : ''}
       <div class="blgrid"><label class="field"><span>Acca stake (£)</span><input class="in slipstake" data-bldstake inputmode="decimal" value="${esc(d.stake)}" placeholder="e.g. 5"></label>
       <label class="field"><span>Bookmaker's acca odds <small>(only if different: boosts, bet builders)</small></span><input class="in" data-bldbook inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(d.odds || '')}" placeholder="optional"></label></div>
@@ -7591,10 +7610,10 @@ function wireBetLog(root, sport) {
 
   // ---- the form
   const usForm = async () => {
-    if (!F.day) F.day = today();
+    if (!F.day) F.day = usToday(); // the US night now (07:00 UK on Wednesday is still Tuesday night in the US)
     const gs = gamesOn(A, F.day); if (F.gid && !gs.some(g => String(g.id) === String(F.gid))) { F.gid = ''; F.pid = ''; }
     const g = F.gid ? A.d.gameById.get(F.gid) || A.d.gameById.get(Number(F.gid)) : null;
-    let html = `<div class="blgrid"><label class="field"><span>Date of the game (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 21))}"></label>
+    let html = `<div class="blgrid"><label class="field"><span>Game night (US date)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 21))}"><span class="xs muted">Tuesday night's games are Tuesday, even when they tip off after midnight UK. Each game shows its UK time.</span></label>
       <label class="field"><span>Match</span><select class="in" data-blgame><option value="">${gs.length ? 'Pick the match' : 'No games that day'}</option>${gs.map(x => `<option value="${esc(x.id)}"${String(x.id) === String(F.gid) ? ' selected' : ''}>${esc(`${x.away} at ${x.home} · ${fmtKick(x)}${x.final ? ` · ${x.as}-${x.hs}` : ''}`)}</option>`).join('')}</select></label></div>`;
     if (!g) { body.innerHTML = html; return; }
     html += `<div><span class="xs muted">Market type</span><div class="seg" data-bluscope>${[['player', 'Player'], ['game', 'Team / game'], ['other', 'Other']].map(([v, l]) => `<button type="button" data-v="${v}" class="${F.uscope === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
@@ -7678,12 +7697,12 @@ function wireBetLog(root, sport) {
     if (g0 && F.uscope === 'game') { const m = GAME_MKTS.find(x => x.key === F.gk); if (!m) return { msg: 'Pick the market.' }; if (m.team && !F.gteam) return { msg: 'Pick the team.' };
       const gl = Number(String(F.gline).replace(',', '.').replace(/\s/g, '')); if (m.key !== 'g.win' && !Number.isFinite(gl)) return { msg: m.key === 'g.hcap' ? 'Type the handicap, e.g. -4.5' : 'Type the line, e.g. 220.5' };
       if (m.ou && gl < 0) return { msg: 'A points line cannot be negative.' };
-      return { sel: { sport, gameId: String(g0.id), scope: 'game', date: koUK(g0).ymd, season: g0.season, game: `${g0.away} at ${g0.home}`, team: m.team ? F.gteam : '', name: m.team ? A.teamName(F.gteam) : `${g0.away} at ${g0.home}`,
+      return { sel: { sport, gameId: String(g0.id), scope: 'game', date: usNight(g0), ko: g0.ko_utc || '', season: g0.season, game: `${g0.away} at ${g0.home}`, team: m.team ? F.gteam : '', name: m.team ? A.teamName(F.gteam) : `${g0.away} at ${g0.home}`,
         key: m.key, market: m.label, binary: m.key === 'g.win', line: m.key === 'g.win' ? 0.5 : gl, side: m.ou ? F.side : 'over', p: null, push: 0, fair: null, model: null }, odds }; }
     if (g0 && F.uscope === 'other') { const d = String(F.otext || '').trim(); if (!d) return { msg: 'Describe the bet.' };
-      return { sel: { sport, gameId: String(g0.id), scope: 'other', date: koUK(g0).ymd, season: g0.season, game: `${g0.away} at ${g0.home}`, team: '', name: d, key: 'other', market: '(you settle it)', binary: false, line: null, side: '', p: null, push: 0, fair: null, model: null }, odds }; }
+      return { sel: { sport, gameId: String(g0.id), scope: 'other', date: usNight(g0), ko: g0.ko_utc || '', season: g0.season, game: `${g0.away} at ${g0.home}`, team: '', name: d, key: 'other', market: '(you settle it)', binary: false, line: null, side: '', p: null, push: 0, fair: null, model: null }, odds }; }
     const g = g0, pl = players && players.find(x => String(x.p.id) === String(F.pid)), r = priced; if (!g || !pl || !r || !r.def) return { msg: 'Pick the match, player and market first.' };
-    return { sel: { sport, gameId: String(g.id), scope: 'player', date: koUK(g).ymd, season: g.season, game: `${g.away} at ${g.home}`, pid: String(pl.p.id), name: pl.p.name, team: pl.p.team, key: F.key, market: r.def.label, binary: !!r.def.binary, line, side: F.side,
+    return { sel: { sport, gameId: String(g.id), scope: 'player', date: usNight(g), ko: g.ko_utc || '', season: g.season, game: `${g.away} at ${g.home}`, pid: String(pl.p.id), name: pl.p.name, team: pl.p.team, key: F.key, market: r.def.label, binary: !!r.def.binary, line, side: F.side,
       p: r.ok ? r.p : null, push: r.ok ? r.push : 0, fair: r.ok ? r.fair : null, model: r.ok ? 'form model, games before the match' : null }, odds };
   };
 
