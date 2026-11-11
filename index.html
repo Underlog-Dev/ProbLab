@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="501c91f4bef8">
+<meta name="proplab-build" content="9c9412a7a79c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -792,6 +792,9 @@ details.blacca>summary{position:relative}details.blacca>summary .blacts{top:2px}
 details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-webkit-details-marker{display:none}
 @media (max-width:420px){.blrow>div:first-child{padding-right:0}.blrow .blacts{position:static;order:-1;width:100%;justify-content:flex-end}}
 .blflags{margin:4px 0 2px}.blflags .warn{color:var(--amber)}.blgroup{border:1px dashed rgba(245,184,61,.5);border-radius:8px;padding:6px 8px;margin:6px 0}
+/* Update 69: free bet / boost box in My Plays */
+.blpromo{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}.blpromo [hidden]{display:none!important}
+.blchk{display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer}.blchk input{width:20px;height:20px;margin:0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7465,20 +7468,37 @@ function accaStateMatch(b) {
   if (res.every(r => SETTLED.has(r.res))) { const allWon = res.every(r => r.res === 'won'); return { status: res.every(r => r.res === 'void') ? 'void' : 'won', factor: allWon && book ? book : res.reduce((t, r) => t * factorOf(r.res, r.odds), 1), manual: false }; }
   return { status: 'pending', factor: null, manual: false };
 }
+// ---- Update 69 (owner, 11 Nov 2026): free bets and profit boosts. `stake` is always YOUR money (it can be 0 for a bet placed entirely with
+// a free bet); `free` is the free bet amount (its stake is never returned, so it can only add winnings); `boost` is a profit boost (0.25,
+// 0.5 or 1 = 25 / 50 / 100% more winnings), applied to all the bet's winnings. A lost bet costs only your own money; a void bet costs
+// nothing (the free bet usually comes back as a token).
+const BOOSTS = [0.25, 0.5, 1];
+const promoOf = b => ({ free: Number(b.free) > 0 ? Number(b.free) : 0, boost: BOOSTS.includes(Number(b.boost)) ? Number(b.boost) : 0 });
+const WIN = { won: [1, 0], halfwon: [0.5, 0], halflost: [0, 0.5], lost: [0, 1], void: [0, 0] };
+/** Pure: profit from your money and a free bet at a result: winnings x (1 + boost), less your own money lost. */
+function promoProfit(real, free, boost, odds, res) { const w = WIN[res]; if (!w) return null; return (real + free) * (odds - 1) * w[0] * (1 + boost) - real * w[1]; }
 /** Pure: profit of a bet (single or acca); 0 for void, null while not settled. */
 function profitOf(b) {
-  if (isAcca(b)) { const s = accaState(b); return s.status === 'pending' ? null : s.status === 'void' ? 0 : b.stake * (s.factor - 1); }
-  const r = effOf(b); if (!r) return null; return b.stake * (factorOf(r, b.odds) - 1);
+  const { free, boost } = promoOf(b);
+  if (isAcca(b)) { const s = accaState(b); if (s.status === 'pending') return null; if (s.status === 'void') return 0;
+    if (!free && !boost) return b.stake * (s.factor - 1);
+    return s.factor >= 1 ? (b.stake + free) * (s.factor - 1) * (1 + boost) : -b.stake * (1 - s.factor); }
+  const r = effOf(b); if (!r) return null; if (!free && !boost) return b.stake * (factorOf(r, b.odds) - 1);
+  return promoProfit(b.stake, free, boost, b.odds, r);
 }
+/** What a bet would win if it wins (profit), free bet and boost included. */
+const winIfWon = (real, free, boost, odds) => (real + free) * (odds - 1) * (1 + boost);
+const promoTxt = b => { const { free, boost } = promoOf(b); return `${free ? `${b.stake > 0 ? `${gbp(b.stake)} + ` : ''}${gbp(free)} free bet` : gbp(b.stake)}${boost ? ` · ${Math.round(boost * 100)}% boost` : ''}`; };
 const combinedOdds = b => accaUnits(b).reduce((t, u) => t * (u.odds || 1), 1);
 /** Pure: expected profit of a single at its stored fair chance: stake x (p x odds + push - 1); null when no fair price was stored. */
-const evOf = b => (!isAcca(b) && Number.isFinite(b.p) && b.p > 0 ? b.stake * (b.p * b.odds + (b.push || 0) - 1) : null);
+const evOf = b => { if (isAcca(b) || !(Number.isFinite(b.p) && b.p > 0)) return null; const { free, boost } = promoOf(b); if (!free && !boost) return b.stake * (b.p * b.odds + (b.push || 0) - 1);
+  return b.p * winIfWon(b.stake, free, boost, b.odds) - (1 - b.p - (b.push || 0)) * b.stake; }; // Update 69: with a free bet / boost
 const stat = b => (isAcca(b) ? accaState(b).status : effOf(b) || 'pending');
 /** Pure: totals. Each bet's stake is counted once (an acca once, not per leg). Void bets are left out of staked and profit. */
 function totals(list) {
   const part = L => { const s = L.filter(b => stat(b) !== 'pending' && stat(b) !== 'void'), staked = s.reduce((t, b) => t + b.stake, 0), profit = s.reduce((t, b) => t + profitOf(b), 0);
     return { n: L.length, won: L.filter(b => ['won', 'halfwon'].includes(stat(b))).length, lost: L.filter(b => ['lost', 'halflost'].includes(stat(b))).length, open: L.filter(b => stat(b) === 'pending').length,
-      voids: L.filter(b => stat(b) === 'void').length, settled: s.length, staked, profit, returned: staked + profit, roi: staked ? profit / staked : null, stakedAll: L.reduce((t, b) => t + b.stake, 0) }; };
+      voids: L.filter(b => stat(b) === 'void').length, settled: s.length, staked, profit, returned: staked + profit, roi: staked ? profit / staked : null, stakedAll: L.reduce((t, b) => t + b.stake, 0), freeUsed: s.reduce((t, b) => t + promoOf(b).free, 0), promoN: s.filter(b => promoOf(b).free || promoOf(b).boost).length }; };
   const singles = list.filter(b => !isAcca(b)), accas = list.filter(isAcca), all = part(list), sg = part(singles), ac = part(accas);
   const priced = singles.filter(b => stat(b) !== 'pending' && stat(b) !== 'void' && evOf(b) != null), ev = priced.reduce((t, b) => t + evOf(b), 0);
   const evPlus = priced.filter(b => evOf(b) > 0);
@@ -7537,7 +7557,7 @@ async function priceAtGame(sport, gid, pid, key, line, side) {
 const resultFrom = (v, line, side, binary) => resultOf(v, line, side, binary);
 
 // ---------------------------------------------------------------- the page section
-const F = { view: 'all', sportF: '', season: 'all', league: '', sport: '', day: '', gid: '', pid: '', key: '', line: null, side: 'over', stake: '', odds: '', scope: 'match', fxk: '', team: '', p: null, push: 0, fair: null, model: null, uscope: 'player', gk: '', gteam: '', gline: '', otext: '' };
+const F = { view: 'all', sportF: '', season: 'all', league: '', sport: '', day: '', gid: '', pid: '', key: '', line: null, side: 'over', stake: '', odds: '', scope: 'match', fxk: '', team: '', p: null, push: 0, fair: null, model: null, uscope: 'player', gk: '', gteam: '', gline: '', otext: '', promo: false, free: '', boost: 0 };
 let players = null, playersFor = '', priced = null, pricing = 0;
 
 function betLogHtml(sport) {
@@ -7580,7 +7600,7 @@ function wireBetLog(root, sport) {
     else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(String(pre.gameId)) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? usNight(g) : (pre.date || F.day); F.pid = String(pre.pid || '');
       if (pre.scope === 'game') { F.uscope = 'game'; F.gk = pre.key; F.gteam = pre.team || ''; F.gline = pre.key === 'g.win' ? '' : String(pre.line); }
       else if (pre.scope === 'other') { F.uscope = 'other'; F.otext = pre.name || ''; } }
-    F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = pre.stake ? String(pre.stake) : ''; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
+    F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = pre.stake ? String(pre.stake) : ''; F.promo = !!(pre.free > 0 || pre.boost > 0); F.free = pre.free > 0 ? String(pre.free) : ''; F.boost = pre.boost || 0; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
     box.querySelector('#blform').open = true; };
   if (pre && !pre.acca && pre.sport === sport) applyPre(pre);
   if (pre && pre.readd) setTimeout(() => { const f = box.querySelector('#blform'); if (f) f.scrollIntoView({ block: 'start' }); }, 300);
@@ -7603,8 +7623,8 @@ function wireBetLog(root, sport) {
         <select class="in" data-blsportf aria-label="Sport"><option value="">Every sport</option>${['football', 'nba', 'nfl'].map(s => `<option value="${s}"${F.sportF === s ? ' selected' : ''}>${SPORT_NAME[s]}</option>`).join('')}</select>
         ${lgs.length ? `<select class="in" data-blleague aria-label="League"><option value="">Every league</option>${lgs.map(l => `<option value="${esc(l)}"${F.league === l ? ' selected' : ''}>${esc(leagueName(l))}</option>`).join('')}</select>` : ''}
         ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
-      <div class="tiles bltiles">${tile(gbp(T.staked), 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
-        ${tile(String(T.open), 'Pending')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
+      <div class="tiles bltiles">${tile(gbp(T.staked), T.promoN ? 'Total staked (settled, your own money)' : 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
+        ${tile(String(T.open), 'Pending')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}${T.promoN ? tile(gbp(T.freeUsed), `Free bets used (${T.promoN} bet${T.promoN === 1 ? '' : 's'} with a free bet or boost; not in staked)`) : ''}</div>
       ${F.view === 'all' && L.length ? `<div class="tblscroll"><table class="risktb bltypes"><tr><th></th><th title="won – lost – void">W–L–V</th><th>Pend.</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
         ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n} <span class="xs muted">(${x.n})</span></th><td>${x.won}–${x.lost}–${x.voids}</td><td>${x.open}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table></div>` : ''}
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
@@ -7649,17 +7669,18 @@ function wireBetLog(root, sport) {
   const editHtml = b => `<div class="bleditbox card stack" data-bleditfor="${esc(b.id)}"><b>Edit ${isAcca(b) ? `this ${b.legs.length}-leg acca` : 'this bet'}</b>
       ${isAcca(b) && b.mode === 'match' ? accaUnits(b).filter(u => u.group).map(u => `<label class="field"><span>Price for the same-match group: ${esc(b.legs[u.idx[0]].game)} (${u.idx.length} legs)</span><input class="in" data-bleg="${esc(u.key)}" inputmode="text"${NO} value="${esc((b.groups[u.key] && (b.groups[u.key].oddsTxt || fmtOdds(b.groups[u.key].odds))) || '')}"></label>`).join('') : ''}
       ${isAcca(b) ? b.legs.map((l, i) => legEditHtml(l, i, b.mode === 'match' && accaUnits(b).some(u => u.group && u.idx.includes(i)))).join('') : legEditHtml(b, null)}
-      <div class="blgrid"><label class="field"><span>Stake (£)</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(String(b.stake))}"></label>
+      <div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(!!(promoOf(b).free || promoOf(b).boost))}</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(b.stake > 0 || !promoOf(b).free ? String(b.stake) : '')}" placeholder="${promoOf(b).free ? '0 if it is all free bet' : ''}"></label>
       ${isAcca(b) ? `<label class="field"><span>Bookmaker's acca odds <small>(optional)</small></span><input class="in" data-ble="book" inputmode="text"${NO} value="${esc(b.bookOdds ? String(b.bookOddsTxt || b.bookOdds) : '')}"></label>` : ''}</div>
+      ${promoHtml('edit', { promo: !!(promoOf(b).free || promoOf(b).boost), ...promoOf(b) }, !isAcca(b))}
       ${isAcca(b) ? `<div><span class="xs muted">Result of the whole acca <small>(your bookmaker's result comes first: boosts, same-game accas, special rules)</small></span><div class="seg wrap mpres" data-ble="accaresult">${[['', 'From the legs'], ['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(b.result || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       <p class="xs muted" style="margin:0">"Automatic" lets PropLab settle it from the published results; a result you pick stays until you change it. To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again.</p>
       <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button><button type="button" class="linkbtn xs" data-bledel style="margin-left:auto">✕ Remove ${isAcca(b) ? 'this acca' : 'this bet'}</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
-    return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)}${b.ko && !b.fx ? ` · ${esc(ukWhen(b.ko))}` : ''} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
+    return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)}${b.ko && !b.fx ? ` · ${esc(ukWhen(b.ko))}` : ''} · ${esc(promoTxt(b))} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
       <div class="small">${chip(b)}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
       ${flags(b)}<div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button></div></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
-    return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
+    return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${esc(promoTxt(b))} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''}${promoOf(b).free || promoOf(b).boost ? ` · profit ${sgbp(winIfWon(b.stake, promoOf(b).free, promoOf(b).boost, Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}` : ` · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}`} if every leg wins
 </div>
       ${flags(b, TWINS)}<div class="small"><span class="xs muted">${s.manual ? 'set by you' : SETTLED.has(s.status) ? 'from the legs' : 'settles automatically from the legs'}${b.mode === 'match' ? ' · odds per match' : ''}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot ${resCls(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')} <span class="xs muted">tap to see the legs</span></div></div></summary>
       ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'), gu = b.mode === 'match' ? accaUnits(b).find(u => u.group && u.idx.includes(i)) : null;
@@ -7672,11 +7693,11 @@ function wireBetLog(root, sport) {
   // the tap on "Save this acca" on a phone).
   let TWINS = new Map();
   const draftAcca = d => ({ legs: d.legs, mode: d.mode === 'match' ? 'match' : 'leg', groups: Object.fromEntries(Object.entries(d.godds || {}).map(([k, v]) => [k, { odds: parseIn(v).exact || parseIn(v).dec || null, oddsTxt: v }])) });
-  const draftSum = d => { const A = draftAcca(d), U = accaUnits(A), co = U.reduce((t, u) => t * (u.odds || 1), 1), st = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = U.filter(u => !(u.odds > 1)).length, price = bo || co;
+  const draftSum = d => { const A = draftAcca(d), U = accaUnits(A), co = U.reduce((t, u) => t * (u.odds || 1), 1), st = money(d.stake), fr = d.promo ? money(d.free) : 0, bs = d.promo ? Number(d.boost) || 0 : 0, bo = parseIn(d.odds || '').dec, missing = U.filter(u => !(u.odds > 1)).length, price = bo || co;
     const ps = d.legs.map(l => l.p), pAll = ps.every(x => x > 0) ? ps.reduce((t, x) => t * x, 1) : null, sameMatch = U.some(u => u.group) || new Set(d.legs.map(gkOf)).size < d.legs.length;
     const model = pAll && !missing ? `<br><span class="xs">Model: ${(pAll * 100).toFixed(1)}% that every leg wins (the legs' probabilities multiplied) · EV at ${esc(fmtOdds(price))}: <b class="${pAll * price - 1 > 0 ? 'hit' : 'miss'}">${pAll * price - 1 > 0 ? '+' : '−'}${Math.abs((pAll * price - 1) * 100).toFixed(1)}%</b>${sameMatch ? '. Same-match legs are correlated, so for those this is rough' : ''}</span>` : !missing && d.legs.length ? `<br><span class="xs muted">No model EV: ${ps.filter(x => !(x > 0)).length} leg${ps.filter(x => !(x > 0)).length === 1 ? ' has' : 's have'} no PropLab price (team markets and your own bets)</span>` : '';
     const cap = st > capGBP() + 1e-9 ? `<br><span class="xs warn">⚠ ${gbp(st)} is over your ${RISK.cap.toFixed(2)}u cap (${gbp(capGBP())})</span>` : '';
-    return `${A.mode === 'match' ? 'Groups and legs multiply' : 'Legs multiply'} to <b>${missing ? '–' : esc(fmtOdds(co))}</b>${st > 0 && !missing ? ` · returns <b>${gbp(st * price)}</b> (profit ${sgbp(st * (price - 1))}) if every leg wins` : ''}${missing ? ` · type ${A.mode === 'match' ? 'the price' : 'your odds'} for ${missing} ${A.mode === 'match' ? 'group / leg' : 'leg'}${missing === 1 ? '' : 's'}` : ''}${model}${cap}`; };
+    return `${A.mode === 'match' ? 'Groups and legs multiply' : 'Legs multiply'} to <b>${missing ? '–' : esc(fmtOdds(co))}</b>${(fr || bs) && !missing ? `<br>${promoSum(st, fr, bs, price)}` : st > 0 && !missing ? ` · returns <b>${gbp(st * price)}</b> (profit ${sgbp(st * (price - 1))}) if every leg wins` : ''}${missing ? ` · type ${A.mode === 'match' ? 'the price' : 'your odds'} for ${missing} ${A.mode === 'match' ? 'group / leg' : 'leg'}${missing === 1 ? '' : 's'}` : ''}${model}${cap}`; };
   const drawDraft = () => { const d = loadDraft(), el = box.querySelector('#bldraft'); if (!d.legs.length) { el.innerHTML = ''; return; }
     const co = d.legs.reduce((t, l) => t * (l.odds || 1), 1), st = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = d.legs.filter(l => !(l.odds > 1)).length;
     const games = new Map(); for (const l of d.legs) { const k = l.gameId ? `${l.sport}|${l.gameId}` : l.fx ? `f|${l.fx.league}|${l.fx.home}|${l.fx.away}` : l.id; games.set(k, (games.get(k) || 0) + 1); }
@@ -7688,8 +7709,9 @@ function wireBetLog(root, sport) {
         <p class="xs muted" style="margin:2px 0 0">${A0.mode === 'match' ? 'Legs from the same match share one price (a bet builder inside the acca); legs on their own keep their own odds. A group still needs every leg to win.' : 'Each leg has its own odds (a normal acca, or a stand-alone bet builder). Choose "Per match" if your acca has a bet builder in it.'}</p></div>
       ${A0.mode === 'match' ? legsHtml : ''}${A0.mode === 'match' ? '' : ''}${A0.mode !== 'match' ? d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('') : ''}
       ${same && A0.mode !== 'match' ? '<p class="xs warn" style="margin:4px 0">Two or more legs come from the same match. Bookmakers usually price these as a bet builder, not by multiplying, and settle them under their own rules: type the bookmaker\'s acca odds below and check the result yourself.</p>' : ''}
-      <div class="blgrid"><label class="field"><span>Acca stake (£)</span><input class="in slipstake" data-bldstake inputmode="decimal" value="${esc(d.stake)}" placeholder="e.g. 5"></label>
-      <label class="field"><span>Bookmaker's acca odds <small>(only if different: boosts, bet builders)</small></span><input class="in" data-bldbook inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(d.odds || '')}" placeholder="optional"></label></div>
+      <div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(d.promo, true)}</span><input class="in slipstake" data-bldstake inputmode="decimal" value="${esc(d.stake)}" placeholder="${d.promo ? '0 if it is all free bet' : 'e.g. 5'}"></label>
+      <label class="field"><span>Bookmaker's acca odds <small>(only if different: price boosts, bet builders)</small></span><input class="in" data-bldbook inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(d.odds || '')}" placeholder="optional"></label></div>
+      ${promoHtml('draft', d, false)}
       <p class="small" style="margin:4px 0" data-bldsum>${draftSum(d)}</p>
       <div class="row" style="border:0;gap:8px"><button type="button" class="btn primary" data-bldsave${d.legs.length < 2 ? ' disabled' : ''}>Save this acca</button><button type="button" class="btn" data-bldclear>Clear</button></div><p class="small" data-bldmsg style="margin:0"></p></section>`; };
 
@@ -7726,8 +7748,25 @@ function wireBetLog(root, sport) {
       : `<div><span class="xs muted">Side</span><div class="seg" data-blside><button type="button" data-v="over" class="${F.side !== 'under' ? 'on' : ''}">Over</button><button type="button" data-v="under" class="${F.side === 'under' ? 'on' : ''}">Under</button></div></div>
       <div><span class="xs muted">Line</span><div class="blline"><button type="button" class="btn" data-blstep="-0.5" aria-label="Lower line">−</button><input class="in" data-blline inputmode="decimal" value="${esc(String(F.line))}" aria-label="Line"><button type="button" class="btn" data-blstep="0.5" aria-label="Higher line">+</button></div></div>`}</div>
       ${stakeOddsHtml()}`;
-  const stakeOddsHtml = () => `<div class="blgrid"><label class="field"><span>Your stake (£)</span><input class="in slipstake" data-blstake inputmode="decimal" placeholder="e.g. 10 (leave empty for an acca leg)" value="${esc(F.stake)}"></label>
-      <label class="field"><span>Your odds</span><input class="in slipstake" data-blodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 2.10 or 11/10" value="${esc(F.odds)}"></label></div>`;
+  // Update 69: "Free bet / boost" tick box (Log a bet, the acca being built, Edit). Ticked: a free bet amount, the stake box becomes your
+  // own money (0 or empty when it is all free bet) and a None / 25% / 50% / 100% profit boost.
+  const STAKE_LBL = (promo, acca) => (promo ? 'Your own money (£)' : acca ? 'Acca stake (£)' : 'Your stake (£)');
+  const promoHtml = (ctx, P, sum = true) => `<div class="blpromo" data-pr="${ctx}"><label class="blchk"><input type="checkbox" data-prtick${P.promo ? ' checked' : ''}> <b>Free bet / boost</b></label>
+      <div class="stack" data-prbody${P.promo ? '' : ' hidden'} style="gap:6px;margin-top:6px"><div class="blgrid"><label class="field"><span>Free bet amount (£)</span><input class="in" data-prfree inputmode="decimal" value="${esc(P.free ? String(P.free) : '')}" placeholder="0 if no free bet"></label>
+      <div><span class="xs muted">Profit boost</span><div class="seg" data-prboost>${[[0, 'None'], [0.25, '25%'], [0.5, '50%'], [1, '100%']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Number(P.boost || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
+      <p class="xs muted" style="margin:0">Put your own money in the stake box: leave it empty or 0 if it is all free bet, or type it if you added real money to the free bet. A free bet's stake is not paid back, so a win pays the winnings only; a loss costs only your own money. The boost is added to all the winnings (if your bookmaker caps the extra, it may pay a little less).</p>
+      ${sum ? '<p class="small" data-prsum style="margin:0"></p>' : ''}</div></div>`;
+  const readPromo = root => { const el = root && root.querySelector('[data-pr]'); if (!el || !el.querySelector('[data-prtick]').checked) return { promo: false, free: 0, boost: 0 };
+    const raw = String(el.querySelector('[data-prfree]').value || '').trim(), f = Number(raw.replace(/[£,\s]/g, '')), on = el.querySelector('[data-prboost] button.on');
+    return { promo: true, free: f > 0 ? f : 0, bad: raw !== '' && !(f >= 0), boost: on ? Number(on.dataset.v) : 0 }; };
+  /** The "if it wins / if it loses" line for your own money + free bet + boost at these odds. */
+  const promoSum = (real, free, boost, odds) => (!(odds > 1) ? 'Type your odds to see the profit.' : !(real + free > 0) ? 'Type the free bet amount and / or your own money.'
+    : `If it wins: profit <b class="hit">${sgbp(winIfWon(real, free, boost, odds))}</b> (you get back ${gbp(real + winIfWon(real, free, boost, odds))})${boost ? `, of which ${sgbp(winIfWon(real, free, boost, odds) - winIfWon(real, free, 0, odds))} is the boost` : ''} · if it loses: <b class="${real > 0 ? 'miss' : ''}">${sgbp(-real)}</b>${real > 0 ? '' : ' (free bet only)'}`);
+  const money = v => { const x = Number(String(v || '').replace(/[£,\s]/g, '')); return x > 0 ? x : 0; };
+  const drawFormSum = () => { const q = body.querySelector('[data-pr="form"] [data-prsum]'); if (q) q.innerHTML = promoSum(money(F.stake), money(F.free), F.boost || 0, parseIn(F.odds).dec); };
+  const stakeOddsHtml = () => `<div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(F.promo)}</span><input class="in slipstake" data-blstake inputmode="decimal" placeholder="${F.promo ? '0 if it is all free bet' : 'e.g. 10 (leave empty for an acca leg)'}" value="${esc(F.stake)}"></label>
+      <label class="field"><span>Your odds</span><input class="in slipstake" data-blodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 2.10 or 11/10" value="${esc(F.odds)}"></label></div>
+      ${promoHtml('form', F)}`;
   const fbForm = async () => {
     if (!F.day) F.day = today();
     const fxs = footballOn(F.day); let fx = fxs.find(f => fxKeyOf(f) === F.fxk) || (F._fx && fxKeyOf(F._fx) === F.fxk ? F._fx : null); if (!fx) F.fxk = '';
@@ -7755,7 +7794,7 @@ function wireBetLog(root, sport) {
     const el = body.querySelector('#blprice'); if (!el) return;
     if (sport !== 'football' && F.uscope !== 'player') {
       el.innerHTML = `<p class="xs muted" style="margin:4px 0">${F.uscope === 'game' ? 'No fair odds: PropLab has no model for team and game markets, so this is logged without EV. It settles automatically from the final score (overtime included), or set the result yourself.' : 'PropLab cannot settle this market: set Won / Lost / Void yourself in the list once it is decided. It is logged without EV.'}</p>
-        <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blsave>Log as a single</button><button type="button" class="btn" data-bladdleg>＋ Add to an acca</button></div><p class="small" data-blmsg style="margin:4px 0 0"></p>`; return; }
+        <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blsave>Log as a single</button><button type="button" class="btn" data-bladdleg>＋ Add to an acca</button></div><p class="small" data-blmsg style="margin:4px 0 0"></p>`; drawFormSum(); return; }
     const my = ++pricing, line = Number(String(F.line).replace(',', '.'));
     if (!Number.isFinite(line) || line < 0) { el.innerHTML = '<p class="warn small">Type a line, e.g. 2.5</p>'; return; }
     let r = { ok: false };
@@ -7763,14 +7802,15 @@ function wireBetLog(root, sport) {
     else if (F.p > 0) r = { ok: true, p: F.p, push: F.push || 0, fair: F.fair, def: F._def };
     else r = { ok: false, reason: 'football bets keep the fair price only when logged from Hiwi\'s Section', def: F._def };
     const odds = parseIn(F.odds).dec, stake = Number(String(F.stake).replace(/[£,\s]/g, ''));
-    const ev = r.ok && odds && stake > 0 ? stake * (r.p * odds + r.push - 1) : null, evp = r.ok && odds ? (r.p * odds + r.push - 1) * 100 : null;
+    const pr = F.promo ? { free: money(F.free), boost: F.boost || 0 } : { free: 0, boost: 0 }, ev = r.ok && odds && (stake > 0 || pr.free > 0) ? evOf({ type: 'single', p: r.p, push: r.push, odds, stake: stake > 0 ? stake : 0, ...pr }) : null, evp = r.ok && odds ? (r.p * odds + r.push - 1) * 100 : null;
     el.innerHTML = `<div class="sliptiles slippay"><div><small>Fair odds${sport !== 'football' ? ` (${r.games || 0} games before this one)` : ''}</small><b data-blfair>${r.ok ? esc(fmtOdds(r.fair)) : 'Unavailable'}</b></div>
         <div><small>${odds ? `Your odds ${esc(fmtOdds(odds))}: ` : ''}value</small><b data-blev class="${evp == null ? '' : evp > 0 ? 'hit' : 'miss'}">${evp == null ? (r.ok ? 'Type your odds' : '–') : `${evp > 0 ? 'EV+' : 'EV−'} ${evp.toFixed(1)}%${ev != null ? ` (${sgbp(ev)})` : ''}`}</b></div></div>
       <p class="xs muted" style="margin:4px 0">${r.ok ? `Model chance ${(r.p * 100).toFixed(1)}%${r.push >= 0.0005 ? `, push ${(r.push * 100).toFixed(1)}%` : ''}.${sport !== 'football' ? (r.started ? ' From his games before this match only (form model; no injury or matchup adjustment, which were not recorded on the day).' : ' The same price as his Hiwi\'s Section card for this game (form, tonight\'s matchup and teammates out).') : ' As shown in Hiwi\'s Section when you logged it.'}` : `No fair price: ${esc(r.reason || '')}. You can still log the bet; it is left out of the EV totals.`}
         ${r.actual != null ? ` He had <b>${esc(String(r.actual))}</b> ${esc(((r.def && r.def.label) || 'of this').toLowerCase())} in this game.` : r.played === false ? ' He has no stat line for this game (did not play?): such bets are usually void.' : ''} The result is settled automatically from the published statistics once the match is final (or set it yourself in the list).</p>
       <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blsave>Log as a single</button><button type="button" class="btn" data-bladdleg>＋ Add to an acca</button></div><p class="small" data-blmsg style="margin:4px 0 0"></p>`;
+    drawFormSum();
   };
-  const resetBet = () => { F.gk = ''; F.gteam = ''; F.gline = ''; F.otext = ''; F.pid = ''; F.key = ''; F.line = null; F.side = 'over'; F.stake = ''; F.odds = ''; F.p = null; F.push = 0; F.fair = null; F.model = null; F.team = ''; priced = null; };
+  const resetBet = () => { F.gk = ''; F.gteam = ''; F.gline = ''; F.otext = ''; F.pid = ''; F.key = ''; F.line = null; F.side = 'over'; F.stake = ''; F.odds = ''; F.p = null; F.push = 0; F.fair = null; F.model = null; F.team = ''; F.promo = false; F.free = ''; F.boost = 0; priced = null; };
   /** The selection described by the form (without stake), or a message. */
   const selFromForm = () => {
     const odds = parseIn(F.odds), line = Number(String(F.line).replace(',', '.'));
@@ -7810,8 +7850,13 @@ function wireBetLog(root, sport) {
   });
   let tm = null;
   box.addEventListener('input', e => { const t = e.target;
-    if (t.matches('[data-blstake]')) { F.stake = t.value; clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
-    if (t.matches('[data-blodds]')) { F.odds = t.value; clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
+    if (t.matches('[data-blstake]')) { F.stake = t.value; drawFormSum(); clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
+    if (t.matches('[data-prfree]')) { const c = t.closest('[data-pr]').dataset.pr;
+      if (c === 'form') { F.free = t.value; drawFormSum(); clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
+      else if (c === 'draft') { const d = loadDraft(); d.free = t.value; saveDraft(d); const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(d); }
+      else drawEditSum(t.closest('.bleditbox')); }
+    if (t.matches('.bleditbox [data-ble="stake"], .bleditbox [data-ble="odds"]')) drawEditSum(t.closest('.bleditbox'));
+    if (t.matches('[data-blodds]')) { F.odds = t.value; drawFormSum(); clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
     if (t.matches('[data-blgline]')) F.gline = t.value;
     if (t.matches('[data-blotext]')) F.otext = t.value;
     if (t.matches('[data-blline]')) { F.line = t.value; F.p = null; clearTimeout(tm); tm = setTimeout(drawPrice, 400); }
@@ -7825,6 +7870,15 @@ function wireBetLog(root, sport) {
   box.addEventListener('change', e => { if (e.target.matches('[data-bldstake], [data-bldbook]')) { const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(loadDraft()); } });
 
   box.addEventListener('click', e => {
+    { const t = e.target, pr = t.closest('[data-pr]');
+      if (pr && (t.matches('[data-prtick]') || t.closest('[data-prboost] button'))) { const c = pr.dataset.pr, root = c === 'form' ? body : c === 'draft' ? box.querySelector('#bldraft') : pr.closest('.bleditbox');
+        const bb = t.closest('[data-prboost] button'); if (bb) bb.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === bb));
+        const on = pr.querySelector('[data-prtick]').checked, boost = Number((pr.querySelector('[data-prboost] button.on') || { dataset: { v: 0 } }).dataset.v);
+        pr.querySelector('[data-prbody]').hidden = !on; const lb = root && root.querySelector('[data-stakelbl]'); if (lb) lb.textContent = STAKE_LBL(on, c === 'draft');
+        if (c === 'form') { F.promo = on; F.boost = boost; drawFormSum(); drawPrice(); }
+        else if (c === 'draft') { const d = loadDraft(); d.promo = on; d.boost = boost; saveDraft(d); const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(d); }
+        else drawEditSum(root);
+        if (!t.matches('[data-prtick]')) e.preventDefault(); return; } }
     const t = e.target;
     const vw = t.closest('[data-blview] button'); if (vw) { if (F.view !== vw.dataset.v) { F.view = vw.dataset.v; drawTotals(); } return; }
     const st = t.closest('[data-blstep]'); if (st) { const v = Number(String(F.line).replace(',', '.')) || 0; F.line = Math.max(0.5, Math.round((v + Number(st.dataset.blstep)) * 4) / 4); F.p = null; const i = body.querySelector('[data-blline]'); if (i) i.value = String(F.line); drawPrice(); return; }
@@ -7834,30 +7888,36 @@ function wireBetLog(root, sport) {
     if (t.closest('[data-blsave]') || t.closest('[data-bladdleg]')) {
       const msg = body.querySelector('[data-blmsg]'), { sel, odds, msg: m } = selFromForm(); if (!sel) { msg.textContent = m; return; }
       if (t.closest('[data-bladdleg]')) { const d = loadDraft(); d.legs.push({ ...sel, id: `leg|${Date.now()}|${d.legs.length}`, odds: odds.dec ? (odds.exact || odds.dec) : null, oddsTxt: F.odds, result: '' }); saveDraft(d); drawDraft(); msg.textContent = `Added to the acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'}): see below.`; return; }
-      const stake = Number(String(F.stake).replace(/[£,\s]/g, '')); if (!(stake > 0)) { msg.textContent = 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
-      const b = { ...sel, id: `${sport}|${sel.gameId || fxKeyOf(sel.fx)}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`, type: 'single', stake, odds: odds.exact || odds.dec, result: '', logged: new Date().toISOString() };
+      const stake = money(F.stake), PR = F.promo ? readPromo(body) : { promo: false, free: 0, boost: 0 };
+      if (String(F.stake || '').trim() && !(Number(String(F.stake).replace(/[£,\s]/g, '')) >= 0)) { msg.textContent = 'Type your stake as a number, e.g. 10.'; return; }
+      if (PR.bad) { msg.textContent = 'Type the free bet amount as a number, e.g. 5.'; return; }
+      if (!(stake > 0) && !(PR.free > 0)) { msg.textContent = F.promo ? 'Type the free bet amount and / or your own money.' : 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
+      const b = { ...sel, id: `${sport}|${sel.gameId || fxKeyOf(sel.fx)}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`, type: 'single', stake, odds: odds.exact || odds.dec, oddsTxt: String(F.odds || '').trim(), result: '', logged: new Date().toISOString(),
+        ...(PR.free > 0 ? { free: PR.free } : {}), ...(PR.boost > 0 ? { boost: PR.boost } : {}) };
       const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
-      F.key = ''; F.line = null; F.stake = ''; F.odds = ''; F.p = null; drawForm(); settleAll().then(drawTotals); drawTotals();
-      setTimeout(() => { const k = body.querySelector('[data-blkey], [data-blgk], [data-blotext]'); if (k) k.insertAdjacentHTML('beforebegin', `<p class="small hit" data-blsaved>Logged: ${esc(b.name)} ${esc(b.market)} ${esc(sideTxt(b))}, ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}. It settles automatically once the result is published.</p>`); }, 50);
+      F.key = ''; F.line = null; F.stake = ''; F.odds = ''; F.p = null; F.promo = false; F.free = ''; F.boost = 0; drawForm(); settleAll().then(drawTotals); drawTotals();
+      setTimeout(() => { const k = body.querySelector('[data-blkey], [data-blgk], [data-blotext]'); if (k) k.insertAdjacentHTML('beforebegin', `<p class="small hit" data-blsaved>Logged: ${esc(b.name)} ${esc(b.market)} ${esc(sideTxt(b))}, ${esc(promoTxt(b))} at ${esc(fmtOdds(b.odds))}. It settles automatically once the result is published.</p>`); }, 50);
       return;
     }
     // acca being built
     const dl = t.closest('[data-bldl]'); if (dl && t.closest('[data-bldrm]')) { const d = loadDraft(); d.legs.splice(Number(dl.dataset.bldl), 1); saveDraft(d); drawDraft(); return; }
     if (t.closest('[data-bldclear]')) { saveDraft({ legs: [], stake: '', odds: '' }); drawDraft(); return; }
     const md = t.closest('[data-bldmode] button'); if (md) { const d = loadDraft(); d.mode = md.dataset.v; saveDraft(d); drawDraft(); return; }
-    if (t.closest('[data-bldsave]')) { const d = loadDraft(), msg = box.querySelector('[data-bldmsg]'), stake = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec;
+    if (t.closest('[data-bldsave]')) { const d = loadDraft(), msg = box.querySelector('[data-bldmsg]'), stake = money(d.stake), bo = parseIn(d.odds || '').dec;
       const A = draftAcca(d), U = accaUnits(A), sb = t.closest('[data-bldsave]');
-      if (d.legs.length < 2) { msg.textContent = 'An acca needs at least two legs.'; return; } if (U.some(u => !(u.odds > 1))) { msg.textContent = A.mode === 'match' ? 'Type the price for every same-match group and your odds for every other leg.' : 'Type your odds for every leg.'; return; } if (!(stake > 0)) { msg.textContent = 'Type the acca stake.'; return; }
+      if (d.legs.length < 2) { msg.textContent = 'An acca needs at least two legs.'; return; } if (U.some(u => !(u.odds > 1))) { msg.textContent = A.mode === 'match' ? 'Type the price for every same-match group and your odds for every other leg.' : 'Type your odds for every leg.'; return; }
+      const PR = d.promo ? readPromo(box.querySelector('#bldraft')) : { free: 0, boost: 0 }; if (PR.bad) { msg.textContent = 'Type the free bet amount as a number, e.g. 5.'; return; }
+      if (!(stake > 0) && !(PR.free > 0)) { msg.textContent = d.promo ? 'Type the free bet amount and / or your own money.' : 'Type the acca stake.'; return; }
       const grouped = new Set(U.filter(u => u.group).flatMap(u => u.idx));
       const legs = d.legs.map(({ oddsTxt, ...l }, i) => ({ ...l, oddsTxt: grouped.has(i) ? '' : oddsTxt, odds: grouped.has(i) ? null : l.odds, result: '' })), first = legs.map(l => l.date).sort()[0];
       // Update 68: the same legs logged before? (e.g. the same acca at two bookmakers: fine; by mistake: it would count twice)
       const twin = loadLog().filter(isAcca).find(x => accaSig(x.legs) === accaSig(legs));
       if (twin && !(sb.dataset.arm && Date.now() - Number(sb.dataset.arm) < 8000)) { sb.dataset.arm = String(Date.now()); sb.textContent = 'Save it again anyway';
-        msg.innerHTML = `<span class="warn">⚠ You already logged an acca with exactly these legs (${esc(fmtDay(twin.date))}, ${gbp(twin.stake)}). If this is a second bet (another bookmaker), tap "Save it again anyway"; if not, it would count twice.</span>`; return; }
-      const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString(),
+        msg.innerHTML = `<span class="warn">⚠ You already logged an acca with exactly these legs (${esc(fmtDay(twin.date))}, ${esc(promoTxt(twin))}). If this is a second bet (another bookmaker), tap "Save it again anyway"; if not, it would count twice.</span>`; return; }
+      const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString(), ...(PR.free > 0 ? { free: PR.free } : {}), ...(PR.boost > 0 ? { boost: PR.boost } : {}),
         ...(A.mode === 'match' && U.some(u => u.group) ? { mode: 'match', groups: Object.fromEntries(U.filter(u => u.group).map(u => [u.key, { odds: u.odds, oddsTxt: (d.godds || {})[u.key] || '' }])) } : {}) };
       const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
-      saveDraft({ legs: [], stake: '', odds: '', mode: d.mode }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${gbp(stake)}.${stake > capGBP() + 1e-9 ? ` Note: that is over your ${RISK.cap.toFixed(2)}u cap (${gbp(capGBP())}).` : ''} Each leg settles automatically once its result is published.`); return; }
+      saveDraft({ legs: [], stake: '', odds: '', mode: d.mode }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${promoTxt(b)}.${stake > capGBP() + 1e-9 ? ` Note: that is over your ${RISK.cap.toFixed(2)}u cap (${gbp(capGBP())}).` : ''} Each leg settles automatically once its result is published.`); return; }
     // re-add: the same single back in "Log a bet", or the same acca's legs back in "Acca being built", with your odds and stake
     const ra = t.closest('[data-blreadd]'); if (ra) { e.preventDefault(); e.stopPropagation(); const b = loadLog().find(x => x.id === ra.closest('[data-bl]').dataset.bl); if (!b) return; readd(b); return; }
     // edit
@@ -7897,7 +7957,10 @@ function wireBetLog(root, sport) {
       for (const gi of ebox.querySelectorAll('[data-bleg]')) { const o = parseIn(gi.value); if (!o.dec) { msg.textContent = 'Type a valid price for every same-match group.'; return; } b.groups[gi.dataset.bleg] = { odds: o.exact || o.dec, oddsTxt: gi.value.trim() }; }
       const bk = ebox.querySelector('[data-ble="book"]').value.trim(); if (bk) { const o = parseIn(bk); if (!o.dec) { msg.textContent = 'Type valid acca odds, or leave it empty.'; return; } b.bookOdds = o.exact || o.dec; b.bookOddsTxt = bk; } else { delete b.bookOdds; delete b.bookOddsTxt; } }
     else { const m = readLeg(b, ebox.querySelector('.bleleg')); if (m) { msg.textContent = m; return; } }
-    const st = num(ebox.querySelector('[data-ble="stake"]').value); if (!(st > 0)) { msg.textContent = 'Type the stake.'; return; } b.stake = st;
+    const sv = ebox.querySelector('[data-ble="stake"]').value, st = String(sv || '').trim() ? num(sv) : 0, PR = readPromo(ebox);
+    if (!(st >= 0)) { msg.textContent = 'Type the stake as a number, e.g. 10.'; return; } if (PR.bad) { msg.textContent = 'Type the free bet amount as a number, e.g. 5.'; return; }
+    if (!(st > 0) && !(PR.free > 0)) { msg.textContent = PR.promo ? 'Type the free bet amount and / or your own money.' : 'Type the stake.'; return; }
+    b.stake = st; if (PR.free > 0) b.free = PR.free; else delete b.free; if (PR.boost > 0) b.boost = PR.boost; else delete b.boost;
     // a single NBA / NFL player bet with a new line or side gets its fair price again (as it would when logged)
     for (const x of isAcca(b) ? b.legs : [b]) { if (!x._reprice) continue; delete x._reprice;
       if ((x.sport === 'nba' || x.sport === 'nfl') && x.scope === 'player') { try { const r = await priceAtGame(x.sport, x.gameId, x.pid, x.key, x.line, x.side); if (r.ok) { x.p = r.p; x.push = r.push; x.fair = r.fair; } } catch { /* stays without a fair price */ } } }
@@ -7907,14 +7970,17 @@ function wireBetLog(root, sport) {
     ebox.remove(); drawTotals(); settleAll().then(() => { drawTotals(); if (isAcca(b)) reopen(b.id); }); if (isAcca(b)) reopen(b.id);
     alertMsg(`Saved your changes to ${isAcca(b) ? `the ${b.legs.length}-leg acca` : `${b.name} ${b.market}`}.`); };
   const oddsText = x => x.oddsTxt || (x.odds ? fmtOdds(x.odds) : '');
+  const drawEditSum = ebox => { const q = ebox && ebox.querySelector('[data-pr="edit"] [data-prsum]'); if (!q) return; const P = readPromo(ebox), o = ebox.querySelector('.bleleg [data-ble="odds"]');
+    q.innerHTML = promoSum(money(ebox.querySelector('[data-ble="stake"]').value), P.free, P.boost, o ? parseIn(o.value).dec : null); };
   const readd = b => {
     if (isAcca(b)) { const d = loadDraft(), n0 = d.legs.length;
       d.legs.push(...b.legs.map((l, i) => { const { auto, ...rest } = l; return { ...rest, id: `leg|${Date.now()}|${n0 + i}`, result: '', oddsTxt: l.odds ? oddsText(l) : '' }; }));
       if (b.mode === 'match' && !n0) { d.mode = 'match'; d.godds = Object.fromEntries(Object.entries(b.groups || {}).map(([k, v]) => [k, v.oddsTxt || fmtOdds(v.odds)])); }
-      if (!d.stake) d.stake = String(b.stake); if (!d.odds && Number(b.bookOdds) > 1) d.odds = b.bookOddsTxt || fmtOdds(Number(b.bookOdds)); saveDraft(d); drawDraft();
+      if (!n0) { const P = promoOf(b); d.promo = !!(P.free || P.boost); d.free = P.free ? String(P.free) : ''; d.boost = P.boost; }
+      if (!d.stake && b.stake > 0) d.stake = String(b.stake); if (!d.odds && Number(b.bookOdds) > 1) d.odds = b.bookOddsTxt || fmtOdds(Number(b.bookOdds)); saveDraft(d); drawDraft();
       const el = box.querySelector('#bldraft'); if (el) el.scrollIntoView({ block: 'start' });
       const m = box.querySelector('[data-bldmsg]'); if (m) m.textContent = `${b.legs.length} legs added back${n0 ? ` (after the ${n0} already here)` : ''} with your odds${n0 ? '' : ' and stake'}. Change anything, then Save this acca.`; return; }
-    const pre = { readd: true, sport: b.sport, gameId: b.gameId, date: b.date, pid: b.pid, fx: b.fx, scope: b.scope, team: b.team, name: b.name, key: b.key, line: b.line, side: b.side, odds: oddsText(b), stake: b.stake, p: b.p, push: b.push, fair: b.fair, model: b.model };
+    const pre = { readd: true, sport: b.sport, gameId: b.gameId, date: b.date, pid: b.pid, fx: b.fx, scope: b.scope, team: b.team, name: b.name, key: b.key, line: b.line, side: b.side, odds: oddsText(b), stake: b.stake, free: promoOf(b).free, boost: promoOf(b).boost, p: b.p, push: b.push, fair: b.fair, model: b.model };
     if (b.sport !== sport) { try { sessionStorage.setItem(PREFILL, JSON.stringify(pre)); } catch { /* fine */ } location.hash = b.sport === 'football' ? '#/myplays' : `#/${b.sport}/myplays`; return; }
     applyPre(pre); drawForm(); const f = box.querySelector('#blform'); if (f) f.scrollIntoView({ block: 'start' }); };
   const reopen = id => { const d = box.querySelector(`details[data-bl="${CSS.escape(id)}"]`); if (d) d.open = true; };
@@ -7923,7 +7989,7 @@ function wireBetLog(root, sport) {
   hooks.betlogRefresh = () => settleAll().then(n => { if (n && box.isConnected) drawTotals(); });
 }
 
-return { loadLog, effOf, gkOf, accaUnits, legSig, accaSig, capGBP, accaState, profitOf, combinedOdds, evOf, totals, settleAll, priceAtGame, resultFrom, betLogHtml, wireBetLog };
+return { loadLog, effOf, gkOf, accaUnits, legSig, accaSig, capGBP, accaState, BOOSTS, promoOf, promoProfit, profitOf, winIfWon, combinedOdds, evOf, totals, settleAll, priceAtGame, resultFrom, betLogHtml, wireBetLog };
 })();
 __m['myplays'] = (() => {
 // My Plays (owner model audit, 2 Nov 2026): the plays you add from Compare Price, kept on this device, with the exposure limits the audit
