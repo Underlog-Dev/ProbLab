@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="71081bba536c">
+<meta name="proplab-build" content="302aa879efa2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7333,7 +7333,20 @@ function selFromCandidate(c, side, r) {
     const fx = { league: g.league, date: g.date, ko_utc: g.ko_utc || '', local_date: g.local_date || '', home: g.home, away: g.away, source: g.source || '', stage: g.stage || '' };
     return { ...base, fx, scope, team: scope === 'team' || scope === 'opp' ? c.team : '', pid: scope === 'player' ? c.pid : '', name: scope === 'match' ? `${g.home} v ${g.away}` : c.name, game: `${g.home} v ${g.away}`, date: (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date) };
   }
-  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date, season: g.season };
+  // NBA / NFL: dated by the US night of the game (Update 64), with the UK kick-off kept
+  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: g.date || (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : ''), ko: g.ko_utc || '', dateUS: !!g.date, season: g.season };
+}
+/**
+ * Update 66 (owner, 11 Nov 2026): "＋ Add to My Plays" logs the bet straight into the My Plays list (the same list, in date order, with
+ * Edit / Re-add / automatic settlement), at the suggested stake: units x £ per unit. Returns the saved bet, or null.
+ */
+const BETLOG = 'proplab.betlog.v1';
+function logSingleNow(sel, oddsDec, oddsTxt, stakeGBP) {
+  if (!sel || !(oddsDec > 1) || !(stakeGBP > 0)) return null;
+  const b = { ...sel, id: `${sel.sport}|${sel.gameId || (sel.fx ? `${sel.fx.league}|${sel.fx.date}|${sel.fx.home}|${sel.fx.away}` : '')}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`,
+    type: 'single', stake: Math.round(stakeGBP * 100) / 100, odds: oddsDec, oddsTxt: String(oddsTxt || ''), result: '', logged: new Date().toISOString() };
+  try { const a = JSON.parse(localStorage.getItem(BETLOG) || '[]'); const L = Array.isArray(a) ? a : []; L.push(b); localStorage.setItem(BETLOG, JSON.stringify(L)); } catch { return null; }
+  return b;
 }
 function openBetForm(sel, oddsTxt = '') { try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
 function openAccaForm(sels, stakeTxt = '') {
@@ -7342,7 +7355,7 @@ function openAccaForm(sels, stakeTxt = '') {
   go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
 }
 
-return { PREFILL, DRAFT, selFromCandidate, openBetForm, openAccaForm };
+return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, openBetForm, openAccaForm };
 })();
 __m['betlog'] = (() => {
 // Bet log on My Plays: your REAL bets, singles and accas, across NBA, NFL and football (owner requests 5 and 9 Nov 2026).
@@ -7856,6 +7869,7 @@ const { fmtOdds } = __m['oddsfmt'];
 const { RISK } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { betLogHtml, wireBetLog } = __m['betlog'];
+const { logSingleNow } = __m['betprefill'];
 
 const KEY = 'proplab.myplays.v1';
 const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
@@ -7926,8 +7940,10 @@ function viewMyPlays(root0) {
   // 5 Nov 2026 (owner): the bet log (betlog.js) with its season totals comes first; the Compare Price plays follow in their own box
   const sp = /^#\/(nba|nfl)\//.exec(location.hash || ''), sport = sp ? sp[1] : 'football';
   // 9 Nov 2026 (owner): one bet log for every sport (football too), settled automatically from the published data
-  root0.innerHTML = `<h1>My Plays</h1>${betLogHtml(sport)}<div id="mpwrap"></div>`;
+  migrateOldPlays(); // Update 66: the Compare Price list is merged into the one My Plays list
+  root0.innerHTML = `<h1>My Plays</h1>${betLogHtml(sport)}`;
   wireBetLog(root0, sport);
+  return;
   const root = root0.querySelector('#mpwrap');
   const draw = () => {
     const a = load(), days = [...new Set(a.map(x => x.day))].sort().reverse();
@@ -7958,8 +7974,40 @@ function viewMyPlays(root0) {
   });
   draw();
 }
-// "Add to My Plays" on the Compare Price / EV page (risk.js draws the button with the play's details)
+/**
+ * Update 66 (owner, 11 Nov 2026): one My Plays list. Plays added from Compare Price used to go to a separate list at the bottom (no Edit,
+ * no automatic settlement). They now go into the bet log, and anything already in the old list is moved there once, with its odds, the
+ * stake in £ (units x £${RISK.unitGBP}) and any result you set. NBA / NFL plays then settle automatically; football plays from the old list do not
+ * carry their match details, so they are kept as bets you settle yourself (Edit > Won / Lost). The old list is kept as a backup copy.
+ */
+const BETLOG = 'proplab.betlog.v1';
+function migrateOldPlays() {
+  const old = load(); if (!old.length) return 0;
+  let L = []; try { L = JSON.parse(localStorage.getItem(BETLOG) || '[]'); if (!Array.isArray(L)) L = []; } catch { L = []; }
+  const have = new Set(L.map(b => b.fromCompare).filter(Boolean)); let n = 0;
+  for (const x of old) { if (have.has(x.id)) continue; n++;
+    const us = x.sport === 'nba' || x.sport === 'nfl', pid = us && x.subj && /^\d+$/.test(String(x.subj)) ? String(x.subj) : '';
+    const res = ['won', 'lost', 'void'].includes(x.result) ? x.result : '';
+    L.push({ sport: x.sport, gameId: x.gameId || '', scope: us && pid ? 'player' : 'other', pid, name: us && pid ? x.name : `${x.name} · ${x.market} ${sideTxt(x)}`, team: x.team || '', key: us && pid ? x.key : 'other',
+      market: us && pid ? x.market : '(you settle it)', binary: !!x.binary, line: us && pid ? x.line : null, side: us && pid ? x.side : '', p: x.p || null, push: 0, fair: x.p ? 1 / x.p : null, model: "PropLab's model when you added it",
+      game: x.game || '', date: x.day || x.date || '', id: `cmp|${x.id}`, fromCompare: x.id, type: 'single', stake: Math.round((x.units || 0) * RISK.unitGBP * 100) / 100, odds: x.odds, result: res, logged: x.added || new Date().toISOString() }); }
+  try { localStorage.setItem(BETLOG, JSON.stringify(L)); localStorage.setItem(KEY + '.moved', JSON.stringify(old)); localStorage.removeItem(KEY); } catch { return 0; }
+  return n;
+}
+// "Add to My Plays" on the Compare Price / EV page (risk.js draws the button with the play's details): straight into the bet log
 if (typeof document !== 'undefined') document.addEventListener('click', ev => {
+  const b0 = ev.target.closest('[data-slipadd]'); if (!b0) return; const bx = b0.closest('[data-risk]'); if (!bx) return;
+  let d0; try { d0 = JSON.parse(bx.dataset.rk); } catch { return; }
+  const u0 = Number(bx.dataset.final), m0 = bx.querySelector('[data-slipmsg]'), I = d0.info;
+  if (!I || !(u0 > 0)) { if (m0) m0.textContent = 'No stake at this price, so nothing to add.'; return; }
+  const us = I.sport === 'nba' || I.sport === 'nfl', pid = us && I.subj && /^\d+$/.test(String(I.subj)) ? String(I.subj) : '';
+  const sel = us && pid && I.gameId ? { sport: I.sport, gameId: String(I.gameId), scope: 'player', pid, name: I.name, team: I.team || '', key: I.key, market: I.market, binary: !!I.binary, line: I.binary ? 0.5 : I.line, side: I.side, p: I.p, push: 0, fair: I.p ? 1 / I.p : null, model: "PropLab's model when you logged it", game: I.game, date: I.date || '' }
+    : { sport: I.sport, gameId: String(I.gameId || ''), scope: 'other', pid: '', name: `${I.name} · ${I.market} ${sideTxt(I)}`, team: '', key: 'other', market: '(you settle it)', binary: false, line: null, side: '', p: I.p, push: 0, fair: I.p ? 1 / I.p : null, game: I.game || '', date: I.date || '' };
+  const saved = logSingleNow(sel, d0.dec, '', u0 * RISK.unitGBP);
+  if (m0) m0.textContent = saved ? `In My Plays: £${saved.stake.toFixed(2)} (${fmtU(u0)}u) at ${fmtOdds(d0.dec)}${sel.scope === 'other' ? '. Set its result yourself in My Plays (Edit).' : '. It settles automatically.'}` : 'Could not save on this phone (private browsing?).';
+  if (saved) b0.disabled = true;
+});
+if (false) document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-slipadd]'); if (!b) return; const box = b.closest('[data-risk]'); if (!box) return;
   let d; try { d = JSON.parse(box.dataset.rk); } catch { return; }
   const units = Number(box.dataset.final); const msg = box.querySelector('[data-slipmsg]');
@@ -7969,7 +8017,7 @@ if (typeof document !== 'undefined') document.addEventListener('click', ev => {
     : `${res.r === 'added' ? 'Added' : 'Updated'}: ${fmtU(res.units)}u${res.units < units - 1e-9 ? ` (cut from ${fmtU(units)}u: ${res.why.join('; ')})` : ''}.${W.length ? ' ⚠ ' + W[0] : ''}`;
 });
 
-return { myPlays, roomFor, addPlay, checks, ladders, viewMyPlays };
+return { myPlays, roomFor, addPlay, checks, ladders, viewMyPlays, migrateOldPlays };
 })();
 __m['accabuild'] = (() => {
 // Acca Builder engine (owner request 2 Nov 2026). Builds an accumulator close to a target fair price from the same plays, lines,
@@ -8469,7 +8517,7 @@ const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming
 const { legId } = __m['accabuild'];
 const { slipToggle, slipRegister, syncButtons, toCard, slipSetBook } = __m['accaslip'];
 const { hooks } = __m['shared'];
-const { selFromCandidate, openBetForm } = __m['betprefill'];
+const { selFromCandidate, openBetForm, logSingleNow } = __m['betprefill'];
 const { nightOf } = __m['nightdate'];
 const { isHidden, hide, unhide, hiddenFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
@@ -8787,7 +8835,8 @@ async function viewRecommended(root, sport) {
       carryPrice(cd, st, sport); return; }
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: r.p }, D, r.conf), g = x.c.f;
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
-      const res = addPlay(info, D, P ? P.final : 0), b = t.closest('[data-radd]'); b.textContent = res.r === 'blocked' ? `Not added: ${res.why[0]}` : res.r === 'failed' ? 'Could not save' : `✓ ${fmtU(res.units)}u in My Plays${res.why.length ? ` (cut: ${res.why[0]})` : ''}`; b.disabled = true; return; }
+      const u = P ? P.final : 0, saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP) : null, b = t.closest('[data-radd]'); void info;
+      b.textContent = saved ? `✓ In My Plays: £${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}` : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved; if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
     if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'), bt = t.closest('[data-ralt]'); box.hidden = !box.hidden; bt.setAttribute('aria-expanded', String(!box.hidden)); bt.querySelector('b').textContent = box.hidden ? '▸' : '▾'; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
       box.innerHTML = `<table class="ralttb raltcomp"><tr><th>Line</th><th>Model</th><th>Fair</th><th>L10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
     const pk = t.closest('[data-rpick]'); if (pk) { const r = evalAt(x.c, Number(pk.dataset.rpick), x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L: r.L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
