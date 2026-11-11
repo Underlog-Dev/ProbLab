@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="216cec1f064b">
+<meta name="proplab-build" content="66b145080762">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -773,8 +773,8 @@ html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 .blleg{display:flex;flex-wrap:wrap;gap:6px 10px;padding:6px 0;border-top:1px dashed var(--line)}.blleg>div:first-child{flex:1 1 220px;min-width:0}
 
 /* 11 Nov: Edit on logged bets (top-right of each row) and the edit panel */
-.blrow{position:relative}.blrow>div:first-child{padding-right:64px}.blrow .bledit{position:absolute;top:6px;right:0;min-height:32px;padding:4px 10px;font-size:13px}
-details.blacca>summary{position:relative;padding-right:64px}details.blacca>summary .bledit{position:absolute;top:2px;right:0}
+.blrow{position:relative}.blrow>div:first-child{padding-right:170px}.blrow .blacts{position:absolute;top:6px;right:0;display:flex;gap:6px}.blrow .blacts .chip{min-height:32px;padding:4px 10px;font-size:13px}
+details.blacca>summary{position:relative}details.blacca>summary .blacts{top:2px}
 .bleditbox{margin:6px 0 10px;border:1px solid var(--accent,#3b82f6)}.bleleg{border-top:1px dashed var(--line);padding-top:6px}.bleleg:first-of-type{border-top:0}
 
 /* 11 Nov (owner): results stand out; clear day headers */
@@ -790,6 +790,7 @@ details.blacca>summary{position:relative;padding-right:64px}details.blacca>summa
 .blleg.res-won{border-left:3px solid var(--hit);padding-left:8px}.blleg.res-lost{border-left:3px solid var(--miss);padding-left:8px}.blleg.res-void{border-left:3px solid var(--muted);padding-left:8px}.blleg.res-open{border-left:3px solid rgba(245,184,61,.6);padding-left:8px}
 .bldot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;vertical-align:middle;background:rgba(245,184,61,.6)}.bldot.res-won{background:var(--hit)}.bldot.res-lost{background:var(--miss)}.bldot.res-void{background:var(--muted)}
 details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-webkit-details-marker{display:none}
+@media (max-width:420px){.blrow>div:first-child{padding-right:0}.blrow .blacts{position:static;order:-1;width:100%;justify-content:flex-end}}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7490,11 +7491,17 @@ function wireBetLog(root, sport) {
   const alertMsg = m => { const p = box.querySelector('#bllist'); if (p) p.insertAdjacentHTML('afterbegin', `<div class="banner info">${esc(m)}</div>`); };
   // ---- prefill from Hiwi's Section / the Acca slip
   let pre = null; try { pre = JSON.parse(sessionStorage.getItem(PREFILL) || 'null'); sessionStorage.removeItem(PREFILL); } catch { pre = null; }
-  if (pre && !pre.acca && pre.sport === sport) { Object.assign(F, { gid: '', pid: '', key: '', fxk: '', team: '', p: null, push: 0, fair: null, model: null });
+  // the form filled in from a selection: Hiwi's Section, the Acca slip, or "Re-add" on a logged bet (11 Nov 2026: team / game / other bets,
+  // and the stake and odds you had before)
+  const applyPre = pre => { Object.assign(F, { gid: '', pid: '', key: '', fxk: '', team: '', p: null, push: 0, fair: null, model: null, uscope: 'player', gk: '', gteam: '', gline: '', otext: '' }); priced = null;
     if (sport === 'football') { const f = pre.fx; F.day = koUK(f).ymd; F.fxk = fxKeyOf(f); F.scope = pre.scope === 'opp' ? 'team' : pre.scope; F.team = pre.team || ''; F.pid = pre.pid || ''; F._fx = f; }
-    else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? koUK(g).ymd : F.day; F.pid = String(pre.pid); }
-    F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = ''; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
-    box.querySelector('#blform').open = true; }
+    else { F.gid = String(pre.gameId); const g = A && (A.d.gameById.get(pre.gameId) || A.d.gameById.get(String(pre.gameId)) || A.d.gameById.get(Number(pre.gameId))); F.day = g ? koUK(g).ymd : (pre.date || F.day); F.pid = String(pre.pid || '');
+      if (pre.scope === 'game') { F.uscope = 'game'; F.gk = pre.key; F.gteam = pre.team || ''; F.gline = pre.key === 'g.win' ? '' : String(pre.line); }
+      else if (pre.scope === 'other') { F.uscope = 'other'; F.otext = pre.name || ''; } }
+    F.key = pre.key; F.line = pre.line; F.side = pre.side || 'over'; F.odds = pre.odds || ''; F.stake = pre.stake ? String(pre.stake) : ''; if (pre.p > 0) { F.p = pre.p; F.push = pre.push || 0; F.fair = pre.fair; F.model = pre.model || "PropLab's model when you logged it"; }
+    box.querySelector('#blform').open = true; };
+  if (pre && !pre.acca && pre.sport === sport) applyPre(pre);
+  if (pre && pre.readd) setTimeout(() => { const f = box.querySelector('#blform'); if (f) f.scrollIntoView({ block: 'start' }); }, 300);
   if (pre && pre.acca) setTimeout(() => { const d = box.querySelector('#bldraft'); if (d) d.scrollIntoView({ block: 'start' }); }, 300);
 
   // ---- totals and list
@@ -7556,9 +7563,9 @@ function wireBetLog(root, sport) {
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
     return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
       <div class="small">${chip(b)}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
-      <button type="button" class="chip bledit" data-bledit aria-label="Edit this bet">✎ Edit</button></div>`; }
+      <div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button></div></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
-    return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><button type="button" class="chip bledit" data-bledit aria-label="Edit this acca">✎ Edit</button><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
+    return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
 </div>
       <div class="small"><span class="xs muted">${s.manual ? 'set by you' : SETTLED.has(s.status) ? 'from the legs' : 'settles automatically from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot ${resCls(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')} <span class="xs muted">tap to see the legs</span></div></div></summary>
       ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<div class="blleg ${resCls(r)}" data-blleg="${i}"><div>${badge(r, true)} ${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div></div>`; }).join('')}
@@ -7737,6 +7744,8 @@ function wireBetLog(root, sport) {
       const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString() };
       const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
       saveDraft({ legs: [], stake: '', odds: '' }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${gbp(stake)}. Each leg settles automatically once its result is published.`); return; }
+    // re-add: the same single back in "Log a bet", or the same acca's legs back in "Acca being built", with your odds and stake
+    const ra = t.closest('[data-blreadd]'); if (ra) { e.preventDefault(); e.stopPropagation(); const b = loadLog().find(x => x.id === ra.closest('[data-bl]').dataset.bl); if (!b) return; readd(b); return; }
     // edit
     const eb = t.closest('[data-bledit]'); if (eb) { e.preventDefault(); e.stopPropagation(); const r0 = eb.closest('[data-bl]'), b = loadLog().find(x => x.id === r0.dataset.bl); if (!b) return;
       box.querySelectorAll('.bleditbox').forEach(x => x.remove()); r0.insertAdjacentHTML('afterend', editHtml(b)); r0.nextElementSibling.scrollIntoView({ block: 'nearest' }); return; }
@@ -7782,6 +7791,16 @@ function wireBetLog(root, sport) {
     if (!saveLog(cur)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
     ebox.remove(); drawTotals(); settleAll().then(() => { drawTotals(); if (isAcca(b)) reopen(b.id); }); if (isAcca(b)) reopen(b.id);
     alertMsg(`Saved your changes to ${isAcca(b) ? `the ${b.legs.length}-leg acca` : `${b.name} ${b.market}`}.`); };
+  const oddsText = x => x.oddsTxt || (x.odds ? fmtOdds(x.odds) : '');
+  const readd = b => {
+    if (isAcca(b)) { const d = loadDraft(), n0 = d.legs.length;
+      d.legs.push(...b.legs.map((l, i) => { const { auto, ...rest } = l; return { ...rest, id: `leg|${Date.now()}|${n0 + i}`, result: '', oddsTxt: oddsText(l) }; }));
+      if (!d.stake) d.stake = String(b.stake); if (!d.odds && Number(b.bookOdds) > 1) d.odds = b.bookOddsTxt || fmtOdds(Number(b.bookOdds)); saveDraft(d); drawDraft();
+      const el = box.querySelector('#bldraft'); if (el) el.scrollIntoView({ block: 'start' });
+      const m = box.querySelector('[data-bldmsg]'); if (m) m.textContent = `${b.legs.length} legs added back${n0 ? ` (after the ${n0} already here)` : ''} with your odds${n0 ? '' : ' and stake'}. Change anything, then Save this acca.`; return; }
+    const pre = { readd: true, sport: b.sport, gameId: b.gameId, date: b.date, pid: b.pid, fx: b.fx, scope: b.scope, team: b.team, name: b.name, key: b.key, line: b.line, side: b.side, odds: oddsText(b), stake: b.stake, p: b.p, push: b.push, fair: b.fair, model: b.model };
+    if (b.sport !== sport) { try { sessionStorage.setItem(PREFILL, JSON.stringify(pre)); } catch { /* fine */ } location.hash = b.sport === 'football' ? '#/myplays' : `#/${b.sport}/myplays`; return; }
+    applyPre(pre); drawForm(); const f = box.querySelector('#blform'); if (f) f.scrollIntoView({ block: 'start' }); };
   const reopen = id => { const d = box.querySelector(`details[data-bl="${CSS.escape(id)}"]`); if (d) d.open = true; };
   drawTotals(); drawDraft(); drawForm();
   settleAll().then(n => { if (n) drawTotals(); }); // reconcile with the latest published data every time My Plays opens
