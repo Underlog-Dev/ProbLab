@@ -1,6 +1,6 @@
 # PropLab daily data refresh. Create this file in the repository as:  .github/workflows/proplab-data-refresh.yml
 # It needs _proplab-refresh.zip (the refresh tools) in the top folder of the repository.
-# Runs seven times a day (about 06:07, 12:07, 14:37, 17:07, 18:37, 20:07 and 23:02 UK time; GitHub's timezone setting handles GMT/BST).
+# Runs eight times a day (about 06:07, 07:37, 12:07, 14:37, 17:07, 18:37, 20:07 and 23:02 UK time; GitHub's timezone setting handles GMT/BST).
 # GitHub may start scheduled runs late, so these are intended starts, not guarantees. A catch-up run at 23:47 only does work if
 # nothing has succeeded since 22:30. Squad lists (Wikipedia) are read at most every 10 hours.
 # Only data-*.json files are ever committed; the site's code is never changed by this workflow.
@@ -10,6 +10,9 @@ on:
     # 5 Nov 2026 (owner): six refreshes a day, a few minutes after the hour (GitHub is busiest exactly on the hour and may start late),
     # plus a 23:47 catch-up that only does work if the 23:02 run did not succeed.
     - cron: '7 6 * * *'
+      timezone: 'Europe/London'
+    # Update 67 (owner): last night's NBA games (filled from ESPN when the main source is late) before the morning
+    - cron: '37 7 * * *'
       timezone: 'Europe/London'
     - cron: '7 12 * * *'
       timezone: 'Europe/London'
