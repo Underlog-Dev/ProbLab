@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="9c9412a7a79c">
+<meta name="proplab-build" content="80ece3e6d02d">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -795,6 +795,19 @@ details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-w
 /* Update 69: free bet / boost box in My Plays */
 .blpromo{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}.blpromo [hidden]{display:none!important}
 .blchk{display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer}.blchk input{width:20px;height:20px;margin:0}
+/* Update 70: tap a hit-rate box to change the bar chart; tap a bar for the box score */
+.rh[data-rwin]{cursor:pointer;font:inherit;color:inherit}.rh.on{border-color:var(--accent,#3b82f6);background:color-mix(in srgb,var(--accent,#3b82f6) 18%,var(--bg))}.rh.on small{color:var(--text)}
+.rbcap{margin:8px 0 0}
+.rbwrap{position:relative}.rbwrap.wide{overflow-x:auto;overflow-y:hidden;padding-top:14px;-webkit-overflow-scrolling:touch}.rbwrap.wide .rbars{min-width:100%;margin-top:0}
+.rbwrap.wide .rbar{flex:0 0 12px}.rbwrap.wide .rbar em{font-size:8px}
+.rbars .rbar.sel{outline:2px solid var(--text);outline-offset:1px;z-index:1}
+.rbox{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}.rbxh{font-size:13px;margin-bottom:2px}
+.rbxg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:6px 0}.rbxg div{display:flex;flex-direction:column;align-items:center;padding:4px 2px;border:1px solid var(--line);border-radius:8px}
+.rbxg b{font-size:15px}.rbxg small{font-size:10px;color:var(--muted)}
+.rbxt{width:100%;border-collapse:collapse;font-size:12.5px}.rbxt th{text-align:left;font-weight:500;color:var(--muted);padding:3px 6px 3px 0;white-space:nowrap;width:1%}.rbxt td{padding:3px 0}.rbxt tr+tr{border-top:1px solid var(--line)}
+.rdropev{margin-left:4px}
+.rbxg .rbxmin{grid-column:1/-1;flex-direction:row;justify-content:center;gap:8px}.rbxg .rbxmin b{font-size:17px}
+.rteam{color:var(--text);font-weight:700}.ravgmin b{color:var(--text)}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -6714,7 +6727,7 @@ async function usCandidates(sport, A, games, onProgress) {
       if (played.length < 8) continue;
       const curN = played.filter(x => x.season === cur).length; if (!curN && teamCur.get(t) >= 3) continue; // not played this season while his team has: injured or out of the rotation
       for (const def of defsFor(p)) {
-        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game, ...(def.parts ? { parts: def.parts(x) } : {}) /* combo props: each stat's share for coloured bars (owner, 4 Nov) */ })).filter(r => r.value !== null && r.value !== undefined);
+        const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game, raw: x /* box score on a tapped bar (Update 70) */, ...(def.parts ? { parts: def.parts(x) } : {}) /* combo props: each stat's share for coloured bars (owner, 4 Nov) */ })).filter(r => r.value !== null && r.value !== undefined);
         if (rows.length < 8) continue;
         const card = buildUsPlayerCard({ sport, A, p, def, key: def.key, raw, game: g, period: () => 10, periodText: () => 'this season', cid: `rec|${sport}|${p.id}|${def.key}` });
         out.push({ id: `${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: t, opp: t === g.home ? g.away : g.home, home: t === g.home, f: g, fid: String(g.id), def, card, p, inj, cur,
@@ -7352,6 +7365,20 @@ function logSingleNow(sel, oddsDec, oddsTxt, stakeGBP) {
   try { const a = JSON.parse(localStorage.getItem(BETLOG) || '[]'); const L = Array.isArray(a) ? a : []; L.push(b); localStorage.setItem(BETLOG, JSON.stringify(L)); } catch { return null; }
   return b;
 }
+/**
+ * Update 70 (owner, 11 Nov 2026): "Placed it? Log it" in the Acca slip saves straight into My Plays (it used to open My Plays with the
+ * legs drafted, and nothing was logged until you saved there). legs: [{ sel, odds (decimal), oddsTxt }]; one leg = a single.
+ * Returns the saved bet, or null.
+ */
+function logBetNow(legs, stakeGBP) {
+  if (!legs.length || !(stakeGBP > 0) || legs.some(l => !(l.odds > 1))) return null;
+  if (legs.length === 1) return logSingleNow(legs[0].sel, legs[0].odds, legs[0].oddsTxt, stakeGBP);
+  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: l.odds, oddsTxt: String(l.oddsTxt || ''), result: '' })), sp = [...new Set(L.map(l => l.sport))];
+  const b = { id: `acca|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100, bookOdds: null, date: L.map(l => l.date).sort()[0],
+    game: `${L.length}-leg acca`, result: '', logged: new Date().toISOString(), fromSlip: true };
+  try { const a = JSON.parse(localStorage.getItem(BETLOG) || '[]'); const A = Array.isArray(a) ? a : []; A.push(b); localStorage.setItem(BETLOG, JSON.stringify(A)); } catch { return null; }
+  return b;
+}
 function openBetForm(sel, oddsTxt = '') { try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
 function openAccaForm(sels, stakeTxt = '') {
   const legs = sels.map((x, i) => ({ ...x.sel, id: `leg|${Date.now()}|${i}`, odds: parseDec(x.oddsTxt), oddsTxt: x.oddsTxt || '', result: '' }));
@@ -7359,7 +7386,7 @@ function openAccaForm(sels, stakeTxt = '') {
   go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
 }
 
-return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, openBetForm, openAccaForm };
+return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, logBetNow, openBetForm, openAccaForm };
 })();
 __m['betlog'] = (() => {
 // Bet log on My Plays: your REAL bets, singles and accas, across NBA, NFL and football (owner requests 5 and 9 Nov 2026).
@@ -8343,7 +8370,7 @@ const { evalAt, ladderName } = __m['recplays'];
 const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick } = __m['util'];
 const { hooks } = __m['shared'];
-const { selFromCandidate, openAccaForm } = __m['betprefill'];
+const { selFromCandidate, logBetNow } = __m['betprefill'];
 const { accaPlan, getFrac } = __m['risk'];
 
 const KEY = 'proplab.slip.v1';
@@ -8468,7 +8495,7 @@ function drawPanel() {
     <p class="xs muted" data-slipfmttext style="margin:2px 0 8px"></p>
     <label class="field slipstakef"><span data-sliplabel>${esc(stakeLabel(F.find(f => f.id === S.fmt)))}</span><input class="in slipstake" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="Type your stake, e.g. 10" value="${esc(S.stakeTxt)}"></label>
     <div class="slipout" data-slipout aria-live="polite"></div>
-    <button type="button" class="btn" data-sliplog style="width:100%;margin-top:8px">Placed it? Log this acca as a real bet</button><p class="xs muted" style="margin:2px 0 0">Opens My Plays with these legs and your typed odds; it then settles leg by leg from the published results.</p>
+    <button type="button" class="btn primary" data-sliplog style="width:100%;margin-top:8px">Placed it? Log it in My Plays</button><p class="small" data-sliplogmsg style="margin:4px 0 0" aria-live="polite"></p><p class="xs muted" style="margin:2px 0 0">Type your odds for every pick and your stake, then tap: it is saved in My Plays straight away (each bet of the bet type above, at your stake per bet) and settles leg by leg from the published results. Change anything later with Edit in My Plays.</p>
 `
     : '<p class="small muted" style="margin:12px 0">Your slip is empty. Tap <b>＋ Add to Acca</b> on any play in Hiwi\'s Section to add it.</p>'}
     <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Picks from the same game (a bet builder) are linked: when PropLab can measure how they moved together in their shared earlier games the price is adjusted for it (experimental); otherwise it is the picks multiplied and marked not adjusted. The same pick twice is never priced. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
@@ -8504,8 +8531,9 @@ function onClick(e) {
   const t = e.target, S = load();
   if (t.closest('[data-sliptab]')) { setOpen(!S.open); return; }
   if (t.closest('[data-slipclose]')) { setOpen(false); return; }
+  if (t.closest('[data-slipgoplays]')) { setOpen(false); return; }
   if (t.closest('[data-slipclear]')) { if (S.armed && Date.now() - S.armed < 4000) { S.sel = []; S.armed = 0; changed(true); } else { S.armed = Date.now(); drawPanel(); setTimeout(() => { if (S.armed && Date.now() - S.armed >= 4000) { S.armed = 0; if (S.open) drawPanel(); } }, 4100); } return; }
-  if (t.closest('[data-sliplog]')) { if (S.sel.length < 2) return; setOpen(false); openAccaForm(S.sel.map(x => ({ sel: selFromSlip(x), oddsTxt: x.bookTxt || '' })), S.stakeTxt || ''); return; }
+  if (t.closest('[data-sliplog]')) { logFromSlip(t.closest('[data-sliplog]')); return; }
   const li = t.closest('[data-slipi]'); if (!li) return; const i = Number(li.dataset.slipi), x = S.sel[i]; if (!x) return;
   if (t.closest('[data-sliprm]')) { S.sel.splice(i, 1); changed(true); return; }
   const stp = t.closest('[data-slipstep]'); if (stp) { const c = reg.get(x.cid); if (!c) return; const L = x.L + Number(stp.dataset.slipstep); if (!c.lines.includes(L)) return; const r = evalAt(c, L, x.side); if (!r) return;
@@ -8515,6 +8543,22 @@ function onClick(e) {
     hooks.recFocus = { sport: x.sport, fid: x.fid, cid: x.cid, side: x.side, L: x.L }; if (matchMedia('(max-width: 700px)').matches) setOpen(false);
     location.hash = x.sport === 'football' ? '#/rec' : `#/${x.sport}/rec`; }
 }
+/** Update 70: save the slip's bets straight into My Plays (each bet of the chosen bet type, your stake per bet, your odds per pick). */
+function logFromSlip(btn) {
+  const S = load(), m = el.querySelector('[data-sliplogmsg]'), say = (h, ok) => { if (m) { m.innerHTML = h; m.className = `small ${ok ? 'hit' : 'warn'}`; } };
+  if (!S.sel.length) return say('Your slip is empty.');
+  const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£,\s]/g, '')), S.per, adjOf); if (!R) return say('Pick a bet type.');
+  const need = [...new Set(R.bets.flatMap(b => b.idx))].filter(i => !(S.sel[i].book > 1));
+  if (need.length) return say(`Type the odds you got for ${need.map(i => esc(S.sel[i].name)).join(', ')} (the "Your odds" box on each pick).`);
+  if (!(R.unit > 0)) return say('Type your stake.');
+  if (btn.dataset.done && Date.now() - Number(btn.dataset.done) < 8000 && btn.dataset.sig === sigOf(S)) return say('Already logged: these bets are in My Plays. Change the stake, odds or picks to log another.', true);
+  const saved = R.bets.map(b => logBetNow(b.idx.map(i => ({ sel: selFromSlip(S.sel[i]), odds: S.sel[i].book, oddsTxt: S.sel[i].bookTxt || '' })), R.unit)).filter(Boolean);
+  if (!saved.length) return say('Could not save on this phone (private browsing?).');
+  btn.dataset.done = String(Date.now()); btn.dataset.sig = sigOf(S); if (hooks.betlogRefresh) hooks.betlogRefresh();
+  const one = saved[0], odds = x => (x.type === 'acca' ? x.legs.reduce((t, l) => t * l.odds, 1) : x.odds);
+  say(`✓ Logged in My Plays: ${saved.length === 1 ? `${one.type === 'acca' ? `${one.legs.length}-leg acca` : 'single'}, ${money(one.stake)} at ${esc(fmtOdds(odds(one)))}` : `${saved.length} bets of ${money(R.unit)} (${money(R.unit * saved.length)} in total)`}. <a href="${S.sel.every(x => x.sport === S.sel[0].sport) && S.sel[0].sport !== 'football' ? `#/${S.sel[0].sport}/myplays` : '#/myplays'}" data-slipgoplays>Open My Plays</a>`, true);
+}
+const sigOf = S => `${S.fmt}|${S.stakeTxt}|${S.sel.map(x => `${x.id}@${x.bookTxt || ''}`).join(',')}`;
 /** A bet-log selection from a slip pick: from its Hiwi's Section play when it is on this visit, else from what the slip stored. */
 function selFromSlip(x) {
   const c = reg.get(x.cid); if (c) return selFromCandidate(c, x.side, { L: x.L, p: x.p, fair: x.fair, push: 0 });
@@ -8550,7 +8594,24 @@ function unhide(k) { mem = prune(read()); delete mem[k]; write(mem); }
 /** Hidden players for these games: [{ k, name, team, opp }]. */
 const hiddenFor = (sport, fids) => { const f = new Set((fids || []).map(String)); return Object.entries(mem).filter(([k]) => { const [sp, , fid] = k.split('|'); return sp === sport && (!fids || f.has(fid)); }).map(([k, v]) => ({ k, ...v })); };
 
-return { isHidden, hide, unhide, hiddenFor };
+// Removed plays (owner request 11 Nov 2026, Update 70): remove ONE play (this player, this market, this side, for this game) without
+// hiding the player: his other plays stay. Like a hidden player, it is gone for that game only (the key holds the game) and comes back
+// for his next game; kept on this device, dropped after 4 days. Also kept out of the Acca Builder.
+const PKEY = 'proplab.hiddenplays.v1';
+const pread = () => { try { const j = JSON.parse(localStorage.getItem(PKEY) || '{}'); return j && typeof j === 'object' ? j : {}; } catch { return {}; } };
+const pwrite = j => { try { localStorage.setItem(PKEY, JSON.stringify(j)); } catch { /* this visit only */ } };
+let pmem = prune(pread());
+const pkOf = (c, side) => `${c.id}|${side}`;
+/** Has this play (candidate + side, any line) been removed? */
+const isPlayHidden = (c, side) => !!(c && pmem[pkOf(c, side)]);
+function hidePlay(c, side, label) { if (!c) return; pmem = prune(pread()); pmem[pkOf(c, side)] = { sport: c.sport, fid: String(c.fid), name: c.name, label: label || '', t: Date.now() }; pwrite(pmem); }
+function unhidePlay(k) { pmem = prune(pread()); delete pmem[k]; pwrite(pmem); }
+/** Removed plays for these games: [{ k, name, label }]. */
+const hiddenPlaysFor = (sport, fids) => { const f = new Set((fids || []).map(String)); return Object.entries(pmem).filter(([, v]) => v.sport === sport && (!fids || f.has(v.fid))).map(([k, v]) => ({ k, ...v })); };
+/** Keys in the form the Acca Builder's leg pool skips (`${candidate id}|${side}`). */
+const hiddenPlayKeys = () => Object.keys(pmem);
+
+return { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor, hiddenPlayKeys };
 })();
 __m['blowout'] = (() => {
 // Blowout risk (owner request 2 Nov 2026): how likely a game is to be decided by a big margin, which cuts starters' minutes late on.
@@ -8656,7 +8717,8 @@ const { slipToggle, slipRegister, syncButtons, toCard, slipSetBook } = __m['acca
 const { hooks } = __m['shared'];
 const { selFromCandidate, openBetForm, logSingleNow } = __m['betprefill'];
 const { nightOf } = __m['nightdate'];
-const { isHidden, hide, unhide, hiddenFor } = __m['excl'];
+const { nbaSeasonAvgMin } = __m['nbaprefs'];
+const { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
 const { BEAR_ART } = __m['icons'];
 
@@ -8835,6 +8897,7 @@ async function viewRecommended(root, sport) {
     const kept = [...s.kept.entries()];
     for (const [id, k] of kept) { if (list.some(x => x.c.id === id && x.side === k.side)) continue; const c = want.find(x => x.id === id); if (!c) continue; const r = evalAt(c, k.L, k.side); if (r) list.push({ c, side: k.side, rep: r, alts: [], keptOut: true }); }
     for (const x of list) { const k = s.kept.get(x.c.id); if (k && k.side === x.side) { const r = evalAt(x.c, k.L, k.side); if (r) { x.rep = r; x.keptOut = !passes(r, o); } } }
+    list = list.filter(x => !isPlayHidden(x.c, x.side)); // removed plays (Update 70): this play only, the player's other plays stay
     if (keepOrder && current.length) { const pos = new Map(current.map((x, i) => [`${x.c.id}|${x.side}`, i])); list.sort((a, b) => (pos.get(`${a.c.id}|${a.side}`) ?? 1e9) - (pos.get(`${b.c.id}|${b.side}`) ?? 1e9)); const fresh = list.filter(x => !pos.has(`${x.c.id}|${x.side}`)); list = [...list.filter(x => pos.has(`${x.c.id}|${x.side}`)), ...sortPlays(fresh, s.sort, s.f.hitWin)]; }
     else list = sortPlays(list, s.sort, s.f.hitWin);
     current = list;
@@ -8848,11 +8911,12 @@ async function viewRecommended(root, sport) {
       ${relaxed ? `<div class="banner info"><b>None of the plays for "${esc(s.f.q)}" meets all your filters</b>, so the strongest line of each market is shown without the fair-odds, hit-rate, confidence, matchup and market-type filters (model probability at least ${Math.min(o.minProb || 0, 50)}%). Each card is marked "outside your filters".</div>` : ''}
       <div class="row" style="border:0;padding:0;gap:8px;align-items:center;margin-bottom:8px"><button type="button" class="chip" data-resort>⇅ Re-sort</button><button type="button" class="infotag" data-info="recrank" data-title="How plays are chosen and ranked" data-text="${esc(RANK_TXT)}" aria-haspopup="dialog">How it works<span class="ii" aria-hidden="true">i</span></button><span class="xs muted">Cards stay in place while you change lines; Re-sort re-ranks them.</span></div>
       ${(() => { const H = hiddenFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhidden>Hidden for this game: ${H.map(h => `<button type="button" class="chip" data-runhide="${esc(h.k)}" aria-label="Show ${esc(h.name)} again">${esc(h.name)} ✕</button>`).join(' ')} <span>They come back by themselves for their next game. Tap a name to show him again now.</span></p>` : ''; })()}
+      ${(() => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} <span>Only that play is removed; the player's other plays stay. It comes back by itself for his next game. Tap it to show it again now.</span></p>` : ''; })()}
       <div id="rcards" data-total="${list.length}">${list.slice(0, s.shown).map(cardHtml).join('')}</div>
       ${list.length > s.shown ? `<button type="button" class="btn" data-rmore>Show more (${list.length - s.shown} more)</button>` : ''}
       ${(() => { const av = streaks(mine, o); return av.length ? `<details class="card recavoid"><summary><b>Avoid: hot streaks the model does not trust</b> <span class="xs muted">(${av.length})</span></summary><p class="xs muted" style="margin:6px 0">Hit in 8+ of the last 10, but the longer record does not back it up, so the model rates them below 55%. In PropLab's test on 2025/26 games the model's figure was a better guide than a recent hit rate (see Model Performance); the hit rate on its own over-states plays like these.</p>${av.map(x => `<p class="small" style="margin:4px 0"><b>${esc(x.c.name)}</b> ${esc(ladderName(x.c, x.rep))} · last 10: <b>${x.rep.hr.l10.hit}/10</b> · all games: ${x.rep.hr.all.hit}/${x.rep.hr.all.n} (${x.rep.hr.all.pct}%) · model <b>${(x.rep.p * 100).toFixed(0)}%</b></p>`).join('')}</details>` : ''; })()}
       <p class="xs muted">Model probability: PropLab's estimate for this side at this line (NBA player props: model v2, checked on 2025/26 games it never saw). Fair odds = 1 ÷ probability. It is not the hit rate, and it cannot know news after the data update. These are research estimates, not tips; there is no bookmaker price until you type one in Compare. <a href="${sport === 'football' ? '#/model' : `#/${sport}/model`}">Model Performance ›</a> · <a href="${sport === 'football' ? '#/myplays' : `#/${sport}/myplays`}">My Plays ›</a> · <a href="${sport === 'football' ? '#/finder' : `#/${sport}/finder`}">Hit-rate list ›</a></p>`;
-    syncButtons();
+    syncButtons(); scrollBars(pg);
   };
   const tierWord = { g: 'Easy', y: 'Medium', r: 'Tough' };
   const TIP = (title, text) => `data-info="rtip" data-title="${esc(title)}" data-text="${esc(text)}" aria-haspopup="dialog"`;
@@ -8865,6 +8929,7 @@ async function viewRecommended(root, sport) {
     else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
       out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (£${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
         <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+    if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
   }
   /** Names of a combo market's parts, in the order def.parts returns them (null when they cannot be named). */
@@ -8873,8 +8938,44 @@ async function viewRecommended(root, sport) {
     if (pl.length >= 2) return pl;
     if (/cards/i.test(lab)) return ['Yellow cards', 'Red cards'];
     return null; }
-  function barsHtml(x) { // mini bar chart: his last 10 at this line (green = hit, red = miss), newest on the right
-    const r = x.rep, rows = x.c.rows.slice(0, 10).reverse(); if (!rows.length || x.c.def.binary) return '';
+  // Update 70 (owner, 11 Nov 2026): tap Season / Last 5 / Last 10 / Last 20 / All / v opponent and the bar chart shows those games; tap a
+  // bar for that game's box score. Kept for this visit (per play); Last 10 to start, as before.
+  const WINSEL = new Map(), BOXSEL = new Map();
+  const winOf = x => WINSEL.get(`${x.c.id}|${x.side}`) || 'l10';
+  const winRows = (x, w) => { const c = x.c; return w === 'season' ? c.rows.filter(q => q.season === c.cur) : w === 'l5' ? c.rows.slice(0, 5) : w === 'l20' ? c.rows.slice(0, 20) : w === 'all' ? c.rows : w === 'opp' ? c.rows.filter(q => c.opp && q.opp === c.opp).slice(0, 10) : c.rows.slice(0, 10); };
+  const rowKey = q => `${q.game ?? ''}|${q.date || ''}`;
+  const dash = v => (v == null || v === '' ? '–' : String(v));
+  const pctOf = (m, a) => (m != null && a > 0 ? ` <small>${Math.round((m / a) * 100)}%</small>` : '');
+  const NFL_LBL = [['att', 'Pass attempts'], ['cmp', 'Completions'], ['pass_yds', 'Passing yards'], ['pass_td', 'Passing TDs'], ['int', 'Interceptions'], ['sacked', 'Sacked'], ['lcmp', 'Longest completion'],
+    ['car', 'Carries'], ['rush_yds', 'Rushing yards'], ['rush_td', 'Rushing TDs'], ['lrush', 'Longest rush'], ['tgt', 'Targets'], ['rec', 'Receptions'], ['rec_yds', 'Receiving yards'], ['rec_td', 'Receiving TDs'], ['lrec', 'Longest reception'],
+    ['tds', 'Total TDs'], ['tkl', 'Solo tackles'], ['ast', 'Assisted tackles'], ['sacks', 'Sacks'], ['dint', 'Interceptions'], ['pd', 'Passes defended'], ['tfl', 'Tackles for loss'], ['qbh', 'QB hits'],
+    ['fgm', 'Field goals made'], ['fga', 'Field goal attempts'], ['xpm', 'Extra points made'], ['xpa', 'Extra point attempts'], ['kpts', 'Kicking points'], ['osnap', 'Offensive snaps'], ['dsnap', 'Defensive snaps']];
+  /** The box score panel for one game (NBA: the full line; NFL: every recorded figure; football: the match line). Missing = "–", never 0. */
+  function boxHtml(x, q) {
+    const c = x.c, r = x.rep, D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : null, g = D && q.game != null ? (D.gameById.get(q.game) || D.gameById.get(String(q.game)) || D.gameById.get(Number(q.game))) : null, R = q.raw || {};
+    const me = c.team, home = g ? g.home === me : null, opp = q.opp || (g ? (home ? g.away : g.home) : '');
+    const a = g && g.hs != null && g.as != null ? (home ? [g.hs, g.as] : [g.as, g.hs]) : null, res = a ? (a[0] > a[1] ? 'Won' : a[0] < a[1] ? 'Lost' : 'Drew') : '';
+    const ok = x.side === 'under' ? q.value < r.L : q.value > r.L, word = c.def.binary ? '' : ` ${x.side === 'under' ? 'under' : 'over'} ${r.L}`;
+    const head = `<div class="rbxh"><b>${esc(fmtDay(q.date))} ${esc(String(q.date || '').slice(0, 4))}</b> · ${opp ? `${home === null ? 'v' : home ? 'Home v' : 'Away at'} ${esc(opp)}` : ''}${a ? ` · ${res} ${a[0]}-${a[1]}` : ''}${sport === 'nfl' && R.week ? ` · week ${esc(String(R.week))}` : ''}</div>
+      <div class="small">${esc(c.def.label)}: <b class="${ok ? 'hit' : 'miss'}">${q.value}</b> ${ok ? `hit${word}` : `missed${word}`}${stkTxt(x, q)}</div>`;
+    let body = '';
+    if (sport === 'nba' && q.raw) {
+      const t = (k, l) => `<div><b>${dash(R[k])}</b><small>${l}</small></div>`;
+      body = `<div class="rbxg"><div class="rbxmin"><b>${R.min == null ? '–' : Math.round(R.min)}</b><small>MINUTES${R.st === 1 || R.st === true ? ' · START' : R.st === 0 || R.st === false ? ' · BENCH' : ''}</small></div>${t('pts', 'PTS')}${t('reb', 'REB')}${t('ast', 'AST')}${t('stl', 'STL')}${t('blk', 'BLK')}${t('tov', 'TO')}${t('pf', 'FOULS')}<div><b>${R.pm == null ? '–' : (R.pm > 0 ? '+' : '') + R.pm}</b><small>+/−</small></div></div>
+        <table class="rbxt"><tr><th>Field goals</th><td>${dash(R.fgm)}/${dash(R.fga)}${pctOf(R.fgm, R.fga)}</td></tr><tr><th>3-pointers</th><td>${dash(R.tpm)}/${dash(R.tpa)}${pctOf(R.tpm, R.tpa)}</td></tr>
+        <tr><th>Free throws</th><td>${dash(R.ftm)}/${dash(R.fta)}${pctOf(R.ftm, R.fta)}</td></tr><tr><th>Rebounds</th><td>${dash(R.oreb)} offensive · ${dash(R.dreb)} defensive</td></tr>
+        ${[R.q1, R.q2, R.q3, R.q4].some(v => v != null) ? `<tr><th>Points by quarter</th><td>${[R.q1, R.q2, R.q3, R.q4].map(dash).join(' · ')}${R.ot ? ` · OT ${R.ot}` : ''}</td></tr>` : ''}
+        ${R.reb1h != null || R.ast1h != null ? `<tr><th>1st half</th><td>${dash(R.reb1h)} reb · ${dash(R.ast1h)} ast</td></tr>` : ''}${R.reb1q != null || R.ast1q != null ? `<tr><th>1st quarter</th><td>${dash(R.reb1q)} reb · ${dash(R.ast1q)} ast</td></tr>` : ''}</table>`;
+    } else if (sport === 'nfl' && q.raw) {
+      const rows2 = NFL_LBL.filter(([k]) => R[k] != null && R[k] !== '').map(([k, l]) => `<tr><th>${l}</th><td>${typeof R[k] === 'boolean' ? (R[k] ? 'Yes' : 'No') : esc(String(R[k]))}</td></tr>`).join('');
+      const snaps = R.opct != null ? `<tr><th>Snap share</th><td>${Math.round(R.opct <= 1 ? R.opct * 100 : R.opct)}% offence${R.dpct ? ` · ${Math.round(R.dpct <= 1 ? R.dpct * 100 : R.dpct)}% defence` : ''}</td></tr>` : '';
+      body = rows2 || snaps ? `<table class="rbxt">${rows2}${snaps}</table>` : '<p class="xs muted" style="margin:4px 0">No other figures recorded for this game.</p>';
+    } else body = q.min != null ? `<p class="xs muted" style="margin:4px 0">${Math.round(q.min)} minutes played.</p>` : '';
+    return `<div class="rbox" data-rbox>${head}${body}<p class="xs muted" style="margin:4px 0 0">${sport === 'nba' ? 'From the published NBA box score. ' : ''}A dash means not recorded (never counted as 0). Tap the bar again to close.</p></div>`;
+  }
+  const stkTxt = (x, q) => { const pn = partNames(x.c.def); return pn && Array.isArray(q.parts) && q.parts.length === pn.length ? ` <span class="xs muted">(${q.parts.map(([v], i) => `${pn[i]} ${v}`).join(' · ')})</span>` : ''; };
+  function barsHtml(x) { // mini bar chart at this line (green = hit, red = miss), newest on the right; the games of the box you tapped (Update 70)
+    const r = x.rep, w = winOf(x), all = winRows(x, w), rows = all.slice().reverse(); if (x.c.def.binary) return ''; if (!rows.length) return `<p class="xs muted rbcap">No ${unitWord} in this range.</p>`;
     const ok = v => (x.side === 'under' ? v < r.L : v > r.L), mx = Math.max(r.L * 1.25, ...rows.map(q => q.value), 1);
     // owner, 3 Nov (14:16): tap a bar for that game: date, opponent, home or away, the score, his figure against the line (and minutes)
     const D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : null, word = x.side === 'under' ? `under ${r.L}` : `over ${r.L}`;
@@ -8888,7 +8989,10 @@ async function viewRecommended(root, sport) {
     const pn = partNames(x.c.def), stk = pn && rows.every(q => Array.isArray(q.parts) && q.parts.length === pn.length && Math.abs(q.parts.reduce((t, [v]) => t + (Number(v) || 0), 0) - q.value) < 1e-6);
     const segs = q => q.parts.filter(([v]) => v > 0).map(([v, c]) => `<i class="hseg ${c}" style="flex:${v}"></i>`).reverse().join('');
     const partTip = q => (stk ? '\n' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(' · ') : '');
-    return `<div class="rbars${stk ? ' rstk' : ''}" aria-label="Last ${rows.length} ${unitWord} against the line ${r.L} (tap a bar for that game)"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}" style="height:${Math.max(4, (q.value / mx) * 100)}%" ${tipOf(q, partTip(q))} aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}${stk ? ' (' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(', ') + ')' : ''}`)}">${stk ? `<span class="rsegs">${segs(q)}</span>` : ''}<em>${q.value}</em></button>`).join('')}</div>${stk ? `<p class="xs muted rleg">${pn.map((nm, i) => `<span><i class="hseg ${rows[0].parts[i][1]}"></i>${esc(nm)}</span>`).join('')}<span class="rlegk">top edge: green hit, red miss</span></p>` : ''}`;
+    void tipOf; void partTip;
+    const id = `${x.c.id}|${x.side}`, sel = BOXSEL.get(id), selQ = sel ? rows.find(q => rowKey(q) === sel) : null, hitN = rows.filter(q => ok(q.value)).length, wide = rows.length > 20;
+    const cap = `<p class="xs muted rbcap" data-rbcap><b>${esc(w === 'opp' ? `v ${x.c.opp}` : WIN[w])}</b>: ${x.side === 'under' ? 'under' : 'over'} ${r.L} in ${hitN} of ${rows.length}${rows.length ? ` (${Math.round((hitN / rows.length) * 100)}%)` : ''} · oldest left, newest right${wide ? ' (swipe for older)' : ''} · tap a bar for the box score</p>`;
+    return `${cap}<div class="rbwrap${wide ? ' wide' : ''}"><div class="rbars${stk ? ' rstk' : ''}" style="${wide ? `width:${rows.length * 15}px` : ''}" aria-label="${rows.length} ${unitWord} against the line ${r.L} (tap a bar for that game's box score)"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}${selQ === q ? ' sel' : ''}" style="height:${Math.max(4, (q.value / mx) * 100)}%" data-rbar="${esc(rowKey(q))}" aria-pressed="${selQ === q}" aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}${stk ? ' (' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(', ') + ')' : ''}`)}">${stk ? `<span class="rsegs">${segs(q)}</span>` : ''}<em>${q.value}</em></button>`).join('')}</div></div>${selQ ? boxHtml(x, selQ) : ''}${stk ? `<p class="xs muted rleg">${pn.map((nm, i) => `<span><i class="hseg ${rows[0].parts[i][1]}"></i>${esc(nm)}</span>`).join('')}<span class="rlegk">top edge: green hit, red miss</span></p>` : ''}`;
   }
   function nflMuHtml(c, r) {
     const m = c.nflMu; if (!m) return ''; const pos = { qb: 'QBs', rb: 'RBs', wr: 'WRs', te: 'TEs' }[c.p.group] || 'his position';
@@ -8897,9 +9001,12 @@ async function viewRecommended(root, sport) {
   function cardHtml(x) {
     const { c, rep: r } = x, id = `${c.id}|${x.side}`, h = r.hr, why = reasonOf(c, r), g = c.f;
     const word = c.def.binary ? (x.side === 'under' ? 'No' : 'Yes') : `${x.side === 'under' ? 'under' : 'over'} ${r.L}`;
-    const hit = k => (h[k].n ? `<button type="button" class="rh" ${TIP(`${WIN[k]}: ${h[k].hit} of ${h[k].n}`, `${k === 'season' ? 'This season' : k === 'all' ? 'Every game PropLab holds' : `His ${WIN[k].toLowerCase()} ${unitWord}`}: ${word} in ${h[k].hit} of ${h[k].n} (${h[k].pct}%). This is what happened, not a probability. Games with no recorded figure are left out, never counted as misses.`)}><b>${h[k].hit}/${h[k].n}</b><small>${WIN[k]}</small></button>` : '');
+    const wsel = winOf(x), wb = k => (c.def.binary ? '' : ` data-rwin="${k}" aria-pressed="${wsel === k}"`), won = k => (!c.def.binary && wsel === k ? ' on' : '');
+    const hit = k => (h[k].n ? c.def.binary ? `<button type="button" class="rh" ${TIP(`${WIN[k]}: ${h[k].hit} of ${h[k].n}`, `${k === 'season' ? 'This season' : k === 'all' ? 'Every game PropLab holds' : `His ${WIN[k].toLowerCase()} ${unitWord}`}: ${word} in ${h[k].hit} of ${h[k].n} (${h[k].pct}%). This is what happened, not a probability. Games with no recorded figure are left out, never counted as misses.`)}><b>${h[k].hit}/${h[k].n}</b><small>${WIN[k]}</small></button>` : `<button type="button" class="rh${won(k)}"${wb(k)}><b>${h[k].hit}/${h[k].n}</b><small>${WIN[k]}</small></button>` : '');
     const tag = c.inj && c.inj.cls && c.inj.cls !== 'none' && c.inj.cls !== 'na' ? `<span class="injb inj-warn">${esc(c.inj.label)}</span>` : '';
-    const vs = sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
+    // Update 70 (owner, 11 Nov): his team in bold (the team he plays for) and, for NBA players, his average minutes this season
+    const am = sport === 'nba' && c.kind === 'player' ? nbaSeasonAvgMin(c.p) : null;
+    const vs = sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `<b class="rteam" title="${esc(c.name)} plays for ${esc(c.team)}">${esc(c.team)}</b> ${c.home ? 'v' : '@'} ${esc(c.opp)}${c.kind === 'player' && sport === 'nba' ? ` · <span class="ravgmin" data-ravgmin>${am != null ? `avg <b>${am.toFixed(1)}</b> min this season` : 'no game this season yet'}</span>` : ''}`;
     const bo = sport !== 'football' ? blowoutOf(g, sport) : null;
     const lo = r.e && Number.isFinite(r.e.lo) ? r.e.lo : null, hi = r.e && Number.isFinite(r.e.hi) ? r.e.hi : null;
     return `<article class="rcard${x.keptOut ? ' rkept' : ''}" data-rid="${esc(id)}">
@@ -8909,17 +9016,20 @@ async function viewRecommended(root, sport) {
       ${x.keptOut ? `<p class="xs warn" style="margin:4px 0">Outside your filters${String(s.f.q || '').trim() ? '' : ' (kept on screen because you changed this play)'}</p>` : ''}
       ${inPlay(g, sport) ? '<p class="xs warn" style="margin:4px 0" data-inplay><span class="inplay">IN PLAY</span> This game has started. The figures are the pre-game estimate: in-play prices move with the score, so the model probability and fair odds no longer describe an in-play bet, and nor does any price you type.</p>' : ''}
       <div class="rtiles"><button type="button" class="rt" ${TIP(`Fair odds ${fmtOdds(r.fair)}`, `Fair odds = 1 ÷ model probability: the price at which this play breaks even if the probability is right. A bookmaker price above it suggests value (type it below); below it, the bookmaker is charging more than the model thinks the bet is worth.`)}><small>Fair odds</small><b>${esc(fmtOdds(r.fair))}</b></button><button type="button" class="rt" data-info="conf" data-title="Evidence: ${r.conf.label}" data-text="${esc([EVID_INTRO, ...r.conf.why].join('\n'))}" aria-haspopup="dialog"><small>Evidence</small><b class="cf-${r.conf.level.toLowerCase()}">${r.conf.label}</b></button><button type="button" class="rt" data-info="rank" data-title="Rank score ${Math.round(r.rank * 100)} (not a probability)" data-text="${esc(rankText(c, r))}" aria-haspopup="dialog"><small>Rank score</small><b>${Math.round(r.rank * 100)}</b></button>${r.tier ? `<button type="button" class="rt" ${TIP(`Matchup: ${tierWord[r.tier]}`, sport === 'nba' ? 'From the chips below: what the opponent allows to his position (and pace). All green = easy, any red = tough, otherwise medium. The NBA matchup adjustment is part of the model probability (it was tested on 2025/26 games).' : 'What the opponent\'s defence allowed to his position this season (chip below). Experimental: colours and filters only.')}><small>Matchup</small><b class="mu-txt-${r.tier}">${tierWord[r.tier]}</b></button>` : ''}</div>
-      <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
+      <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n && !c.def.binary ? `<button type="button" class="rh${won('opp')}"${wb('opp')}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
       ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button></div><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Probability &amp; fair odds at every line</button>`}
+      <button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove just this play</button>
       ${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not available? Hide ${esc(c.name.split(' ').slice(-1)[0])} for this game</button>` : ''}
       <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button><button type="button" class="chip" data-rlog title="Placed this bet? Log it in My Plays: it settles automatically">Log as a real bet</button></div>
       <div class="ralt" hidden></div></article>`;
   }
   const findX = el => { const id = el.closest('.rcard').dataset.rid; return current.find(x => `${x.c.id}|${x.side}` === id); };
-  const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); el.replaceWith(t.firstElementChild); syncButtons(); };
+  /** Long bar charts (All, Season...) scroll sideways: start at the newest games, or keep the tapped bar in view. */
+  const scrollBars = root => root.querySelectorAll('.rbwrap.wide').forEach(el => { const b = el.querySelector('.rbar.sel'); el.scrollLeft = b ? Math.max(0, b.offsetLeft - el.clientWidth / 2) : el.scrollWidth; });
+  const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); const n = t.firstElementChild; el.replaceWith(n); syncButtons(); scrollBars(n); };
   // ---------------- events ----------------
   pg.addEventListener('change', e => {
     const t = e.target;
@@ -8959,11 +9069,15 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-rqclear]')) { s.f.q = ''; clearTimeout(tIn.q); hideSug(); s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
     if (t.closest('[data-rhide]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { hide(x0.c); render(true); } return; }
     const uh = t.closest('[data-runhide]'); if (uh) { unhide(uh.dataset.runhide); render(); return; }
+    const up = t.closest('[data-runplay]'); if (up) { unhidePlay(up.dataset.runplay); render(); return; }
     if (t.closest('[data-rlog]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) openBetForm(selFromCandidate(x0.c, x0.side, x0.rep), s.odds.get(`${x0.c.id}|${x0.side}`) || ''); return; }
     if (t.closest('[data-rslip]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { slipToggle(x0.c, x0.side, x0.rep, s.odds.get(`${x0.c.id}|${x0.side}`) || ''); } return; }
     if (t.closest('[data-rmore]')) { s.shown += 30; render(true); return; }
     if (t.closest('[data-resort]')) { s.kept.clear(); render(); return; }
     const card = t.closest('.rcard'); if (!card) return; const x = findX(card); if (!x) return;
+    const rw = t.closest('[data-rwin]'); if (rw) { const id = `${x.c.id}|${x.side}`; WINSEL.set(id, rw.dataset.rwin); BOXSEL.delete(id); repaint(card, x); return; }
+    const rb = t.closest('[data-rbar]'); if (rb) { const id = `${x.c.id}|${x.side}`; if (BOXSEL.get(id) === rb.dataset.rbar) BOXSEL.delete(id); else BOXSEL.set(id, rb.dataset.rbar); repaint(card, x); return; }
+    if (t.closest('[data-rdrop]')) { hidePlay(x.c, x.side, `${x.c.def.label}${x.c.def.binary ? '' : x.side === 'under' ? ' (under)' : ' (over)'}`); s.kept.delete(x.c.id); render(true); return; }
     const stp = t.closest('[data-rstepl]'); if (stp) { const L = Math.max(0.5, x.rep.L + Number(stp.dataset.rstepl)); const r = evalAt(x.c, L, x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
     if (false && t.closest('[data-rflip]')) { const side = x.side === 'under' ? 'over' : 'under', r = evalAt(x.c, x.rep.L, side); if (!r) return; x.side = side; x.rep = r; s.kept.set(x.c.id, { L: r.L, side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
     if (false && t.closest('[data-rcmp]')) { // the Value page draws the card itself: give it the rows for the games used (Last 10 for players, as Hiwi opens)
@@ -8999,7 +9113,7 @@ __m['v-acca'] = (() => {
 const { buildCandidates } = __m['recplays'];
 const { EVID } = __m['confidence'];
 const { blowoutOf } = __m['blowout'];
-const { isHidden } = __m['excl'];
+const { isHidden, hiddenPlayKeys } = __m['excl'];
 const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
 const { slipAddMany, slipRegister } = __m['accaslip'];
 const { evalAt, ladderName } = __m['recplays'];
@@ -9179,7 +9293,7 @@ async function viewAcca(root, sport) {
       const bad = L.filter(x => x.problem); if (bad.length) { draw(cands, null, L); return; } // a locked leg needs a decision first
       const locked = L.map(x => x.leg), o = opts(), N = legN();
       if (replace) for (const id of S.current) if (!S.locks.has(id)) S.skip.add(id); // just replaced: not offered again straight away
-      const P = legPool(cands, o, S.excl), res = buildAcca(P, locked, target, { allowSame: S.f.allowSame, skip: S.skip, ...N });
+      const P = legPool(cands, o, new Set([...S.excl, ...hiddenPlayKeys()])), res = buildAcca(P, locked, target, { allowSame: S.f.allowSame, skip: S.skip, ...N });
       if (replace && !res.hit && S.skip.size) { const res2 = buildAcca(P, locked, target, { allowSame: S.f.allowSame, ...N }); if (res2.hit) { res2.note = 'Every fresh combination had been shown already, so legs you replaced earlier may come back (they are not excluded: tap Exclude to keep one out).'; Object.assign(res, res2); } }
       S.current = res.legs.map(l => l.id); S.built = res; save(); const per = {}; for (const l of P) per[l.c.sport] = (per[l.c.sport] || 0) + 1; draw(cands, res, L, `${P.length} (${Object.entries(per).map(([k, v]) => `${{ nba: 'NBA', nfl: 'NFL', football: 'football' }[k]} ${v}`).join(', ') || 'none'})`);
     } finally { busy = false; }
@@ -9191,7 +9305,7 @@ async function viewAcca(root, sport) {
     try {
       const before = S.built.legs, count = before.length, gone = new Set(removeIds), keep = before.filter(l => !gone.has(l.id)), N = legN();
       for (const id of removeIds) { S.locks.delete(id); S.skip.add(id); }
-      const target = dec(S.f.targetTxt), cands = await pool(true), P = legPool(cands, opts(), S.excl);
+      const target = dec(S.f.targetTxt), cands = await pool(true), P = legPool(cands, opts(), new Set([...S.excl, ...hiddenPlayKeys()]));
       let res = keep.length >= count ? null : buildAcca(P, keep, target || 2, { allowSame: S.f.allowSame, skip: S.skip, minLegs: count, maxLegs: count, exact: true });
       if (res && res.legs.length < count && S.skip.size > removeIds.length) { const skip2 = new Set(removeIds); res = buildAcca(P, keep, target || 2, { allowSame: S.f.allowSame, skip: skip2, minLegs: count, maxLegs: count, exact: true }); }
       const fresh = res ? res.legs.filter(l => !keep.some(k => k.id === l.id)) : [], legs = []; let fi = 0;
