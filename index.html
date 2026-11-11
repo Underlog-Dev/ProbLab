@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="8f6e2593c483">
+<meta name="proplab-build" content="71081bba536c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -3967,7 +3967,20 @@ if (typeof document !== 'undefined') document.addEventListener('click', ev => {
   const t = document.createElement('div'); t.innerHTML = stakeHtml(d.e, d.dec, d.conf, d.info); box.replaceWith(t.firstElementChild);
 });
 
-return { RISK, FRACS, getFrac, setFrac, stakePlan, stakeHtml };
+/**
+ * Update 65 (owner, 11 Nov 2026): suggested stake for an acca or a same-game multi, with the same rule as a single: 1/10 Kelly (or your
+ * fraction) on the joint chance at your bookmaker's price, the long-odds caps and the 2.00u maximum. No stake when a leg's market is not
+ * validated or when the bet has same-game picks PropLab has not tested; halved when any leg has Thin evidence. Returns
+ * { units, why, ok } or null (no price).
+ */
+function accaPlan(p, dec, o = {}) {
+  if (!Number.isFinite(p) || !(p > 0) || !Number.isFinite(dec) || dec <= 1) return null;
+  if (o.untested) return { units: 0, ok: false, why: ['same-game picks PropLab has not tested: no stake'] };
+  const P = stakePlan({ win: p, cb: { passed: !!o.validated } }, dec, { level: o.thin ? 'Low' : 'High' });
+  return P ? { units: P.final, ok: P.final >= 0.01, why: P.why.filter(w => !/cautious end/.test(w)), theory: P.theory } : null;
+}
+
+return { RISK, FRACS, getFrac, setFrac, stakePlan, stakeHtml, accaPlan };
 })();
 __m['confidence'] = (() => {
 // Model confidence (2 Nov 2026): High / Medium / Low with its reasons, for Recommended Plays and every card's estimate box. It is separate
@@ -8028,19 +8041,30 @@ function pairLink(ra0, sa, La, rb0, sb, Lb) {
   return { ok: true, ratio, n, joint: hab / n, indep: ind };
 }
 /** Historical same-game dependence of two legs (players by shared game id, football markets by shared fixture identity). */
-function sameGame(a, b) { return pairLink(a.c.rows, a.side, a.r.L, b.c.rows, b.side, b.r.L); }
+function sameGame(a, b) { return sgTested(a.c, b.c); }
+/** Same-game pair of two different subjects: tested (NBA, two players: treat as unrelated) or not. */
+function sgTested(ca, cb) { if (ca.sport === 'nba' && cb.sport === 'nba' && ca.kind === 'player' && cb.kind === 'player') return { ok: true, ratio: 1, tested: true };
+  return { ok: false, why: ca.sport === 'nba' ? 'a player with a team market in one game: not tested' : `two ${ca.sport === 'nfl' ? 'NFL' : 'football'} selections from one game: not tested` }; }
 /** Joint probability of a set of legs: { p, pCaut, fair, priced, notes, pairs }. */
 function jointOf(legs) {
   let p = 1, pc = 1, unadj = 0; const notes = [], pairs = []; let priced = true;
   const bySubj = new Map(); for (const l of legs) { if (bySubj.has(l.subj)) { priced = false; notes.push(`${l.c.name} appears twice: not priced (one player's legs move together)`); } bySubj.set(l.subj, l); }
   const byGame = new Map(); for (const l of legs) { if (!byGame.has(l.game)) byGame.set(l.game, []); byGame.get(l.game).push(l); }
   for (const l of legs) { p *= l.p; pc *= l.cautious; }
+  // 11 Nov 2026 (Update 65): the same-game "link" scaling is gone. Tested on 11,554 real pairs from the NBA 2025-26 regular season (two
+  // different players in one game), the measured ratio did not predict anything: pairs it scaled down came in together 0.99x as often as
+  // their legs multiplied, pairs it scaled up 1.04x, and it made the joint chance less accurate than plain multiplication in 400 of 400
+  // resamples. So: two different NBA players in one game are multiplied (tested); any other same-game pair (NFL, football, a player and a
+  // team market) is untested: still multiplied and shown, but it gets no stake.
   for (const gl of byGame.values()) { if (gl.length < 2) continue;
     for (let i = 0; i < gl.length; i++) for (let j = i + 1; j < gl.length; j++) { if (gl[i].subj === gl[j].subj) continue; const d = sameGame(gl[i], gl[j]);
-      if (!d.ok) { unadj++; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): NOT adjusted for the link between them (${d.why}), so the joint chance is the two multiplied: a rough figure, not a same-game price`); continue; }
-      p *= d.ratio; pc *= Math.min(1, d.ratio); pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
-      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.n} earlier games together; they hit together ${(d.joint * 100).toFixed(0)}% of the time against ${(d.indep * 100).toFixed(0)}% if unrelated, so the joint chance is scaled ×${d.ratio.toFixed(2)}. EXPERIMENTAL and hypothetical: this adjustment has not been tested on real outcomes`); } }
-  p = Math.min(0.999, p); return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs, unadj };
+      if (!d.ok) { unadj++; notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): ${d.why}; the joint chance is the two multiplied (a rough figure) and the acca gets no stake`); continue; }
+      pairs.push({ a: gl[i].c.name, b: gl[j].c.name, ...d });
+      notes.push(`${gl[i].c.name} + ${gl[j].c.name} (same game): multiplied as unrelated. Tested on last season's NBA games: two different players' legs in one game came in together about as often as multiplying predicts (0.99 to 1.05 times)`); } }
+  p = Math.min(0.999, p);
+  // stake rules (Update 65): every leg's market validated; a Thin-evidence leg halves it (as for a single); untested same-game pairs: none
+  const validated = legs.every(l => l.r && l.r.e && l.r.e.cb && l.r.e.cb.passed), thin = legs.some(l => l.r && l.r.conf && l.r.conf.level === 'Low');
+  return { p, pCaut: Math.min(p, pc), fair: priced ? 1 / p : null, priced, notes, pairs, unadj, validated, thin, stakeOk: priced && unadj === 0 && validated };
 }
 /**
  * Build: locked legs first, then a beam search over the shortlist for the best set of extra legs whose combined fair odds land within
@@ -8113,7 +8137,7 @@ function legProblem(l, now = Date.now()) {
   return '';
 }
 
-return { ACCA, RARE_ACCA, legId, gameKey, subjOf, legPool, mkLeg, pairLink, sameGame, jointOf, buildAcca, whyNot, legProblem };
+return { ACCA, RARE_ACCA, legId, gameKey, subjOf, legPool, mkLeg, pairLink, sameGame, sgTested, jointOf, buildAcca, whyNot, legProblem };
 })();
 __m['accaslip'] = (() => {
 // Acca slip (owner request 3 Nov 2026): a betting-slip-style panel on the right of Hiwi's Section. "Add to Acca" on any play puts that
@@ -8135,6 +8159,7 @@ const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick } = __m['util'];
 const { hooks } = __m['shared'];
 const { selFromCandidate, openAccaForm } = __m['betprefill'];
+const { accaPlan, getFrac } = __m['risk'];
 
 const KEY = 'proplab.slip.v1';
 const GAME_OVER_MS = { nba: 4 * 3600e3, nfl: 5 * 3600e3, football: 3 * 3600e3 };
@@ -8211,7 +8236,8 @@ function selOf(c, side, r, bookTxt = '') {
   const g = c.f || {};
   return { id: legId(c, side, r.L), cid: c.id, side, L: r.L, sport: c.sport, name: c.name, kind: c.kind, team: c.team || '', market: c.def.label, label: ladderName(c, r),
     line: c.def.binary ? (side === 'under' ? 'No' : 'Yes') : `${side === 'under' ? 'Under' : 'Over'} ${r.L}`, fixture: c.sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`,
-    ko: g.ko_utc || '', kick: fmtKick(g), fid: String(c.fid), game: `${c.sport}|${c.fid}`, subj: subjOf(c), p: r.p, fair: r.fair, bookTxt: bookTxt || '', book: bookOf(bookTxt), at: Date.now() };
+    ko: g.ko_utc || '', kick: fmtKick(g), fid: String(c.fid), game: `${c.sport}|${c.fid}`, subj: subjOf(c), p: r.p, fair: r.fair, bookTxt: bookTxt || '', book: bookOf(bookTxt), at: Date.now(),
+    ok: !!(r.e && r.e.cb && r.e.cb.passed), lvl: (r.conf && r.conf.level) || '' }; // Update 65: market validated and evidence, for the stake
 }
 const slipCount = () => load().sel.length;
 const slipHas = id => load().sel.some(x => x.id === id);
@@ -8263,7 +8289,7 @@ function drawPanel() {
     <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Picks from the same game (a bet builder) are linked: when PropLab can measure how they moved together in their shared earlier games the price is adjusted for it (experimental); otherwise it is the picks multiplied and marked not adjusted. The same pick twice is never priced. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
   pn.scrollTop = sc; drawOut();
 }
-const adjOf = (a, b) => { const ca = reg.get(a.cid), cb = reg.get(b.cid); if (!ca || !cb) return null; return pairLink(ca.rows, a.side, a.L, cb.rows, b.side, b.L); };
+const adjOf = (a, b) => (a.sport === 'nba' && b.sport === 'nba' && a.kind === 'player' && b.kind === 'player' ? { ok: true, ratio: 1, tested: true } : null); // Update 65: see accabuild.js jointOf
 function drawOut() {
   const S = load(), box = el.querySelector('[data-slipout]'); if (!box) return; const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£,\s]/g, '')), S.per, adjOf);
   const tx = el.querySelector('[data-slipfmttext]'); if (tx && R) tx.textContent = R.fmt.text + (R.fmt.system ? '. Each bet has the same stake.' : '');
@@ -8276,9 +8302,14 @@ function drawOut() {
     <p class="xs muted" data-slipodds style="margin:4px 0 0">${many ? `${R.n} bets · fair odds if all win` : 'Combined fair odds'} ${R.oddsAll != null ? esc(fmtOdds(R.oddsAll)) : 'unavailable'}</p>
     ${R.anyBook ? `<p class="xs muted" style="margin:4px 0 0">${S.sel.filter(x => x.book > 1).length} of ${S.sel.length} picks use your typed odds; the rest use PropLab's fair odds.</p>` : ''}
     ${R.unpriced ? `<p class="xs warn" data-slipunpriced style="margin:6px 0">${R.unpriced} of ${R.n} bet${R.n === 1 ? '' : 's'} cannot be priced (${esc([...new Set(R.bets.filter(b => b.why).map(b => b.why))].slice(0, 2).join('; '))}), so the full return and profit are unavailable. ${R.priced ? `The ${R.priced} priced bet${R.priced === 1 ? '' : 's'} alone would return ${has ? money(R.retPriced) : '–'} if they all won; the total stake above still includes every bet.` : ''}</p>` : ''}
+    ${(() => { // Update 65: suggested stake for the acca (one bet) at your prices
+      if (R.n !== 1 || R.ev == null || !R.bets[0] || !(R.bets[0].book > 1)) return '';
+      const b0 = R.bets[0], P = accaPlan(b0.pj, b0.book, { untested: R.sgRough > 0, validated: S.sel.every(x => x.ok), thin: S.sel.some(x => x.lvl === 'Low') });
+      if (!P) return ''; const old = S.sel.some(x => x.ok == null);
+      return `<p class="small" data-slipunits style="margin:6px 0">${R.ev > 0 && P.ok ? `Suggested stake: <b>${P.units.toFixed(2)}u</b> <span class="xs muted">(1/${getFrac()} Kelly on the ${(b0.pj * 100).toFixed(1)}% chance every pick wins, at ${esc(fmtOdds(b0.book))}${P.why.length ? `; ${esc(P.why.join('; '))}` : ''})</span>` : `Suggested stake: <b>0.00u</b> <span class="xs muted">${R.ev <= 0 ? 'Do not bet: no edge at these prices' : esc(old ? 'picks added before this update have no stake data: remove and add them again' : P.why.join('; ') || 'the edge is too small after rounding down')}</span>`}</p>`; })()}
     <div class="slipev" data-slipev>${R.ev != null ? `<b class="${R.ev > 0 ? 'hit' : 'miss'}">${R.ev > 0 ? 'EV+' : 'EV−'} ${R.ev > 0 ? '+' : '−'}${Math.abs(R.ev).toFixed(1)}%</b> at your prices${has ? ` · return if all win at your prices ${money(R.bookRet)}` : ''}<br><span class="xs muted">Average return per £1 staked if the model probabilities are right, treating the selections as unrelated (an independence estimate, not verified on real accas). Hypothetical, not evidence of profit.</span>`
       : R.unpriced ? '<span class="xs muted">No EV: some bets cannot be priced (see above).</span>' : `<span class="xs muted">Type your bookmaker's price for ${R.booksMissing === S.sel.length ? 'each selection' : `the ${R.booksMissing} selection${R.booksMissing === 1 ? '' : 's'} still without one`} to see whether this bet is EV+ or EV− at your prices.</span>`}</div>
-    ${R.sgMeasured || R.sgRough ? `<p class="xs ${R.sgRough ? 'warn' : 'muted'}" data-slipsg style="margin:6px 0">Same-game picks (bet builder): ${R.sgMeasured ? `${R.sgMeasured} bet${R.sgMeasured === 1 ? '' : 's'} adjusted for how the picks moved together in their shared earlier games (experimental, not tested on real results)` : ''}${R.sgMeasured && R.sgRough ? '; ' : ''}${R.sgRough ? `${R.sgRough} bet${R.sgRough === 1 ? '' : 's'} NOT adjusted (no shared history to measure the link, or its games are not loaded yet: open them in Hiwi's Section), so the fair odds are the picks multiplied: rough, and usually longer than a bookmaker's bet builder price` : ''}. Compare with your bookmaker's bet builder price, not the separate prices.</p>` : ''}
+    ${R.sgMeasured || R.sgRough ? `<p class="xs ${R.sgRough ? 'warn' : 'muted'}" data-slipsg style="margin:6px 0">Same-game picks (bet builder): ${R.sgMeasured ? `${R.sgMeasured} bet${R.sgMeasured === 1 ? '' : 's'} with two different NBA players from one game, multiplied as unrelated (tested on last season: they come in together about as often as multiplying predicts)` : ''}${R.sgMeasured && R.sgRough ? '; ' : ''}${R.sgRough ? `${R.sgRough} bet${R.sgRough === 1 ? '' : 's'} with same-game picks PropLab has not tested (NFL, football, or a player with a team market), so the fair odds are the picks multiplied: rough, often longer than a bookmaker's bet builder price, and no stake is suggested` : ''}. Compare with your bookmaker's bet builder price, not the separate prices.</p>` : ''}
     ${R.pAll != null && S.sel.length > 1 ? `<p class="xs muted" style="margin:6px 0">Chance every selection wins: ${(R.pAll * 100).toFixed(1)}% (independence estimate: the model probabilities multiplied, legs from different games treated as unrelated; not verified on real accas).</p>` : ''}
     ${!has ? '<p class="xs muted" style="margin:6px 0">Type a stake to see the returns.</p>' : ''}
     <details class="slipbets"><summary class="small"><b>Every bet (${R.n})</b></summary><table class="ralttb"><tr><th>Bet</th><th>Fair odds</th><th>Stake</th><th>Return if it wins</th></tr>${R.bets.map(b => `<tr${b.why ? ' class="muted"' : ''}><td>${esc(b.idx.map(i => S.sel[i].name.split(' ').slice(-1)[0]).join(' + '))}${b.sg && (b.sg.measured || b.sg.rough) ? ` <span class="xs ${b.sg.rough ? 'warn' : 'muted'}">${b.sg.rough ? 'same game, not adjusted' : 'same game, adjusted'}</span>` : ''}</td><td>${b.odds != null ? esc(fmtOdds(b.odds)) : 'Unpriced'}</td><td>${has ? money(R.unit) : '–'}</td><td>${b.ret != null ? (has ? money(b.ret) : '–') : esc(b.why)}</td></tr>`).join('')}</table></details>
@@ -8794,6 +8825,7 @@ const { hooks } = __m['shared'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick, koUK, fixtureId } = __m['util'];
 const { nightOf, viewingNight } = __m['nightdate'];
+const { accaPlan, getFrac } = __m['risk'];
 
 const KEY = 'proplab.acca.v1', SPORTS = [['nba', 'NBA'], ['nfl', 'NFL'], ['football', 'Football']];
 const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all', minProb: 0, minLegs: 2, maxLegs: '', gsel: null, lgs: [], mkOff: [] };
@@ -8832,6 +8864,15 @@ const gk = (sp, f) => (sp === 'football' ? `football|${fixtureId(f)}` : `${sp}|$
 const intIn = (v, lo, hi) => { const n = Math.round(Number(String(v).trim())); return String(v).trim() !== '' && Number.isFinite(n) && n >= lo && n <= hi ? n : null; };
 /** min / max legs problem: '' or the message (min must not be above max, both 1-LEGS_CAP). */
 const legsProblem = (mn, mx, mxTxt = 'x') => (mn == null ? 'Min legs: type a whole number (1 or more).' : mx == null && String(mxTxt).trim() !== '' ? 'Max legs: type a whole number, or leave it empty for no maximum.' : mx != null && mn > mx ? `Minimum legs (${mn}) is above maximum legs (${mx}): lower the minimum or raise the maximum.` : '');
+
+// Update 65 (owner, 11 Nov 2026): EV at your acca price and the suggested stake, with the same rule as a single (risk.js accaPlan)
+function aevHtml(J, book) {
+  if (!book) return 'No EV without a real bookmaker price: fair odds are not bookmaker odds.';
+  if (!J.priced) return 'No EV: this acca has the same player (or team) twice, which PropLab does not price.';
+  const ev = (J.p * book - 1) * 100, P = accaPlan(J.p, book, { untested: J.unadj > 0, validated: J.validated, thin: J.thin });
+  const units = ev <= 0 ? 'Suggested stake: <b>0.00u</b>: do not bet, no edge at this price.' : P && P.ok ? `Suggested stake: <b>${P.units.toFixed(2)}u</b> <span class="xs muted">(1/${getFrac()} Kelly on the ${(J.p * 100).toFixed(1)}% joint chance${P.why.length ? `; ${esc(P.why.join('; '))}` : ''})</span>` : `Suggested stake: <b>0.00u</b> <span class="xs muted">(${esc((P && P.why.join('; ')) || 'the edge is too small after rounding down')})</span>`;
+  return `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint chance ${(J.p * 100).toFixed(1)}% (the legs' model probabilities multiplied). ${units}<br><span class="xs muted">Every leg's error multiplies in an acca, so its EV is less certain than a single's; that is why the stake is small.</span>`;
+}
 
 async function viewAcca(root, sport) {
   const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav>`;
@@ -8990,10 +9031,10 @@ async function viewAcca(root, sport) {
     out.innerHTML = `${res.note ? `<div class="banner ${res.over || res.short ? 'warnb' : 'info'}" data-anote>${esc(res.note)}${res.over && !/maximum/.test(res.note) ? ' Raise the target or untick Include on a leg.' : ''}</div>` : ''}
       ${outside.length ? `<div class="banner warnb">${outside.map(l => `${esc(l.c.name)} (locked) is outside your per-leg filters now: kept because you locked it.`).join('<br>')}</div>` : ''}
       ${legs.length ? `<div class="card accasum" data-accasum><div class="tiles evtiles"><div class="tile"><b data-afair>${J.priced ? esc(fmtOdds(J.fair)) : 'Unpriced'}</b><span>Combined fair odds, a model estimate (not a bookmaker price)${target ? ` · target ${esc(fmtOdds(target))}` : ''}</span></div>
-        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.pairs.length ? 'Joint probability: experimental estimate (independence, adjusted for the same-game pair)' : 'Joint probability: independence estimate (legs treated as unrelated), not a verified joint probability'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${EVID[confW]}</b><span>Weakest leg evidence (how much data each probability rests on, not how likely it is to win)</span></div></div>
+        <div class="tile"><b data-ajoint>${J.priced ? (J.p * 100).toFixed(1) + '%' : '–'}</b><span>${J.unadj ? 'Joint probability: the legs multiplied; includes untested same-game picks (rough)' : 'Joint probability: the legs multiplied (legs treated as unrelated; tested for different NBA players in one game)'}${J.priced ? ` · cautious ${(J.pCaut * 100).toFixed(1)}%` : ''}</span></div><div class="tile"><b data-alegs>${legs.length}</b><span>Legs</span></div><div class="tile"><b class="cf-${confW.toLowerCase()}">${EVID[confW]}</b><span>Weakest leg evidence (how much data each probability rests on, not how likely it is to win)</span></div></div>
         ${J.notes.length ? `<ul class="xs" style="margin:6px 0;padding-left:18px">${J.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="xs muted" style="margin:6px 0">Every leg is from a different game, so the joint probability is estimated by multiplying the leg probabilities, which assumes the legs are unrelated (an independence estimate). It has not been checked against real acca results, and different games can still be linked (the same news, the same evening).</p>'}
         <label class="field"><span>Bookmaker's price for this acca (optional)</span><input class="in" data-abook inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(S.bookTxt)}" placeholder="${esc(PLACEHOLDER[oddsFmt()])}"></label>
-        <p class="small" style="margin:4px 0" data-aev>${ev == null ? (J.priced ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : 'No EV: this acca has an unpriced same-game pair.') : `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(book))} against the joint probability ${(J.p * 100).toFixed(1)}%${J.pairs.length ? ' (includes an experimental same-game adjustment)' : ''}. EV is hypothetical: it assumes the joint probability is right, which has not been verified, so it is not evidence that the bet is profitable.`}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p>
+        <p class="small" style="margin:4px 0" data-aev>${aevHtml(J, book)}</p><p class="xs muted" style="margin:0">Fair odds and the joint probability are hypothetical model estimates for research, not bookmaker prices and not a prediction that the acca will win.</p>
         <button type="button" class="chip" data-atoslip style="margin-top:6px">＋ Put these legs in the Acca slip</button></div>` : ''}
       <div id="alegs">${legs.map(l => { const r = l.r, c = l.c, locked = S.locks.has(l.id), g = c.f, vs = c.sport === 'football' ? `${esc(g.home)} v ${esc(g.away)}` : `${esc(c.team)} ${c.home ? 'v' : '@'} ${esc(c.opp)}`;
         return `<article class="rcard aleg${locked ? ' locked' : ''}" data-aleg="${esc(l.id)}"><header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> <span class="xs muted">${esc(c.sport.toUpperCase())}</span><div class="rmk">${esc(ladderName(c, r))}</div><div class="xs muted">${vs} · ${esc(fmtKick(g))}${(() => { const bo = c.sport !== 'football' ? blowoutOf(g, c.sport) : null; /* owner, 4 Nov: blowout chance on built legs, as on the singles */
@@ -9047,7 +9088,7 @@ async function viewAcca(root, sport) {
     const af = t.closest('[data-af]'); if (af) { S.f[af.dataset.af] = af.value; save(); return; }
     const an = t.closest('[data-afn]'); if (an) { S.f[an.dataset.afn] = an.dataset.afn === 'minProb' ? Math.max(0, Math.min(99, Number(an.value) || 0)) : an.value; save();
       const m = legsBad(), el = pg.querySelector('[data-alegerr]'); if (el) { el.hidden = !m; el.textContent = m; } pg.querySelectorAll('[data-abuild],[data-areplace]').forEach(b => { b.disabled = !!m; }); return; }
-    if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = !b ? 'No EV without a real bookmaker price: fair odds are not bookmaker odds.' : !J.priced ? 'No EV: this acca has an unpriced same-game pair.' : (ev => `<b class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}% EV</b> at ${esc(fmtOdds(b))} against the estimated joint probability ${(J.p * 100).toFixed(1)}%. Hypothetical: it assumes that estimate is right (not verified), so it is not evidence of profit.`)((J.p * b - 1) * 100); } }
+    if (t.matches('[data-abook]')) { S.bookTxt = t.value; const box = pg.querySelector('[data-aev]'); if (box && S.built) { const J = S.built.joint, b = dec(t.value); box.innerHTML = aevHtml(J, b); } }
   });
   drawF();
   if (S.current.length || S.locks.size) restore();
