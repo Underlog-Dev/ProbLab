@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="6a3dcfda39b5">
+<meta name="proplab-build" content="216cec1f064b">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -776,6 +776,20 @@ html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 .blrow{position:relative}.blrow>div:first-child{padding-right:64px}.blrow .bledit{position:absolute;top:6px;right:0;min-height:32px;padding:4px 10px;font-size:13px}
 details.blacca>summary{position:relative;padding-right:64px}details.blacca>summary .bledit{position:absolute;top:2px;right:0}
 .bleditbox{margin:6px 0 10px;border:1px solid var(--accent,#3b82f6)}.bleleg{border-top:1px dashed var(--line);padding-top:6px}.bleleg:first-of-type{border-top:0}
+
+/* 11 Nov (owner): results stand out; clear day headers */
+.bldat{margin-top:16px}.bldh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;background:var(--s2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:0 0 6px}
+.bldh>b{font-size:17px;color:var(--text)}.bldh>span{font-size:13px;color:var(--muted)}
+.blrow.res-won,.blrow.res-lost,.blrow.res-void,.blrow.res-open{border-left:4px solid var(--line);padding-left:10px;border-radius:0 8px 8px 0;margin:6px 0;border-top:0}
+.blrow.res-won{border-left-color:var(--hit);background:rgba(52,211,153,.09)}.blrow.res-lost{border-left-color:var(--miss);background:rgba(248,113,113,.09)}
+.blrow.res-void{border-left-color:var(--muted);background:rgba(139,152,170,.08)}.blrow.res-open{border-left-color:var(--amber);background:rgba(245,184,61,.05)}
+.blbadge{display:inline-block;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:6px;margin:0 6px 4px 0;vertical-align:middle}
+.blbadge.sm{font-size:11px;padding:2px 6px;margin-bottom:2px}
+.blbadge.res-won{background:var(--hit);color:#05261a}.blbadge.res-lost{background:var(--miss);color:#2b0707}.blbadge.res-void{background:#4b5563;color:#f3f4f6}.blbadge.res-open{background:rgba(245,184,61,.18);color:var(--amber);border:1px solid rgba(245,184,61,.5)}
+.blpl{font-size:16px;vertical-align:middle}.blsel{margin-top:2px}
+.blleg.res-won{border-left:3px solid var(--hit);padding-left:8px}.blleg.res-lost{border-left:3px solid var(--miss);padding-left:8px}.blleg.res-void{border-left:3px solid var(--muted);padding-left:8px}.blleg.res-open{border-left:3px solid rgba(245,184,61,.6);padding-left:8px}
+.bldot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;vertical-align:middle;background:rgba(245,184,61,.6)}.bldot.res-won{background:var(--hit)}.bldot.res-lost{background:var(--miss)}.bldot.res-void{background:var(--muted)}
+details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-webkit-details-marker{display:none}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7507,14 +7521,20 @@ function wireBetLog(root, sport) {
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
       <p class="xs muted" style="margin:4px 0 0">Each bet's stake is counted once (an acca once, not once per leg); void stakes are returned and left out. ${(() => { let c = ''; try { c = localStorage.getItem('proplab.betlog.checked') || ''; } catch { c = ''; } return c ? `Results checked ${esc(fmtDay(koUK({ ko_utc: c }).ymd))} ${esc(koUK({ ko_utc: c }).hm)} against data published ${esc(dataStamp())}.` : ''; })()}</p>`;
     const days = [...new Set(L.map(b => b.date))].sort().reverse();
-    box.querySelector('#bllist').innerHTML = L.length ? days.map(d => `<div class="bldat"><b>${esc(fmtDay(d))}</b>${L.filter(b => b.date === d).map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</div>`).join('')
+    box.querySelector('#bllist').innerHTML = L.length ? days.map(d => { const B = L.filter(b => b.date === d), st = B.map(stOf), pl = B.map(profitOf).filter(x => x != null), w = st.filter(x => x === 'won' || x === 'halfwon').length, l = st.filter(x => x === 'lost' || x === 'halflost').length, o = st.filter(x => !SETTLED.has(x)).length, tot = pl.reduce((t, x) => t + x, 0);
+      return `<div class="bldat"><div class="bldh"><b>${esc(fmtDay(d))}</b><span>${B.length} bet${B.length === 1 ? '' : 's'}${w || l ? ` · ${w}W ${l}L` : ''}${o ? ` · ${o} pending` : ''}${pl.length ? ` · <b class="${tot > 0 ? 'hit' : tot < 0 ? 'miss' : ''}">${sgbp(tot)}</b>` : ''}</span></div>${B.map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</div>`; }).join('')
       : `<div class="banner info"><b>No bets ${F.view === 'acca' ? 'accas ' : ''}logged${F.sportF ? ` for ${SPORT_NAME[F.sportF]}` : ''} yet.</b> Open <b>Log a bet</b> above.</div>`;
   };
   const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? `${fmtDay(koUK({ ko_utc: t }).ymd)} ${koUK({ ko_utc: t }).hm}` : 'on this visit'; };
-  const chip = x => { const own = x.result, st = own ? (own === 'pending' ? 'pending' : own) : (x.auto ? x.auto.status : 'pending');
-    return `<span class="blst st-${esc(st)}">${esc(STATUS_LABEL[st] || st)}</span> <span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'not checked yet'}</span>`; };
+  const chip = x => { const own = x.result; // the result itself is the badge; this says who set it and why
+    return `<span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'settles automatically'}</span>`; };
   const resBtns = (x, attr) => `<div class="seg wrap mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
   const selLine = x => `<b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}`;
+  // 11 Nov 2026 (owner): results stand out. A coloured edge and a big badge (WON / LOST / VOID / PENDING ...); the result buttons are in Edit.
+  const stOf = b => (isAcca(b) ? accaState(b).status : b.result ? b.result : b.auto ? b.auto.status : 'pending');
+  const RES_CLASS = { won: 'won', halfwon: 'won', lost: 'lost', halflost: 'lost', void: 'void', postponed: 'void' };
+  const resCls = st => `res-${RES_CLASS[st] || 'open'}`;
+  const badge = (st, small) => `<span class="blbadge ${resCls(st)}${small ? ' sm' : ''}">${esc(STATUS_LABEL[st] || st)}</span>`;
   // ---- edit a logged bet (owner, 11 Nov 2026): stake, odds, line / side, your description; for accas each leg and the stake / acca odds.
   // A changed line, side or description is settled again from scratch; a result you set yourself is kept. The player, match and market
   // are not changed here (remove the bet and log it again).
@@ -7524,24 +7544,25 @@ function wireBetLog(root, sport) {
       : x.key === 'g.win' || x.binary ? (x.key === 'g.win' ? '' : `<div><span class="xs muted">Bet</span><div class="seg" data-ble="side">${sideSeg.map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.side || 'over') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`)
       : x.key === 'g.hcap' ? `<label class="field"><span>Handicap</span><input class="in" data-ble="line" inputmode="text"${NO} value="${esc(String(x.line))}"></label>`
       : `<div><span class="xs muted">Side</span><div class="seg" data-ble="side">${sideSeg.map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.side || 'over') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div><label class="field"><span>Line</span><input class="in" data-ble="line" inputmode="decimal" value="${esc(String(x.line))}"></label>`;
-    return `<div class="bleleg"${pre}>${i == null ? '' : `<div class="small"><b>Leg ${i + 1}:</b> ${selLine(x)}</div>`}<div class="blgrid">${lineBox}<label class="field"><span>${i == null ? 'Your odds' : 'Odds'}</span><input class="in" data-ble="odds" inputmode="text"${NO} value="${esc(odds)}"></label></div>${i == null ? '' : `<button type="button" class="linkbtn xs" data-blelegrm>✕ Remove this leg</button>`}</div>`; };
+    const resSeg = `<div><span class="xs muted">Result${i == null ? '' : ' of this leg'}</span><div class="seg wrap mpres" data-ble="result">${[['', 'Automatic'], ['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.result || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+    return `<div class="bleleg"${pre}>${i == null ? '' : `<div class="small"><b>Leg ${i + 1}:</b> ${selLine(x)}</div>`}${resSeg}<div class="blgrid">${lineBox}<label class="field"><span>${i == null ? 'Your odds' : 'Odds'}</span><input class="in" data-ble="odds" inputmode="text"${NO} value="${esc(odds)}"></label></div>${i == null ? '' : `<button type="button" class="linkbtn xs" data-blelegrm>✕ Remove this leg</button>`}</div>`; };
   const editHtml = b => `<div class="bleditbox card stack" data-bleditfor="${esc(b.id)}"><b>Edit ${isAcca(b) ? `this ${b.legs.length}-leg acca` : 'this bet'}</b>
       ${isAcca(b) ? b.legs.map((l, i) => legEditHtml(l, i)).join('') : legEditHtml(b, null)}
       <div class="blgrid"><label class="field"><span>Stake (£)</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(String(b.stake))}"></label>
       ${isAcca(b) ? `<label class="field"><span>Bookmaker's acca odds <small>(optional)</small></span><input class="in" data-ble="book" inputmode="text"${NO} value="${esc(b.bookOdds ? String(b.bookOddsTxt || b.bookOdds) : '')}"></label>` : ''}</div>
-      <p class="xs muted" style="margin:0">To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again. A changed line or side is settled again; a result you set yourself is kept.</p>
-      <div class="row" style="border:0;gap:8px"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
-  function singleRow(b) { const ev = evOf(b), pl = profitOf(b);
-    return `<div class="blrow" data-bl="${esc(b.id)}"><div>${selLine(b)}<div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
-      <div class="small">${chip(b)}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
-      ${resBtns(b, 'data-blres')}<button type="button" class="linkbtn xs" data-bldel aria-label="Remove this bet">✕ Remove</button><button type="button" class="chip bledit" data-bledit aria-label="Edit this bet">✎ Edit</button></div>`; }
+      ${isAcca(b) ? `<div><span class="xs muted">Result of the whole acca <small>(your bookmaker's result comes first: boosts, same-game accas, special rules)</small></span><div class="seg wrap mpres" data-ble="accaresult">${[['', 'From the legs'], ['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(b.result || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
+      <p class="xs muted" style="margin:0">"Automatic" lets PropLab settle it from the published results; a result you pick stays until you change it. To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again.</p>
+      <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button><button type="button" class="linkbtn xs" data-bledel style="margin-left:auto">✕ Remove ${isAcca(b) ? 'this acca' : 'this bet'}</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
+  function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
+    return `<div class="blrow ${resCls(st)}" data-bl="${esc(b.id)}"><div>${badge(st)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${selLine(b)}</div><div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
+      <div class="small">${chip(b)}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
+      <button type="button" class="chip bledit" data-bledit aria-label="Edit this bet">✎ Edit</button></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
-    return `<details class="blrow blacca" data-bl="${esc(b.id)}"><summary><button type="button" class="chip bledit" data-bledit aria-label="Edit this acca">✎ Edit</button><div><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
-      <div class="small"><span class="blst st-${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span> <span class="xs muted">${s.manual ? 'set by you' : 'from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot st-${esc(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}</div></div></summary>
-      ${b.legs.map((l, i) => `<div class="blleg" data-blleg="${i}"><div>${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div>${resBtns(l, 'data-bllegres')}</div>`).join('')}
-      <div class="blleg"><div class="small"><b>The whole acca</b> <span class="xs muted">(your bookmaker's result comes first: use it for boosts, same-game accas or any special rule)</span></div>${resBtns(b, 'data-blres')}</div>
-      <p class="xs muted" style="margin:4px 0">A void leg counts as odds 1.00 (standard acca rule); one lost leg loses the acca. Same-game and promotional accas may be settled differently by your bookmaker.</p>
-      <button type="button" class="linkbtn xs" data-bldel aria-label="Remove this acca">✕ Remove acca</button></details>`; }
+    return `<details class="blrow blacca ${resCls(s.status)}" data-bl="${esc(b.id)}"><summary><button type="button" class="chip bledit" data-bledit aria-label="Edit this acca">✎ Edit</button><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel"><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
+</div>
+      <div class="small"><span class="xs muted">${s.manual ? 'set by you' : SETTLED.has(s.status) ? 'from the legs' : 'settles automatically from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot ${resCls(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')} <span class="xs muted">tap to see the legs</span></div></div></summary>
+      ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<div class="blleg ${resCls(r)}" data-blleg="${i}"><div>${badge(r, true)} ${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div></div>`; }).join('')}
+      <p class="xs muted" style="margin:4px 0">A void leg counts as odds 1.00 (standard acca rule); one lost leg loses the acca. Same-game and promotional accas may be settled differently by your bookmaker: set the result yourself in Edit.</p></details>`; }
   const seasonName = (sp, se) => (sp === 'nba' ? `${Number(se) - 1}/${String(se).slice(2)}` : String(se));
 
   // ---- acca being built
@@ -7720,7 +7741,8 @@ function wireBetLog(root, sport) {
     const eb = t.closest('[data-bledit]'); if (eb) { e.preventDefault(); e.stopPropagation(); const r0 = eb.closest('[data-bl]'), b = loadLog().find(x => x.id === r0.dataset.bl); if (!b) return;
       box.querySelectorAll('.bleditbox').forEach(x => x.remove()); r0.insertAdjacentHTML('afterend', editHtml(b)); r0.nextElementSibling.scrollIntoView({ block: 'nearest' }); return; }
     const ebox = t.closest('.bleditbox');
-    if (ebox) { const sg = t.closest('[data-ble="side"] button'); if (sg) { sg.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === sg)); return; }
+    if (ebox) { const del = t.closest('[data-bledel]'); if (del) { if (del.dataset.arm && Date.now() - Number(del.dataset.arm) < 4000) { const a = loadLog(), k = a.findIndex(x => x.id === ebox.dataset.bleditfor); if (k >= 0) { a.splice(k, 1); saveLog(a); } ebox.remove(); drawTotals(); alertMsg('Removed.'); } else { del.dataset.arm = String(Date.now()); del.textContent = 'Tap again to remove it for good'; } return; }
+      const sg = t.closest('[data-ble="side"] button, [data-ble="result"] button, [data-ble="accaresult"] button'); if (sg) { sg.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === sg)); return; }
       if (t.closest('[data-blecancel]')) { ebox.remove(); return; }
       const lr = t.closest('[data-blelegrm]'); if (lr) { if (ebox.querySelectorAll('[data-bleleg]').length <= 2) { ebox.querySelector('[data-blemsg]').textContent = 'An acca needs at least two legs (remove the whole acca instead).'; return; } lr.closest('[data-bleleg]').remove(); return; }
       if (t.closest('[data-blesave]')) { saveEdit(ebox); return; } return; }
@@ -7743,10 +7765,12 @@ function wireBetLog(root, sport) {
       if (q('line')) { const L = num(q('line').value); if (!Number.isFinite(L) || (x.key !== 'g.hcap' && L < 0)) return 'Type a valid line.'; x.line = L; }
       const sd = el.querySelector('[data-ble="side"] button.on'); if (sd) x.side = sd.dataset.v;
       x.odds = o.exact || o.dec; x.oddsTxt = q('odds').value.trim();
+      const rs = el.querySelector('[data-ble="result"] button.on'); if (rs) x.result = rs.dataset.v;
       if (`${x.line}|${x.side}|${x.name}` !== before) { delete x.auto; x.p = null; x.push = 0; x.fair = null; x._reprice = true; }
       return ''; };
     if (isAcca(b)) { const keep = [...ebox.querySelectorAll('[data-bleleg]')].map(el => Number(el.dataset.bleleg)), els = [...ebox.querySelectorAll('[data-bleleg]')];
       b.legs = keep.map(j => b.legs[j]); for (let j = 0; j < b.legs.length; j++) { const m = readLeg(b.legs[j], els[j]); if (m) { msg.textContent = m; return; } }
+      const ar = ebox.querySelector('[data-ble="accaresult"] button.on'); if (ar) b.result = ar.dataset.v;
       const bk = ebox.querySelector('[data-ble="book"]').value.trim(); if (bk) { const o = parseIn(bk); if (!o.dec) { msg.textContent = 'Type valid acca odds, or leave it empty.'; return; } b.bookOdds = o.exact || o.dec; b.bookOddsTxt = bk; } else { delete b.bookOdds; delete b.bookOddsTxt; } }
     else { const m = readLeg(b, ebox.querySelector('.bleleg')); if (m) { msg.textContent = m; return; } }
     const st = num(ebox.querySelector('[data-ble="stake"]').value); if (!(st > 0)) { msg.textContent = 'Type the stake.'; return; } b.stake = st;
