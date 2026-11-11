@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="1fbfdd62cefd">
+<meta name="proplab-build" content="6a3dcfda39b5">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -771,6 +771,11 @@ html{scroll-padding-top:calc(var(--toph,64px) + 12px)}
 .mpres{width:100%}.mpres button{padding:7px 9px;font-size:13px;min-height:36px}
 #blog{min-width:0;max-width:100%;overflow-wrap:anywhere}#blog select,#blog input,#blog textarea{max-width:100%}
 .blleg{display:flex;flex-wrap:wrap;gap:6px 10px;padding:6px 0;border-top:1px dashed var(--line)}.blleg>div:first-child{flex:1 1 220px;min-width:0}
+
+/* 11 Nov: Edit on logged bets (top-right of each row) and the edit panel */
+.blrow{position:relative}.blrow>div:first-child{padding-right:64px}.blrow .bledit{position:absolute;top:6px;right:0;min-height:32px;padding:4px 10px;font-size:13px}
+details.blacca>summary{position:relative;padding-right:64px}details.blacca>summary .bledit{position:absolute;top:2px;right:0}
+.bleditbox{margin:6px 0 10px;border:1px solid var(--accent,#3b82f6)}.bleleg{border-top:1px dashed var(--line);padding-top:6px}.bleleg:first-of-type{border-top:0}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7360,6 +7365,7 @@ const GAME_MKTS = [{ key: 'g.win', label: 'To win (incl. overtime)', team: true 
 const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
 const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const SPORT_NAME = { nba: 'NBA', nfl: 'NFL', football: 'Football' };
+const NO = ' autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"'; // odds / text boxes: no phone auto-correct
 
 // ---------------------------------------------------------------- pure: results, profit and totals
 /** The result that counts: yours first, then the automatic one; '' = not settled. */
@@ -7509,12 +7515,28 @@ function wireBetLog(root, sport) {
     return `<span class="blst st-${esc(st)}">${esc(STATUS_LABEL[st] || st)}</span> <span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'not checked yet'}</span>`; };
   const resBtns = (x, attr) => `<div class="seg wrap mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
   const selLine = x => `<b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}`;
+  // ---- edit a logged bet (owner, 11 Nov 2026): stake, odds, line / side, your description; for accas each leg and the stake / acca odds.
+  // A changed line, side or description is settled again from scratch; a result you set yourself is kept. The player, match and market
+  // are not changed here (remove the bet and log it again).
+  const legEditHtml = (x, i) => { const pre = i == null ? '' : ` data-bleleg="${i}"`, odds = x.oddsTxt || (x.odds ? String(x.odds) : '');
+    const sideSeg = x.binary ? [['over', 'Yes'], ['under', 'No']] : [['over', 'Over'], ['under', 'Under']];
+    const lineBox = x.scope === 'other' ? `<label class="field"><span>Your description</span><input class="in" data-ble="name" maxlength="120" value="${esc(x.name)}"></label>`
+      : x.key === 'g.win' || x.binary ? (x.key === 'g.win' ? '' : `<div><span class="xs muted">Bet</span><div class="seg" data-ble="side">${sideSeg.map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.side || 'over') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`)
+      : x.key === 'g.hcap' ? `<label class="field"><span>Handicap</span><input class="in" data-ble="line" inputmode="text"${NO} value="${esc(String(x.line))}"></label>`
+      : `<div><span class="xs muted">Side</span><div class="seg" data-ble="side">${sideSeg.map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.side || 'over') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div><label class="field"><span>Line</span><input class="in" data-ble="line" inputmode="decimal" value="${esc(String(x.line))}"></label>`;
+    return `<div class="bleleg"${pre}>${i == null ? '' : `<div class="small"><b>Leg ${i + 1}:</b> ${selLine(x)}</div>`}<div class="blgrid">${lineBox}<label class="field"><span>${i == null ? 'Your odds' : 'Odds'}</span><input class="in" data-ble="odds" inputmode="text"${NO} value="${esc(odds)}"></label></div>${i == null ? '' : `<button type="button" class="linkbtn xs" data-blelegrm>✕ Remove this leg</button>`}</div>`; };
+  const editHtml = b => `<div class="bleditbox card stack" data-bleditfor="${esc(b.id)}"><b>Edit ${isAcca(b) ? `this ${b.legs.length}-leg acca` : 'this bet'}</b>
+      ${isAcca(b) ? b.legs.map((l, i) => legEditHtml(l, i)).join('') : legEditHtml(b, null)}
+      <div class="blgrid"><label class="field"><span>Stake (£)</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(String(b.stake))}"></label>
+      ${isAcca(b) ? `<label class="field"><span>Bookmaker's acca odds <small>(optional)</small></span><input class="in" data-ble="book" inputmode="text"${NO} value="${esc(b.bookOdds ? String(b.bookOddsTxt || b.bookOdds) : '')}"></label>` : ''}</div>
+      <p class="xs muted" style="margin:0">To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again. A changed line or side is settled again; a result you set yourself is kept.</p>
+      <div class="row" style="border:0;gap:8px"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b);
-    return `<div class="blrow" data-bl="${esc(b.id)}"><div>${selLine(b)}<div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}</div>
+    return `<div class="blrow" data-bl="${esc(b.id)}"><div>${selLine(b)}<div class="xs muted">${esc(SPORT_NAME[b.sport] || '')}${b.fx ? ` · ${esc(leagueName(b.fx.league))}` : ''} · ${esc(b.game)} · ${gbp(b.stake)} at ${esc(fmtOdds(b.odds))}${b.fair ? ` · fair ${esc(fmtOdds(b.fair))}` : ''}${b.edited ? ' · <span class="xs">edited</span>' : ''}</div>
       <div class="small">${chip(b)}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}${ev != null ? ` · <span class="${ev > 0 ? 'hit' : 'miss'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}</div></div>
-      ${resBtns(b, 'data-blres')}<button type="button" class="linkbtn xs" data-bldel aria-label="Remove this bet">✕ Remove</button></div>`; }
+      ${resBtns(b, 'data-blres')}<button type="button" class="linkbtn xs" data-bldel aria-label="Remove this bet">✕ Remove</button><button type="button" class="chip bledit" data-bledit aria-label="Edit this bet">✎ Edit</button></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
-    return `<details class="blrow blacca" data-bl="${esc(b.id)}"><summary><div><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
+    return `<details class="blrow blacca" data-bl="${esc(b.id)}"><summary><button type="button" class="chip bledit" data-bledit aria-label="Edit this acca">✎ Edit</button><div><b>${b.legs.length}-leg acca</b> · ${gbp(b.stake)} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''} · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))} if every leg wins
       <div class="small"><span class="blst st-${esc(s.status)}">${esc(STATUS_LABEL[s.status] || s.status)}</span> <span class="xs muted">${s.manual ? 'set by you' : 'from the legs'}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot st-${esc(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')}${pl != null ? ` · <b class="${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}</div></div></summary>
       ${b.legs.map((l, i) => `<div class="blleg" data-blleg="${i}"><div>${selLine(l)} <span class="xs muted">at ${esc(fmtOdds(l.odds))}</span><div class="xs muted">${esc(l.game)}</div><div class="small">${chip(l)}</div></div>${resBtns(l, 'data-bllegres')}</div>`).join('')}
       <div class="blleg"><div class="small"><b>The whole acca</b> <span class="xs muted">(your bookmaker's result comes first: use it for boosts, same-game accas or any special rule)</span></div>${resBtns(b, 'data-blres')}</div>
@@ -7694,6 +7716,14 @@ function wireBetLog(root, sport) {
       const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString() };
       const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
       saveDraft({ legs: [], stake: '', odds: '' }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${gbp(stake)}. Each leg settles automatically once its result is published.`); return; }
+    // edit
+    const eb = t.closest('[data-bledit]'); if (eb) { e.preventDefault(); e.stopPropagation(); const r0 = eb.closest('[data-bl]'), b = loadLog().find(x => x.id === r0.dataset.bl); if (!b) return;
+      box.querySelectorAll('.bleditbox').forEach(x => x.remove()); r0.insertAdjacentHTML('afterend', editHtml(b)); r0.nextElementSibling.scrollIntoView({ block: 'nearest' }); return; }
+    const ebox = t.closest('.bleditbox');
+    if (ebox) { const sg = t.closest('[data-ble="side"] button'); if (sg) { sg.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === sg)); return; }
+      if (t.closest('[data-blecancel]')) { ebox.remove(); return; }
+      const lr = t.closest('[data-blelegrm]'); if (lr) { if (ebox.querySelectorAll('[data-bleleg]').length <= 2) { ebox.querySelector('[data-blemsg]').textContent = 'An acca needs at least two legs (remove the whole acca instead).'; return; } lr.closest('[data-bleleg]').remove(); return; }
+      if (t.closest('[data-blesave]')) { saveEdit(ebox); return; } return; }
     // list
     const row = t.closest('[data-bl]');
     if (row) { const a = loadLog(), i = a.findIndex(x => x.id === row.dataset.bl); if (i < 0) return;
@@ -7703,6 +7733,31 @@ function wireBetLog(root, sport) {
     if (t.closest('[data-blbackup]')) { const blob = new Blob([JSON.stringify({ app: 'PropLab bet log', saved: new Date().toISOString(), bets: loadLog() }, null, 1)], { type: 'application/json' });
       const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = `proplab-bets-${today()}.json`; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
   });
+  /** Read an edit box and save the bet (returns nothing; shows a message on a problem). */
+  const saveEdit = async ebox => {
+    const msg = ebox.querySelector('[data-blemsg]'), a = loadLog(), i = a.findIndex(x => x.id === ebox.dataset.bleditfor); if (i < 0) { ebox.remove(); return; }
+    const b = JSON.parse(JSON.stringify(a[i])), num = v => Number(String(v || '').replace(/[£,\s]/g, '').replace(',', '.'));
+    const readLeg = (x, el) => { const q = k => el.querySelector(`[data-ble="${k}"]`), o = parseIn(q('odds') ? q('odds').value : ''); if (!o.dec) return `Type valid odds${x.name ? ` for ${x.name}` : ''} (e.g. 1.80 or 4/5).`;
+      const before = `${x.line}|${x.side}|${x.name}`;
+      if (q('name')) { const d = q('name').value.trim(); if (!d) return 'Describe the bet.'; x.name = d; }
+      if (q('line')) { const L = num(q('line').value); if (!Number.isFinite(L) || (x.key !== 'g.hcap' && L < 0)) return 'Type a valid line.'; x.line = L; }
+      const sd = el.querySelector('[data-ble="side"] button.on'); if (sd) x.side = sd.dataset.v;
+      x.odds = o.exact || o.dec; x.oddsTxt = q('odds').value.trim();
+      if (`${x.line}|${x.side}|${x.name}` !== before) { delete x.auto; x.p = null; x.push = 0; x.fair = null; x._reprice = true; }
+      return ''; };
+    if (isAcca(b)) { const keep = [...ebox.querySelectorAll('[data-bleleg]')].map(el => Number(el.dataset.bleleg)), els = [...ebox.querySelectorAll('[data-bleleg]')];
+      b.legs = keep.map(j => b.legs[j]); for (let j = 0; j < b.legs.length; j++) { const m = readLeg(b.legs[j], els[j]); if (m) { msg.textContent = m; return; } }
+      const bk = ebox.querySelector('[data-ble="book"]').value.trim(); if (bk) { const o = parseIn(bk); if (!o.dec) { msg.textContent = 'Type valid acca odds, or leave it empty.'; return; } b.bookOdds = o.exact || o.dec; b.bookOddsTxt = bk; } else { delete b.bookOdds; delete b.bookOddsTxt; } }
+    else { const m = readLeg(b, ebox.querySelector('.bleleg')); if (m) { msg.textContent = m; return; } }
+    const st = num(ebox.querySelector('[data-ble="stake"]').value); if (!(st > 0)) { msg.textContent = 'Type the stake.'; return; } b.stake = st;
+    // a single NBA / NFL player bet with a new line or side gets its fair price again (as it would when logged)
+    for (const x of isAcca(b) ? b.legs : [b]) { if (!x._reprice) continue; delete x._reprice;
+      if ((x.sport === 'nba' || x.sport === 'nfl') && x.scope === 'player') { try { const r = await priceAtGame(x.sport, x.gameId, x.pid, x.key, x.line, x.side); if (r.ok) { x.p = r.p; x.push = r.push; x.fair = r.fair; } } catch { /* stays without a fair price */ } } }
+    b.edited = new Date().toISOString();
+    const cur = loadLog(), k = cur.findIndex(x => x.id === b.id); if (k < 0) { ebox.remove(); return; } cur[k] = b;
+    if (!saveLog(cur)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+    ebox.remove(); drawTotals(); settleAll().then(() => { drawTotals(); if (isAcca(b)) reopen(b.id); }); if (isAcca(b)) reopen(b.id);
+    alertMsg(`Saved your changes to ${isAcca(b) ? `the ${b.legs.length}-leg acca` : `${b.name} ${b.market}`}.`); };
   const reopen = id => { const d = box.querySelector(`details[data-bl="${CSS.escape(id)}"]`); if (d) d.open = true; };
   drawTotals(); drawDraft(); drawForm();
   settleAll().then(n => { if (n) drawTotals(); }); // reconcile with the latest published data every time My Plays opens
