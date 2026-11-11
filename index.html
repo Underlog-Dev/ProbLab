@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="80ece3e6d02d">
+<meta name="proplab-build" content="c4e42a6a72f4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -808,6 +808,13 @@ details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-w
 .rdropev{margin-left:4px}
 .rbxg .rbxmin{grid-column:1/-1;flex-direction:row;justify-content:center;gap:8px}.rbxg .rbxmin b{font-size:17px}
 .rteam{color:var(--text);font-weight:700}.ravgmin b{color:var(--text)}
+.bltile.blopen{border-color:var(--accent,#3b82f6)}
+/* Update 71: unit size box (top corner) */
+.unitrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fpnav{position:relative}.fpnav .unitchip{margin-left:auto}
+.unitchip{font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--muted);white-space:nowrap;cursor:pointer}.unitchip b{color:var(--text)}
+.unitpop{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:min(320px,calc(100vw - 32px));box-shadow:0 8px 30px rgba(0,0,0,.45)}
+.unitrow{position:relative}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -3923,6 +3930,57 @@ const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.0
 
 return { KELLY_FRACTION, UNIT_PCT, MAX_UNITS, kellyUnits, fmtU, unitsText, KELLY_NOTE, CAP_NOTE };
 })();
+__m['units'] = (() => {
+// Unit size (owner request 11 Nov 2026, Update 71): each person using PropLab sets what 1 unit is worth for them (amount and currency:
+// £, $ or €), from the "1u = £10" box in the top corner of Hiwi's Section, the Acca Builder and My Plays. Kept on this device. Stakes are
+// worked out in units (1/10 Kelly, max 2.00u) and the money figures follow this setting. Bets already logged keep the amounts logged;
+// changing the currency only changes the symbol shown, it does not convert anything.
+const { esc } = __m['util'];
+const KEY = 'proplab.unit.v1';
+const CURS = ['£', '$', '€'];
+const DEF = { amt: 10, cur: '£' };
+let mem = null;
+function getUnit() {
+  if (mem) return mem;
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); mem = j && Number(j.amt) > 0 && CURS.includes(j.cur) ? { amt: Number(j.amt), cur: j.cur } : { ...DEF }; } catch { mem = { ...DEF }; }
+  return mem;
+}
+function setUnit(amt, cur) {
+  mem = { amt: Math.min(1e6, Math.max(0.01, Math.round(Number(amt) * 100) / 100)), cur: CURS.includes(cur) ? cur : getUnit().cur };
+  try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* this visit only */ }
+  if (typeof document !== 'undefined') { document.querySelectorAll('[data-unitchip]').forEach(b => { b.innerHTML = chipTxt(); }); document.dispatchEvent(new CustomEvent('unitchange')); }
+}
+/** The currency symbol chosen (£ by default). */
+const CUR = () => getUnit().cur;
+const amtTxt = a => (Number.isInteger(a) ? String(a) : a.toFixed(2));
+const chipTxt = () => `1u = <b>${esc(CUR())}${esc(amtTxt(getUnit().amt))}</b>`;
+/** The box for the top corner of a page. */
+const unitChip = () => `<button type="button" class="unitchip" data-unitchip aria-haspopup="dialog" aria-label="Unit size: tap to change">${chipTxt()}</button>`;
+function popHtml() { const U = getUnit();
+  return `<div class="unitpop card" role="dialog" aria-label="Unit size" data-unitpop><b>Your unit size</b>
+    <p class="xs muted" style="margin:4px 0 8px">PropLab works out stakes in units (1/10 Kelly, max 2.00u a play). Set what 1 unit is for you (PropLab suggests 1% of your bankroll) and every money figure follows it. Saved on this phone only, so everyone using the site sets their own.</p>
+    <div class="seg" data-unitcur>${CURS.map(c => `<button type="button" data-v="${c}" class="${U.cur === c ? 'on' : ''}">${c}</button>`).join('')}</div>
+    <label class="field" style="margin-top:8px"><span>1 unit =</span><input class="in" data-unitamt inputmode="decimal" value="${esc(amtTxt(U.amt))}" aria-label="Amount per unit"></label>
+    <p class="xs muted" style="margin:6px 0">Bets already in My Plays keep the amounts you logged. Changing the currency only changes the symbol shown (nothing is converted).</p>
+    <p class="xs warn" data-unitmsg style="margin:0"></p>
+    <div class="row" style="border:0;gap:8px;padding:0;margin-top:6px"><button type="button" class="btn primary" data-unitsave>Save</button><button type="button" class="btn" data-unitclose>Cancel</button></div></div>`; }
+let wired = false;
+function wireUnits() {
+  if (wired || typeof document === 'undefined') return; wired = true;
+  document.addEventListener('click', e => { const t = e.target;
+    const chip = t.closest('[data-unitchip]'); if (chip) { const open = document.querySelector('[data-unitpop]'); if (open) { open.remove(); return; } chip.insertAdjacentHTML('afterend', popHtml()); const i = document.querySelector('[data-unitamt]'); if (i) i.focus(); return; }
+    const pop = t.closest('[data-unitpop]'); if (!pop) return;
+    const c = t.closest('[data-unitcur] button'); if (c) { c.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === c)); return; }
+    if (t.closest('[data-unitclose]')) { pop.remove(); return; }
+    if (t.closest('[data-unitsave]')) { const v = Number(String(pop.querySelector('[data-unitamt]').value).replace(/[£$€,\s]/g, '')); if (!(v > 0)) { pop.querySelector('[data-unitmsg]').textContent = 'Type an amount, e.g. 10.'; return; }
+      const cur = (pop.querySelector('[data-unitcur] button.on') || {}).dataset?.v; pop.remove(); setUnit(v, cur); } });
+}
+/** Redraw something when the unit size changes, for as long as el is on the page. */
+function onUnitChange(el, fn) { const h = () => { if (!el.isConnected) { document.removeEventListener('unitchange', h); return; } fn(); }; document.addEventListener('unitchange', h); }
+wireUnits();
+
+return { CURS, getUnit, setUnit, CUR, unitChip, wireUnits, onUnitChange };
+})();
 __m['risk'] = (() => {
 // Stake risk controls (owner model audit, 2 Nov 2026). The Kelly arithmetic itself was correct (kelly.js); what was missing is everything
 // around it. For a price the visitor typed, PropLab now shows three figures side by side:
@@ -3935,8 +3993,11 @@ __m['risk'] = (() => {
 // tracker counts 1 unit as £10. Units are always rounded DOWN to 2 decimals.
 const { fmtU } = __m['kelly'];
 const { esc } = __m['util'];
+const { getUnit, CUR } = __m['units'];
 
-const RISK = { cap: 2, longOdds: [[8, 0.25], [4, 0.5]], daily: 10, perPlayer: 3, perGame: 5, unitGBP: 10 };
+const RISK = { cap: 2, longOdds: [[8, 0.25], [4, 0.5]], daily: 10, perPlayer: 3, perGame: 5 };
+// Update 71: the money value of 1 unit is each person's own setting (units.js; £10 until changed). The name stays for the code using it.
+Object.defineProperty(RISK, 'unitGBP', { get: () => getUnit().amt, enumerable: true });
 const FRACS = [10, 15, 20];
 const FKEY = 'proplab.kelly.v1';
 const getFrac = () => { try { const v = Number(localStorage.getItem(FKEY)); return FRACS.includes(v) ? v : 10; } catch { return 10; } };
@@ -3971,7 +4032,7 @@ function stakeHtml(e, dec, conf, info = null) {
   const ev = (e.win * dec + (e.push || 0) - 1) * 100;
   return `<div class="card stack riskbox" data-risk data-rk="${esc(rk)}" data-final="${fmtU(P.final)}" data-theory="${fmtU(P.theory)}" data-adj="${fmtU(P.adj)}">
     <div class="row" style="border:0;padding:0;align-items:center;gap:8px;flex-wrap:wrap"><b>Stake after risk controls</b><span class="seg" data-kfrac>${FRACS.map(d => `<button type="button" data-v="${d}" class="${d === den ? 'on' : ''}" aria-pressed="${d === den}">1/${d} Kelly</button>`).join('')}</span></div>
-    <div class="tiles evtiles riskt"><div class="tile"><b>${ev > 0 ? fmtU(P.theory) : '0.00'}u</b><span>Theoretical (uncapped), 1/${den} Kelly</span></div><div class="tile"><b>${ev > 0 ? fmtU(P.adj) : '0.00'}u</b><span>Risk-adjusted</span></div><div class="tile ${ev > 0 && P.final > 0 ? 'pos' : 'neg'}"><b data-riskfinal>${ev > 0 ? fmtU(P.final) : '0.00'}u</b><span>Final stake · £${(ev > 0 ? P.final * RISK.unitGBP : 0).toFixed(2)} at £${RISK.unitGBP} a unit</span></div></div>
+    <div class="tiles evtiles riskt"><div class="tile"><b>${ev > 0 ? fmtU(P.theory) : '0.00'}u</b><span>Theoretical (uncapped), 1/${den} Kelly</span></div><div class="tile"><b>${ev > 0 ? fmtU(P.adj) : '0.00'}u</b><span>Risk-adjusted</span></div><div class="tile ${ev > 0 && P.final > 0 ? 'pos' : 'neg'}"><b data-riskfinal>${ev > 0 ? fmtU(P.final) : '0.00'}u</b><span>Final stake · ${CUR()}${(ev > 0 ? P.final * RISK.unitGBP : 0).toFixed(2)} at ${CUR()}${RISK.unitGBP} a unit</span></div></div>
     <p class="xs muted" style="margin:0">${ev > 0 ? P.why.map(x => x[0].toUpperCase() + x.slice(1)).join('. ') + '.' : 'No positive estimated EV at this price, so no stake.'}</p>
     <table class="risktb"><tr><th>Kelly</th><th>Theoretical</th><th>Risk-adjusted</th><th>Final</th></tr>${cmp.map(([d, x]) => `<tr class="${d === den ? 'on' : ''}"><td>1/${d}</td><td>${ev > 0 ? fmtU(x.theory) : '0.00'}u</td><td>${ev > 0 ? fmtU(x.adj) : '0.00'}u</td><td>${ev > 0 ? fmtU(x.final) : '0.00'}u</td></tr>`).join('')}</table>
     <p class="xs muted" style="margin:0">A smaller fraction gives up a little growth if the model is right for much less damage if it is wrong. These are theoretical stakes: PropLab's probabilities are checked against past seasons, not against bookmaker prices.</p>
@@ -7417,6 +7478,7 @@ const { nba } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { hooks } = __m['shared'];
 const { RISK } = __m['risk'];
+const { CUR, unitChip, onUnitChange } = __m['units'];
 
 const { PREFILL, DRAFT } = __m['betprefill'];
 const KEY = 'proplab.betlog.v1';
@@ -7431,7 +7493,7 @@ const moveOldDraft = () => { try { const old = localStorage.getItem('undefined')
 const loadDraft = () => { moveOldDraft(); try { const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d && Array.isArray(d.legs) ? d : { legs: [], stake: '', odds: '' }; } catch { return { legs: [], stake: '', odds: '' }; } };
 const saveDraft = d => { try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch { /* this visit only */ } };
 const NFL_SKIP = new Set(['k.fg', 'k.xp']);
-const gbp = x => `${x < 0 ? '−' : ''}£${Math.abs(x).toFixed(2)}`, sgbp = x => `${x >= 0 ? '+' : '−'}£${Math.abs(x).toFixed(2)}`;
+const gbp = x => `${x < 0 ? '−' : ''}${CUR()}${Math.abs(x).toFixed(2)}`, sgbp = x => `${x >= 0 ? '+' : '−'}${CUR()}${Math.abs(x).toFixed(2)}`; // Update 71: your currency symbol
 const sideTxt = (b, def) => (b.scope === 'other' || b.key === 'g.win' ? '' : b.key === 'g.hcap' ? `${b.line > 0 ? '+' : ''}${b.line}`
   : def && def.binary || b.binary ? (b.side === 'under' ? 'No' : 'Yes') : `${b.side === 'under' ? 'Under' : 'Over'} ${b.line}`);
 /** NBA / NFL team and game markets (11 Nov 2026, owner): settled from the final score, overtime included. */
@@ -7525,7 +7587,9 @@ const stat = b => (isAcca(b) ? accaState(b).status : effOf(b) || 'pending');
 function totals(list) {
   const part = L => { const s = L.filter(b => stat(b) !== 'pending' && stat(b) !== 'void'), staked = s.reduce((t, b) => t + b.stake, 0), profit = s.reduce((t, b) => t + profitOf(b), 0);
     return { n: L.length, won: L.filter(b => ['won', 'halfwon'].includes(stat(b))).length, lost: L.filter(b => ['lost', 'halflost'].includes(stat(b))).length, open: L.filter(b => stat(b) === 'pending').length,
-      voids: L.filter(b => stat(b) === 'void').length, settled: s.length, staked, profit, returned: staked + profit, roi: staked ? profit / staked : null, stakedAll: L.reduce((t, b) => t + b.stake, 0), freeUsed: s.reduce((t, b) => t + promoOf(b).free, 0), promoN: s.filter(b => promoOf(b).free || promoOf(b).boost).length }; };
+      voids: L.filter(b => stat(b) === 'void').length, settled: s.length, staked, profit, returned: staked + profit, roi: staked ? profit / staked : null, stakedAll: L.reduce((t, b) => t + b.stake, 0), freeUsed: s.reduce((t, b) => t + promoOf(b).free, 0), promoN: s.filter(b => promoOf(b).free || promoOf(b).boost).length,
+      // Update 71: what is riding on bets not settled yet (your own money; free bets apart). Settled bets drop out by themselves.
+      openStake: L.filter(b => stat(b) === 'pending').reduce((t, b) => t + (Number(b.stake) || 0), 0), openFree: L.filter(b => stat(b) === 'pending').reduce((t, b) => t + promoOf(b).free, 0) }; };
   const singles = list.filter(b => !isAcca(b)), accas = list.filter(isAcca), all = part(list), sg = part(singles), ac = part(accas);
   const priced = singles.filter(b => stat(b) !== 'pending' && stat(b) !== 'void' && evOf(b) != null), ev = priced.reduce((t, b) => t + evOf(b), 0);
   const evPlus = priced.filter(b => evOf(b) > 0);
@@ -7644,14 +7708,14 @@ function wireBetLog(root, sport) {
     const tile = (v, l, cls = '') => `<div class="tile bltile ${cls}"><b>${v}</b><span>${l}</span></div>`, roi = r => (r == null ? '–' : `${(r * 100).toFixed(1)}%`);
     const lgs = [...new Set(all0.flatMap(b => (isAcca(b) ? b.legs : [b]).filter(x => x.fx).map(x => x.fx.league)))];
     const S = T.singles, Ac = T.accas;
-    box.querySelector('#bltot').innerHTML = `<h2 style="margin:0">Bet log</h2>
+    box.querySelector('#bltot').innerHTML = `<div class="unitrow"><h2 style="margin:0">Bet log</h2>${unitChip()}</div>
       <div class="row" style="border:0;gap:6px;flex-wrap:wrap;margin:6px 0">
         <div class="seg" data-blview>${[['all', 'All plays'], ['single', 'Singles'], ['acca', 'Accas']].map(([v, l]) => `<button type="button" data-v="${v}" class="${F.view === v ? 'on' : ''}">${l}</button>`).join('')}</div>
         <select class="in" data-blsportf aria-label="Sport"><option value="">Every sport</option>${['football', 'nba', 'nfl'].map(s => `<option value="${s}"${F.sportF === s ? ' selected' : ''}>${SPORT_NAME[s]}</option>`).join('')}</select>
         ${lgs.length ? `<select class="in" data-blleague aria-label="League"><option value="">Every league</option>${lgs.map(l => `<option value="${esc(l)}"${F.league === l ? ' selected' : ''}>${esc(leagueName(l))}</option>`).join('')}</select>` : ''}
         ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
       <div class="tiles bltiles">${tile(gbp(T.staked), T.promoN ? 'Total staked (settled, your own money)' : 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
-        ${tile(String(T.open), 'Pending')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}${T.promoN ? tile(gbp(T.freeUsed), `Free bets used (${T.promoN} bet${T.promoN === 1 ? '' : 's'} with a free bet or boost; not in staked)`) : ''}</div>
+        ${tile(`${(T.openStake / RISK.unitGBP).toFixed(2)}u`, T.open ? `Pending: ${T.open} bet${T.open === 1 ? '' : 's'} · ${gbp(T.openStake)} of your money placed${T.openFree ? ` + ${gbp(T.openFree)} free bet${T.openFree === 1 ? '' : 's'}` : ''} (${CUR()}${RISK.unitGBP} a unit)` : 'Pending: nothing placed right now', T.open ? 'blopen' : '')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', 'Expected profit from your edge (singles with a fair price)', T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}${T.promoN ? tile(gbp(T.freeUsed), `Free bets used (${T.promoN} bet${T.promoN === 1 ? '' : 's'} with a free bet or boost; not in staked)`) : ''}</div>
       ${F.view === 'all' && L.length ? `<div class="tblscroll"><table class="risktb bltypes"><tr><th></th><th title="won – lost – void">W–L–V</th><th>Pend.</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
         ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n} <span class="xs muted">(${x.n})</span></th><td>${x.won}–${x.lost}–${x.voids}</td><td>${x.open}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table></div>` : ''}
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
@@ -7726,7 +7790,7 @@ function wireBetLog(root, sport) {
     const cap = st > capGBP() + 1e-9 ? `<br><span class="xs warn">⚠ ${gbp(st)} is over your ${RISK.cap.toFixed(2)}u cap (${gbp(capGBP())})</span>` : '';
     return `${A.mode === 'match' ? 'Groups and legs multiply' : 'Legs multiply'} to <b>${missing ? '–' : esc(fmtOdds(co))}</b>${(fr || bs) && !missing ? `<br>${promoSum(st, fr, bs, price)}` : st > 0 && !missing ? ` · returns <b>${gbp(st * price)}</b> (profit ${sgbp(st * (price - 1))}) if every leg wins` : ''}${missing ? ` · type ${A.mode === 'match' ? 'the price' : 'your odds'} for ${missing} ${A.mode === 'match' ? 'group / leg' : 'leg'}${missing === 1 ? '' : 's'}` : ''}${model}${cap}`; };
   const drawDraft = () => { const d = loadDraft(), el = box.querySelector('#bldraft'); if (!d.legs.length) { el.innerHTML = ''; return; }
-    const co = d.legs.reduce((t, l) => t * (l.odds || 1), 1), st = Number(String(d.stake).replace(/[£,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = d.legs.filter(l => !(l.odds > 1)).length;
+    const co = d.legs.reduce((t, l) => t * (l.odds || 1), 1), st = Number(String(d.stake).replace(/[£$€,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = d.legs.filter(l => !(l.odds > 1)).length;
     const games = new Map(); for (const l of d.legs) { const k = l.gameId ? `${l.sport}|${l.gameId}` : l.fx ? `f|${l.fx.league}|${l.fx.home}|${l.fx.away}` : l.id; games.set(k, (games.get(k) || 0) + 1); }
     const same = [...games.values()].some(n => n > 1);
     const A0 = draftAcca(d), U0 = accaUnits(A0), legRow = (l, i, grouped) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div>${grouped ? '' : `<label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" ${NO_} value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label>`}<button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`;
@@ -7777,19 +7841,19 @@ function wireBetLog(root, sport) {
       ${stakeOddsHtml()}`;
   // Update 69: "Free bet / boost" tick box (Log a bet, the acca being built, Edit). Ticked: a free bet amount, the stake box becomes your
   // own money (0 or empty when it is all free bet) and a None / 25% / 50% / 100% profit boost.
-  const STAKE_LBL = (promo, acca) => (promo ? 'Your own money (£)' : acca ? 'Acca stake (£)' : 'Your stake (£)');
+  const STAKE_LBL = (promo, acca) => (promo ? `Your own money (${CUR()})` : acca ? `Acca stake (${CUR()})` : `Your stake (${CUR()})`);
   const promoHtml = (ctx, P, sum = true) => `<div class="blpromo" data-pr="${ctx}"><label class="blchk"><input type="checkbox" data-prtick${P.promo ? ' checked' : ''}> <b>Free bet / boost</b></label>
-      <div class="stack" data-prbody${P.promo ? '' : ' hidden'} style="gap:6px;margin-top:6px"><div class="blgrid"><label class="field"><span>Free bet amount (£)</span><input class="in" data-prfree inputmode="decimal" value="${esc(P.free ? String(P.free) : '')}" placeholder="0 if no free bet"></label>
+      <div class="stack" data-prbody${P.promo ? '' : ' hidden'} style="gap:6px;margin-top:6px"><div class="blgrid"><label class="field"><span>Free bet amount (${CUR()})</span><input class="in" data-prfree inputmode="decimal" value="${esc(P.free ? String(P.free) : '')}" placeholder="0 if no free bet"></label>
       <div><span class="xs muted">Profit boost</span><div class="seg" data-prboost>${[[0, 'None'], [0.25, '25%'], [0.5, '50%'], [1, '100%']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Number(P.boost || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
       <p class="xs muted" style="margin:0">Put your own money in the stake box: leave it empty or 0 if it is all free bet, or type it if you added real money to the free bet. A free bet's stake is not paid back, so a win pays the winnings only; a loss costs only your own money. The boost is added to all the winnings (if your bookmaker caps the extra, it may pay a little less).</p>
       ${sum ? '<p class="small" data-prsum style="margin:0"></p>' : ''}</div></div>`;
   const readPromo = root => { const el = root && root.querySelector('[data-pr]'); if (!el || !el.querySelector('[data-prtick]').checked) return { promo: false, free: 0, boost: 0 };
-    const raw = String(el.querySelector('[data-prfree]').value || '').trim(), f = Number(raw.replace(/[£,\s]/g, '')), on = el.querySelector('[data-prboost] button.on');
+    const raw = String(el.querySelector('[data-prfree]').value || '').trim(), f = Number(raw.replace(/[£$€,\s]/g, '')), on = el.querySelector('[data-prboost] button.on');
     return { promo: true, free: f > 0 ? f : 0, bad: raw !== '' && !(f >= 0), boost: on ? Number(on.dataset.v) : 0 }; };
   /** The "if it wins / if it loses" line for your own money + free bet + boost at these odds. */
   const promoSum = (real, free, boost, odds) => (!(odds > 1) ? 'Type your odds to see the profit.' : !(real + free > 0) ? 'Type the free bet amount and / or your own money.'
     : `If it wins: profit <b class="hit">${sgbp(winIfWon(real, free, boost, odds))}</b> (you get back ${gbp(real + winIfWon(real, free, boost, odds))})${boost ? `, of which ${sgbp(winIfWon(real, free, boost, odds) - winIfWon(real, free, 0, odds))} is the boost` : ''} · if it loses: <b class="${real > 0 ? 'miss' : ''}">${sgbp(-real)}</b>${real > 0 ? '' : ' (free bet only)'}`);
-  const money = v => { const x = Number(String(v || '').replace(/[£,\s]/g, '')); return x > 0 ? x : 0; };
+  const money = v => { const x = Number(String(v || '').replace(/[£$€,\s]/g, '')); return x > 0 ? x : 0; };
   const drawFormSum = () => { const q = body.querySelector('[data-pr="form"] [data-prsum]'); if (q) q.innerHTML = promoSum(money(F.stake), money(F.free), F.boost || 0, parseIn(F.odds).dec); };
   const stakeOddsHtml = () => `<div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(F.promo)}</span><input class="in slipstake" data-blstake inputmode="decimal" placeholder="${F.promo ? '0 if it is all free bet' : 'e.g. 10 (leave empty for an acca leg)'}" value="${esc(F.stake)}"></label>
       <label class="field"><span>Your odds</span><input class="in slipstake" data-blodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 2.10 or 11/10" value="${esc(F.odds)}"></label></div>
@@ -7828,7 +7892,7 @@ function wireBetLog(root, sport) {
     if (sport !== 'football') { const pk = `${F.gid}|${F.pid}|${F.key}|${line}|${F.side}`; r = priced && priced.pk === pk ? priced : { ...(await priceAtGame(sport, F.gid, F.pid, F.key, line, F.side)), pk }; if (my !== pricing) return; priced = r; }
     else if (F.p > 0) r = { ok: true, p: F.p, push: F.push || 0, fair: F.fair, def: F._def };
     else r = { ok: false, reason: 'football bets keep the fair price only when logged from Hiwi\'s Section', def: F._def };
-    const odds = parseIn(F.odds).dec, stake = Number(String(F.stake).replace(/[£,\s]/g, ''));
+    const odds = parseIn(F.odds).dec, stake = Number(String(F.stake).replace(/[£$€,\s]/g, ''));
     const pr = F.promo ? { free: money(F.free), boost: F.boost || 0 } : { free: 0, boost: 0 }, ev = r.ok && odds && (stake > 0 || pr.free > 0) ? evOf({ type: 'single', p: r.p, push: r.push, odds, stake: stake > 0 ? stake : 0, ...pr }) : null, evp = r.ok && odds ? (r.p * odds + r.push - 1) * 100 : null;
     el.innerHTML = `<div class="sliptiles slippay"><div><small>Fair odds${sport !== 'football' ? ` (${r.games || 0} games before this one)` : ''}</small><b data-blfair>${r.ok ? esc(fmtOdds(r.fair)) : 'Unavailable'}</b></div>
         <div><small>${odds ? `Your odds ${esc(fmtOdds(odds))}: ` : ''}value</small><b data-blev class="${evp == null ? '' : evp > 0 ? 'hit' : 'miss'}">${evp == null ? (r.ok ? 'Type your odds' : '–') : `${evp > 0 ? 'EV+' : 'EV−'} ${evp.toFixed(1)}%${ev != null ? ` (${sgbp(ev)})` : ''}`}</b></div></div>
@@ -7896,6 +7960,7 @@ function wireBetLog(root, sport) {
   box.addEventListener('pointerdown', e => { const vw = e.target.closest && e.target.closest('[data-blview] button'); if (vw && F.view !== vw.dataset.v) { F.view = vw.dataset.v; requestAnimationFrame(drawTotals); } }); // Update 68
   box.addEventListener('change', e => { if (e.target.matches('[data-bldstake], [data-bldbook]')) { const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(loadDraft()); } });
 
+  onUnitChange(box, () => { drawTotals(); drawDraft(); drawForm(); }); // Update 71: your unit size / currency changed
   box.addEventListener('click', e => {
     { const t = e.target, pr = t.closest('[data-pr]');
       if (pr && (t.matches('[data-prtick]') || t.closest('[data-prboost] button'))) { const c = pr.dataset.pr, root = c === 'form' ? body : c === 'draft' ? box.querySelector('#bldraft') : pr.closest('.bleditbox');
@@ -7916,7 +7981,7 @@ function wireBetLog(root, sport) {
       const msg = body.querySelector('[data-blmsg]'), { sel, odds, msg: m } = selFromForm(); if (!sel) { msg.textContent = m; return; }
       if (t.closest('[data-bladdleg]')) { const d = loadDraft(); d.legs.push({ ...sel, id: `leg|${Date.now()}|${d.legs.length}`, odds: odds.dec ? (odds.exact || odds.dec) : null, oddsTxt: F.odds, result: '' }); saveDraft(d); drawDraft(); msg.textContent = `Added to the acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'}): see below.`; return; }
       const stake = money(F.stake), PR = F.promo ? readPromo(body) : { promo: false, free: 0, boost: 0 };
-      if (String(F.stake || '').trim() && !(Number(String(F.stake).replace(/[£,\s]/g, '')) >= 0)) { msg.textContent = 'Type your stake as a number, e.g. 10.'; return; }
+      if (String(F.stake || '').trim() && !(Number(String(F.stake).replace(/[£$€,\s]/g, '')) >= 0)) { msg.textContent = 'Type your stake as a number, e.g. 10.'; return; }
       if (PR.bad) { msg.textContent = 'Type the free bet amount as a number, e.g. 5.'; return; }
       if (!(stake > 0) && !(PR.free > 0)) { msg.textContent = F.promo ? 'Type the free bet amount and / or your own money.' : 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
       const b = { ...sel, id: `${sport}|${sel.gameId || fxKeyOf(sel.fx)}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`, type: 'single', stake, odds: odds.exact || odds.dec, oddsTxt: String(F.odds || '').trim(), result: '', logged: new Date().toISOString(),
@@ -7968,7 +8033,7 @@ function wireBetLog(root, sport) {
   /** Read an edit box and save the bet (returns nothing; shows a message on a problem). */
   const saveEdit = async ebox => {
     const msg = ebox.querySelector('[data-blemsg]'), a = loadLog(), i = a.findIndex(x => x.id === ebox.dataset.bleditfor); if (i < 0) { ebox.remove(); return; }
-    const b = JSON.parse(JSON.stringify(a[i])), num = v => Number(String(v || '').replace(/[£,\s]/g, '').replace(',', '.'));
+    const b = JSON.parse(JSON.stringify(a[i])), num = v => Number(String(v || '').replace(/[£$€,\s]/g, '').replace(',', '.'));
     const readLeg = (x, el) => { const q = k => el.querySelector(`[data-ble="${k}"]`), o = parseIn(q('odds') ? q('odds').value : ''); if (q('odds') && !o.dec) return `Type valid odds${x.name ? ` for ${x.name}` : ''} (e.g. 1.80 or 4/5).`;
       const before = `${x.line}|${x.side}|${x.name}`;
       if (q('name')) { const d = q('name').value.trim(); if (!d) return 'Describe the bet.'; x.name = d; }
@@ -8031,6 +8096,7 @@ __m['myplays'] = (() => {
 const { esc, koUK } = __m['util'];
 const { fmtOdds } = __m['oddsfmt'];
 const { RISK } = __m['risk'];
+const { CUR } = __m['units'];
 const { fmtU } = __m['kelly'];
 const { betLogHtml, wireBetLog } = __m['betlog'];
 const { logSingleNow } = __m['betprefill'];
@@ -8097,7 +8163,7 @@ function ladders(list) {
     out.push({ name: g[0].name, market: g[0].market, rows, evU, n: g.length }); }
   return out;
 }
-const money = u => `${u >= 0 ? '+' : '−'}£${Math.abs(u * RISK.unitGBP).toFixed(2)}`;
+const money = u => `${u >= 0 ? '+' : '−'}${CUR()}${Math.abs(u * RISK.unitGBP).toFixed(2)}`;
 const uu = u => `${u >= 0 ? '+' : '−'}${fmtU(Math.abs(u))}u`;
 
 function viewMyPlays(root0) {
@@ -8113,13 +8179,13 @@ function viewMyPlays(root0) {
     const a = load(), days = [...new Set(a.map(x => x.day))].sort().reverse();
     const settled = a.filter(x => x.result), pl = settled.reduce((t, x) => t + (x.result === 'won' ? x.units * (x.odds - 1) : x.result === 'lost' ? -x.units : 0), 0), staked = settled.filter(x => x.result !== 'void').reduce((t, x) => t + x.units, 0);
     root.innerHTML = `<div id="mypg"><h2 style="margin:16px 0 4px">Plays added from Compare Price</h2>
-      <p class="muted" style="margin-top:0">Plays you added from Compare Price, with the price you typed and the stake after PropLab's risk controls. Kept on this device only. 1 unit = £${RISK.unitGBP}.</p>
+      <p class="muted" style="margin-top:0">Plays you added from Compare Price, with the price you typed and the stake after PropLab's risk controls. Kept on this device only. 1 unit = ${CUR()}${RISK.unitGBP}.</p>
       <div class="tiles evtiles"><div class="tile"><b>${a.length}</b><span>Plays</span></div><div class="tile"><b>${settled.length}</b><span>Settled</span></div><div class="tile ${pl >= 0 ? 'pos' : 'neg'}"><b>${uu(pl)}</b><span>Profit / loss (${money(pl)})</span></div><div class="tile"><b>${staked ? `${((pl / staked) * 100).toFixed(1)}%` : '–'}</b><span>Return on units staked</span></div></div>
       <details class="card"><summary class="small"><b>Limits</b> <span class="xs muted">(what is enforced)</span></summary><ul class="small" style="margin:6px 0;padding-left:18px"><li><b>Enforced</b> when you add a play (the stake is cut to fit, or the play is not added): ${RISK.daily}u a day; ${RISK.perPlayer}u on one player across all his markets; ${RISK.perGame}u on one game; ${RISK.cap}u on one player and market at several lines (a ladder is one outcome); per selection ${RISK.cap}u, and 0.50u from odds 4.00 / 0.25u from 8.00 (Compare's final stake).</li><li><b>Advisory</b> (a warning, the stake is not changed): several players in one game; one player on several different markets.</li><li><b>Unavailable</b>: doubles and other multiples. PropLab does not price them, because the legs are not independent and it has no reliable way to measure how they move together; it never multiplies single chances for them.</li></ul></details>
       <p class="xs muted">Your own bets only. They are never mixed into the model's test results on Model Performance, and a short run of results says little either way.</p>
       ${!a.length ? '<div class="banner info"><b>No plays yet.</b> Open a play, tap <b>Compare</b>, type the price you can see and tap <b>Add to My Plays</b>.</div>' : ''}
       ${days.map(d => { const L = a.filter(x => x.day === d), open = L.filter(x => !x.result), W = checks(open), LD = ladders(open), tot = L.reduce((t, x) => t + x.units, 0);
-        return `<section class="card stack mpday"><b>${esc(d)}</b> <span class="xs muted">${L.length} play${L.length === 1 ? '' : 's'} · ${fmtU(tot)}u (£${(tot * RISK.unitGBP).toFixed(2)})</span>
+        return `<section class="card stack mpday"><b>${esc(d)}</b> <span class="xs muted">${L.length} play${L.length === 1 ? '' : 's'} · ${fmtU(tot)}u (${CUR()}${(tot * RISK.unitGBP).toFixed(2)})</span>
         ${W.length ? `<div class="banner warnb">${W.map(w => `<p style="margin:2px 0">⚠ ${esc(w)}</p>`).join('')}</div>` : ''}
         ${L.map(x => `<div class="mprow" data-mp="${esc(x.id)}"><div><b>${esc(x.name)}</b> · ${esc(x.market)} ${esc(sideTxt(x))}<div class="xs muted">${esc(x.game || '')} · ${esc(fmtOdds(x.odds))} · model ${(x.p * 100).toFixed(1)}% · ${fmtU(x.units)}u (£${(x.units * RISK.unitGBP).toFixed(2)})${x.limited && x.limited.length ? ` · cut from ${fmtU(x.asked)}u by the ${esc(x.limited.join(', '))}` : ''}</div></div>
           <div class="seg mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void']].map(([v, l]) => `<button type="button" data-mpres="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}<button type="button" data-mpdel aria-label="Remove">✕</button></div></div>`).join('')}
@@ -8168,7 +8234,7 @@ if (typeof document !== 'undefined') document.addEventListener('click', ev => {
   const sel = us && pid && I.gameId ? { sport: I.sport, gameId: String(I.gameId), scope: 'player', pid, name: I.name, team: I.team || '', key: I.key, market: I.market, binary: !!I.binary, line: I.binary ? 0.5 : I.line, side: I.side, p: I.p, push: 0, fair: I.p ? 1 / I.p : null, model: "PropLab's model when you logged it", game: I.game, date: I.date || '' }
     : { sport: I.sport, gameId: String(I.gameId || ''), scope: 'other', pid: '', name: `${I.name} · ${I.market} ${sideTxt(I)}`, team: '', key: 'other', market: '(you settle it)', binary: false, line: null, side: '', p: I.p, push: 0, fair: I.p ? 1 / I.p : null, game: I.game || '', date: I.date || '' };
   const saved = logSingleNow(sel, d0.dec, '', u0 * RISK.unitGBP);
-  if (m0) m0.textContent = saved ? `In My Plays: £${saved.stake.toFixed(2)} (${fmtU(u0)}u) at ${fmtOdds(d0.dec)}${sel.scope === 'other' ? '. Set its result yourself in My Plays (Edit).' : '. It settles automatically.'}` : 'Could not save on this phone (private browsing?).';
+  if (m0) m0.textContent = saved ? `In My Plays: ${CUR()}${saved.stake.toFixed(2)} (${fmtU(u0)}u) at ${fmtOdds(d0.dec)}${sel.scope === 'other' ? '. Set its result yourself in My Plays (Edit).' : '. It settles automatically.'}` : 'Could not save on this phone (private browsing?).';
   if (saved) b0.disabled = true;
 });
 if (false) document.addEventListener('click', ev => {
@@ -8370,6 +8436,7 @@ const { evalAt, ladderName } = __m['recplays'];
 const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
 const { esc, fmtKick } = __m['util'];
 const { hooks } = __m['shared'];
+const { CUR } = __m['units'];
 const { selFromCandidate, logBetNow } = __m['betprefill'];
 const { accaPlan, getFrac } = __m['risk'];
 
@@ -8380,7 +8447,7 @@ const GAME_OVER_MS = { nba: 4 * 3600e3, nfl: 5 * 3600e3, football: 3 * 3600e3 };
 function combos(n, k) { const out = [], c = []; const go = s => { if (c.length === k) { out.push(c.slice()); return; } for (let i = s; i <= n - (k - c.length); i++) { c.push(i); go(i + 1); c.pop(); } }; if (k >= 1 && k <= n) go(0); return out; }
 const nCk = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
 /** The stake box names the bet it is for (owner, 4 Nov: no per bet / total switch). */
-const stakeLabel = f => { if (!f) return 'Stake (£)'; if (f.id === 'acca') return 'Stake (£)'; if (f.system) return `Stake per bet (£) · ${f.bets} bets`; const k = f.ks[0]; return `Stake per ${k === 1 ? 'single' : k === 2 ? 'double' : k === 3 ? 'treble' : `${k}-fold`} (£) · ${f.bets} bets`; };
+const stakeLabel = f => { if (!f) return `Stake (${CUR()})`; if (f.id === 'acca') return `Stake (${CUR()})`; if (f.system) return `Stake per bet (${CUR()}) · ${f.bets} bets`; const k = f.ks[0]; return `Stake per ${k === 1 ? 'single' : k === 2 ? 'double' : k === 3 ? 'treble' : `${k}-fold`} (£) · ${f.bets} bets`; };
 const FOLD = k => (k === 1 ? 'Singles' : k === 2 ? 'Doubles' : k === 3 ? 'Trebles' : `${k}-folds`);
 // full-cover bets: [id, name, selections, smallest fold included]
 const SYSTEMS = [['trixie', 'Trixie', 3, 2], ['patent', 'Patent', 3, 1], ['yankee', 'Yankee', 4, 2], ['lucky15', 'Lucky 15', 4, 1], ['canadian', 'Canadian (Super Yankee)', 5, 2], ['lucky31', 'Lucky 31', 5, 1], ['heinz', 'Heinz', 6, 2], ['lucky63', 'Lucky 63', 6, 1], ['superheinz', 'Super Heinz', 7, 2], ['goliath', 'Goliath', 8, 2]];
@@ -8466,13 +8533,14 @@ function slipRegister(cands) { const S = load(); let ch = false; for (const c of
   if (ch) changed(); }
 // ---------------- UI ----------------
 let el = null, visible = false;
-const money = v => `£${(Math.round(v * 100) / 100).toFixed(2)}`;
+const money = v => `${CUR()}${(Math.round(v * 100) / 100).toFixed(2)}`;
 function ensure() {
   if (el || typeof document === 'undefined') return el;
   el = document.createElement('div'); el.className = 'slipwrap'; el.innerHTML = '<button type="button" class="sliptab" data-sliptab aria-expanded="false" aria-controls="slippanel"></button><aside class="slippanel" id="slippanel" aria-label="Acca slip" hidden></aside>';
   document.body.appendChild(el);
   el.addEventListener('click', onClick); el.addEventListener('input', onInput); el.addEventListener('change', onChange);
   document.addEventListener('oddsfmt', () => { if (ST && ST.open) drawPanel(); syncButtons(); });
+  document.addEventListener('unitchange', () => { if (ST && ST.open) drawPanel(); });
   return el;
 }
 /** Show the slip tab on these pages only (Hiwi's Section singles and the Acca Builder). */
@@ -8503,7 +8571,7 @@ function drawPanel() {
 }
 const adjOf = (a, b) => (a.sport === 'nba' && b.sport === 'nba' && a.kind === 'player' && b.kind === 'player' ? { ok: true, ratio: 1, tested: true } : null); // Update 65: see accabuild.js jointOf
 function drawOut() {
-  const S = load(), box = el.querySelector('[data-slipout]'); if (!box) return; const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£,\s]/g, '')), S.per, adjOf);
+  const S = load(), box = el.querySelector('[data-slipout]'); if (!box) return; const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£$€,\s]/g, '')), S.per, adjOf);
   const tx = el.querySelector('[data-slipfmttext]'); if (tx && R) tx.textContent = R.fmt.text + (R.fmt.system ? '. Each bet has the same stake.' : '');
   if (!R) { box.innerHTML = ''; return; }
   const has = R.unit > 0, many = R.n > 1;
@@ -8547,7 +8615,7 @@ function onClick(e) {
 function logFromSlip(btn) {
   const S = load(), m = el.querySelector('[data-sliplogmsg]'), say = (h, ok) => { if (m) { m.innerHTML = h; m.className = `small ${ok ? 'hit' : 'warn'}`; } };
   if (!S.sel.length) return say('Your slip is empty.');
-  const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£,\s]/g, '')), S.per, adjOf); if (!R) return say('Pick a bet type.');
+  const R = priceSlip(S.sel, S.fmt, parseFloat(String(S.stakeTxt).replace(/[£$€,\s]/g, '')), S.per, adjOf); if (!R) return say('Pick a bet type.');
   const need = [...new Set(R.bets.flatMap(b => b.idx))].filter(i => !(S.sel[i].book > 1));
   if (need.length) return say(`Type the odds you got for ${need.map(i => esc(S.sel[i].name)).join(', ')} (the "Your odds" box on each pick).`);
   if (!(R.unit > 0)) return say('Type your stake.');
@@ -8718,6 +8786,7 @@ const { hooks } = __m['shared'];
 const { selFromCandidate, openBetForm, logSingleNow } = __m['betprefill'];
 const { nightOf } = __m['nightdate'];
 const { nbaSeasonAvgMin } = __m['nbaprefs'];
+const { CUR, unitChip, onUnitChange } = __m['units'];
 const { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
 const { BEAR_ART } = __m['icons'];
@@ -8792,7 +8861,7 @@ async function viewRecommended(root, sport) {
   if (!s.fx.size) for (const f of firstPick(all)) s.fx.add(fxIdOf(sport, f));
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
-  root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
+  root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div>${unitChip()}</nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
     <p class="muted" style="margin-top:-4px">Choose your games and set the minimum chance and fair-odds range. PropLab works out every ${sportName} market it can price and shows the strongest plays. Type the price you can see on any play to get its EV and stake. Tap anything marked ⓘ for what it means.</p>
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
@@ -8927,7 +8996,7 @@ async function viewRecommended(root, sport) {
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
     else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
-      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (£${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
         <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
@@ -9031,6 +9100,7 @@ async function viewRecommended(root, sport) {
   const scrollBars = root => root.querySelectorAll('.rbwrap.wide').forEach(el => { const b = el.querySelector('.rbar.sel'); el.scrollLeft = b ? Math.max(0, b.offsetLeft - el.clientWidth / 2) : el.scrollWidth; });
   const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); const n = t.firstElementChild; el.replaceWith(n); syncButtons(); scrollBars(n); };
   // ---------------- events ----------------
+  onUnitChange(pg, () => render(true)); // Update 71: stakes in your currency at your unit size
   pg.addEventListener('change', e => {
     const t = e.target;
     if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
@@ -9087,7 +9157,7 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: r.p }, D, r.conf), g = x.c.f;
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
       const u = P ? P.final : 0, saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP) : null, b = t.closest('[data-radd]'); void info;
-      b.textContent = saved ? `✓ In My Plays: £${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}` : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved; if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
+      b.textContent = saved ? `✓ In My Plays: ${CUR()}${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}` : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved; if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
     if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'), bt = t.closest('[data-ralt]'); box.hidden = !box.hidden; bt.setAttribute('aria-expanded', String(!box.hidden)); bt.querySelector('b').textContent = box.hidden ? '▸' : '▾'; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
       box.innerHTML = `<table class="ralttb raltcomp"><tr><th>Line</th><th>Model</th><th>Fair</th><th>L10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
     const pk = t.closest('[data-rpick]'); if (pk) { const r = evalAt(x.c, Number(pk.dataset.rpick), x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L: r.L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
@@ -9114,6 +9184,7 @@ const { buildCandidates } = __m['recplays'];
 const { EVID } = __m['confidence'];
 const { blowoutOf } = __m['blowout'];
 const { isHidden, hiddenPlayKeys } = __m['excl'];
+const { unitChip } = __m['units'];
 const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
 const { slipAddMany, slipRegister } = __m['accaslip'];
 const { evalAt, ladderName } = __m['recplays'];
@@ -9175,7 +9246,7 @@ function aevHtml(J, book) {
 }
 
 async function viewAcca(root, sport) {
-  const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div></nav>`;
+  const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div>${unitChip()}</nav>`;
   if (!S.f.sports.length) S.f.sports = [sport];
   root.innerHTML = `${tabs}<div id="accapg"><h1>Acca Builder</h1>
     <p class="muted" style="margin-top:-4px">Choose a target price. PropLab picks the legs from the same plays and probabilities as Recommended Plays. Tick <b>Include</b> on legs you like; <b>Exclude</b> a leg (or a whole player) and it is replaced straight away; <b>Replace Unlocked Plays</b> as often as you like. Fair odds are not bookmaker odds: a 10/1 fair acca is not a 10/1 bet, and it is not value unless your bookmaker pays more.</p>
