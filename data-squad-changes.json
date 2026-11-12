@@ -1,6 +1,6 @@
 {
 "schema": 1,
-"updated": "2026-11-09",
+"updated": "2026-11-12",
 "source": "Wikipedia club articles (CC BY-SA 4.0), compared night by night",
 "note": "A player leaving a list may have been sold, released, retired or loaned out: the list does not say which.",
 "items": [
@@ -91,6 +91,30 @@
 "from": null,
 "to": "San Jose Earthquakes",
 "kind": "joined the squad list"
+},
+{
+"date": "2026-11-12",
+"league": "mls",
+"player": "Brendan Hines-Ike",
+"from": "Austin FC",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-12",
+"league": "mls",
+"player": "Ilie Sánchez",
+"from": "Austin FC",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-12",
+"league": "mls",
+"player": "Riley Thomas",
+"from": "Austin FC",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
 }
 ]
 }
