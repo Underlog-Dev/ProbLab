@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="ffd3e906e09a">
+<meta name="proplab-build" content="f4ad3d3fd8b2">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -9080,7 +9080,9 @@ async function viewRecommended(root, sport) {
   // Update 70 (owner, 11 Nov 2026): tap Season / Last 5 / Last 10 / Last 20 / All / v opponent and the bar chart shows those games; tap a
   // bar for that game's box score. Kept for this visit (per play); Last 10 to start, as before.
   const WINSEL = new Map(), BOXSEL = new Map();
-  const winOf = x => WINSEL.get(`${x.c.id}|${x.side}`) || 'l10';
+  // Update 75 (owner, 12 Nov): each play's chart starts on the "Hit rate over" filter (Season by default); tapping a box on a play
+  // changes that play only, and changing the filter resets every play to it.
+  const winOf = x => WINSEL.get(`${x.c.id}|${x.side}`) || s.f.hitWin || 'l10';
   const winRows = (x, w) => { const c = x.c; return w === 'season' ? c.rows.filter(q => q.season === c.cur) : w === 'l5' ? c.rows.slice(0, 5) : w === 'l20' ? c.rows.slice(0, 20) : w === 'all' ? c.rows : w === 'opp' ? c.rows.filter(q => c.opp && q.opp === c.opp).slice(0, 10) : c.rows.slice(0, 10); };
   const rowKey = q => `${q.game ?? ''}|${q.date || ''}`;
   const dash = v => (v == null || v === '' ? '–' : String(v));
@@ -9200,8 +9202,8 @@ async function viewRecommended(root, sport) {
     const ad = t.closest('[data-recaddfx]'); if (ad) { s.fx.add(ad.dataset.recaddfx); pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; fxCount(); save(sport, s); run(); return; }
     const fa = t.closest('[data-fxall]'); if (fa) { const v = fa.dataset.fxall, vis = all.filter(shownF); s.fx.clear(); if (v === 'all') vis.forEach(f => s.fx.add(fxIdOf(sport, f))); if (v === 'today') { const d = vis.length ? ukDay(vis[0]) : null; vis.forEach(f => { if (ukDay(f) === d) s.fx.add(fxIdOf(sport, f)); }); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); fxCount(); save(sport, s); run(); return; }
-    const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
-    if (t.closest('[data-rreset]')) { s.f = { ...DEF, ...RECO(sport), mkOff: [], q: '' }; s.sort = 'best'; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
+    const sg = t.closest('[data-rseg] button'); if (sg) { const k = sg.closest('[data-rseg]').dataset.rseg; s.f[k] = k === 'minConf' ? Number(sg.dataset.v) : sg.dataset.v; if (k === 'hitWin') { WINSEL.clear(); BOXSEL.clear(); } s.kept.clear(); save(sport, s); drawFilters(); render(); return; }
+    if (t.closest('[data-rreset]')) { WINSEL.clear(); BOXSEL.clear(); s.f = { ...DEF, ...RECO(sport), mkOff: [], q: '' }; s.sort = 'best'; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); run(); return; }
     if (t.closest('[data-mkall]')) { s.f.mkOff = []; s.kept.clear(); save(sport, s); render(); return; }
     if (t.closest('[data-mknone]')) { s.f.mkOff = [...pg.querySelectorAll('[data-mk]')].map(i => i.value); s.kept.clear(); save(sport, s); render(); return; }
     const mg = t.closest('[data-mkgrp]'); if (mg) { const ks = [...mg.closest('.mkgrp').querySelectorAll('[data-mk]')].map(i => i.value), off = new Set(s.f.mkOff), allOn = ks.every(k => !off.has(k)); ks.forEach(k => (allOn ? off.add(k) : off.delete(k))); s.f.mkOff = [...off]; s.kept.clear(); save(sport, s); render(); return; }
