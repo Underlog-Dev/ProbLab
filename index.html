@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="8fb837918100">
+<meta name="proplab-build" content="58618262ac71">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -811,11 +811,35 @@ details.blacca>summary{list-style:none;cursor:pointer}details.blacca>summary::-w
 .bltile.blopen{border-color:var(--accent,#3b82f6)}
 /* Update 71: unit size box (top corner) */
 .unitrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.fpnav{position:relative}.fpnav .unitchip{margin-left:auto}
-.unitchip{font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--muted);white-space:nowrap;cursor:pointer}.unitchip b{color:var(--text)}
+.fpnav{position:relative}.fpnav .unitchips{margin-left:auto}
+.unitchips{display:inline-flex;gap:6px;margin-left:auto;flex:none}.unitchip{font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;border:1.5px solid rgba(255,255,255,.85);background:var(--bg);color:var(--muted);white-space:nowrap;cursor:pointer}.unitchip b{color:var(--text)}
 .unitpop{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:min(320px,calc(100vw - 32px));box-shadow:0 8px 30px rgba(0,0,0,.45)}
 .unitrow{position:relative}
 .blip{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,#f59e0b 22%,transparent);color:#fbbf24;vertical-align:middle}.blinplay{margin:6px 0 0}
+/* Update 73: My Plays — big "Log a bet" button, folding days */
+.blform>summary.bigbtn{list-style:none;display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:12px;background:#3b6cf0;color:#fff;font-weight:800;font-size:19px;letter-spacing:.2px;cursor:pointer}
+.blform>summary.bigbtn::-webkit-details-marker{display:none}.blform>summary.bigbtn::after{content:'＋';margin-left:10px;font-weight:700}.blform[open]>summary.bigbtn::after{content:'−'}
+.blform:has(>summary.bigbtn){padding:6px}
+details.bldat>summary.bldh{list-style:none;cursor:pointer;position:relative;padding-right:22px}details.bldat>summary.bldh::-webkit-details-marker{display:none}
+details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--muted);transition:transform .15s}details.bldat[open]>summary.bldh::after{transform:translateY(-50%) rotate(90deg)}
+/* Update 73: Hiwi's Section "How to use this page" */
+.howto>summary{cursor:pointer}.howsteps{margin:10px 0 0;padding:0;list-style:none;counter-reset:hs}
+.howsteps li{counter-increment:hs;position:relative;padding:0 0 10px 36px;font-size:13.5px;line-height:1.45}.howsteps li::before{content:counter(hs);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#3b6cf0;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+.howsteps li>b{display:block;font-size:14.5px;margin-bottom:1px}.howsteps li>span{color:var(--muted)}.howsteps li>span b,.howsteps li>span i{color:var(--text)}
+
+/* Update 73 (owner): loading = three Hiwi bears running and bobbing in turn, like typing dots (replaces the grey loading bars) */
+.skel.bearload{display:flex;align-items:flex-end;justify-content:center;gap:8px;height:76px;margin:18px auto;padding-top:14px;background:none!important;animation:none;border-radius:0;width:auto!important}
+.bearload i{display:block;width:48px;height:48px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 40%22%3E%3Cg transform=%22translate%280 0%29%22%3E%3Cellipse cx=%2219%22 cy=%2237.5%22 rx=%2211%22 ry=%221.6%22 fill=%22%23000%22 opacity=%22.22%22/%3E%3Cg transform=%22translate%280 0%29%22%3E%3Cline x1=%2223%22 y1=%2228%22 x2=%2228%22 y2=%2234%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2214%22 y1=%2229%22 x2=%2210%22 y2=%2234%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.5%22 cy=%2221.5%22 r=%222.2%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2218%22 cy=%2224%22 rx=%2210.5%22 ry=%227%22 fill=%22%23f6f8fc%22/%3E%3Cline x1=%2225%22 y1=%2228%22 x2=%2232%22 y2=%2232%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2212%22 y1=%2228%22 x2=%225%22 y2=%2231%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M23.4 18.6l-5 3.6 2.3 1 4.1-3.2z%22 fill=%22%232459c9%22/%3E%3Cpath d=%22M22.6 17.2q5 3.2 10 .6l.6 2.8q-5.6 2.7-11.1-.6z%22 fill=%22%232f6df0%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%222.7%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%221.3%22 fill=%22%23c9d9f7%22/%3E%3Ccircle cx=%2231%22 cy=%228.6%22 r=%222.5%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2228.4%22 cy=%2214.6%22 r=%227%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2234.2%22 cy=%2216.6%22 rx=%223.7%22 ry=%222.8%22 fill=%22%23e9eef6%22/%3E%3Cellipse cx=%2237.3%22 cy=%2215.6%22 rx=%221.4%22 ry=%221.1%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2230.6%22 cy=%2213%22 r=%221.25%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2231%22 cy=%2212.6%22 r=%22.4%22 fill=%22%23fff%22/%3E%3Cellipse cx=%2229.3%22 cy=%2218.4%22 rx=%221.7%22 ry=%221%22 fill=%22%23f7b9c8%22 opacity=%22.8%22/%3E%3C/g%3E%3C/g%3E%3Cg transform=%22translate%2840 0%29%22%3E%3Cellipse cx=%2219%22 cy=%2237.5%22 rx=%2211%22 ry=%221.6%22 fill=%22%23000%22 opacity=%22.22%22/%3E%3Cg transform=%22translate%280 -0.8%29%22%3E%3Cline x1=%2222%22 y1=%2228%22 x2=%2224%22 y2=%2234%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2212%22 y1=%2228%22 x2=%2211%22 y2=%2234%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.5%22 cy=%2221.5%22 r=%222.2%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2218%22 cy=%2224%22 rx=%2210.5%22 ry=%227%22 fill=%22%23f6f8fc%22/%3E%3Cline x1=%2224%22 y1=%2228%22 x2=%2222%22 y2=%2234%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2213%22 y1=%2228%22 x2=%2215%22 y2=%2234%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M23.4 18.6l-5 3.6 2.3 1 4.1-3.2z%22 fill=%22%232459c9%22/%3E%3Cpath d=%22M22.6 17.2q5 3.2 10 .6l.6 2.8q-5.6 2.7-11.1-.6z%22 fill=%22%232f6df0%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%222.7%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%221.3%22 fill=%22%23c9d9f7%22/%3E%3Ccircle cx=%2231%22 cy=%228.6%22 r=%222.5%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2228.4%22 cy=%2214.6%22 r=%227%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2234.2%22 cy=%2216.6%22 rx=%223.7%22 ry=%222.8%22 fill=%22%23e9eef6%22/%3E%3Cellipse cx=%2237.3%22 cy=%2215.6%22 rx=%221.4%22 ry=%221.1%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2230.6%22 cy=%2213%22 r=%221.25%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2231%22 cy=%2212.6%22 r=%22.4%22 fill=%22%23fff%22/%3E%3Cellipse cx=%2229.3%22 cy=%2218.4%22 rx=%221.7%22 ry=%221%22 fill=%22%23f7b9c8%22 opacity=%22.8%22/%3E%3C/g%3E%3C/g%3E%3Cg transform=%22translate%2880 0%29%22%3E%3Cellipse cx=%2219%22 cy=%2237.5%22 rx=%2211%22 ry=%221.6%22 fill=%22%23000%22 opacity=%22.22%22/%3E%3Cg transform=%22translate%280 0.4%29%22%3E%3Cline x1=%2223%22 y1=%2227%22 x2=%2230%22 y2=%2231%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2214%22 y1=%2228%22 x2=%228%22 y2=%2231%22 stroke=%22%23dfe5ef%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%228.5%22 cy=%2221.5%22 r=%222.2%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2218%22 cy=%2224%22 rx=%2210.5%22 ry=%227%22 fill=%22%23f6f8fc%22/%3E%3Cline x1=%2225%22 y1=%2227%22 x2=%2233%22 y2=%2229%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cline x1=%2212%22 y1=%2227%22 x2=%224%22 y2=%2228%22 stroke=%22%23eef2f8%22 stroke-width=%224.6%22 stroke-linecap=%22round%22/%3E%3Cpath d=%22M23.4 18.6l-5 3.6 2.3 1 4.1-3.2z%22 fill=%22%232459c9%22/%3E%3Cpath d=%22M22.6 17.2q5 3.2 10 .6l.6 2.8q-5.6 2.7-11.1-.6z%22 fill=%22%232f6df0%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%222.7%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2225%22 cy=%228.8%22 r=%221.3%22 fill=%22%23c9d9f7%22/%3E%3Ccircle cx=%2231%22 cy=%228.6%22 r=%222.5%22 fill=%22%23f6f8fc%22/%3E%3Ccircle cx=%2228.4%22 cy=%2214.6%22 r=%227%22 fill=%22%23f6f8fc%22/%3E%3Cellipse cx=%2234.2%22 cy=%2216.6%22 rx=%223.7%22 ry=%222.8%22 fill=%22%23e9eef6%22/%3E%3Cellipse cx=%2237.3%22 cy=%2215.6%22 rx=%221.4%22 ry=%221.1%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2230.6%22 cy=%2213%22 r=%221.25%22 fill=%22%231d2633%22/%3E%3Ccircle cx=%2231%22 cy=%2212.6%22 r=%22.4%22 fill=%22%23fff%22/%3E%3Cellipse cx=%2229.3%22 cy=%2218.4%22 rx=%221.7%22 ry=%221%22 fill=%22%23f7b9c8%22 opacity=%22.8%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0/144px 48px no-repeat;animation:bearrun .42s steps(3) infinite,bearbob 1.05s ease-in-out infinite}
+.bearload i:nth-child(2){animation-delay:-.14s,.17s}.bearload i:nth-child(3){animation-delay:-.28s,.34s}
+@keyframes bearrun{to{background-position:-144px 0}}
+@keyframes bearbob{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-12px)}}
+@media (prefers-reduced-motion:reduce){.bearload i{animation:bearbob 2.4s ease-in-out infinite}}
+.startset{margin:0 0 14px}
+/* Update 73 (owner): on Hiwi's Section the filters worth adjusting are outlined in white; everything else can stay at its default */
+.recflt .keyf .in,.recflt .keyf .seg{border:1.5px solid rgba(255,255,255,.9)!important;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.recflt .keyf>span:first-child{color:var(--text)!important;font-weight:600}
+.keynote{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--s2);color:var(--muted);display:flex;gap:8px;align-items:flex-start}.keynote b{color:var(--text)}
+.keyswatch{flex:none;width:16px;height:16px;margin-top:2px;border-radius:5px;border:1.5px solid #fff}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1027,7 +1051,7 @@ const isUpcoming = (f, now = new Date()) => {
 };
 // ---- viewer time zone: DISPLAY ONLY. Fixture identity, gameweeks, sorting and every calculation keep using the UTC instant
 // (and the UK reference date above); only the date and time a visitor reads are converted to their own time zone. ----
-const TZ_CHOICES = [['auto', 'Automatic'], ['uk', 'UK', 'Europe/London'], ['et', 'US Eastern', 'America/New_York'], ['ct', 'US Central', 'America/Chicago'], ['pt', 'US Pacific', 'America/Los_Angeles'], ['tr', 'Turkey', 'Europe/Istanbul']];
+const TZ_CHOICES = [['auto', 'Automatic'], ['uk', 'UK', 'Europe/London'], ['et', 'US Eastern', 'America/New_York'], ['ct', 'US Central', 'America/Chicago'], ['mt', 'US Mountain', 'America/Denver'], ['pt', 'US Pacific', 'America/Los_Angeles'], ['tr', 'Turkey', 'Europe/Istanbul']];
 const validTz = tz => { try { new Intl.DateTimeFormat('en-GB', { timeZone: tz }).format(0); return true; } catch { return false; } };
 /** The browser's time zone, or UTC when it cannot be detected or is not usable. */
 const detectTz = () => { try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; return z && validTz(z) ? z : 'UTC'; } catch { return 'UTC'; } };
@@ -1060,6 +1084,8 @@ const koLocal = f => {
 /** Today's date in the viewer's time zone. */
 const todayLocal = (now = new Date()) => partsIn(now, viewTz()).ymd;
 const localDayAfter = (n, now = new Date()) => partsIn(new Date(now.getTime() + n * 864e5), viewTz()).ymd;
+/** Update 73: any moment (ISO) in the viewer's time zone, e.g. "Wed 12 Nov 19:30 EST" (the footer's time zone, Automatic = this phone's). */
+const whenLocal = iso => { if (!iso) return ''; const d = new Date(iso); if (Number.isNaN(d.getTime())) return String(iso); const k = koLocal({ ko_utc: d.toISOString() }); return `${fmtDay(k.ymd)} ${k.hm} ${k.abbr}`; };
 /** "Sun 18 Oct · 15:00 BST" or "Sun 25 Oct · time TBC". */
 const fmtKick = f => { const k = koLocal(f); return `${fmtDay(k.ymd)} · ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
 /** The zone name used now, for notes such as "Times shown in BST". */
@@ -1118,7 +1144,7 @@ const keepScrollIn = (root, fn) => {
   const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
 };
 
-return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, isProvisional, timeHtml, SCROLLERS, keepScrollIn };
+return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, whenLocal, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, isProvisional, timeHtml, SCROLLERS, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -1743,7 +1769,7 @@ const { $, $$, esc, fmtDay, fmtLong, fmtShort, koLocal, todayLocal, localDayAfte
 const { nightOf, viewingNight } = __m['nightdate'];
 
 const nbaBanner = () => (nba.status === 'error' ? `<div class="banner bad"><b>NBA data unavailable.</b> ${esc(nba.error)} <a href="" onclick="location.reload();return false">Try again</a></div>` : '');
-const nbaLoading = root => { if (nba.status !== 'ready') { root.innerHTML = nba.status === 'error' ? nbaBanner() : '<div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div>'; return true; } return false; };
+const nbaLoading = root => { if (nba.status !== 'ready') { root.innerHTML = nba.status === 'error' ? nbaBanner() : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return true; } return false; };
 const nbaCredit = () => `<p class="xs muted">NBA data: <a href="https://github.com/sportsdataverse/sportsdataverse-data/releases" target="_blank" rel="noopener">sportsdataverse / hoopR</a> (CC BY 4.0, from ESPN box scores and play-by-play), ${esc(seasonLabel(nba.meta.seasons[0]))} to ${esc(seasonLabel(latestSeason()))}; injuries: <a href="https://official.nba.com/nba-injury-report-2026-27-season/" target="_blank" rel="noopener">Official NBA Injury Report</a>. Updated nightly; PropLab has no live scores.</p>`;
 const LIVE_NBA = 3 * 3600e3;
 const typeTag = g => (g.type === 'P' ? `<span class="potag">${esc(g.round || 'Playoffs')}</span>` : g.type === 'PI' ? `<span class="pitag">${esc(g.round || 'Play-In')}</span>` : g.type === 'C' ? `<span class="potag">NBA Cup Championship</span>` : '');
@@ -1871,7 +1897,9 @@ const KIND = { dec: 'decimal', frac: 'fractional', amer: 'American' };
  */
 function parseIn(text, f = oddsFmt()) {
   void f;
-  const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
+  // Update 73: also read PropLab's own approximate prices ("≈ 11/10", "≈ +105", as Re-add copies them) and the minus / plus signs a
+  // phone keyboard may type instead of "-" (−, –, —, ＋).
+  const s = String(text ?? '').trim().toLowerCase().replace(/^[≈~]/, '').replace(/[−–—]/g, '-').replace(/＋/g, '+').replace(/\s+/g, '').replace(',', '.'); if (!s) return { dec: null };
   const ok = (x, kind) => (Number.isFinite(x) && x > 1 && x <= 1001 ? { dec: Math.round(x * 1000) / 1000, exact: x, kind } : { dec: null, error: 'That price is not possible (decimal odds must be above 1.00 and at most 1001)' });
   if (s === 'evens' || s === 'evs' || s === 'even' || s === 'ev') return ok(2, 'fractional');
   let m = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(s);
@@ -1902,7 +1930,7 @@ __m['minfair'] = (() => {
 // Minimum fair odds filter (owner request 28 Oct 2026, evening): one box on Hiwi and every Find Plays page. Plays whose model fair odds are
 // below the minimum are hidden, and so are plays with no estimate (they have no fair odds to compare). Only the display changes: sorting,
 // ticked players and the other filters are untouched, and clearing the box shows everything again. Any odds format can be typed.
-const { parseIn } = __m['oddsfmt'];
+const { parseIn, fmtOdds } = __m['oddsfmt'];
 const { esc } = __m['util'];
 const KEY = 'proplab.minfair.v1';
 let mem; // { text, dec } or null
@@ -1948,7 +1976,7 @@ function applyMinFair(box) {
 }
 function note() {
   const m = minFair(), n = new Set([...document.querySelectorAll('.mfhide')].map(x => (x.matches('tr') ? x.closest('tr.hytr') || x.nextElementSibling : x))).size;
-  document.querySelectorAll('[data-mfnote]').forEach(el => { el.textContent = m ? `Showing plays with fair odds of ${m.dec.toFixed(2)} or more: ${n} hidden${n ? '' : ''} (plays with no estimate are hidden too).` : 'Empty = every play shown.'; });
+  document.querySelectorAll('[data-mfnote]').forEach(el => { el.textContent = m ? `Showing plays with fair odds of ${fmtOdds(m.dec)} or longer: ${n} hidden${n ? '' : ''} (plays with no estimate are hidden too).` : 'Empty = every play shown.'; });
   document.querySelectorAll('[data-mfclear]').forEach(b => { b.hidden = !m; });
   const f = muFilter(); document.querySelectorAll('[data-mufnote]').forEach(el => { el.textContent = f === 'all' ? '' : `${f === 'g' ? 'Green' : 'Green or yellow'} matchups only: ${n} hidden (plays without a matchup rank are hidden too).`; });
   document.querySelectorAll('[data-mufilter]').forEach(b => { const on = b.dataset.mufilter === f; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
@@ -3173,8 +3201,10 @@ const nbaTypeOk = t => (getNbaTypes() === 'R' ? t === 'R' : true);
 // is always shown. ----
 const AK = 'proplab.nba.minAvg.v1';
 let memA = null;
-const getNbaAvg = () => { if (memA) return memA; try { const o = JSON.parse(localStorage.getItem(AK) || 'null'); memA = o && typeof o.val === 'number' ? { on: !!o.on, val: Math.max(1, Math.min(44, o.val)) } : { on: false, val: 20 }; } catch { memA = { on: false, val: 20 }; } return memA; };
-const setNbaAvg = (on, val) => { memA = { on: !!on, val: Math.max(1, Math.min(44, Math.round(Number(val) || 20))) }; globalThis.__prefRev = (globalThis.__prefRev || 0) + 1; try { localStorage.setItem(AK, JSON.stringify(memA)); } catch { /* this visit only */ } };
+// Update 73 (owner, 12 Nov 2026): on at 25+ minutes by default. Applied once to a phone that saved the setting before (v < 2); after that
+// your own choice is kept.
+const getNbaAvg = () => { if (memA) return memA; try { const o = JSON.parse(localStorage.getItem(AK) || 'null'); memA = o && typeof o.val === 'number' && o.v >= 2 ? { on: !!o.on, val: Math.max(1, Math.min(44, o.val)) } : { on: true, val: 25 }; } catch { memA = { on: true, val: 25 }; } return memA; };
+const setNbaAvg = (on, val) => { memA = { on: !!on, val: Math.max(1, Math.min(44, Math.round(Number(val) || 25))), v: 2 }; globalThis.__prefRev = (globalThis.__prefRev || 0) + 1; try { localStorage.setItem(AK, JSON.stringify(memA)); } catch { /* this visit only */ } };
 /** His average minutes this season (regular season, games played), or null when he has not played this season. */
 const nbaSeasonAvgMin = p => (p && p.now && p.now.min != null && Number.isFinite(p.now.min) ? p.now.min : null);
 /** True when the player passes the minimum-average filter (always true when it is off). */
@@ -3939,29 +3969,33 @@ __m['units'] = (() => {
 const { esc } = __m['util'];
 const KEY = 'proplab.unit.v1';
 const CURS = ['£', '$', '€'];
-const DEF = { amt: 10, cur: '£' };
+const DEF = { amt: 10, cur: '£', cap: 2 }; // Update 73: cap = your max units on one play (2u until changed)
 let mem = null;
 function getUnit() {
   if (mem) return mem;
-  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); mem = j && Number(j.amt) > 0 && CURS.includes(j.cur) ? { amt: Number(j.amt), cur: j.cur } : { ...DEF }; } catch { mem = { ...DEF }; }
+  try { const j = JSON.parse(localStorage.getItem(KEY) || 'null'); mem = j && Number(j.amt) > 0 && CURS.includes(j.cur) ? { amt: Number(j.amt), cur: j.cur, cap: Number(j.cap) > 0 ? Number(j.cap) : DEF.cap } : { ...DEF }; } catch { mem = { ...DEF }; }
   return mem;
 }
-function setUnit(amt, cur) {
-  mem = { amt: Math.min(1e6, Math.max(0.01, Math.round(Number(amt) * 100) / 100)), cur: CURS.includes(cur) ? cur : getUnit().cur };
+function setUnit(amt, cur, cap) {
+  const was = getUnit(); mem = { amt: Math.min(1e6, Math.max(0.01, Math.round(Number(amt) * 100) / 100)), cur: CURS.includes(cur) ? cur : was.cur, cap: Number(cap) > 0 ? Math.min(100, Math.round(Number(cap) * 100) / 100) : was.cap };
   try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* this visit only */ }
-  if (typeof document !== 'undefined') { document.querySelectorAll('[data-unitchip]').forEach(b => { b.innerHTML = chipTxt(); }); document.dispatchEvent(new CustomEvent('unitchange')); }
+  if (typeof document !== 'undefined') { document.querySelectorAll('[data-unitchip]').forEach(b => { b.innerHTML = chipTxt(); }); document.querySelectorAll('[data-capchip]').forEach(b => { b.innerHTML = capTxt(); }); document.dispatchEvent(new CustomEvent('unitchange')); }
 }
 /** The currency symbol chosen (£ by default). */
 const CUR = () => getUnit().cur;
 const amtTxt = a => (Number.isInteger(a) ? String(a) : a.toFixed(2));
 const chipTxt = () => `1u = <b>${esc(CUR())}${esc(amtTxt(getUnit().amt))}</b>`;
-/** The box for the top corner of a page. */
-const unitChip = () => `<button type="button" class="unitchip" data-unitchip aria-haspopup="dialog" aria-label="Unit size: tap to change">${chipTxt()}</button>`;
+const capNum = c => String(Number(c.toFixed(2))); // 2, 0.5, 2.25
+const capTxt = () => `Max <b>${esc(capNum(getUnit().cap))}u</b>`;
+/** The boxes for the top corner of a page: unit size and max units per play (Update 73), both open the same settings. */
+const unitChip = () => `<span class="unitchips"><button type="button" class="unitchip" data-unitchip aria-haspopup="dialog" aria-label="Unit size: tap to change">${chipTxt()}</button><button type="button" class="unitchip" data-capchip aria-haspopup="dialog" aria-label="Max units per play: tap to change">${capTxt()}</button></span>`;
 function popHtml() { const U = getUnit();
-  return `<div class="unitpop card" role="dialog" aria-label="Unit size" data-unitpop><b>Your unit size</b>
+  return `<div class="unitpop card" role="dialog" aria-label="Unit size" data-unitpop><b>Your unit size and max</b>
     <p class="xs muted" style="margin:4px 0 8px">PropLab works out stakes in units (1/10 Kelly, max 2.00u a play). Set what 1 unit is for you (PropLab suggests 1% of your bankroll) and every money figure follows it. Saved on this phone only, so everyone using the site sets their own.</p>
     <div class="seg" data-unitcur>${CURS.map(c => `<button type="button" data-v="${c}" class="${U.cur === c ? 'on' : ''}">${c}</button>`).join('')}</div>
     <label class="field" style="margin-top:8px"><span>1 unit =</span><input class="in" data-unitamt inputmode="decimal" value="${esc(amtTxt(U.amt))}" aria-label="Amount per unit"></label>
+    <label class="field" style="margin-top:8px"><span>Max units on one play</span><input class="in" data-unitcap inputmode="decimal" value="${esc(capNum(U.cap))}" aria-label="Max units on one play"></label>
+    <p class="xs muted" style="margin:4px 0 0">Stakes above this are cut to it (very long odds get less: at 2u, 0.5u from 4.00 and 0.25u from 8.00, scaled to your max). When a play is cut, Hiwi's Section still shows the uncapped stake beside it.</p>
     <p class="xs muted" style="margin:6px 0">Bets already in My Plays keep the amounts you logged. Changing the currency only changes the symbol shown (nothing is converted).</p>
     <p class="xs warn" data-unitmsg style="margin:0"></p>
     <div class="row" style="border:0;gap:8px;padding:0;margin-top:6px"><button type="button" class="btn primary" data-unitsave>Save</button><button type="button" class="btn" data-unitclose>Cancel</button></div></div>`; }
@@ -3969,12 +4003,13 @@ let wired = false;
 function wireUnits() {
   if (wired || typeof document === 'undefined') return; wired = true;
   document.addEventListener('click', e => { const t = e.target;
-    const chip = t.closest('[data-unitchip]'); if (chip) { const open = document.querySelector('[data-unitpop]'); if (open) { open.remove(); return; } chip.insertAdjacentHTML('afterend', popHtml()); const i = document.querySelector('[data-unitamt]'); if (i) i.focus(); return; }
+    const chip = t.closest('[data-unitchip], [data-capchip]'); if (chip) { const open = document.querySelector('[data-unitpop]'); if (open) { open.remove(); return; } chip.closest('.unitchips').insertAdjacentHTML('afterend', popHtml()); const i = document.querySelector(chip.matches('[data-capchip]') ? '[data-unitcap]' : '[data-unitamt]'); if (i) i.focus(); return; }
     const pop = t.closest('[data-unitpop]'); if (!pop) return;
     const c = t.closest('[data-unitcur] button'); if (c) { c.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === c)); return; }
     if (t.closest('[data-unitclose]')) { pop.remove(); return; }
     if (t.closest('[data-unitsave]')) { const v = Number(String(pop.querySelector('[data-unitamt]').value).replace(/[£$€,\s]/g, '')); if (!(v > 0)) { pop.querySelector('[data-unitmsg]').textContent = 'Type an amount, e.g. 10.'; return; }
-      const cur = (pop.querySelector('[data-unitcur] button.on') || {}).dataset?.v; pop.remove(); setUnit(v, cur); } });
+      const cp = Number(String(pop.querySelector('[data-unitcap]').value).replace(/[u\s]/gi, '')); if (!(cp > 0)) { pop.querySelector('[data-unitmsg]').textContent = 'Type your max units, e.g. 2.'; return; }
+      const cur = (pop.querySelector('[data-unitcur] button.on') || {}).dataset?.v; pop.remove(); setUnit(v, cur, cp); } });
 }
 /** Redraw something when the unit size changes, for as long as el is on the page. */
 function onUnitChange(el, fn) { const h = () => { if (!el.isConnected) { document.removeEventListener('unitchange', h); return; } fn(); }; document.addEventListener('unitchange', h); }
@@ -3995,8 +4030,14 @@ __m['risk'] = (() => {
 const { fmtU } = __m['kelly'];
 const { esc } = __m['util'];
 const { getUnit, CUR } = __m['units'];
+const { fmtOdds } = __m['oddsfmt'];
 
-const RISK = { cap: 2, longOdds: [[8, 0.25], [4, 0.5]], daily: 10, perPlayer: 3, perGame: 5 };
+const RISK = { longOdds: [[8, 0.25], [4, 0.5]], daily: 10, perPlayer: 3, perGame: 5 };
+// Update 73: the per-play cap (max units) is each person's own setting too (2u until changed). Long-odds caps scale with it
+// (at 2u: 0.5u from 4.00, 0.25u from 8.00).
+Object.defineProperty(RISK, 'cap', { get: () => getUnit().cap, enumerable: true });
+/** The cap that applies at these odds: [units, reason]. */
+function capAt(dec) { const cap = RISK.cap; for (const [o, c] of RISK.longOdds) if (dec >= o) { const x = Math.round(c * (cap / 2) * 100) / 100; return [x, `long odds (${fmtOdds(o)} or longer): at most ${fmtU(x)}u`]; } return [cap, `${fmtU(cap)}u per selection (your max)`]; }
 // Update 71: the money value of 1 unit is each person's own setting (units.js; £10 until changed). The name stays for the code using it.
 Object.defineProperty(RISK, 'unitGBP', { get: () => getUnit().amt, enumerable: true });
 const FRACS = [10, 15, 20];
@@ -4020,8 +4061,7 @@ function stakePlan(e, dec, conf, den = getFrac()) {
   if (Number.isFinite(e.lo) && validated) { const evLo = (Math.min(e.win, e.lo) * dec + push - 1) * 100; why.push(`staked at the model probability ${(e.win * 100).toFixed(1)}% (calibrated); at the cautious end of its range (${(Math.min(e.win, e.lo) * 100).toFixed(1)}%) the EV would be ${evLo >= 0 ? '+' : '−'}${Math.abs(evLo).toFixed(1)}%`); }
   if (!validated) { adj = 0; why.push('market not validated: no stake'); }
   else if (conf && conf.level === 'Low') { adj /= 2; why.push('Thin evidence: halved'); }
-  let cap = RISK.cap, capWhy = `${fmtU(RISK.cap)}u per selection`;
-  for (const [o, c] of RISK.longOdds) if (dec >= o) { cap = c; capWhy = `long odds (${o.toFixed(2)}+): at most ${fmtU(c)}u`; break; }
+  const [cap, capWhy] = capAt(dec);
   const fin = Math.min(adj, cap); if (adj > cap) why.push(`capped: ${capWhy}`);
   return { den, theory: down(theory), adj: down(adj), final: down(fin), capped: adj > cap, cap, why, validated };
 }
@@ -4059,7 +4099,7 @@ function accaPlan(p, dec, o = {}) {
   return P ? { units: P.final, ok: P.final >= 0.01, why: P.why.filter(w => !/cautious end/.test(w)), theory: P.theory } : null;
 }
 
-return { RISK, FRACS, getFrac, setFrac, stakePlan, stakeHtml, accaPlan };
+return { RISK, capAt, FRACS, getFrac, setFrac, stakePlan, stakeHtml, accaPlan };
 })();
 __m['confidence'] = (() => {
 // Model confidence (2 Nov 2026): High / Medium / Low with its reasons, for Recommended Plays and every card's estimate box. It is separate
@@ -5274,7 +5314,7 @@ function dataBanner() {
 const problemsBanner = () => (store.problems.length ? `<div class="banner"><b>Some published data could not be used:</b> ${esc(store.problems.join('; '))}.</div>` : '');
 const pill = s => `<span class="pill ${esc(s)}">${esc(NEWS_STATUS[s] || s)}</span>`;
 const newsItem = n => `<div class="row"><div class="l"><b>${esc(n.player)} ${pill(n.status)}</b><span>${esc(n.team)}${n.detail ? ' · ' + esc(n.detail) : ''}</span></div><div class="r">as of ${esc(fmtShort(n.as_of))}</div></div>`;
-const loading = root => { if (store.status !== 'ready' && store.status !== 'error') { root.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; return true; } return false; };
+const loading = root => { if (store.status !== 'ready' && store.status !== 'error') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return true; } return false; };
 
 // ---- selected league (remembered on this device only; everyone still sees the same data) ----
 let _league = null;
@@ -5631,7 +5671,7 @@ async function viewHiwi(root, r, sport) {
   if (!restoring) { st.gw = { cur: true, next: false }; st.linked = null; } // Current Gameweek every time the page opens (its fixtures are ticked below)
   const ready = usMode ? A.d.status === 'ready' : store.status === 'ready';
   root.innerHTML = `<div class="hiwihead"><div><h1 style="margin:0">Find Your Own</h1><p class="muted" style="margin:4px 0 0">Research a team's own record, or an upcoming match. Each result card has its own line: move it and the hit rate and bars update. Detailed analysis compares both teams and their head-to-head.</p></div></div>
-    ${isNba ? '<p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p>' : ''}<div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}</div>`;
+    ${isNba ? '<p class="xs" style="margin:0 0 10px"><a class="mulink" href="#/nba/matchups">Team matchup ranks 1-30 (defence v position, offence, pace) ›</a></p>' : ''}<div class="card stack hiwif" id="hf"></div><div id="hout" style="margin-top:12px">${ready ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}</div>`;
   if (!ready) return;
   const hf = $('#hf', root), out = $('#hout', root);
 
@@ -6175,7 +6215,7 @@ async function viewHiwi(root, r, sport) {
       out.innerHTML = `${seasonNote()}<div class="banner info"><b>${!mkts().size ? 'Choose at least one market' : `Choose ${what}${hasPlayers() ? ' or players' : ''}`}.</b> ${!mkts().size ? 'Tap Select Markets.' : st.mode === 'matches' && !st.today && !st.gw.cur && !st.gw.next ? 'Turn on a gameweek, then tick fixtures.' : 'Tick them above.'} Every choice gets its own card with an adjustable line and bar chart.</div>`; return;
     }
     if (!usMode && st.rank === 'combined') { refreshCombined(); return; }
-    out.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>';
+    out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     const built0 = await build(); if (gen !== refreshGen) return; // a newer selection superseded this build
     // Over / Under / Both at the top (owner request 21 Oct, evening): Both makes each card twice, an Over card and an Under card, each with its
     // own percentage and clearly labelled; nothing is merged into one figure. A card's own switch is Over / Under only.
@@ -6586,7 +6626,7 @@ async function viewNbaFinder(root) {
   };
   let rowsNow = [];
   const draw = async (keepY = false) => {
-    const y = scrollY; if (!keepY) out.innerHTML = '<div class="skel"></div>';
+    const y = scrollY; if (!keepY) out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     const games = selGames(), gTeams = games.length ? new Set(games.flatMap(g => [g.home, g.away])) : null;
     const minM = isT() ? 0 : (nbaMinGlobal() || 0), subjects = [];
     if (isT()) {
@@ -7465,7 +7505,7 @@ __m['betlog'] = (() => {
 //  * Totals count each real bet once: an acca's stake once (not once per leg). Void stakes are returned and leave staked and profit alone.
 //  * Fair odds "at the time" (NBA / NFL player props): from his games before that match only. Kept on this device (backup file below).
 //    There is no server: your bets live in this browser and are reconciled with the shared data whenever My Plays opens; no syncing.
-const { esc, koUK, fmtKick, fmtDay } = __m['util'];
+const { esc, koUK, fmtKick, fmtDay, koLocal, whenLocal } = __m['util'];
 const { fmtOdds, parseIn } = __m['oddsfmt'];
 const { usAdapter } = __m['v-hiwi'];
 const { buildUsPlayerCard } = __m['uscards'];
@@ -7494,6 +7534,9 @@ const moveOldDraft = () => { try { const old = localStorage.getItem('undefined')
 const loadDraft = () => { moveOldDraft(); try { const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d && Array.isArray(d.legs) ? d : { legs: [], stake: '', odds: '' }; } catch { return { legs: [], stake: '', odds: '' }; } };
 const saveDraft = d => { try { localStorage.setItem(DRAFT, JSON.stringify(d)); } catch { /* this visit only */ } };
 const NFL_SKIP = new Set(['k.fg', 'k.xp']);
+// Update 73 (owner): each day of plays folds; days start closed. The days you open stay open while you're on the page (and the day of a
+// bet you have just logged opens). Tests can open them all with window.__PL_OPEN_DAYS.
+const OPEN_DAYS = new Set(); const OPEN_ALL = typeof window !== 'undefined' && !!window.__PL_OPEN_DAYS;
 const gbp = x => `${x < 0 ? '−' : ''}${CUR()}${Math.abs(x).toFixed(2)}`, sgbp = x => `${x >= 0 ? '+' : '−'}${CUR()}${Math.abs(x).toFixed(2)}`; // Update 71: your currency symbol
 const sideTxt = (b, def) => (b.scope === 'other' || b.key === 'g.win' ? '' : b.key === 'g.hcap' ? `${b.line > 0 ? '+' : ''}${b.line}`
   : def && def.binary || b.binary ? (b.side === 'under' ? 'No' : 'Yes') : `${b.side === 'under' ? 'Under' : 'Over'} ${b.line}`);
@@ -7507,7 +7550,8 @@ const usToday = () => { try { return new Date(Date.now() - 6 * 36e5).toLocaleDat
 // its UK kick-off time ("Wed 00:30 UK"). Football stays on the UK date.
 const usNight = g => (g && g.date) || (g ? koUK(g).ymd : '');
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const ukWhen = ko => { if (!ko) return ''; const k = koUK({ ko_utc: ko }); return k.hm ? `${WD[new Date(`${k.ymd}T12:00:00Z`).getUTCDay()]} ${k.hm} UK` : ''; };
+// Update 73: the tip-off shown in YOUR time zone (footer setting; Automatic = this phone's), e.g. "Wed 00:30 GMT" in the UK, "Tue 19:30 EST" in New York
+const ukWhen = ko => { if (!ko) return ''; const k = koLocal({ ko_utc: ko }); return k.hm ? `${WD[new Date(`${k.ymd}T12:00:00Z`).getUTCDay()]} ${k.hm} ${k.abbr}` : ''; };
 const addDays = (ymd, n) => { const d = new Date(ymd + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const SPORT_NAME = { nba: 'NBA', nfl: 'NFL', football: 'Football' };
 const NO_ = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
@@ -7658,7 +7702,7 @@ let players = null, playersFor = '', priced = null, pricing = 0;
 function betLogHtml(sport) {
   if (F.sport !== sport) { F.sport = sport; F.gid = ''; F.pid = ''; F.key = ''; F.fxk = ''; players = null; playersFor = ''; priced = null; }
   return `<section class="card stack" id="blog" data-blsport="${esc(sport)}"><div id="bltot"></div>
-    <details class="card blform" id="blform"${F.gid || F.fxk ? ' open' : ''}><summary><b>Log a bet</b> <span class="xs muted">(before or after the game: match, selection, your stake and odds)</span></summary><div id="blbody" style="margin-top:8px"></div></details>
+    <details class="card blform" id="blform"${F.gid || F.fxk ? ' open' : ''}><summary class="bigbtn">Log a bet</summary><p class="small muted" style="margin:10px 0 0">Add a bet you've placed, before or after the game: pick the match and selection, then type your stake and the odds you got. It settles itself from the published results. "＋ Add to an acca" builds an acca leg by leg.</p><div id="blbody" style="margin-top:8px"></div></details>
     <div id="bldraft"></div>
     <div id="bllist"></div>
     <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-blbackup>Save a backup file</button><label class="chip" style="cursor:pointer">Restore from a file<input type="file" accept="application/json,.json" data-blrestore hidden></label></div>
@@ -7718,19 +7762,20 @@ function wireBetLog(root, sport) {
         <select class="in" data-blsportf aria-label="Sport"><option value="">Every sport</option>${['football', 'nba', 'nfl'].map(s => `<option value="${s}"${F.sportF === s ? ' selected' : ''}>${SPORT_NAME[s]}</option>`).join('')}</select>
         ${lgs.length ? `<select class="in" data-blleague aria-label="League"><option value="">Every league</option>${lgs.map(l => `<option value="${esc(l)}"${F.league === l ? ' selected' : ''}>${esc(leagueName(l))}</option>`).join('')}</select>` : ''}
         ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
-      <div class="tiles bltiles">${tile(gbp(T.staked), T.promoN ? 'Total staked (settled, your own money)' : 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost}`, 'Won / lost')}
-        ${tile(`${(T.openStake / RISK.unitGBP).toFixed(2)}u`, T.open ? `Pending: ${T.open} bet${T.open === 1 ? '' : 's'} · ${gbp(T.openStake)} of your money placed${T.openFree ? ` + ${gbp(T.openFree)} free bet${T.openFree === 1 ? '' : 's'}` : ''} (${CUR()}${RISK.unitGBP} a unit)` : 'Pending: nothing placed right now', T.open ? 'blopen' : '')}${tile(String(T.voids), 'Void')}${tile(T.pricedN ? sgbp(T.ev) : '–', `Expected profit from your edge (singles with a fair price${T.inplayN ? `; ${T.inplayN} in-play bet${T.inplayN === 1 ? '' : 's'} not counted` : ''})`, T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}${T.promoN ? tile(gbp(T.freeUsed), `Free bets used (${T.promoN} bet${T.promoN === 1 ? '' : 's'} with a free bet or boost; not in staked)`) : ''}</div>
+      <div class="tiles bltiles">${tile(gbp(T.staked), T.promoN ? 'Total staked (settled, your own money)' : 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost} / ${T.voids}`, 'Won / lost / void')}
+        ${tile(`${(T.openStake / RISK.unitGBP).toFixed(2)}u`, T.open ? `Pending: ${T.open} bet${T.open === 1 ? '' : 's'} · ${gbp(T.openStake)} of your money placed${T.openFree ? ` + ${gbp(T.openFree)} free bet${T.openFree === 1 ? '' : 's'}` : ''} (${CUR()}${RISK.unitGBP} a unit)` : 'Pending: nothing placed right now', T.open ? 'blopen' : '')}${tile(T.pricedN ? sgbp(T.ev) : '–', `Expected profit from your edge (singles with a fair price${T.inplayN ? `; ${T.inplayN} in-play bet${T.inplayN === 1 ? '' : 's'} not counted` : ''})`, T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
       ${F.view === 'all' && L.length ? `<div class="tblscroll"><table class="risktb bltypes"><tr><th></th><th title="won – lost – void">W–L–V</th><th>Pend.</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
         ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n} <span class="xs muted">(${x.n})</span></th><td>${x.won}–${x.lost}–${x.voids}</td><td>${x.open}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table></div>` : ''}
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
-      <p class="xs muted" style="margin:4px 0 0">Each bet's stake is counted once (an acca once, not once per leg); void stakes are returned and left out. ${(() => { let c = ''; try { c = localStorage.getItem('proplab.betlog.checked') || ''; } catch { c = ''; } return c ? `Results checked ${esc(fmtDay(koUK({ ko_utc: c }).ymd))} ${esc(koUK({ ko_utc: c }).hm)} against data published ${esc(dataStamp())}.` : ''; })()}</p>`;
+      <p class="xs muted" style="margin:4px 0 0">Each bet's stake is counted once (an acca once, not once per leg); void stakes are returned and left out. ${(() => { let c = ''; try { c = localStorage.getItem('proplab.betlog.checked') || ''; } catch { c = ''; } return c ? `Results checked ${esc(whenLocal(c))} against data published ${esc(dataStamp())}.` : ''; })()}</p>`;
     const days = [...new Set(L.map(b => b.date))].sort().reverse();
     TWINS = new Map(); for (const b of L) if (isAcca(b)) { const k = accaSig(b.legs); TWINS.set(k, (TWINS.get(k) || 0) + 1); }
     box.querySelector('#bllist').innerHTML = L.length ? days.map(d => { const B = L.filter(b => b.date === d), st = B.map(stOf), pl = B.map(profitOf).filter(x => x != null), w = st.filter(x => x === 'won' || x === 'halfwon').length, l = st.filter(x => x === 'lost' || x === 'halflost').length, o = st.filter(x => !SETTLED.has(x)).length, tot = pl.reduce((t, x) => t + x, 0);
-      return `<div class="bldat"><div class="bldh"><b>${esc(fmtDay(d))}</b><span>${B.length} bet${B.length === 1 ? '' : 's'}${w || l ? ` · ${w}W ${l}L` : ''}${o ? ` · ${o} pending` : ''}${pl.length ? ` · <b class="${tot > 0 ? 'hit' : tot < 0 ? 'miss' : ''}">${sgbp(tot)}</b>` : ''}</span></div>${B.map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</div>`; }).join('')
+      const vd = st.filter(x => x === 'void').length;
+      return `<details class="bldat" data-bldate="${esc(d)}"${OPEN_DAYS.has(d) || OPEN_ALL ? ' open' : ''}><summary class="bldh"><b>${esc(fmtDay(d))}</b><span>${B.length} bet${B.length === 1 ? '' : 's'}${w || l || vd ? ` · ${w}W ${l}L${vd ? ` ${vd}V` : ''}` : ''}${o ? ` · ${o} pending` : ''}${pl.length ? ` · <b class="${tot > 0 ? 'hit' : tot < 0 ? 'miss' : ''}">${sgbp(tot)}</b>` : ''}</span></summary>${B.map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</details>`; }).join('')
       : `<div class="banner info"><b>No bets ${F.view === 'acca' ? 'accas ' : ''}logged${F.sportF ? ` for ${SPORT_NAME[F.sportF]}` : ''} yet.</b> Open <b>Log a bet</b> above.</div>`;
   };
-  const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? `${fmtDay(koUK({ ko_utc: t }).ymd)} ${koUK({ ko_utc: t }).hm}` : 'on this visit'; };
+  const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? whenLocal(t) : 'on this visit'; };
   const chip = x => { const own = x.result; // the result itself is the badge; this says who set it and why
     return `<span class="xs muted">${own ? 'set by you' : x.auto ? `automatic${x.auto.why ? ` · ${esc(x.auto.why)}` : ''}${x.auto.suggest ? ` · likely ${esc(STATUS_LABEL[x.auto.suggest] || x.auto.suggest)}` : ''}` : 'settles automatically'}</span>`; };
   const resBtns = (x, attr) => `<div class="seg wrap mpres">${[['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" ${attr}="${v}" class="${x.result === v ? 'on' : ''}" aria-pressed="${x.result === v}">${l}</button>`).join('')}${x.result ? `<button type="button" ${attr}="auto" title="Hand back to automatic settlement">Auto</button>` : ''}</div>`;
@@ -7965,7 +8010,8 @@ function wireBetLog(root, sport) {
   box.addEventListener('pointerdown', e => { const vw = e.target.closest && e.target.closest('[data-blview] button'); if (vw && F.view !== vw.dataset.v) { F.view = vw.dataset.v; requestAnimationFrame(drawTotals); } }); // Update 68
   box.addEventListener('change', e => { if (e.target.matches('[data-bldstake], [data-bldbook]')) { const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(loadDraft()); } });
 
-  onUnitChange(box, () => { drawTotals(); drawDraft(); drawForm(); }); // Update 71: your unit size / currency changed
+  onUnitChange(box, () => { drawTotals(); drawDraft(); drawForm(); });
+  box.addEventListener('toggle', e => { const d = e.target.closest && e.target.matches('details[data-bldate]') ? e.target.dataset.bldate : null; if (d) { if (e.target.open) OPEN_DAYS.add(d); else OPEN_DAYS.delete(d); } }, true); // Update 71: your unit size / currency changed
   box.addEventListener('click', e => {
     { const t = e.target; if (t.matches('[data-inplay]')) { const c = t.closest('[data-ipctx]').dataset.ipctx;
         if (c === 'form') { F.inplay = t.checked; drawPrice(); } else if (c === 'draft') { const d = loadDraft(); d.inplay = t.checked; saveDraft(d); const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(d); }
@@ -7994,7 +8040,7 @@ function wireBetLog(root, sport) {
       if (!(stake > 0) && !(PR.free > 0)) { msg.textContent = F.promo ? 'Type the free bet amount and / or your own money.' : 'Type your stake.'; return; } if (!odds.dec) { msg.textContent = odds.error || 'Type the odds you got.'; return; }
       const b = { ...sel, id: `${sport}|${sel.gameId || fxKeyOf(sel.fx)}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`, type: 'single', stake, odds: odds.exact || odds.dec, oddsTxt: String(F.odds || '').trim(), result: '', logged: new Date().toISOString(),
         ...(PR.free > 0 ? { free: PR.free } : {}), ...(PR.boost > 0 ? { boost: PR.boost } : {}), ...(F.inplay ? { inplay: true } : {}) };
-      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; } OPEN_DAYS.add(b.date);
       F.key = ''; F.line = null; F.stake = ''; F.odds = ''; F.p = null; F.promo = false; F.free = ''; F.boost = 0; F.inplay = false; drawForm(); settleAll().then(drawTotals); drawTotals();
       setTimeout(() => { const k = body.querySelector('[data-blkey], [data-blgk], [data-blotext]'); if (k) k.insertAdjacentHTML('beforebegin', `<p class="small hit" data-blsaved>Logged: ${esc(b.name)} ${esc(b.market)} ${esc(sideTxt(b))}, ${esc(promoTxt(b))} at ${esc(fmtOdds(b.odds))}. It settles automatically once the result is published.</p>`); }, 50);
       return;
@@ -8016,7 +8062,7 @@ function wireBetLog(root, sport) {
         msg.innerHTML = `<span class="warn">⚠ You already logged an acca with exactly these legs (${esc(fmtDay(twin.date))}, ${esc(promoTxt(twin))}). If this is a second bet (another bookmaker), tap "Save it again anyway"; if not, it would count twice.</span>`; return; }
       const b = { id: `acca|${Date.now()}`, type: 'acca', sport: [...new Set(legs.map(l => l.sport))].length === 1 ? legs[0].sport : 'mixed', legs, stake, bookOdds: bo || null, date: first, game: `${legs.length}-leg acca`, result: '', logged: new Date().toISOString(), ...(PR.free > 0 ? { free: PR.free } : {}), ...(PR.boost > 0 ? { boost: PR.boost } : {}), ...(d.inplay ? { inplay: true } : {}),
         ...(A.mode === 'match' && U.some(u => u.group) ? { mode: 'match', groups: Object.fromEntries(U.filter(u => u.group).map(u => [u.key, { odds: u.odds, oddsTxt: (d.godds || {})[u.key] || '' }])) } : {}) };
-      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+      const a = loadLog(); a.push(b); if (!saveLog(a)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; } OPEN_DAYS.add(b.date);
       saveDraft({ legs: [], stake: '', odds: '', mode: d.mode }); drawDraft(); drawTotals(); settleAll().then(drawTotals); alertMsg(`Acca saved: ${legs.length} legs, ${promoTxt(b)}.${stake > capGBP() + 1e-9 ? ` Note: that is over your ${RISK.cap.toFixed(2)}u cap (${gbp(capGBP())}).` : ''} Each leg settles automatically once its result is published.`); return; }
     // re-add: the same single back in "Log a bet", or the same acca's legs back in "Acca being built", with your odds and stake
     const ra = t.closest('[data-blreadd]'); if (ra) { e.preventDefault(); e.stopPropagation(); const b = loadLog().find(x => x.id === ra.closest('[data-bl]').dataset.bl); if (!b) return; readd(b); return; }
@@ -8103,7 +8149,7 @@ __m['myplays'] = (() => {
 //    apart from the model's own test results (Model Performance), which never include anything you typed.
 const { esc, koUK } = __m['util'];
 const { fmtOdds } = __m['oddsfmt'];
-const { RISK } = __m['risk'];
+const { capAt, RISK } = __m['risk'];
 const { CUR } = __m['units'];
 const { fmtU } = __m['kelly'];
 const { betLogHtml, wireBetLog } = __m['betlog'];
@@ -8135,7 +8181,7 @@ function roomFor(list, info, ask) {
 const playId = info => `${info.sport}|${info.gameId}|${info.subj}|${info.key}|${info.line}|${info.side}`;
 function addPlay(info, odds, ask) {
   // defence in depth: whatever the caller asks, never more than the per-selection cap or the long-odds caps (risk.js), then the room left
-  let cap = RISK.cap; for (const [o, c] of RISK.longOdds) if (odds >= o) { cap = c; break; }
+  const cap = capAt(odds)[0];
   ask = Math.min(Number(ask) || 0, cap);
   const a = load(), id = playId(info), room = roomFor(a, info, ask), units = room.units;
   if (!(units > 0)) return { r: 'blocked', units: 0, why: room.why };
@@ -8787,7 +8833,7 @@ const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { addPlay } = __m['myplays'];
-const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming } = __m['util'];
+const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming, whenLocal } = __m['util'];
 const { legId } = __m['accabuild'];
 const { slipToggle, slipRegister, syncButtons, toCard, slipSetBook } = __m['accaslip'];
 const { hooks } = __m['shared'];
@@ -8814,7 +8860,21 @@ const KEY = sport => `proplab.rec.v1.${sport}`;
 const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Strong evidence (was Medium+ until 10 Nov), high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
-const DEFV = 4, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 3, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy' }); // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
+const DEFV = 5, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 3, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy', ...(sport === 'nba' ? { minAvg: 25 } : {}) }); // Update 73: NBA players averaging 25+ minutes this season // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
+// Update 73 (owner, 12 Nov 2026): a short step-by-step guide at the top instead of the paragraph of text. Closed until tapped.
+function howToHtml(sport, sportName) {
+  const st = (n, t, b) => `<li><b>${t}</b><span>${b}</span></li>`;
+  return `<details class="card howto" id="rechowto"><summary><b>How to use this page</b> <span class="xs muted">(step by step)</span></summary>
+    <ol class="howsteps">
+      ${st(1, 'Pick your games', '<b>1. Games</b>: tick the games you want to bet on. <i>Today\'s games</i> is the quickest.')}
+      ${st(2, 'Set your filters', `<b>2. Your filters</b>: the minimum chance (60%), the fair-odds range (from ${esc(fmtOdds(1.3))}, so no near-certain lines), Strong evidence${sport !== 'football' ? ', easy / OK matchups' : ''}${sport === 'nba' ? ' and players averaging 25+ minutes' : ''}. Loosen one to see more plays; <i>Reset to recommended settings</i> puts them back.`)}
+      ${st(3, 'Choose your markets', '<b>3. Markets</b>: untick any market your bookmaker doesn\'t offer, so every play shown is one you can bet.')}
+      ${st(4, 'Read a play', 'The big % is the model\'s chance it lands. <i>Fair odds</i> is the break-even price. <i>Evidence</i> is how much data it rests on. <i>Matchup</i> is how kind tonight\'s opponent is. Tap a hit-rate box (Season, Last 5...) to change the bar chart, and tap a bar for that game\'s box score.')}
+      ${st(5, 'Type your bookmaker\'s price', 'Put it in <i>Your odds</i> (decimal, fraction or American all work). Green EV+ means the price beats the fair odds, and the stake appears in units. Set your unit size and max units with the two boxes at the top right. The − / + buttons move the line to match your bookmaker\'s.')}
+      ${st(6, 'Act on it', '<i>＋ My Plays</i> logs the bet. <i>＋ Add to Acca</i> puts it in your Acca slip. <i>✕ Remove just this play</i> hides a play you won\'t take (for example EV−). <i>Hide</i> removes a player who isn\'t playing.')}
+    </ol>
+    <p class="small" style="margin:6px 0 0"><b>Finding the best plays fastest:</b> sort by <i>Best</i>, keep Strong evidence on, then only type prices for plays near the top. A play worth taking has a high chance, an easy matchup <u>and</u> your price above its fair odds. Tap anything marked ⓘ for what it means. The <i>Acca Builder</i> tab builds accas from these plays.</p></details>`;
+}
 const S = {}; // per sport: { fx: Set, f: filters, sort, adv, kept: Map(id -> { L, side }), shown, cands: Map(fid -> candidates) }
 function stateOf(sport) {
   if (S[sport]) return S[sport];
@@ -8822,7 +8882,9 @@ function stateOf(sport) {
   // first visit: fair odds of at least 1.30 (no near-certain 1+ lines nobody prices) and, for NBA, the markets bookmakers usually offer
   // 10 Nov (DEFV 4, owner): the default minimum evidence is now Strong. A phone on the previous defaults (DEFV 3) only has that one
   // setting changed; everything else it saved is kept.
-  const first = saved.f && saved.defv === DEFV ? {} : saved.f && saved.defv === 3 ? { minConf: 3 } : RECO(sport), once = saved.f && saved.defv !== DEFV;
+  // DEFV 5 (Update 73): a phone on DEFV 4 only gets the NBA 25-minute minimum; DEFV 3 also gets Strong evidence.
+  const up5 = sport === 'nba' ? { minAvg: 25 } : {};
+  const first = saved.f && saved.defv === DEFV ? {} : saved.f && saved.defv === 4 ? up5 : saved.f && saved.defv === 3 ? { minConf: 3, ...up5 } : RECO(sport), once = saved.f && saved.defv !== DEFV;
   S[sport] = { odds: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: ((saved.defv === DEFV || saved.defv === 3) && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
   S[sport].f.grps = []; /* owner, 3 Nov: every market is on by default; the Markets list below the filters replaces the market-type buttons */ if (!Array.isArray(S[sport].f.mkOff)) S[sport].f.mkOff = [];
   if (once) save(sport, S[sport]); /* the recommended settings, once */
@@ -8850,17 +8912,17 @@ const fxIdOf = (sport, f) => (sport === 'football' ? fixtureId(f) : String(f.id)
 const fxLabel = (sport, f, A) => (sport === 'football' ? `${f.home} v ${f.away}` : `${A.teamName(f.away)} at ${A.teamName(f.home)}`);
 
 // data freshness (owner audit: show it): when the published data was built, and the injury report it used
-const ukTime = iso => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)); } catch { return iso; } };
+const ukTime = iso => whenLocal(iso); // Update 73: in the viewer's time zone (name included)
 function freshHtml(sport) {
   const meta = sport === 'nba' ? nba.meta : sport === 'nfl' ? nfl.meta : null, at = meta ? meta.updated : store.manifest && store.manifest.generated;
-  const inj = sport === 'nba' && nba.injuries && nba.injuries.report_utc ? ` · injury report ${esc(ukTime(nba.injuries.report_utc))} UK` : '';
+  const inj = sport === 'nba' && nba.injuries && nba.injuries.report_utc ? ` · injury report ${esc(ukTime(nba.injuries.report_utc))}` : '';
   const old = at && Date.now() - Date.parse(at) > 36 * 3600e3;
-  return at ? `<p class="xs ${old ? 'warn' : 'muted'}" style="margin:0 0 8px" data-fresh>Data updated ${esc(ukTime(at))} UK (every night at about 23:00)${inj}${old ? '. <b>This is more than a day old</b>: recent games and injury news may be missing.' : ''}</p>` : '';
+  return at ? `<p class="xs ${old ? 'warn' : 'muted'}" style="margin:0 0 8px" data-fresh>Data updated ${esc(ukTime(at))} (every night at about 23:00)${inj}${old ? '. <b>This is more than a day old</b>: recent games and injury news may be missing.' : ''}</p>` : '';
 }
 async function viewRecommended(root, sport) {
   const A = sport === 'football' ? null : usAdapter(sport), s = stateOf(sport);
   if (sport === 'nba') await loadNbaInjuries(); // OUT players are left out, Questionable / Doubtful marked: the report must be in first
-  if (sport === 'football' && store.status !== 'ready') { root.innerHTML = store.status === 'error' ? '<div class="banner bad"><b>Football data could not be loaded.</b> Try again later.</div>' : '<div class="skel" style="width:60%"></div><div class="skel"></div>'; return; }
+  if (sport === 'football' && store.status !== 'ready') { root.innerHTML = store.status === 'error' ? '<div class="banner bad"><b>Football data could not be loaded.</b> Try again later.</div>' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
   const ukDay = dayOfFor(sport), all = fixturesOf(sport, A), byId = new Map(all.map(f => [fxIdOf(sport, f), f]));
   // default: today's games (UK), the first time
   for (const id of [...s.fx]) if (!byId.has(id)) s.fx.delete(id);
@@ -8870,7 +8932,7 @@ async function viewRecommended(root, sport) {
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
   root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div>${unitChip()}</nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
-    <p class="muted" style="margin-top:-4px">Choose your games and set the minimum chance and fair-odds range. PropLab works out every ${sportName} market it can price and shows the strongest plays. Type the price you can see on any play to get its EV and stake. Tap anything marked ⓘ for what it means.</p>
+    ${howToHtml(sport, sportName)}
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
       <button type="button" class="chip" data-fxall="today">Today's games</button><button type="button" class="chip" data-fxall="all">Select all upcoming</button><button type="button" class="chip" data-fxall="none">Clear all</button></div>
@@ -8897,19 +8959,19 @@ async function viewRecommended(root, sport) {
   const drawFilters = () => {
     const f = s.f, grps = GRPS[sport], y = scrollY;
     pg.querySelector('#recflt').innerHTML = `<div class="row" style="border:0;padding:0;justify-content:space-between;align-items:center;gap:8px"><b>2. Your filters</b><button type="button" class="chip" data-rreset>Reset to recommended settings</button></div>
-      <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
-      <div class="recrow"><label class="field"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
-        <label class="field"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
+      <p class="small keynote" data-keynote>The recommended settings are already set, so you can leave everything as it is. If you'd like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.</p><div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
+      <div class="recrow"><label class="field keyf"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
+        <label class="field keyf"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
         <label class="field"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 3.00 or 2/1" value="${esc(f.maxFairTxt)}"></label></div>
       <div class="recrow"><div class="field"><span class="xs muted">Side</span>${seg('sides', [['over', 'Over / Yes'], ['under', 'Under / No'], ['both', 'Both']], f.sides)}</div>
-        ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Matchup</span>${seg('mu', [['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']], f.mu || 'all')}</div>`}
+        ${sport === 'football' ? '' : `<div class="field keyf"><span class="xs muted">Matchup</span>${seg('mu', [['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']], f.mu || 'all')}</div>`}
         <div class="field"><span class="xs muted">Sort</span><select class="in" data-rsort>${SORTS.map(([v, l]) => `<option value="${v}" ${s.sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
       <details class="recadv" ${s.adv ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
-        <div class="recrow"><label class="field"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
+        <div class="recrow"><label class="field keyf"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
-        <div class="field"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
-        <label class="field"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
-        ${sport === 'nba' ? `<label class="field"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
+        <div class="field keyf"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
+        <label class="field keyf"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
+        ${sport === 'nba' ? `<label class="field keyf"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
         ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Home / away</span>${seg('venue', [['all', 'Both'], ['home', 'Home team'], ['away', 'Away team']], f.venue)}</div>`}
         ${sport === 'football' ? '' : `<label class="hcheck"><input type="checkbox" data-rck="injOk" ${f.injOk ? 'checked' : ''}><span>Include players listed Questionable / Doubtful</span></label>`}
         ${sport !== 'football' ? `<label class="hcheck"><input type="checkbox" data-rck="hideBlowout" ${f.hideBlowout ? 'checked' : ''}><span>Hide games with high blowout risk</span></label>` : ''}
@@ -9004,8 +9066,8 @@ async function viewRecommended(root, sport) {
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
     else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
-      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)}) <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
-        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (2.00u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = £${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
   }
@@ -9108,7 +9170,8 @@ async function viewRecommended(root, sport) {
   const scrollBars = root => root.querySelectorAll('.rbwrap.wide').forEach(el => { const b = el.querySelector('.rbar.sel'); el.scrollLeft = b ? Math.max(0, b.offsetLeft - el.clientWidth / 2) : el.scrollWidth; });
   const repaint = (el, x) => { const t = document.createElement('div'); t.innerHTML = cardHtml(x); const n = t.firstElementChild; el.replaceWith(n); syncButtons(); scrollBars(n); };
   // ---------------- events ----------------
-  onUnitChange(pg, () => render(true)); // Update 71: stakes in your currency at your unit size
+  onUnitChange(pg, () => render(true));
+  { const onFmt = () => { if (!pg.isConnected) { document.removeEventListener('oddsfmt', onFmt); return; } render(true); }; document.addEventListener('oddsfmt', onFmt); } // Update 73: "Odds shown as" redraws every price here (typed odds are read in any format) // Update 71: stakes in your currency at your unit size
   pg.addEventListener('change', e => {
     const t = e.target;
     if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
@@ -9202,7 +9265,7 @@ const { nfl, loadNfl } = __m['nfl-data'];
 const { store, loadCore, selectableFixtures, leagueName, leagueOrder } = __m['data'];
 const { hooks } = __m['shared'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
-const { esc, fmtKick, koUK, fixtureId } = __m['util'];
+const { esc, fmtKick, koUK, fixtureId, whenLocal } = __m['util'];
 const { nightOf, viewingNight } = __m['nightdate'];
 const { accaPlan, getFrac } = __m['risk'];
 
@@ -9235,7 +9298,7 @@ function fixtures(sp, days, now = new Date()) {
   return usAdapter(sp).upcoming(now).filter(ahead).filter(g => { const n = nightOf(g); return n >= n0 && n < lim; });
 }
 const updated = sp => { const at = sp === 'nba' ? nba.meta && nba.meta.updated : sp === 'nfl' ? nfl.meta && nfl.meta.updated : store.manifest && store.manifest.generated;
-  try { return at ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(at)) + ' UK' : 'unknown'; } catch { return at || 'unknown'; } };
+  try { return at ? whenLocal(at) : 'unknown'; } catch { return at || 'unknown'; } };
 
 const SP_ICON = { nba: '🏀', nfl: '🏈', football: '⚽' };
 const grpOfF = (sp, f) => (sp === 'football' ? `football|${f.league}` : sp);
@@ -9489,7 +9552,7 @@ const bandsTb = (rows, extra = null) => `<div class="scroll"><table class="riskt
   const gap = b.actual - b.predicted; return `<tr><td>${esc(b.band)}</td><td>${b.n.toLocaleString('en-GB')}</td><td>${b.predicted}%</td><td class="${Math.abs(gap) <= 2 ? 'hit' : Math.abs(gap) <= 5 ? 'amber' : 'miss'}">${b.actual}%</td>${extra ? (o => `<td>${o ? `${o.actual}%` : '–'}</td>`)(extra.rows.find(x => x.band === b.band)) : ''}</tr>`; }).join('')}</table></div>`;
 
 async function viewModel(root) {
-  root.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>';
+  root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
   const d = await load();
   if (!d) { root.innerHTML = '<div class="banner info"><b>Model Performance could not be loaded.</b> Try again later.</div>'; return; }
   const n = d.nba, imp = (a, b) => `${(((b - a) / a) * 100).toFixed(1)}%`;
@@ -9654,7 +9717,7 @@ async function viewNbaPlays(root, r) {
   if (!out._xo) { out._xo = true; out.addEventListener('change', e => { if (e.target.id === 'fxout') { setExcludeOut(e.target.checked); draw(); } }); }
   let gen = 0;
   const draw = async () => { const my = ++gen; globalThis.__plPending = 1; // a newer choice supersedes an unfinished one (rapid switching no longer stacks up work)
-    reg = new Map(); out.innerHTML = '<div class="skel"></div>'; const blocks = [];
+    reg = new Map(); out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; const blocks = [];
     if (ui.kind === 'game') {
       const g = gameOf(); if (!g) { out.innerHTML = '<div class="banner info">No upcoming NBA game to choose.</div>'; return; }
       ensurePicked(g); const outs = outOf(g); const I = nba.injuries;
@@ -10008,7 +10071,7 @@ async function viewPlayers(root, r) {
   const ready = store.status === 'ready';
   const lg = getLeague(); const hasLogs = ready && store.playerIndex.some(p => p.league === lg), dirN = ready ? store.directory.filter(d => d.league === lg).length : 0, dirAll = ready ? store.directory.length : 0;
   let body = '';
-  if (!ready) body = store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>';
+  if (!ready) body = store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
   else if (q) {
     const res = search(buildSearchIndex(), q, 60);
     body = res.length ? `<div class="card"><div class="list">${res.map(rowHtml).join('')}</div></div>` : `<div class="banner"><b>No player or team found for "${esc(q)}".</b> Try a surname or a club name. The directory covers current Premier League and MLS squads${dirAll ? ` (${dirAll} players)` : ''}; a player who has just signed, or who plays elsewhere, may not be listed.</div>`;
@@ -10065,14 +10128,14 @@ const POSNAME = { GK: 'Goalkeeper', DF: 'Defender', MF: 'Midfielder', FW: 'Forwa
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
 async function viewPlayer(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel" style="width:50%"></div><div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const p = playerById(r.arg);
   if (!p) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/players">← Search</a><h1>Player not found</h1><p class="muted">That player is not in the published data. Search again:</p><div id="sb"></div>`; searchBox($('#sb', root)); return; }
   const today = todayYmd(), slug = teamSlugOf(p.team), news = newsForPlayer(p.name, p.team), up = upcomingFor(p.team, today).slice(0, 2);
   root.innerHTML = `${dataBanner()}${problemsBanner()}<a class="crumb" href="#/players">← Search</a>
     <div class="prof">${photoHtml(p, 'lg')}<div><h1 style="margin:0">${esc(p.name)}</h1><div class="muted"><a href="#/team/${encodeURIComponent(slug)}">${esc(p.team)}</a> · ${esc(leagueName(p.league))}${p.pos ? ' · ' + esc(POSNAME[p.pos] || p.pos) : ''}${p.loan_from ? ' · on loan from ' + esc(p.loan_from) : ''}</div></div></div>${photoCredit(p)}
     ${news.length ? `<div style="margin-top:14px" class="card"><h3>Team news</h3><div class="list">${news.map(newsItem).join('')}</div><p class="xs muted" style="margin:8px 0 0">Only as current as the date shown. Check club sources before relying on it.</p></div>` : ''}
-    <div id="body" style="margin-top:14px"><div class="skel"></div><div class="skel" style="width:70%"></div></div>`;
+    <div id="body" style="margin-top:14px"><div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div>`;
   hydratePhoto(root, p);
   const body = $('#body', root);
   const rows = p.hasLogs ? await loadPlayerRows(p) : [];
@@ -10115,7 +10178,7 @@ function squadSection(t) {
   return `<section class="sec"><h2>Squad (${ps.length})</h2><div class="card">${POSORD.map(([k, lab]) => { const g = ps.filter(p => p.pos === k).sort((a, b) => a.name.localeCompare(b.name)); return g.length ? `<h3 style="margin:10px 0 4px">${lab}</h3><div class="list">${g.map(p => `<a class="row" style="justify-content:flex-start" href="#/player/${encodeURIComponent(p.id)}">${photoHtml(p, 'sm')}<div class="l"><b>${esc(p.name)}</b>${p.loan_from ? `<span>On loan from ${esc(p.loan_from)}</span>` : ''}</div></a>`).join('')}</div>` : ''; }).join('')}<p class="xs muted" style="margin:10px 0 0">Squad list ${meta?.as_of ? 'as of ' + esc(fmtLong(meta.as_of)) : 'date not stated by the source'}, from <a href="${esc(meta?.source || 'https://en.wikipedia.org')}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0). May lag recent transfers.</p></div></section>`;
 }
 async function viewTeam(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel" style="width:50%"></div><div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const t = teamBySlug(r.arg);
   if (!t) { root.innerHTML = `${dataBanner()}<a class="crumb" href="#/players">← Search</a><h1>Team not found</h1><div id="sb"></div>`; searchBox($('#sb', root)); return; }
   // a club with European matches: research uses the remembered All games / Domestic league only / European matches choice (All games by default)
@@ -10143,7 +10206,7 @@ __m['lineup'] = (() => {
 const { knownPlayers, teamSlugOf } = __m['data'];
 const { normName } = __m['teams'];
 const { photoHtml } = __m['photo'];
-const { esc, fixtureId } = __m['util'];
+const { esc, fixtureId, whenLocal } = __m['util'];
 
 const KEY = 'proplab.lineup.v1.';
 // Published team sheets (data-lineups.json): only ones the owner has checked against the announced team sheets. Loaded once.
@@ -10153,7 +10216,7 @@ function loadPublishedLineups() {
     .then(d => { published = d && d.schema === 1 && d.items && typeof d.items === 'object' ? d.items : {}; return published; });
   return loading;
 }
-const fmtTime = t => new Date(t).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtTime = t => whenLocal(t); // Update 73: viewer's time zone
 /** "19 B. Mbeumo (c)" -> { num: '19', name: 'B. Mbeumo', cap: true } */
 const splitName = raw => { let t = String(raw).trim(); const cap = /\(c\)/i.test(t); t = t.replace(/\(c\)/ig, '').trim();
   const m = /^(\d{1,2})\s+(.+)$/.exec(t); return m ? { num: m[1], name: m[2].trim(), cap } : { num: '', name: t, cap }; };
@@ -10274,7 +10337,7 @@ const snap = (name, label) => { const s = teamProfile(teamSlugOf(name)); const n
     ${n.length ? `<div class="list">${n.map(newsItem).join('')}</div>` : '<p class="small muted" style="margin:0">No team news published.</p>'}</div>`; };
 
 async function viewFixtures(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Fixtures</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Fixtures</h1>${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const today = todayYmd();
   if (r.q.get('tab')) ui.tab = r.q.get('tab') === 'results' ? 'results' : 'upcoming';
   if (r.q.get('lg')) { const l = r.q.get('lg'); ui.leagues = l === 'all' ? null : new Set(l.split(',')); } // e.g. #/fixtures?lg=epl,laliga
@@ -10459,7 +10522,7 @@ const seg = (name, items, cur, cls = 'wrap') => `<div class="seg ${cls}" data-se
 
 async function viewPlays(root, r) {
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Plays</h1>${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Plays</h1>${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const g = r.q.get('game'); if (g) { const lg = g.split(':')[0]; if (lg) setLeague(lg); ui.kind = 'match'; ui.game = g; ui.gvH = 'home'; ui.gvA = 'away'; }
   const t = r.q.get('team'); if (t) { const tm = store.teams.get(t); if (tm) { setLeague(tm.league); ui.kind = 'team'; ui.team = t; } }
   root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Plays</h1>
@@ -10639,7 +10702,7 @@ const seg = (name, items, cur) => `<div class="seg" data-seg="${name}">${items.m
 const dotsHtml = d => `<div class="dots">${d.map(h => `<i class="${h ? 'on' : ''}">${h ? '●' : '○'}</i>`).join('')}</div>`;
 
 async function viewMatch(root, r) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const home = r.q.get('h') || '', away = r.q.get('a') || '', date = r.q.get('d') || '';
   const hs = teamSlugOf(home), as = teamSlugOf(away);
   const fx = store.fixtures.find(f => f.date === date && teamSlugOf(f.home) === hs && teamSlugOf(f.away) === as);
@@ -10788,7 +10851,7 @@ function cardHtml(r, ctx = {}) {
 
 async function viewTrends(root, r) {
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div><div class="skel" style="width:70%"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const g = r.q.get('tgame'); if (g) { ui.mode = 'game'; ui.game = g; ui.games = new Set([g]); ui.gOpen = false; ui.gvH = 'home'; ui.gvA = 'away'; const lg = g.split(':')[0]; if (lg) { setLeague(lg); const cur = getLeagues(); if (!cur.includes(lg)) setLeagues([...cur, lg]); } ui.today = false; ui.exLine = null; }
   let playerAll = null, defNote = '';
   // Every card on screen is registered so a tap can open its graph with the same subject, market, line, sample and Home/Away Form.
@@ -11084,7 +11147,7 @@ const ui = { today: false, lgOpen: false, mode: 'teams', market: 'm.goals', pmar
 const ORDERS = [...RANK_ORDERS, ['market', 'By Market / Play (by fixture)']];
 async function viewTable(root) {
   ui.side = getGlobalSide(); // the Over / Under / Both at the top is the only direction control (redesign follow-up) // starts on the global Over / Under (21 Oct); this page's own Side control changes only this page
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   let players = null, note = '', shown = [];
   // Several leagues can be compared in one table (league checkboxes, All Leagues); rows are ranked together. Today's Games Only keeps the
   // teams (and their players) that play today, by UK date.
@@ -11227,7 +11290,7 @@ const ui = shareSelection({ sort: 'combined', per: '10', venue: 'all', minEach: 
 const seg = (name, items, cur) => `<div class="seg wrap" data-seg="${name}">${items.map(([v, l]) => `<button type="button" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}" aria-pressed="${String(v) === String(cur)}">${esc(l)}</button>`).join('')}</div>`;
 
 async function viewCombined(root) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<div class="skel"></div>`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>`; return; }
   let lgs = getLeagues(); const now = new Date();
   root.innerHTML = `${problemsBanner()}<div class="card stack" id="cbctl"></div><div id="cbout" style="margin-top:12px"></div>`;
   const ctl = $('#cbctl', root), out = $('#cbout', root);
@@ -11396,7 +11459,7 @@ function evVerdict(p, odds, pred) {
 }
 /** Odds in decimal, fractional ("6/4", "evens") or American ("+150", "-120"). Returns decimal odds or null. */
 function parseAnyOdds(t) {
-  const s = String(t ?? '').trim().toLowerCase().replace(/\s+/g, ''); if (!s) return { dec: null };
+  const s = String(t ?? '').trim().toLowerCase().replace(/^[≈~]/, '').replace(/[−–—]/g, '-').replace(/＋/g, '+').replace(/\s+/g, ''); if (!s) return { dec: null };
   if (s === 'evs' || s === 'evens' || s === 'even') return { dec: 2, exact: 2, kind: 'fractional' };
   // American: a sign, or a whole number of 100 or more (decimal odds of 100+ are not realistic)
   if (/^[+-]\d+$/.test(s) || (/^\d{3,}$/.test(s) && Number(s) >= 100)) {
@@ -11525,7 +11588,7 @@ const { carryHtml, wireCarry } = __m['pricecheck'];
 const { usValuePage } = __m['v-nba-value'];
 const valueHref = (p, side, line) => `#/nfl/value?pid=${encodeURIComponent(p.player_id)}&m=${encodeURIComponent(p.market)}&line=${line}&side=${side}`;
 const stamp = () => (model.data ? `Model ${esc(model.data.version)} · trained ${esc(model.data.trained.slice(0, 10))} · predictions updated ${esc(new Date(model.data.generated).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }))}` : '');
-const loading = root => { root.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>'; };
+const loading = root => { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; };
 const missing = (root, title) => { root.innerHTML = `<h1>${title}</h1>${EV_NOTICE}<div class="banner info"><b>Model predictions are not available right now.</b> The model's output file could not be loaded. Historical research is still available in Find Your Own.</div>`; };
 
 /** The picks rule (documented on the page): an active market (passed its out-of-sample tests), a measured confidence of Medium or
@@ -11742,7 +11805,7 @@ async function viewValue(root, r) {
   { const onFmt = e => { if (!root.isConnected || !document.querySelector('#od')) { document.removeEventListener('oddsfmt', onFmt); return; }
       for (const [id, k] of [['od', 'odds'], ['ot', 'other']]) { const r = parseIn(ui[k], e.detail.from); if (!r.dec) continue; ui[k] = inputText(r.exact, e.detail.to); const el = document.getElementById(id); if (el) { el.value = ui[k]; el.placeholder = id === 'od' ? PLACEHOLDER[e.detail.to] : el.placeholder; el.dispatchEvent(new Event('input', { bubbles: true })); } } };
     document.addEventListener('oddsfmt', onFmt); }
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Value: compare a price</h1>${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Value: compare a price</h1>${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const q = r.q;
   if (q.get('s')) { ui.subject = q.get('s'); ui.market = RETIRED_MARKETS.has(q.get('m')) ? null : q.get('m'); /* old links to the removed yellow/red markets are ignored safely */ ui.side = q.get('side') === 'under' ? 'under' : 'over'; ui.line = q.get('line') ? Number(q.get('line')) : null; ui.last = q.get('last') === 'season' ? 'season' : q.get('last') ? Number(q.get('last')) || 0 : 20; ui.venue = ['home', 'away'].includes(q.get('venue')) ? q.get('venue') : ''; } // a play's exact sample (26 Oct)
   root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Value: compare a price</h1>${carryHtml('football', r)}
@@ -11885,13 +11948,13 @@ return { LICENSING, STATUS_LABEL };
 __m['v-about'] = (() => {
 const { loadCalib } = __m['valueev'];
 const { store, leagueName, SOURCES, freshness } = __m['data'];
-const { esc, fmtLong, fmtShort, seasonLabel } = __m['util'];
+const { esc, fmtLong, fmtShort, seasonLabel, whenLocal } = __m['util'];
 const { dataBanner, problemsBanner } = __m['shared'];
 const { LICENSING, STATUS_LABEL } = __m['licensing'];
 const { nfl } = __m['nfl-data'];
 
 async function viewAbout(root) {
-  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Data &amp; sources</h1>${store.status === 'error' ? '' : '<div class="skel"></div>'}`; return; }
+  if (store.status !== 'ready') { root.innerHTML = `${dataBanner()}<h1>Data &amp; sources</h1>${store.status === 'error' ? '' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'}`; return; }
   const m = store.manifest, f = freshness();
   root.innerHTML = `${dataBanner()}${problemsBanner()}<h1>Data &amp; sources</h1><p class="muted">Everyone sees the same published dataset. It is checked before publication, and anything that could not be verified is left blank rather than estimated.</p>
   <section class="sec"><h2>What is published</h2><div class="card"><dl class="kv">
@@ -11947,7 +12010,7 @@ ${coverageHtml()}
 }
 
 // The daily refresh (GitHub Actions, about 11pm UK time) writes data-refresh-status.json. Read it fresh (no cache).
-const ukTime = iso => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso)); } catch { return iso; } };
+const ukTime = iso => whenLocal(iso); // Update 73: in the viewer's time zone
 // 4 Nov 2026 (audit): each kind of data with its own real date, so a file rebuilt tonight is never read as fresh data.
 const dataDates = fr => { if (!fr) return ''; const li = [], inj = fr.nfl?.injuries, lu = fr.lineups, ro = fr.rosters || {}, N = fr.leagues || {};
   if (inj) li.push(`<li><b>NFL injury reports:</b> ${inj.latest_report_week ? `latest week ${esc(String(inj.latest_report_week))}` : 'none'}${inj.next_game_week && inj.teams_playing_next_week ? ` · week ${esc(String(inj.next_game_week))} report in the data for ${inj.teams_with_that_weeks_report} of ${inj.teams_playing_next_week} teams playing` : ''}${inj.file_written ? ` · checked ${esc(ukTime(inj.file_written))}` : ''}. A player who is not listed is not on the official report; that does not mean fit.</li>`);
@@ -12082,7 +12145,7 @@ const { nightOf, viewingNight } = __m['nightdate'];
 const { hooks } = __m['shared'];
 
 const nflBanner = () => (nfl.status === 'error' ? `<div class="banner bad"><b>NFL data unavailable.</b> ${esc(nfl.error)} <a href="" onclick="location.reload();return false">Try again</a></div>` : '');
-const nflLoading = root => { if (nfl.status !== 'ready') { root.innerHTML = nfl.status === 'error' ? nflBanner() : '<div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div>'; return true; } return false; };
+const nflLoading = root => { if (nfl.status !== 'ready') { root.innerHTML = nfl.status === 'error' ? nflBanner() : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return true; } return false; };
 const POS_ORDER = ['qb', 'rb', 'wr', 'te', 'k', 'def'];
 const ROSTER = { ACT: 'Active', RES: 'Reserve / injured list', INA: 'Inactive', DEV: 'Practice squad', CUT: 'Released', EXE: 'Exempt', RET: 'Retired' };
 const credit = '<p class="xs muted">NFL data: <a href="https://github.com/nflverse/nflverse-data" target="_blank" rel="noopener">nflverse</a> (CC-BY 4.0). Regular season and postseason are kept apart unless you choose to include the postseason.</p>';
@@ -12126,7 +12189,7 @@ async function viewNflSearch(root) {
 async function viewNflPlayer(root, id) {
   if (nflLoading(root)) return;
   const p = nfl.playerById.get(id); if (!p) { root.innerHTML = '<div class="banner">Player not found. <a href="#/nfl/search">Search NFL players</a></div>'; return; }
-  root.innerHTML = '<div class="skel"></div>';
+  root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
   const rows = await playerRows(p), markets = playerMarkets(p, rows), ng = p.current ? nextGameOf(p.team) : null;
   const oppAbbr = ng ? (ng.home === p.team ? ng.away : ng.home) : null;
   const seasons = [...new Set(rows.map(r => r.season))].sort((a, b) => b - a);
@@ -12159,7 +12222,7 @@ async function viewNflTeam(root, abbr) {
   const roster = nfl.players.filter(p => p.current && p.team === abbr).sort((a, b) => POS_ORDER.indexOf(a.group) - POS_ORDER.indexOf(b.group) || b.n - a.n);
   root.innerHTML = `<p><a href="#/nfl/search">← NFL search</a></p><div class="prof"><div class="avatar">${esc(abbr)}</div><div><h1 style="margin:0">${esc(t.name)}</h1><div class="muted">${t.conf} ${t.div} · ${season} regular season ${w}-${l}${d ? '-' + d : ''}</div></div></div>
     <section class="sec"><h2>${season} games</h2><div class="card"><div class="list">${games.map(gameRow).join('')}</div></div></section>
-    <section class="sec"><h2>Defence vs position <span class="xs muted">(${season} regular season, per game allowed)</span></h2><div id="dvp"><div class="skel"></div></div></section>
+    <section class="sec"><h2>Defence vs position <span class="xs muted">(${season} regular season, per game allowed)</span></h2><div id="dvp"><div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div></div></section>
     <section class="sec"><h2>Team points</h2><div id="tpanel"></div></section>
     <section class="sec"><h2>Players</h2>${POS_ORDER.map(g => { const ps = roster.filter(p => p.group === g); return ps.length ? `<details><summary><b>${GROUP_NAMES[g]}</b> <span class="xs muted">${ps.length}</span></summary><div class="list">${ps.map(p => `<a class="row" href="#/nfl/player/${encodeURIComponent(p.id)}"><div class="l"><b>${esc(p.name)}</b><span>${esc(p.pos)}${p.jersey ? ' · #' + esc(p.jersey) : ''} · ${esc(ROSTER[p.roster_status] || '')}</span></div></a>`).join('')}</div></details>` : ''; }).join('')}</section>${credit}`;
   const rows = teamGameRows(abbr);
@@ -12234,7 +12297,7 @@ function offerProblem(o, now = Date.now()) {
 }
 
 async function viewNflRecommended(root) {
-  root.innerHTML = '<div class="skel"></div><div class="skel" style="width:70%"></div>';
+  root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
   if (nfl.status !== 'ready') return;
   await loadModel();
   let odds = null;
@@ -12378,7 +12441,7 @@ async function viewNflFinder(root) {
   };
   let rowsNow = [];
   const draw = async (keepY = false) => {
-    const y = scrollY; if (!keepY) out.innerHTML = '<div class="skel"></div>';
+    const y = scrollY; if (!keepY) out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
     const gs = groups(); if (!gs.length) { out.innerHTML = '<div class="banner info"><b>Choose at least one position.</b></div>'; return; }
     const bys = new Map(); for (const g of gs) bys.set(g, await loadGroup(g));
     const games = selGames(); const gTeams = games.length ? new Set(games.flatMap(g => [g.home, g.away])) : null;
@@ -12515,7 +12578,9 @@ return { GLOSSARY, gl, glossaryHtml };
 })();
 __m['v-start'] = (() => {
 // Start page for each sport (redesign, 21 Oct 2026): four plain-English journeys, Compare a price, an optional quick guide and the glossary.
-const { esc } = __m['util'];
+const { esc, TZ_CHOICES, tzPref, detectTz, tzAbbr } = __m['util'];
+const { ODDS_FORMATS, oddsFmt } = __m['oddsfmt'];
+const { unitChip } = __m['units'];
 const { gl, glossaryHtml } = __m['glossary'];
 const HK = 'proplab.startGuide.v1';
 const guideHidden = () => { try { return localStorage.getItem(HK) === 'hidden'; } catch { return false; } };
@@ -12535,7 +12600,14 @@ function viewStart(root, sport) {
     ...(sport === 'nba' ? [['Team Matchups', 'Every team ranked 1-30 for what its defence allows to guards, forwards and centres and what its offence produces, updated every night.', '#/nba/matchups', 'See matchups']] : []),
     ['Compare a Price', 'Type the odds you can see at a bookmaker and compare them with what happened in the past.', s.value, 'Compare a price'],
   ];
-  root.innerHTML = `<section class="startpg"><h1>${s.em} ${esc(s.name)}: start here</h1>
+  // Update 73 (owner, 12 Nov 2026): your own settings at the top of Start, so anyone (in the UK or the US) sets them first: the time zone
+  // (Automatic = this phone's own, e.g. UK time in the UK, Mountain time in Colorado), the odds format and the unit size / max units.
+  const auto = detectTz(), cur = tzPref();
+  const setHtml = `<div class="card startset" data-startset><div class="unitrow"><b>Your settings</b>${unitChip()}</div>
+    <div class="blgrid" style="margin-top:8px"><label class="field"><span>Times shown in</span><select class="in" data-settz aria-label="Time zone">${TZ_CHOICES.map(([v, l]) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${esc(l)}${v === 'auto' ? ` (${esc(auto === 'UTC' ? 'UTC' : tzAbbr(new Date(), auto))})` : ''}</option>`).join('')}</select></label>
+    <label class="field"><span>Odds shown as</span><select class="in" data-setodds aria-label="Odds format">${ODDS_FORMATS.map(([v, l]) => `<option value="${v}" ${v === oddsFmt() ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label></div>
+    <p class="xs muted" style="margin:6px 0 0">Saved on this phone only. You can type odds in any format in every box (2.50, 6/4 or +150). NBA and NFL games are still dated by their US night.</p></div>`;
+  root.innerHTML = `<section class="startpg">${setHtml}<h1>${s.em} ${esc(s.name)}: start here</h1>
     <p class="muted" style="margin:4px 0 12px">PropLab counts how often things happened in real past ${s.unit === 'game' ? 'games' : 'matches'}, for example <i>${esc(s.ex)}</i> (an illustration, not a real figure). It is research, not tips: past results never guarantee the next one.</p>
     ${guideHidden() ? '<p class="xs"><button type="button" class="linkbtn" data-guide="show">Show the quick guide</button></p>' : `<div class="card startguide" id="sguide"><div class="row" style="border:0;padding:0;align-items:center"><b>New here? 4 quick steps</b><button type="button" class="chip" data-guide="hide" aria-label="Hide the quick guide">Hide</button></div>
       <ol class="small" style="margin:6px 0 0;padding-left:20px"><li>Tap <b>Hiwi's Section</b> for recommended plays (or choose a match).</li><li>Each card shows a ${gl('hit', 'hit rate')} and the ${gl('qual', 'qualifying games')} behind it: 8 of 10, not just 80%.</li><li>Move the line, pick ${gl('ou', 'Over / Under')}, or change <b>Games used</b> on any card. Cards stay where they are.</li><li>Tap <b>Compare Price</b> to check a bookmaker's ${gl('odds', 'odds')} against that card.</li></ol></div>`}
@@ -12572,7 +12644,7 @@ const backBtn = (sport, where) => `<button type="button" class="btn rsback" data
 
 async function viewResearch(root, sport, pid) {
   const usMode = sport !== 'football';
-  root.innerHTML = `${backBtn(sport, 'top')}<div class="skel" style="margin-top:12px"></div><div class="skel" style="width:70%"></div>`;
+  root.innerHTML = `${backBtn(sport, 'top')}<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>`;
   let p = null, raw = null, markets = [], head = '', game = null, A = null;
   if (usMode) {
     A = usAdapter(sport); p = A.d.playerById.get(pid);
@@ -12586,7 +12658,7 @@ async function viewResearch(root, sport, pid) {
     head = `<h1 style="margin:10px 0 2px">${esc(p.name)}</h1><p class="small muted" style="margin:0">${badge(A.teamName(p.team), { abbr: p.team })} ${esc(p.pos || '')} · ${esc(A.teamName(p.team))} · ${A.name}${p.new_team ? ' · <button type="button" class="newteam" data-info="newteam" data-title="NEW TEAM">NEW TEAM</button>' : ''}</p>
       <p class="small" style="margin:6px 0 0">${game ? `Game: <b>${esc(A.teamName(game.away))} at ${esc(A.teamName(game.home))}</b> · ${esc(fmtKick(game))}` : 'No upcoming game published.'}${ij && ij.cls !== 'none' ? ` · <span class="injb inj-${ij.cls}" title="${esc(ij.detail || '')}">${esc(ij.label)}</span>` : ''}</p>`;
   } else {
-    if (store.status !== 'ready') { root.innerHTML = `${backBtn(sport, 'top')}<div class="skel"></div>`; return; }
+    if (store.status !== 'ready') { root.innerHTML = `${backBtn(sport, 'top')}<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>`; return; }
     for (const lg of leaguesPresent()) { const ps = await fbPlayers(lg); const x = ps.find(q => q.id === pid); if (x) { p = { ...x, league: lg }; break; } }
     if (!p) { root.innerHTML = `${backBtn(sport, 'top')}<div class="banner info" style="margin-top:12px"><b>No match-by-match statistics are published for this player.</b> PropLab has player match logs for MLS only.</div>`; wireBack(root, sport); return; }
     raw = p.rows.slice().sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -12884,7 +12956,11 @@ function shell() {
     if (m) m.textContent = r.state === 'code' ? 'A new version is available: tap Update in the bar below.' : r.state === 'data' ? 'New data is available: tap Update in the bar below.' : r.state === 'offline' ? 'Could not reach the site (offline?). Try again later.' : r.state === 'dev' ? 'Development copy: no update checks.' : 'You have the latest version.';
   });
   $('#tzsel').addEventListener('change', e => { setTzPref(e.target.value); drawTz(); render(); });
-  $('#oddsel').addEventListener('change', e => setOddsFmt(e.target.value)); // every odds figure redraws in place (no recalculation)
+  // Update 73: the same two settings at the top of Start drive the footer ones (one place holds the logic)
+  document.addEventListener('change', e => { const t = e.target; const to = t.matches && t.matches('[data-settz]') ? '#tzsel' : t.matches && t.matches('[data-setodds]') ? '#oddsel' : null; if (!to) return; const f = $(to); f.value = t.value; f.dispatchEvent(new Event('change')); });
+  // Update 73 (owner): pages that redraw their own prices on a format change (Hiwi's Section, the EV pages, Compare a price) do it in
+  // place; every other page (My Plays, Acca Builder, research, NFL pages...) is drawn again, keeping your scroll position.
+  $('#oddsel').addEventListener('change', e => { setOddsFmt(e.target.value); if (document.querySelector('#recpg, #od, #evo, #pcbox')) return; const y = scrollY; Promise.resolve(render()).then(() => requestAnimationFrame(() => scrollTo(0, y))); });
   $('#topctl').addEventListener('change', e => {
     if (e.target.id !== 'sportsel') return; const w = where(); const to = e.target.value; if (to === w.sport) return;
     const eq = equivalentHref(w, to); setSport(to);
@@ -12948,10 +13024,10 @@ async function render() {
   const body = document.createElement('div'); root.appendChild(body); note = '';
   try {
     if (w.page === 'about') { if (store.status === 'idle') loadCore(getJson).then(() => where().page === 'about' && render()); if (nfl.status === 'idle') loadNfl(getJson).then(() => where().page === 'about' && render()); }
-    if (w.sport === 'football' && store.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadCore(getJson).then(() => { if (where().sport === 'football') render(); }); }
-    if (w.sport === 'nfl' && nfl.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadNfl(getJson).then(() => { if (where().sport === 'nfl') render(); }); return; }
+    if (w.sport === 'football' && store.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadCore(getJson).then(() => { if (where().sport === 'football') render(); }); }
+    if (w.sport === 'nfl' && nfl.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNfl(getJson).then(() => { if (where().sport === 'nfl') render(); }); return; }
     if (w.sport === 'nfl' && nfl.status === 'loading') return;
-    if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel" style="width:60%"></div><div class="skel"></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
+    if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
       const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
