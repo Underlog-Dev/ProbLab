@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f53f16b0c1c7">
+<meta name="proplab-build" content="1438cc9c8dd1">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7458,6 +7458,69 @@ function wireCarry(root) {
 
 return { carryPrice, hasCarry, setCarried, carryHtml, wireCarry };
 })();
+__m['backup'] = (() => {
+// Back up / restore (Update 87, owner 13 Nov 2026): on iPhone each Home Screen web app keeps its own storage, so moving to a new address
+// (the repository rename ProbLab -> PropLab) starts an empty app. This copies everything PropLab keeps on this phone (My Plays, units,
+// odds format, time zone, filters, the Acca slip...) as one block of text, and restores it in the new app. Restoring MERGES: bets are added
+// by their id (a bet already there is never overwritten or duplicated) and a setting is only filled in where the new app has none.
+const SKIP = /^proplab\.(photo\.|lineup\.|reload|test\.)/;
+const BETLOG = 'proplab.betlog.v1', HEAD = 'PROPLAB-BACKUP-1 ';
+function backupText() {
+  const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('proplab.') && !SKIP.test(k)) o[k] = localStorage.getItem(k); }
+  return HEAD + JSON.stringify({ at: new Date().toISOString(), keys: o });
+}
+function backupSummary(text) {
+  const d = parse(text); if (!d.ok) return d; let bets = []; try { bets = JSON.parse(d.keys[BETLOG] || '[]'); } catch { bets = []; }
+  return { ok: true, at: d.at, bets: Array.isArray(bets) ? bets.length : 0, settings: Object.keys(d.keys).length - (d.keys[BETLOG] ? 1 : 0), keys: d.keys };
+}
+function parse(text) {
+  const t = String(text || '').trim(), i = t.indexOf(HEAD.trim()); if (i < 0) return { ok: false, why: 'That is not a PropLab backup (it should start with PROPLAB-BACKUP-1).' };
+  try { const j = JSON.parse(t.slice(i + HEAD.trim().length).trim()); if (!j || typeof j.keys !== 'object') throw new Error('x'); return { ok: true, at: j.at, keys: j.keys }; }
+  catch { return { ok: false, why: 'The backup text is incomplete: copy all of it (it ends with }}) and paste again.' }; }
+}
+/** Merge a backup into this app: { ok, added, kept, settings } or { ok:false, why }. */
+function restoreText(text) {
+  const d = parse(text); if (!d.ok) return d;
+  let added = 0, kept = 0, settings = 0;
+  for (const [k, v] of Object.entries(d.keys)) {
+    if (!k.startsWith('proplab.') || SKIP.test(k) || typeof v !== 'string') continue;
+    if (k === BETLOG) { let inc = [], cur = []; try { inc = JSON.parse(v) || []; } catch { inc = []; } try { cur = JSON.parse(localStorage.getItem(BETLOG) || '[]') || []; } catch { cur = []; }
+      const ids = new Set(cur.map(b => b && b.id)); for (const b of inc) { if (!b || b.id == null) continue; if (ids.has(b.id)) kept++; else { cur.push(b); ids.add(b.id); added++; } }
+      localStorage.setItem(BETLOG, JSON.stringify(cur)); continue; }
+    if (localStorage.getItem(k) == null) { localStorage.setItem(k, v); settings++; }
+  }
+  return { ok: true, added, kept, settings };
+}
+function backupHtml() {
+  return `<details class="card stack" data-bkp style="margin-top:14px"><summary><b>Back up / restore my bets</b> <span class="xs muted">(moving to a new app or phone)</span></summary>
+    <p class="small" style="margin:6px 0">Your bets and settings live on this phone, inside this app only. <b>Back up</b> copies them as text: paste it into Notes (or send it to yourself). In the new app, paste it under <b>Restore</b>. Restoring adds the bets the new app does not have; nothing already there is changed or doubled.</p>
+    <div class="row" style="border:0;padding:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-bkpcopy>Back up (copy)</button><button type="button" class="chip" data-bkpshare>Share…</button></div>
+    <p class="xs" data-bkpmsg aria-live="polite"></p>
+    <textarea class="in" data-bkptext rows="3" readonly hidden style="width:100%;font-size:11px"></textarea>
+    <label class="field"><span>Restore: paste a backup here</span><textarea class="in" data-bkpin rows="3" style="width:100%;font-size:12px" placeholder="PROPLAB-BACKUP-1 {...}"></textarea></label>
+    <p class="xs" data-bkpcheck aria-live="polite"></p>
+    <button type="button" class="btn" data-bkprestore disabled>Restore</button></details>`;
+}
+function wireBackup(root, onDone) {
+  const $ = s => root.querySelector(s); if (!$('[data-bkp]') || root._bkpWired) return; root._bkpWired = true; // one set of listeners per page root
+  const msg = (t, cls = '') => { const m = $('[data-bkpmsg]'); m.className = 'xs ' + cls; m.textContent = t; };
+  root.addEventListener('click', async e => {
+    if (e.target.closest('[data-bkpcopy]')) { const t = backupText(), s = backupSummary(t), ta = $('[data-bkptext]'); ta.value = t; ta.hidden = false;
+      try { await navigator.clipboard.writeText(t); msg(`✓ Copied: ${s.bets} bet${s.bets === 1 ? '' : 's'} and ${s.settings} setting${s.settings === 1 ? '' : 's'}. Paste it into Notes now.`, 'hit'); }
+      catch { ta.focus(); ta.select(); msg(`Your phone blocked copying: the backup (${s.bets} bets) is in the box below. Press and hold it, Select All, then Copy.`, 'warn'); } return; }
+    if (e.target.closest('[data-bkpshare]')) { const t = backupText(); try { if (navigator.share) { await navigator.share({ title: 'PropLab backup', text: t }); msg('✓ Shared. Save it somewhere you can find it (Notes is easiest).', 'hit'); } else throw new Error('no share'); } catch (er) { if (er && er.name === 'AbortError') return; const ta = $('[data-bkptext]'); ta.value = t; ta.hidden = false; msg('Sharing is not available here: copy the text in the box below instead.', 'warn'); } return; }
+    if (e.target.closest('[data-bkprestore]')) { const r = restoreText($('[data-bkpin]').value); const c = $('[data-bkpcheck]');
+      if (!r.ok) { c.className = 'xs warn'; c.textContent = r.why; return; }
+      c.className = 'xs hit'; c.textContent = `✓ Restored: ${r.added} bet${r.added === 1 ? '' : 's'} added${r.kept ? `, ${r.kept} already here (left as they were)` : ''}${r.settings ? `, ${r.settings} setting${r.settings === 1 ? '' : 's'}` : ''}.`; $('[data-bkpin]').value = ''; $('[data-bkprestore]').disabled = true; if (onDone) setTimeout(onDone, 1200); }
+  });
+  root.addEventListener('input', e => { if (!e.target.matches('[data-bkpin]')) return; const s = backupSummary(e.target.value), c = $('[data-bkpcheck]'), b = $('[data-bkprestore]');
+    if (!e.target.value.trim()) { c.textContent = ''; b.disabled = true; return; }
+    if (!s.ok) { c.className = 'xs warn'; c.textContent = s.why; b.disabled = true; return; }
+    c.className = 'xs'; c.textContent = `Backup from ${s.at ? new Date(s.at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : 'unknown date'}: ${s.bets} bet${s.bets === 1 ? '' : 's'}, ${s.settings} setting${s.settings === 1 ? '' : 's'}. Tap Restore.`; b.disabled = false; });
+}
+
+return { backupText, backupSummary, restoreText, backupHtml, wireBackup };
+})();
 __m['settle'] = (() => {
 // Automatic settlement of your logged bets (owner, 9 Nov 2026). PropLab is a static site: there is no server watching your bets. Your bets
 // are kept on this phone; every time My Plays opens (and whenever new data has been published since), each unsettled selection is checked
@@ -7580,6 +7643,7 @@ function accaOf(legs) {
 return { STATUS_LABEL, SETTLED, resultOf, factorOf, usGame, settleLeg, accaOf };
 })();
 __m['betprefill'] = (() => {
+const { nightOf } = __m['nightdate'];
 const { getUnit } = __m['units'];
 // "Log as a real bet" (owner, 9 Nov 2026): carries a selection from Hiwi's Section, or the whole Acca slip, to the bet log on My Plays,
 // with the match, player / team, market, line and side filled in. You then type the odds and stake you actually got. No heavy imports.
@@ -7595,7 +7659,7 @@ function selFromCandidate(c, side, r) {
     return { ...base, fx, scope, team: scope === 'team' || scope === 'opp' ? c.team : '', pid: scope === 'player' ? c.pid : '', name: scope === 'match' ? `${g.home} v ${g.away}` : c.name, game: `${g.home} v ${g.away}`, date: (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date) };
   }
   // NBA / NFL: dated by the US night of the game (Update 64), with the UK kick-off kept
-  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: g.date || (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : ''), ko: g.ko_utc || '', dateUS: !!g.date, season: g.season };
+  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: nightOf(g) || '', ko: g.ko_utc || '', dateUS: true, dateUS2: true, season: g.season }; // Update 87 fix: the US schedule night (NFL: local_date)
 }
 /**
  * Update 66 (owner, 11 Nov 2026): "＋ Add to My Plays" logs the bet straight into the My Plays list (the same list, in date order, with
@@ -7647,6 +7711,7 @@ __m['betlog'] = (() => {
 //  * Totals count each real bet once: an acca's stake once (not once per leg). Void stakes are returned and leave staked and profit alone.
 //  * Fair odds "at the time" (NBA / NFL player props): from his games before that match only. Kept on this device (backup file below).
 //    There is no server: your bets live in this browser and are reconciled with the shared data whenever My Plays opens; no syncing.
+const { nightOf } = __m['nightdate'];
 const { esc, koUK, fmtKick, fmtDay, koLocal, whenLocal } = __m['util'];
 const { fmtOdds, parseIn } = __m['oddsfmt'];
 const { usAdapter } = __m['v-hiwi'];
@@ -7690,7 +7755,8 @@ const today = () => koUK({ ko_utc: new Date().toISOString() }).ymd;
 const usToday = () => { try { return new Date(Date.now() - 6 * 36e5).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); } catch { return today(); } };
 // 11 Nov 2026 (owner): NBA / NFL bets belong to the US night of the game (a 00:30 UK tip-off on Wednesday is Tuesday's game), shown with
 // its UK kick-off time ("Wed 00:30 UK"). Football stays on the UK date.
-const usNight = g => (g && g.date) || (g ? koUK(g).ymd : '');
+// Update 87 fix (owner, 13 Nov): the US schedule night (NFL files keep the UK date in g.date and the US date in local_date)
+const usNight = g => (g ? nightOf(g) || koUK(g).ymd : '');
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // Update 73: the tip-off shown in YOUR time zone (footer setting; Automatic = this phone's), e.g. "Wed 00:30 GMT" in the UK, "Tue 19:30 EST" in New York
 // Update 78: the strict-rule record, so you can see if betting only on the rules works (judge it at 100 bets, not a night)
@@ -7812,12 +7878,12 @@ async function settleAll(now = Date.now()) {
   const a = loadLog(); let changed = 0;
   // 11 Nov 2026: NBA / NFL bets logged before this were dated by the UK day of the tip-off; they move to the US night of the game
   let moved = 0;
-  for (const b of a) { for (const x of isAcca(b) ? b.legs : [b]) { if ((x.sport !== 'nba' && x.sport !== 'nfl') || !x.gameId || (x.ko && x.dateUS)) continue;
-      let g = null; try { g = await usGame(x.sport, x.gameId); } catch { g = null; } if (!g || !g.date) continue;
-      if (x.date !== g.date || x.ko !== (g.ko_utc || '')) moved++; x.date = g.date; x.ko = g.ko_utc || ''; x.dateUS = true; }
+  for (const b of a) { for (const x of isAcca(b) ? b.legs : [b]) { if ((x.sport !== 'nba' && x.sport !== 'nfl') || !x.gameId || (x.ko && x.dateUS2)) continue; // dateUS2: re-checked with the NFL fix
+      let g = null; try { g = await usGame(x.sport, x.gameId); } catch { g = null; } if (!g || !nightOf(g)) continue; const gn = nightOf(g);
+      if (x.date !== gn || x.ko !== (g.ko_utc || '')) moved++; x.date = gn; x.ko = g.ko_utc || ''; x.dateUS = true; x.dateUS2 = true; }
     if (isAcca(b)) { const first = b.legs.map(l => l.date).filter(Boolean).sort()[0]; if (first && b.date !== first) { b.date = first; moved++; } } }
   if (moved) { const cur = loadLog(), ids = new Map(a.map(b => [b.id, b]));
-    for (let i = 0; i < cur.length; i++) { const n = ids.get(cur[i].id); if (!n) continue; const fix = (c, m) => { if (m && m.dateUS) { c.date = m.date; c.ko = m.ko; c.dateUS = true; } };
+    for (let i = 0; i < cur.length; i++) { const n = ids.get(cur[i].id); if (!n) continue; const fix = (c, m) => { if (m && m.dateUS2) { c.date = m.date; c.ko = m.ko; c.dateUS = true; c.dateUS2 = true; } };
       if (isAcca(n)) { (cur[i].legs || []).forEach((l, j) => fix(l, n.legs[j])); const first = cur[i].legs.map(l => l.date).filter(Boolean).sort()[0]; if (first) cur[i].date = first; } else fix(cur[i], n); }
     saveLog(cur); changed += moved; }
   for (const b of a) {
@@ -8316,6 +8382,7 @@ __m['myplays'] = (() => {
 //    model's chance of each range taken from the probabilities of the lines themselves (one distribution, so it is consistent).
 //  * Tracker: mark each play Won / Lost / Void; profit is counted in units and in £ at £10 a unit. These are YOUR bets: they are kept
 //    apart from the model's own test results (Model Performance), which never include anything you typed.
+const { backupHtml, wireBackup } = __m['backup'];
 const { esc, koUK } = __m['util'];
 const { fmtOdds } = __m['oddsfmt'];
 const { capAt, RISK } = __m['risk'];
@@ -8394,8 +8461,9 @@ function viewMyPlays(root0) {
   const sp = /^#\/(nba|nfl)\//.exec(location.hash || ''), sport = sp ? sp[1] : 'football';
   // 9 Nov 2026 (owner): one bet log for every sport (football too), settled automatically from the published data
   migrateOldPlays(); // Update 66: the Compare Price list is merged into the one My Plays list
-  root0.innerHTML = `<h1>My Plays</h1>${betLogHtml(sport)}`;
+  root0.innerHTML = `<h1>My Plays</h1>${betLogHtml(sport)}${backupHtml()}`;
   wireBetLog(root0, sport);
+  wireBackup(root0, () => location.reload()); // Update 87: back up / restore (moving to a new Home Screen app); reload shows the restored bets
   return;
   const root = root0.querySelector('#mpwrap');
   const draw = () => {
@@ -8654,6 +8722,7 @@ __m['accaslip'] = (() => {
 //    from the SAME game (owner, 3 Nov: bet builders in accas) are priced: scaled by how they moved together in 30+ shared earlier games
 //    when that can be measured (experimental), otherwise the plain product, always labelled "not adjusted".
 //  * a selection with no valid probability (or whose game is over) is unpriced too, and so is every bet that contains it.
+const { nightOf } = __m['nightdate'];
 const { legId, subjOf, pairLink } = __m['accabuild'];
 const { evalAt, ladderName } = __m['recplays'];
 const { fmtOdds, oddsFmt, parseIn, PLACEHOLDER } = __m['oddsfmt'];
@@ -8855,7 +8924,7 @@ function selFromSlip(x) {
   const c = reg.get(x.cid); if (c) return selFromCandidate(c, x.side, { L: x.L, p: x.p, fair: x.fair, push: 0 });
   const parts = String(x.cid).split('|'), [home, away] = String(x.fixture).split(x.sport === 'football' ? ' v ' : ' at ');
   const base = { sport: x.sport, market: x.market, binary: /^(Yes|No)$/.test(x.line), line: Number(String(x.line).replace(/^(Over|Under) /, '')) || 0.5, side: x.side, p: x.p, push: 0, fair: x.fair, model: "PropLab's model when you logged it", name: x.name, game: x.fixture,
-    date: x.ko ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(x.ko)) : '' };
+    date: x.ko ? (x.sport === 'football' ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(x.ko)) : nightOf({ ko_utc: x.ko })) : '' }; // Update 87 fix: NBA / NFL legs by their US night
   if (x.sport === 'football') { const fid = parts[1] || '', [lg, d] = fid.split(':'), key = parts[2], scope = key.startsWith('m.') ? 'match' : key.startsWith('o.') ? 'opp' : key.startsWith('t.') ? 'team' : 'player';
     return { ...base, key, scope, team: scope === 'team' || scope === 'opp' ? x.team : '', fx: { league: lg, date: d, ko_utc: x.ko || '', local_date: '', home, away, source: '' } }; }
   return { ...base, gameId: parts[1], pid: parts[2], key: parts[3], scope: 'player', team: x.team, game: `${away} at ${home}`.replace(/^undefined at /, x.fixture) };
@@ -9441,7 +9510,7 @@ async function viewRecommended(root, sport) {
       try { if (cd.rebuild) Object.assign(cd, cd.rebuild(st)); else if (cd.perFn) Object.assign(cd, cd.perFn(st)); } catch (err) { console.error(err); }
       carryPrice(cd, st, sport); return; }
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: sport === 'football' ? r.p : blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
-      const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
+      const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (nightOf(g) || ''), subj: x.c.pid || x.c.name, p: r.p };
       const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
       const saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP, extra) : null, b = t.closest('[data-radd]'); void info;
       b.textContent = saved ? `✓ In My Plays: ${CUR()}${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}` : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved; if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
