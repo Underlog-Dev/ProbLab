@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="43aa03418288">
+<meta name="proplab-build" content="ca20096c9af7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -4068,6 +4068,12 @@ const RISK = { longOdds: [[8, 0.25], [4, 0.5]], daily: 10, perPlayer: 3, perGame
 // Update 73: the per-play cap (max units) is each person's own setting too (2u until changed). Long-odds caps scale with it
 // (at 2u: 0.5u from 4.00, 0.25u from 8.00).
 Object.defineProperty(RISK, 'cap', { get: () => getUnit().cap, enumerable: true });
+// Update 79 (owner, 13 Nov 2026): stakes and EV use a BLEND of the model and the bookmaker, not the model alone. When the two disagree a lot,
+// part of that gap is usually model error (news, minutes, line-ups the model can't see), so the believable chance sits between them.
+// 50/50: model 61% at 2.00 (bookmaker 50%) → 55.5%. Small gaps barely change; huge gaps are trimmed automatically (no "half stake" rule needed).
+const BLEND = 0.5;
+/** The chance used for EV and stakes: BLEND x model + (1 - BLEND) x the chance your odds imply. */
+const blendP = (p, dec) => (dec > 1 ? BLEND * p + (1 - BLEND) * (1 / dec) : p);
 /** The cap that applies at these odds: [units, reason]. */
 function capAt(dec) { const cap = RISK.cap; for (const [o, c] of RISK.longOdds) if (dec >= o) { const x = Math.round(c * (cap / 2) * 100) / 100; return [x, `long odds (${fmtOdds(o)} or longer): at most ${fmtU(x)}u`]; } return [cap, `${fmtU(cap)}u per selection (your max)`]; }
 // Update 71: the money value of 1 unit is each person's own setting (units.js; £10 until changed). The name stays for the code using it.
@@ -4131,7 +4137,7 @@ function accaPlan(p, dec, o = {}) {
   return P ? { units: P.final, ok: P.final >= 0.01, why: P.why.filter(w => !/cautious end/.test(w)), theory: P.theory } : null;
 }
 
-return { RISK, capAt, FRACS, getFrac, setFrac, stakePlan, stakeHtml, accaPlan };
+return { RISK, BLEND, blendP, capAt, FRACS, getFrac, setFrac, stakePlan, stakeHtml, accaPlan };
 })();
 __m['confidence'] = (() => {
 // Model confidence (2 Nov 2026): High / Medium / Low with its reasons, for Recommended Plays and every card's estimate box. It is separate
@@ -6971,7 +6977,7 @@ function strictVerdict(p, dec) {
   if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short, a small model error wipes out the edge` };
   if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
   if (edge < need - 1e-9) return { ok: false, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds); it needs ${Math.round(need * 100)}+ pts` };
-  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts, EV +${(ev * 100).toFixed(0)}%: unusually big. Check the news first (injury, minutes, line-up). If you find a reason for the price, pass; if not, back it at half stake` };
+  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts. The gap with the bookmaker is unusually big, so the stake is already trimmed (blended with the bookmaker's price). A quick look at the news before tip-off is still wise` };
   return { ok: true, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds)` };
 }
 /** The shortest odds that pass the strict rules for a model chance. */
@@ -8928,7 +8934,7 @@ const { nba, loadNbaInjuries } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { store, selectableFixtures, leagueName, leagueOrder } = __m['data'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
-const { stakePlan, RISK } = __m['risk'];
+const { stakePlan, RISK, blendP } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { addPlay } = __m['myplays'];
 const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming, whenLocal } = __m['util'];
@@ -9071,7 +9077,7 @@ async function viewRecommended(root, sport) {
           <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season <u>and</u> in his last 10 (the model and his form agree).</li>
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
           <li>One play per player per game: his strongest.</li>
-          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>: odds ${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}, and the model at least ${Math.round(STRICT.edge * 100)} points above the chance your odds imply (${Math.round(STRICT.edgeLong * 100)} above ${STRICT.longFrom.toFixed(2)}). EV over +${Math.round(STRICT.evCheck * 100)}%: check the news first.</li>
+          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>: odds ${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}, and the model at least ${Math.round(STRICT.edge * 100)} points above the chance your odds imply (${Math.round(STRICT.edgeLong * 100)} above ${STRICT.longFrom.toFixed(2)}). Stakes and EV use a blend of the model and your bookmaker's price, so huge gaps (often something the model can't see) are trimmed automatically.</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
       <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
       <div class="recrow"><label class="field keyf"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
@@ -9179,12 +9185,12 @@ async function viewRecommended(root, sport) {
     const r = x.rep, id = `${x.c.id}|${x.side}`, txt = s.odds.get(id) || '', od = txt.trim() ? parseIn(txt) : null, f = oddsFmt();
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
-    else if (od && od.dec) { const D = od.exact ?? od.dec, ev = (r.p * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: r.p }, D, r.conf);
-      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
-        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+    else if (od && od.dec) { const D = od.exact ?? od.dec, pb = blendP(r.p, D), evM = (r.p * D + r.push - 1) * 100, ev = (pb * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: pb }, D, r.conf); // Update 79: EV and stake on the model + bookmaker blend
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}" data-revmodel="${evM.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> <span class="xs muted" data-revnote>(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+        <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     let sv = ''; // Update 77: the strict rules' verdict
-    if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? 'Check the news' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+    if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? '✓ Back it (quick news check)' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
       else sv = `<div class="sverdict hint" data-sneed="${strictMinOdds(r.p).toFixed(4)}">Back it if your odds are at least <b>${esc(fmtOdds(strictMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(STRICT.maxOdds))})</div>`; }
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span>${sv}</div>`;
   }
@@ -9346,7 +9352,7 @@ async function viewRecommended(root, sport) {
       const st = { ...x.rep.st, per: sport === 'football' ? x.rep.st.per : (x.c.card.perDefault || '10') }, cd = x.c.card;
       try { if (cd.rebuild) Object.assign(cd, cd.rebuild(st)); else if (cd.perFn) Object.assign(cd, cd.perFn(st)); } catch (err) { console.error(err); }
       carryPrice(cd, st, sport); return; }
-    if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: r.p }, D, r.conf), g = x.c.f;
+    if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (g.date || ''), subj: x.c.pid || x.c.name, p: r.p };
       const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
       const saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP, extra) : null, b = t.closest('[data-radd]'); void info;
