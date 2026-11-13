@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f9b0f6d6d226">
+<meta name="proplab-build" content="abb058916239">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -1116,7 +1116,7 @@ const tzLabel = () => { const p = memPref || tzPref(); const c = TZ_CHOICES.find
 const fixtureId = f => `${f.league}:${f.date}:${String(f.home).toLowerCase().replace(/[^a-z0-9]+/g, '-')}:${String(f.away).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
 // MLS seasons run within one calendar year (2026); Premier League seasons span two (2026/27).
-const seasonLabel = (league, s) => (league === 'mls' || league === 'eliteserien' ? String(s) : `${s}/${String(s + 1).slice(2)}`); // calendar-year seasons: MLS, Eliteserien
+const seasonLabel = (league, s) => (league === 'mls' || league === 'eliteserien' || league === 'intl' ? String(s) : `${s}/${String(s + 1).slice(2)}`); // calendar-year seasons: MLS, Eliteserien
 /**
  * Match status from the scheduled kick-off (PropLab has no live feed): 'pre' before kick-off, 'started' (status unconfirmed) for the first hours,
  * then 'awaiting' until a verified result is published (callers drop fixtures that already have one). 'postponed' if the fixture says so.
@@ -1174,10 +1174,14 @@ const { normName, teamSlug, normTeam, displayTeam } = __m['teams'];
 const { avg, isUpcoming, koUK, koLocal, fxStatus, recentlyCalledOff, viewTz } = __m['util'];
 
 const LEAGUE_NAMES = { epl: 'Premier League', laliga: 'La Liga', bundesliga: 'Bundesliga', seriea: 'Serie A', ligue1: 'Ligue 1', ligaportugal: 'Liga Portugal', scotprem: 'Scottish Premiership', eredivisie: 'Eredivisie', mls: 'MLS', ucl: 'Champions League', uel: 'Europa League', uecl: 'Conference League',
-  championship: 'Championship', leagueone: 'League One', leaguetwo: 'League Two', proleague: 'Belgian Pro League', superlig: 'Süper Lig', eliteserien: 'Eliteserien' }; // 27 Oct 2026: six more leagues
+  championship: 'Championship', leagueone: 'League One', leaguetwo: 'League Two', proleague: 'Belgian Pro League', superlig: 'Süper Lig', eliteserien: 'Eliteserien', intl: 'International' }; // 27 Oct 2026: six more leagues; Update 81: international football
+/** Update 81: the competitions inside 'International' (national teams), by ESPN's competition code (fixture.comp / match.comp). */
+const COMP_NAMES = { 'uefa.nations': 'UEFA Nations League', 'fifa.world': 'World Cup', 'fifa.worldq.uefa': 'World Cup qualifying (UEFA)', 'fifa.worldq.conmebol': 'World Cup qualifying (CONMEBOL)', 'fifa.worldq.concacaf': 'World Cup qualifying (CONCACAF)', 'fifa.worldq.caf': 'World Cup qualifying (CAF)', 'fifa.worldq.afc': 'World Cup qualifying (AFC)', 'uefa.euro': 'European Championship', 'uefa.euroq': 'Euro qualifying', 'conmebol.america': 'Copa América', 'concacaf.nations.league': 'CONCACAF Nations League', 'concacaf.gold': 'Gold Cup', 'caf.nations': 'Africa Cup of Nations', 'fifa.friendly': 'International friendly' };
+const compName = f => (f && f.comp && COMP_NAMES[f.comp]) || (f && LEAGUE_NAMES[f.league]) || '';
+const isFriendly = r => r && r.comp === 'fifa.friendly';
 // owner, 3 Nov (14:11): competitions are listed by the date of their next game, then by popularity (most popular first), so today's
 // Championship comes above a Premier League that has no game until the weekend. Worked out from the games listed, so it changes daily.
-const LEAGUE_POP = ['ucl', 'epl', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'uel', 'championship', 'ligaportugal', 'eredivisie', 'scotprem', 'uecl', 'mls', 'superlig', 'proleague', 'eliteserien', 'leagueone', 'leaguetwo'];
+const LEAGUE_POP = ['ucl', 'intl', 'epl', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'uel', 'championship', 'ligaportugal', 'eredivisie', 'scotprem', 'uecl', 'mls', 'superlig', 'proleague', 'eliteserien', 'leagueone', 'leaguetwo'];
 /** Competitions of these fixtures in display order: earliest UK day of a listed game, then LEAGUE_POP. dayOf(f) gives a game's YYYY-MM-DD. */
 function leagueOrder(fixtures, dayOf) {
   const first = new Map(); for (const f of fixtures) { const d = dayOf(f) || '9999'; if (!first.has(f.league) || d < first.get(f.league)) first.set(f.league, d); }
@@ -1185,7 +1189,7 @@ function leagueOrder(fixtures, dayOf) {
   return [...first.keys()].sort((a, b) => (first.get(a) < first.get(b) ? -1 : first.get(a) > first.get(b) ? 1 : 0) || rank(a) - rank(b) || a.localeCompare(b));
 }
 /** Calendar-year competitions: the season is the calendar year (MLS, Eliteserien); the others run July-June. */
-const CALENDAR_YEAR = new Set(['mls', 'eliteserien']);
+const CALENDAR_YEAR = new Set(['mls', 'eliteserien', 'intl']); // Update 81: international football is grouped by calendar year
 /** Cup competitions (Milestone 5): a club's identity is shared with its domestic league; its domestic league stays its home league. */
 const CUPS = new Set(['ucl', 'uel', 'uecl']);
 const isCup = lg => CUPS.has(lg);
@@ -1301,8 +1305,8 @@ const upcomingFor = (name) => upcomingFixtures().filter(f => normTeam(f.home) ==
 // 27 Oct: England's EFL divisions follow the Premier League; Belgium and Turkey after the Netherlands; Norway before MLS.
 // the nine main leagues (owner, 4 Nov audit): the default league choice of Plays and the Hit Rate Finder
 const NINE_LEAGUES = ['epl', 'mls', 'laliga', 'ligue1', 'bundesliga', 'seriea', 'ligaportugal', 'scotprem', 'eredivisie'];
-const LEAGUE_ORDER = ['epl', 'championship', 'leagueone', 'leaguetwo', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'ligaportugal', 'eredivisie', 'proleague', 'superlig', 'scotprem', 'eliteserien', 'mls', 'ucl', 'uel', 'uecl'];
-const LEAGUE_COUNTRY = { epl: 'England', laliga: 'Spain', seriea: 'Italy', bundesliga: 'Germany', ligue1: 'France', ligaportugal: 'Portugal', eredivisie: 'Netherlands', scotprem: 'Scotland', mls: 'USA / Canada', ucl: 'Europe', uel: 'Europe', uecl: 'Europe', championship: 'England', leagueone: 'England', leaguetwo: 'England', proleague: 'Belgium', superlig: 'Turkey', eliteserien: 'Norway' };
+const LEAGUE_ORDER = ['epl', 'championship', 'leagueone', 'leaguetwo', 'laliga', 'seriea', 'bundesliga', 'ligue1', 'ligaportugal', 'eredivisie', 'proleague', 'superlig', 'scotprem', 'eliteserien', 'mls', 'ucl', 'uel', 'uecl', 'intl'];
+const LEAGUE_COUNTRY = { epl: 'England', laliga: 'Spain', seriea: 'Italy', bundesliga: 'Germany', ligue1: 'France', ligaportugal: 'Portugal', eredivisie: 'Netherlands', scotprem: 'Scotland', mls: 'USA / Canada', ucl: 'Europe', uel: 'Europe', uecl: 'Europe', championship: 'England', leagueone: 'England', leaguetwo: 'England', proleague: 'Belgium', superlig: 'Turkey', eliteserien: 'Norway', intl: 'National teams' };
 const lgRank = k => { const i = LEAGUE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
 const leaguesPresent = () => [...new Set([...store.fixtures.map(f => f.league), ...store.teamMatches.map(m => m.league)])].filter(k => LEAGUE_NAMES[k]).sort((a, b) => lgRank(a) - lgRank(b) || (a < b ? -1 : 1));
 // Latest season per competition. Performance fix (20 Oct): this used to scan every stored match on every call, and the European views call it
@@ -1413,7 +1417,7 @@ async function loadAllPlayerRowsNow() {
   return byId;
 }
 
-return { LEAGUE_NAMES, LEAGUE_POP, leagueOrder, CALENDAR_YEAR, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, hasEuropean, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, NINE_LEAGUES, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
+return { LEAGUE_NAMES, COMP_NAMES, compName, isFriendly, LEAGUE_POP, leagueOrder, CALENDAR_YEAR, CUPS, isCup, COMP_SHORT, NEWS_STATUS, emptyStore, store, validFixture, validNews, validTeamMatch, validDirItem, validIndexItem, loadCore, derive, leagueName, teamBySlug, teamRowsFor, teamRowsScoped, hasEuropean, teamSlugOf, newsForTeam, fxKey, fxSort, fxKeyLocal, fxSortLocal, upcomingFixtures, upcomingFor, NINE_LEAGUES, LEAGUE_ORDER, LEAGUE_COUNTRY, leaguesPresent, currentSeason, teamsOfLeague, resultsList, hasFinalResult, selectableFixtures, refereeProfile, teamProfile, playerId, knownPlayers, playerById, newsForPlayer, loadPlayerRows, freshness, SOURCES, loadAllPlayerRows };
 })();
 __m['nfl-data'] = (() => {
 // NFL data (nflverse, CC-BY 4.0). Loaded only when an NFL page is opened; game logs are loaded per position group on demand.
@@ -5040,6 +5044,11 @@ const memMemo = new WeakMap();
 function membership(p, lg) { let m = memMemo.get(p); if (m && m.dir === store.directory && m.lg === lg && m.day === new Date().toISOString().slice(0, 10)) return m.v;
   const v = membershipNow(p, lg); memMemo.set(p, { dir: store.directory, lg, day: new Date().toISOString().slice(0, 10), v }); return v; }
 function membershipNow(p, lg) {
+  // Update 81: national teams publish no squad list PropLab can read. A player who played for his country in the last 18 months counts as
+  // a recent international (shown as "squad not confirmed"); older ones are historical. Never a confirmed squad or line-up.
+  if (lg === 'intl') { const last = p.rows[0], today = new Date().toISOString().slice(0, 10), club = last ? (last.club || p.team) : p.team;
+    if (last && daysBetween(last.date, today) <= 548) return { status: 'unverified', intl: true, currentClub: teamSlugOf(club), currentTeam: club, asOf: last.date, listAsOf: null, lastClub: club };
+    return { status: 'historical', intl: true, currentClub: null, currentTeam: null, asOf: null, lastClub: club, lastDate: last ? last.date : null }; }
   if (!dirIdx || dirIdx.src !== store.directory) { dirIdx = { src: store.directory, by: new Map(), clubs: new Map() }; for (const d of store.directory) dirIdx.by.set(`${d.league}|${normName(d.name)}`, d);
     for (const c of store.directoryMeta?.clubs || []) dirIdx.clubs.set(`${c.league || 'epl'}|${c.slug || teamSlugOf(c.team)}`, c); }
   const today = new Date().toISOString().slice(0, 10);
@@ -5518,11 +5527,14 @@ const KEY = 'proplab.leagues.v1';
 let mem = null;
 function getLeagues() {
   const have = leaguesPresent();
-  if (!mem) { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s)) mem = s; } catch { /* private mode */ } }
+  if (!mem) { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (Array.isArray(s)) mem = s;
+    // Update 81: International is added once to a saved choice (it did not exist when the choice was made); unticking it later is kept
+    if (Array.isArray(mem) && mem.length && !mem.includes('intl') && !localStorage.getItem(KEY + '.intl')) { mem = [...mem, 'intl']; localStorage.setItem(KEY, JSON.stringify(mem)); }
+    localStorage.setItem(KEY + '.intl', '1'); } catch { /* private mode */ } }
   // owner request 20 Oct: an empty selection is allowed and kept (never turned into All Leagues or back into the default league)
   if (Array.isArray(mem) && mem.length === 0) return [];
   // nothing saved yet: the nine main leagues (owner audit, 4 Nov), not one league
-  const out = (mem || NINE_LEAGUES).filter(l => have.includes(l));
+  const out = (mem || [...NINE_LEAGUES, 'intl']).filter(l => have.includes(l)); // Update 81: + International
   return out.length ? out : [have.includes(getLeague()) ? getLeague() : have[0]].filter(Boolean);
 }
 function setLeagues(list) { mem = [...new Set(list)].sort((a, b) => LEAGUE_ORDER.indexOf(a) - LEAGUE_ORDER.indexOf(b)); try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* this visit only */ } }
@@ -5836,7 +5848,7 @@ async function viewHiwi(root, r, sport) {
     const sel = new Set(st.mode === 'teams' ? [...st.teams] : selFx().flatMap(id => { const f = fxById(id); return f ? homeAway(f) : []; }));
     if (usMode) return A.d.players.filter(p => p.current && (isNba || p.seasons.includes(seasonOf('nfl'))) && (sel.size ? sel.has(p.team) : true) && (!st.ppos || p.group === st.ppos) && (!isNba || st.pfind || nbaAvgOk(p))).map(p => ({ id: p.id, name: p.name, team: p.team, sub: `${p.pos}, ${p.team}`, p }));
     // current squad members only (fbscan membership): a player last seen for the club in an earlier season is not offered (owner report 26 Oct)
-    return fbPlayerList().filter(p => p.currentClub && (sel.size ? sel.has(p.currentClub) : true)).map(p => ({ id: p.id, name: p.name, team: p.currentClub, sub: `${p.currentTeam}${p.status === 'loan' ? ` (on loan from ${p.loanFrom})` : ''}${p.status === 'verified' || p.status === 'loan' ? (p.stale ? ' · old squad list' : '') : ' · unverified (played this season, not in a current squad list)'}`, p }));
+    return fbPlayerList().filter(p => p.currentClub && (sel.size ? sel.has(p.currentClub) : true)).map(p => ({ id: p.id, name: p.name, team: p.currentClub, sub: `${p.currentTeam}${p.status === 'loan' ? ` (on loan from ${p.loanFrom})` : ''}${p.intl ? ` · last played for ${p.currentTeam} ${p.asOf}; squad for this game not confirmed` : p.status === 'verified' || p.status === 'loan' ? (p.stale ? ' · old squad list' : '') : ' · unverified (played this season, not in a current squad list)'}`, p }));
   };
   // the game being researched for a player's team (Upcoming Matches), for injury-report freshness
   // Individual Teams: the team's next game, so an injury report from an earlier week is never treated as current
@@ -6041,10 +6053,12 @@ async function viewHiwi(root, r, sport) {
 
   // ---------- result cards ----------
   let cards = [], shown = 0, reg = new Map(), notes = [];
-  const periodText = (lg, sc) => (sc === 'all' ? (st.period === 'season' ? `${seasonOf('ucl')}/${String(seasonOf('ucl') + 1).slice(2)} season, all competitions` : `last ${st.period} matches, all competitions`)
-    : sc === 'dom' ? (st.period === 'season' ? (isCup(lg) ? 'domestic league: not covered by PropLab' : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' || lg === 'eliteserien' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season (domestic league only)`) : `last ${st.period} ${isCup(lg) ? 'domestic' : leagueName(lg)} matches`)
+  // Update 81: international samples are national-team matches only, labelled (club form is never assumed to carry over)
+  const periodText = (lg, sc) => periodText0(lg, sc) + (lg === 'intl' ? ' · national-team matches only (club matches not mixed in; friendlies included)' : '');
+  const periodText0 = (lg, sc) => (sc === 'all' ? (st.period === 'season' ? `${seasonOf('ucl')}/${String(seasonOf('ucl') + 1).slice(2)} season, all competitions` : `last ${st.period} matches, all competitions`)
+    : sc === 'dom' ? (st.period === 'season' ? (isCup(lg) ? 'domestic league: not covered by PropLab' : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' || lg === 'eliteserien' || lg === 'intl' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season (domestic league only)`) : `last ${st.period} ${isCup(lg) ? 'domestic' : leagueName(lg)} matches`)
     : isEuScope(sc) ? (st.period === 'season' ? `${scopeName(sc)} ${seasonOf(sc === 'eu' ? 'ucl' : sc)}/${String(seasonOf(sc === 'eu' ? 'ucl' : sc) + 1).slice(2)}${sc === 'eu' ? ' (European matches)' : ''}` : `last ${st.period} ${scopeName(sc)} matches`)
-    : st.period === 'season' ? `${lg === 'nfl' ? `${seasonOf('nfl')} regular season` : lg === 'nba' ? `${nba_seasonLabel(seasonOf('nba'))} season${getNbaTypes() === 'R' ? ' (regular season only)' : ''}` : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' || lg === 'eliteserien' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season`}` : `last ${st.period} ${usMode ? 'games' : 'matches'}`);
+    : st.period === 'season' ? `${lg === 'nfl' ? `${seasonOf('nfl')} regular season` : lg === 'nba' ? `${nba_seasonLabel(seasonOf('nba'))} season${getNbaTypes() === 'R' ? ' (regular season only)' : ''}` : `${leagueName(lg)} ${seasonOf(lg)}${lg === 'mls' || lg === 'eliteserien' || lg === 'intl' ? '' : '/' + String(seasonOf(lg) + 1).slice(2)} season`}` : `last ${st.period} ${usMode ? 'games' : 'matches'}`);
   const trCache = new Map();
   /** A team's completed rows, newest first: the current season (Season) or every season PropLab has (Last N picks from these). */
   // sc (European fixtures only): 'all' = rows of every competition in date order; a cup code = that competition's rows only. Default: domestic.
