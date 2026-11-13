@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="abb058916239">
+<meta name="proplab-build" content="42cc809d545e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -8952,6 +8952,7 @@ const { usAdapter } = __m['v-hiwi'];
 const { nba, loadNbaInjuries } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { store, selectableFixtures, leagueName, leagueOrder } = __m['data'];
+const { normTeam } = __m['teams'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK, blendP } = __m['risk'];
 const { fmtU } = __m['kelly'];
@@ -9123,7 +9124,12 @@ async function viewRecommended(root, sport) {
   let IDX = null;
   const index = () => { if (IDX) return IDX; const m = new Map(), put = (label, sub, kind, fid) => { const k = `${kind}|${label}`; let e = m.get(k); if (!e) m.set(k, e = { label, sub, kind, fids: new Set(), n: norm(label) }); e.fids.add(fid); };
     for (const f of all) { const id = fxIdOf(sport, f);
-      if (sport === 'football') { put(f.home, leagueName(f.league), 'team', id); put(f.away, leagueName(f.league), 'team', id); continue; }
+      if (sport === 'football') { put(f.home, leagueName(f.league), 'team', id); put(f.away, leagueName(f.league), 'team', id);
+        // Update 81 fix (owner, 13 Nov): football player names were never searchable here, only teams. Players with match logs for either
+        // team (their latest team in PropLab's logs, played in the last 18 months) are now in the search and its suggestions.
+        const cut = new Date(Date.now() - 548 * 864e5).toISOString().slice(0, 10), th = normTeam(f.home), ta = normTeam(f.away);
+        for (const p of store.playerIndex) if (p.league === f.league && (p.last || '') >= cut) { const nt = normTeam(p.team); if (nt === th || nt === ta) put(p.name, p.team, 'player', id); }
+        continue; }
       for (const t of [f.home, f.away]) { put(A.teamName(t), t, 'team', id); for (const p of A.d.players) if (p.current && p.team === t && (sport !== 'nba' || p.logs_file)) put(p.name, `${t}${p.pos ? ' · ' + p.pos : ''}`, 'player', id); } }
     return (IDX = [...m.values()]); };
   const wordStart = (n, q) => n.startsWith(q) || n.includes(' ' + q);
