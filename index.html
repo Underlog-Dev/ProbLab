@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="cbccf8be8aa6">
+<meta name="proplab-build" content="33a1378391d8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -855,6 +855,9 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .recflt.strictmode .sovr>span:first-child{color:var(--muted)!important;font-weight:400}
 .sovrtag{font-style:normal;font-size:11px;font-weight:600;color:var(--text);background:var(--s2);border-radius:99px;padding:1px 7px;margin-left:4px;white-space:nowrap;opacity:1}
 
+/* Update 84: Log a bet: date, competition and match each on their own row; an iPhone date box can never spill into its neighbour */
+.blstack{display:grid;grid-template-columns:1fr;gap:8px;margin:6px 0}.blstack .field{margin:0;min-width:0}.blgrid>*,.blstack>*{min-width:0}.blform input[type=date]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+
 </style>
 <title>PropLab – football stats and player-prop research</title>
 </head>
@@ -1374,6 +1377,8 @@ async function loadPlayerRows(p) {
   const names = new Set([p.name, ...(p.src_names || [])].map(normName)); const spids = new Set(p.spids || []);
   const files = (store.manifest?.player_matches || []).filter(e => e.league === p.league && (!p.seasons?.length || p.seasons.includes(e.season)));
   const rows = [];
+  // Update 84: fetch his files in parallel (the international logs are three files; one after another was slow on a phone)
+  await Promise.all(files.filter(e => !store.playerFiles.has(e.file)).map(e => store.getJson(e.file, { v: e.v || store.manifest.generated }).then(d => { if (d?.schema === 1 && Array.isArray(d.matches)) store.playerFiles.set(e.file, d); }).catch(() => {})));
   for (const e of files) {
     let d = store.playerFiles.get(e.file);
     if (!d) { try { d = await store.getJson(e.file, { v: e.v || store.manifest.generated }); } catch { store.problems.push(`${e.file} could not be loaded`); continue; } if (d?.schema === 1 && Array.isArray(d.matches)) store.playerFiles.set(e.file, d); else continue; }
@@ -4527,6 +4532,10 @@ function v2Games(card, def) {
   return rows.filter(r => !r.dnp && r.type !== 'P' && r.type !== 'PS').map(r => ({ v: def.get(r), min: r.min, season: r.season, date: r.date })).filter(g => g.v !== null && g.v !== undefined && Number.isFinite(g.v));
 }
 /** { ok, ... } estimate for the card at its current line and side. */
+const INTL_RECAL = { A: -0.081, B: 0.799 };
+const intlG = p => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(INTL_RECAL.A + INTL_RECAL.B * Math.log(x / (1 - x))))); };
+function intlRecal(e, side) { const f = p => (Number.isFinite(p) ? (side === 'under' ? 1 - intlG(1 - p) : intlG(p)) : p); const win = f(e.win);
+  return { ...e, win, lose: 1 - win, q: f(e.q), lo: f(e.lo), hi: f(e.hi), intlRecal: true }; }
 function cardEstimate(card, st, sport) {
   const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
   if (!card.historical && card.injury && isConfirmedOut(card.injury)) return { ok: false, reason: `${card.title} is confirmed OUT for this game` };
@@ -4554,6 +4563,11 @@ function cardEstimate(card, st, sport) {
     cbUsed = { passed: true, a: V2C.a, b: V2C.b, test_label: V2C.test_label, model: 'v2' };
   } else e = scale === 1 ? estimate(vals, line, side, opts) : scaledEstimate(vals, line / scale, side, opts);
   if (!e.ok) return { ...e, kind: 'nomodel', key, cb: cbUsed, side, line };
+  // Update 84 (owner, 13 Nov 2026: international player odds looked too extreme). International player markets get a second calibration,
+  // fitted on 77,652 international player predictions (2025 to 12 Nov 2026, every market and line, each from the games before it):
+  // p' = 1 / (1 + exp(-(A + B x logit p))) on the over side. It pulls extreme estimates towards the middle (the raw model was over-confident:
+  // e.g. 95% came in 85-89%, 2% came in 8-11%). Validated out of sample (fitted to 31 Aug 2026, tested on Sep-Nov 2026): log loss 0.4265 -> 0.4212.
+  if (sport === 'football' && def.scope === 'player' && !(e.push > 1e-9) && (card.rows || []).some(r => r && r.raw && r.raw.league === 'intl')) e = intlRecal(e, side);
   if (adj) e.adj = adj;
   if (mu) e.mu = mu;
   // Best Combined % (27 Oct): the probability uses the SELECTED team's own record only, the series the calibration was checked on. The
@@ -4618,7 +4632,7 @@ function evBlock(card, st, sport, oddsText) {
     <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
 }
 
-return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
+return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, INTL_RECAL, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
 })();
 __m['hypo'] = (() => {
 // Hypothetical odds & units box on every eligible play card (owner request 27 Oct 2026, late evening).
@@ -6817,6 +6831,11 @@ function hitRates(rows, L, side, cur) {
   return { season: f(rows.filter(r => r.season === cur)), l5: f(rows.slice(0, 5)), l10: f(rows.slice(0, 10)), l20: f(rows.slice(0, 20)), all: f(rows) };
 }
 /** Lines worth evaluating: half-points around his recent level (mean +- 2.5 spreads), inside the market's range. */
+// Update 84 (owner, 13 Nov 2026): football player plays only use lines bookmakers actually offer (UK books: 1+ / 2+ / 3+ ... ladders), never
+// e.g. 8.5 fouls drawn. A player's own range still decides which of these are evaluated.
+const FB_BOOK_LINES = { shots: [0.5, 1.5, 2.5, 3.5, 4.5], shots_on_target: [0.5, 1.5, 2.5], goals: [0.5, 1.5], assists: [0.5], goal_contrib: [0.5, 1.5],
+  fouls_committed: [0.5, 1.5, 2.5], fouls_drawn: [0.5, 1.5, 2.5, 3.5], yellow_cards: [0.5], red_cards: [0.5], offsides: [0.5, 1.5], saves: [0.5, 1.5, 2.5, 3.5, 4.5, 5.5], tackles: [0.5, 1.5, 2.5, 3.5] };
+function bookLines(def, lines) { const B = FB_BOOK_LINES[def.key]; if (!B) return lines; const k = lines.filter(L => B.includes(L)); return k.length ? k : [B[0]]; }
 function candidateLines(def, values) {
   if (def.binary) return [0.5];
   const v = values.slice(0, 30); if (!v.length) return [];
@@ -6926,7 +6945,7 @@ async function footballCandidates(fixtures, onProgress) {
         const rows = played.map(r => ({ value: m.get(r), season: r.season, date: r.date, opp: r.opp, min: r.minutes, raw: r })).filter(r => r.value !== null && r.value !== undefined); if (rows.length < 8) continue;
         const def = { ...m, scope: 'player', exposureKey: 'minutes' }, card = { def, title: p.name, rows: rows.map(r => ({ date: r.date, value: r.value, raw: r.raw })).reverse(), tagCls: null, detail: { subjectId: p.id } };
         out.push({ id: `football|${fixtureId(f)}|${p.id}|${m.key}`, sport: 'football', kind: 'player', name: p.name, pid: p.id, team, opp, home, f, fid: fixtureId(f), def, card, p, cur, curN,
-          rows, lines: candidateLines(def, rows.map(r => r.value)), grp: 'Player' });
+          rows, lines: bookLines(def, candidateLines(def, rows.map(r => r.value))), grp: 'Player' });
       }
     }
   }
@@ -7059,7 +7078,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, vsOppOf, strictPick, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, vsOppOf, strictPick, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -7617,7 +7636,7 @@ const { buildUsPlayerCard } = __m['uscards'];
 const { cardEstimate, loadCalib } = __m['valueev'];
 const { NBA_BET_MARKETS } = __m['nba-markets'];
 const { usGame, settleLeg, accaOf, factorOf, resultOf, STATUS_LABEL, SETTLED } = __m['settle'];
-const { store, knownPlayers, loadPlayerRows, leagueName } = __m['data'];
+const { store, knownPlayers, loadPlayerRows, leagueName, LEAGUE_ORDER } = __m['data'];
 const { FB_GROUPS, fbDef, avgLine } = __m['hiwi-markets'];
 const { normTeam, teamSlug } = __m['teams'];
 const { nba } = __m['nba-data'];
@@ -7885,7 +7904,7 @@ function wireBetLog(root, sport) {
         ${lgs.length ? `<select class="in" data-blleague aria-label="League"><option value="">Every league</option>${lgs.map(l => `<option value="${esc(l)}"${F.league === l ? ' selected' : ''}>${esc(leagueName(l))}</option>`).join('')}</select>` : ''}
         ${seasons.length > 1 ? `<select class="in" data-blseason aria-label="Season"><option value="all">Every season</option>${seasons.map(k => { const [sp, se] = k.split('|'); return `<option value="${esc(k)}"${k === F.season ? ' selected' : ''}>${esc(`${SPORT_NAME[sp] || sp} ${seasonName(sp, se)}`)}</option>`; }).join('')}</select>` : ''}</div>
       <div class="tiles bltiles">${tile(gbp(T.staked), T.promoN ? 'Total staked (settled, your own money)' : 'Total staked (settled)')}${tile(sgbp(T.profit), `Profit / loss (settled bets only${T.open ? `; ${T.open} pending not counted` : ''})`, T.profit >= 0 ? 'pos' : 'neg')}${tile(roi(T.roi), 'Return on stakes')}${tile(`${T.won} / ${T.lost} / ${T.voids}`, 'Won / lost / void')}
-        ${tile(`${T.openUnits.toFixed(2)}u`, T.open ? `Pending: ${T.open} bet${T.open === 1 ? '' : 's'} · ${gbp(T.openStake)} of your money placed${T.openFree ? ` + ${gbp(T.openFree)} free bet${T.openFree === 1 ? '' : 's'}` : ''} (each at the unit size it was logged at)` : 'Pending: nothing placed right now', T.open ? 'blopen' : '')}${tile(T.pricedN ? sgbp(T.ev) : '–', `Expected profit from your edge (singles with a fair price${T.inplayN ? `; ${T.inplayN} in-play bet${T.inplayN === 1 ? '' : 's'} not counted` : ''})`, T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>${strictHtml(L)}
+        ${tile(`${T.openUnits.toFixed(2)}u`, T.open ? `Pending: ${T.open} bet${T.open === 1 ? '' : 's'} · ${gbp(T.openStake)} of your money placed${T.openFree ? ` + ${gbp(T.openFree)} free bet${T.openFree === 1 ? '' : 's'}` : ''} (each at the unit size it was logged at)` : 'Pending: nothing placed right now', T.open ? 'blopen' : '')}${tile(T.pricedN ? sgbp(T.ev) : '–', `Expected profit from your edge (singles with a fair price${T.inplayN ? `; ${T.inplayN} in-play bet${T.inplayN === 1 ? '' : 's'} not counted` : ''})`, T.ev >= 0 ? 'pos' : 'neg')}${tile(gbp(T.returned), 'Returned (incl. stakes)')}</div>
       ${F.view === 'all' && L.length ? `<div class="tblscroll"><table class="risktb bltypes"><tr><th></th><th title="won – lost – void">W–L–V</th><th>Pend.</th><th>Staked</th><th>P/L</th><th>ROI</th></tr>
         ${[['Singles', S], ['Accas', Ac], ['All', T]].map(([n, x]) => `<tr${n === 'All' ? ' class="bltot"' : ''}><th>${n} <span class="xs muted">(${x.n})</span></th><td>${x.won}–${x.lost}–${x.voids}</td><td>${x.open}</td><td>${gbp(x.staked)}</td><td class="${x.profit >= 0 ? 'hit' : 'miss'}">${sgbp(x.profit)}</td><td>${roi(x.roi)}</td></tr>`).join('')}</table></div>` : ''}
       ${T.pricedN ? `<p class="xs muted" style="margin:4px 0 0">EV+ singles: ${sgbp(T.plusProfit)} actual · EV− singles: ${sgbp(T.minusProfit)} actual. ${T.evRoi != null ? `Average edge: ${(T.evRoi * 100).toFixed(1)}% of stake.` : ''} Expected profit is what your prices were worth on average; the gap to actual profit is mostly luck over a short run.</p>` : ''}
@@ -7933,7 +7952,7 @@ function wireBetLog(root, sport) {
       ${isAcca(b) ? b.legs.map((l, i) => legEditHtml(l, i, b.mode === 'match' && accaUnits(b).some(u => u.group && u.idx.includes(i)))).join('') : legEditHtml(b, null)}
       <div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(!!(promoOf(b).free || promoOf(b).boost))}</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(b.stake > 0 || !promoOf(b).free ? String(b.stake) : '')}" placeholder="${promoOf(b).free ? '0 if it is all free bet' : ''}"></label>
       ${isAcca(b) ? `<label class="field"><span>Bookmaker's acca odds <small>(optional)</small></span><input class="in" data-ble="book" inputmode="text"${NO} value="${esc(b.bookOdds ? String(b.bookOddsTxt || b.bookOdds) : '')}"></label>` : ''}</div>
-      ${inplayHtml('edit', isInplay(b))}<label class="blchk"><input type="checkbox" data-blstrict${b.strict ? ' checked' : ''}> <b>Counts in the strict-rule record</b> <span class="xs muted">(placed under the strict rules)</span></label>${promoHtml('edit', { promo: !!(promoOf(b).free || promoOf(b).boost), ...promoOf(b) }, !isAcca(b))}
+      ${inplayHtml('edit', isInplay(b))}${promoHtml('edit', { promo: !!(promoOf(b).free || promoOf(b).boost), ...promoOf(b) }, !isAcca(b))}
       ${isAcca(b) ? `<div><span class="xs muted">Result of the whole acca <small>(your bookmaker's result comes first: boosts, same-game accas, special rules)</small></span><div class="seg wrap mpres" data-ble="accaresult">${[['', 'From the legs'], ['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(b.result || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       <p class="xs muted" style="margin:0">"Automatic" lets PropLab settle it from the published results; a result you pick stays until you change it. To change the ${isAcca(b) ? 'match, player or market of a leg' : 'match, player or market'}, remove it and log it again.</p>
       <div class="row" style="border:0;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-blesave>Save changes</button><button type="button" class="btn" data-blecancel>Cancel</button><button type="button" class="linkbtn xs" data-bledel style="margin-left:auto">✕ Remove ${isAcca(b) ? 'this acca' : 'this bet'}</button></div><p class="small" data-blemsg style="margin:0"></p></div>`;
@@ -8032,8 +8051,13 @@ function wireBetLog(root, sport) {
       ${inplayHtml('form', F.inplay)}${promoHtml('form', F)}`;
   const fbForm = async () => {
     if (!F.day) F.day = today();
-    const fxs = footballOn(F.day); let fx = fxs.find(f => fxKeyOf(f) === F.fxk) || (F._fx && fxKeyOf(F._fx) === F.fxk ? F._fx : null); if (!fx) F.fxk = '';
-    let html = `<div class="blgrid"><label class="field"><span>Date (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 60))}"></label>
+    const all = footballOn(F.day); let fx = all.find(f => fxKeyOf(f) === F.fxk) || (F._fx && fxKeyOf(F._fx) === F.fxk ? F._fx : null); if (!fx) F.fxk = '';
+    // Update 84 (owner, 13 Nov): pick the competition first, so a busy Saturday is not one long list; date, competition and match each on their own row
+    const lgsDay = [...new Set(all.map(f => f.league))].sort((a, b) => LEAGUE_ORDER.indexOf(a) - LEAGUE_ORDER.indexOf(b));
+    if (F.fxLg && !lgsDay.includes(F.fxLg)) F.fxLg = ''; if (fx && F.fxLg && fx.league !== F.fxLg) F.fxLg = fx.league;
+    const fxs = F.fxLg ? all.filter(f => f.league === F.fxLg) : all;
+    let html = `<div class="blstack"><label class="field"><span>Date (UK)</span><input class="in" type="date" data-blday value="${esc(F.day)}" max="${esc(addDays(today(), 60))}"></label>
+      <label class="field"><span>Competition</span><select class="in" data-blfxlg><option value="">${lgsDay.length ? `All competitions (${all.length} matches)` : 'No matches that day'}</option>${lgsDay.map(l => `<option value="${esc(l)}"${l === F.fxLg ? ' selected' : ''}>${esc(leagueName(l))} (${all.filter(f => f.league === l).length})</option>`).join('')}</select></label>
       <label class="field"><span>Match</span><select class="in" data-blfx><option value="">${fxs.length ? 'Pick the match' : 'No matches that day'}</option>${fxs.map(f => `<option value="${esc(fxKeyOf(f))}"${fxKeyOf(f) === F.fxk ? ' selected' : ''}>${esc(`${f.home} v ${f.away} · ${leagueName(f.league)}${f.ko_utc ? ` · ${fmtKick(f)}` : ''}`)}</option>`).join('')}</select></label></div>`;
     if (!fx) { body.innerHTML = html; return; }
     const scopes = [['match', 'Match'], ['team', 'Team'], ...(hasPlayerData(fx.league) ? [['player', 'Player']] : [])]; if (!scopes.some(s => s[0] === F.scope)) F.scope = 'match';
@@ -8042,9 +8066,12 @@ function wireBetLog(root, sport) {
     if (F.scope === 'team') { const teams = [fx.home, fx.away]; if (!teams.includes(F.team)) F.team = fx.home;
       html += `<label class="field"><span>Team</span><select class="in" data-blteam>${teams.map(t => `<option${t === F.team ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`; rows = store.teamRows.get(teamSlug(F.team)) || []; subj = F.team; }
     else if (F.scope === 'match') { rows = store.teamRows.get(teamSlug(fx.home)) || []; subj = `${fx.home} v ${fx.away}`; }
-    else { const ps = [...knownPlayers().values()].filter(p => p.league === fx.league && [normTeam(fx.home), normTeam(fx.away)].includes(normTeam(p.team))).sort((a, b) => a.team.localeCompare(b.team) || a.name.localeCompare(b.name));
+    else { const cut = new Date(Date.now() - 548 * 864e5).toISOString().slice(0, 10); // intl: played for his country in the last 18 months
+      const ps = [...knownPlayers().values()].filter(p => p.league === fx.league && [normTeam(fx.home), normTeam(fx.away)].includes(normTeam(p.team)) && (fx.league !== 'intl' || (p.last || '') >= cut)).sort((a, b) => a.team.localeCompare(b.team) || a.name.localeCompare(b.name));
       html += `<label class="field"><span>Player</span><select class="in" data-blplayer><option value="">Pick the player</option>${[fx.home, fx.away].map(t => `<optgroup label="${esc(t)}">${ps.filter(p => normTeam(p.team) === normTeam(t)).map(p => `<option value="${esc(p.id)}"${p.id === F.pid ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
-      const p = ps.find(x => x.id === F.pid); if (!p) { body.innerHTML = html; return; } try { rows = await loadPlayerRows(p); } catch { rows = []; } subj = p.name; }
+      const p = ps.find(x => x.id === F.pid); if (!p) { body.innerHTML = html; return; }
+      body.innerHTML = html + '<p class="small muted" data-blloading>Loading his matches…</p><div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
+      try { rows = await loadPlayerRows(p); } catch { rows = []; } subj = p.name; }
     const keys = fbKeysFor(F.scope).filter(k => rows.some(r => fbDef(k).get(r) != null)); if (!keys.includes(F.key)) { F.key = ''; }
     html += `<label class="field"><span>Market</span><select class="in" data-blkey><option value="">${keys.length ? 'Pick the market' : 'No market with recorded data'}</option>${keys.map(k => `<option value="${esc(k)}"${k === F.key ? ' selected' : ''}>${esc(fbDef(k).label)}</option>`).join('')}</select></label>`;
     const def = F.key ? fbDef(F.key) : null; if (!def) { body.innerHTML = html; return; }
@@ -8102,6 +8129,7 @@ function wireBetLog(root, sport) {
     if (t.matches('[data-blday]')) { F.day = t.value || F.day; F.gid = ''; F.fxk = ''; resetBet(); return drawForm(); }
     if (t.matches('[data-blgame]')) { F.gid = t.value; resetBet(); return drawForm(); }
     if (t.matches('[data-blfx]')) { F.fxk = t.value; resetBet(); return drawForm(); }
+    if (t.matches('[data-blfxlg]')) { F.fxLg = t.value; F.fxk = ''; resetBet(); return drawForm(); }
     if (t.matches('[data-blteam]')) { F.team = t.value; F.key = ''; F.line = null; return drawForm(); }
     if (t.matches('[data-blplayer]')) { F.pid = t.value; F.key = ''; F.line = null; return drawForm(); }
     if (t.matches('[data-blgk]')) { F.gk = t.value; F.gline = ''; return drawForm(); }
