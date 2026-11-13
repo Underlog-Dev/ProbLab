@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="ca20096c9af7">
+<meta name="proplab-build" content="f9b0f6d6d226">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -849,6 +849,11 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 /* Update 78: strict-rule record */
 .strictrec{margin-top:10px;border:1.5px solid #3fbf7f}.strictbar{height:6px;border-radius:99px;background:var(--s2);margin:8px 0;overflow:hidden}.strictbar i{display:block;height:100%;background:#3fbf7f}
 .strictgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.strictgrid div{display:flex;flex-direction:column;padding:6px 8px;border-radius:9px;background:var(--s2)}.strictgrid b{font-size:17px}.strictgrid small{color:var(--muted);font-size:11.5px}
+/* Update 80: with the strict filter on, the filters its rules replace are greyed out and locked */
+.recflt.strictmode .sovr{opacity:.38;filter:grayscale(1)}.recflt.strictmode .sovr *{cursor:not-allowed}
+.recflt.strictmode .sovr .in,.recflt.strictmode .sovr .seg{border-color:var(--line)!important;box-shadow:none!important}
+.recflt.strictmode .sovr>span:first-child{color:var(--muted)!important;font-weight:400}
+.sovrtag{font-style:normal;font-size:11px;font-weight:600;color:var(--text);background:var(--s2);border-radius:99px;padding:1px 7px;margin-left:4px;white-space:nowrap;opacity:1}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -9070,7 +9075,7 @@ async function viewRecommended(root, sport) {
   const drawFilters = () => {
     const f = s.f, grps = GRPS[sport], y = scrollY;
     pg.querySelector('#recflt').innerHTML = `<div class="row" style="border:0;padding:0;justify-content:space-between;align-items:center;gap:8px"><b>2. Your filters</b><button type="button" class="chip" data-rreset>Reset to recommended settings</button></div>
-      <p class="small keynote" data-keynote>The recommended settings are already set, so you can leave everything as it is. If you'd like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.</p><div class="strictbox${s.f.strict ? ' on' : ''}" data-strictbox><label class="hcheck strictlbl"><input type="checkbox" data-rstrict ${s.f.strict ? 'checked' : ''}> <b>Strict EV filter</b></label><p class="xs muted" style="margin:2px 0 0">Shows only the plays that meet our betting rules, and tells you <b>Back it</b> or <b>Pass</b> when you type your odds.</p>
+      ${s.f.strict ? `<p class="small keynote" data-keynote data-keystrict><b>Strict EV filter on:</b> the greyed-out filters are set by its rules; the bright ones still work.</p>` : `<p class="small keynote" data-keynote>The recommended settings are already set, so you can leave everything as it is. If you'd like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.</p>`}<div class="strictbox${s.f.strict ? ' on' : ''}" data-strictbox><label class="hcheck strictlbl"><input type="checkbox" data-rstrict ${s.f.strict ? 'checked' : ''}> <b>Strict EV filter</b></label><p class="xs muted" style="margin:2px 0 0">Shows only the plays that meet our betting rules, and tells you <b>Back it</b> or <b>Pass</b> when you type your odds.</p><p class="xs" style="margin:4px 0 0" data-strictnote>Once it's on, some filters are restricted: minimum probability, fair-odds range, hit rate, evidence, matchup, injury and blowout settings are set by the rules and greyed out. Your games, side, markets, minimum minutes, games behind it, home / away and sort still work as normal.</p>
         <details class="xs"><summary>The rules</summary><ol class="strictrules">
           <li>The usual bookmaker line: the one nearest his season average (so it's priced near evens), and the model gives it ${Math.round(STRICT.minP * 100)}%+.</li>
           <li>Strong evidence${sport !== 'football' ? ' and an Easy or OK matchup' : ''}.</li>
@@ -9080,21 +9085,21 @@ async function viewRecommended(root, sport) {
           <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>: odds ${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}, and the model at least ${Math.round(STRICT.edge * 100)} points above the chance your odds imply (${Math.round(STRICT.edgeLong * 100)} above ${STRICT.longFrom.toFixed(2)}). Stakes and EV use a blend of the model and your bookmaker's price, so huge gaps (often something the model can't see) are trimmed automatically.</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
       <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
-      <div class="recrow"><label class="field keyf"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
-        <label class="field keyf"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
-        <label class="field"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 3.00 or 2/1" value="${esc(f.maxFairTxt)}"></label></div>
+      <div class="recrow"><label class="field keyf sovr"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
+        <label class="field keyf sovr"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
+        <label class="field sovr"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 3.00 or 2/1" value="${esc(f.maxFairTxt)}"></label></div>
       <div class="recrow"><div class="field"><span class="xs muted">Side</span>${seg('sides', [['over', 'Over / Yes'], ['under', 'Under / No'], ['both', 'Both']], f.sides)}</div>
-        ${sport === 'football' ? '' : `<div class="field keyf"><span class="xs muted">Matchup</span>${seg('mu', [['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']], f.mu || 'all')}</div>`}
+        ${sport === 'football' ? '' : `<div class="field keyf sovr"><span class="xs muted">Matchup</span>${seg('mu', [['all', 'Any'], ['gy', 'Green + yellow'], ['g', 'Green only']], f.mu || 'all')}</div>`}
         <div class="field"><span class="xs muted">Sort</span><select class="in" data-rsort>${SORTS.map(([v, l]) => `<option value="${v}" ${s.sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
       <details class="recadv" ${s.adv ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
-        <div class="recrow"><label class="field keyf"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
+        <div class="recrow"><label class="field keyf sovr"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
-        <div class="field keyf"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
+        <div class="field keyf sovr"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
         <label class="field keyf"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
         ${sport === 'nba' ? `<label class="field keyf"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
         ${sport === 'football' ? '' : `<div class="field"><span class="xs muted">Home / away</span>${seg('venue', [['all', 'Both'], ['home', 'Home team'], ['away', 'Away team']], f.venue)}</div>`}
-        ${sport === 'football' ? '' : `<label class="hcheck"><input type="checkbox" data-rck="injOk" ${f.injOk ? 'checked' : ''}><span>Include players listed Questionable / Doubtful</span></label>`}
-        ${sport !== 'football' ? `<label class="hcheck"><input type="checkbox" data-rck="hideBlowout" ${f.hideBlowout ? 'checked' : ''}><span>Hide games with high blowout risk</span></label>` : ''}
+        ${sport === 'football' ? '' : `<label class="hcheck sovr"><input type="checkbox" data-rck="injOk" ${f.injOk ? 'checked' : ''}><span>Include players listed Questionable / Doubtful</span></label>`}
+        ${sport !== 'football' ? `<label class="hcheck sovr"><input type="checkbox" data-rck="hideBlowout" ${f.hideBlowout ? 'checked' : ''}><span>Hide games with high blowout risk</span></label>` : ''}
       </details>`;
     scrollTo(0, y);
   };
@@ -9144,7 +9149,13 @@ async function viewRecommended(root, sport) {
       <p class="xs muted" style="margin:6px 0 0">Markets in the games you have chosen. New markets are on until you untick them. Your choice is remembered.</p>`; };
   // ---------------- list ----------------
   let current = [];
+  // Update 80 (owner, 13 Nov 2026): with the Strict EV filter on, the filters its rules replace are greyed out and locked (with "set by
+  // the strict rules"); the ones it still uses stay as they are.
+  const applySovr = () => { const box = pg.querySelector('#recflt'); if (!box) return; const on = !!s.f.strict; box.classList.toggle('strictmode', on);
+    box.querySelectorAll('.sovr').forEach(el => { el.setAttribute('aria-disabled', on ? 'true' : 'false'); el.querySelectorAll('input, button, select').forEach(c => { c.disabled = on; });
+      if (on && !el.querySelector('.sovrtag')) (el.querySelector('span') || el).insertAdjacentHTML('beforeend', ' <em class="sovrtag">set by the strict rules</em>'); if (!on) el.querySelectorAll('.sovrtag').forEach(t => t.remove()); }); };
   const render = (keepOrder = false) => {
+    applySovr();
     const want = scope().map(id => s.cands.get(id) || []).flat(), o = opts(); slipRegister(want);
     drawMarkets(want); const off = new Set(s.f.mkOff);
     const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key) && !isHidden(c)); // hidden players (owner, 5 Nov): out for this game only
@@ -9299,7 +9310,7 @@ async function viewRecommended(root, sport) {
   { const onFmt = () => { if (!pg.isConnected) { document.removeEventListener('oddsfmt', onFmt); return; } render(true); }; document.addEventListener('oddsfmt', onFmt); } // Update 73: "Odds shown as" redraws every price here (typed odds are read in any format) // Update 71: stakes in your currency at your unit size
   pg.addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('[data-rstrict]')) { s.f.strict = t.checked; const b = t.closest('[data-strictbox]'); if (b) b.classList.toggle('on', t.checked); s.kept.clear(); s.shown = 30; save(sport, s); render(); return; } // Update 77
+    if (t.matches('[data-rstrict]')) { s.f.strict = t.checked; const b = t.closest('[data-strictbox]'); if (b) b.classList.toggle('on', t.checked); { const k = pg.querySelector('[data-keynote]'); if (k) k.innerHTML = t.checked ? '<b>Strict EV filter on:</b> the greyed-out filters are set by its rules; the bright ones still work.' : 'The recommended settings are already set, so you can leave everything as it is. If you\'d like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.'; } s.kept.clear(); s.shown = 30; save(sport, s); render(); return; } // Update 77
     if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-recfx]')) { t.checked ? s.fx.add(t.value) : s.fx.delete(t.value); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
