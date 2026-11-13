@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f4ad3d3fd8b2">
+<meta name="proplab-build" content="1d6fc370261a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -840,6 +840,12 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .recflt .keyf>span:first-child{color:var(--text)!important;font-weight:600}
 .keynote{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--s2);color:var(--muted);display:block}.keynote b{color:var(--text)}
 .keyswatch{flex:none;width:16px;height:16px;margin-top:2px;border-radius:5px;border:1.5px solid #fff}
+/* Update 77: strict EV filter */
+.strictbox{margin:0 0 10px;padding:10px 12px;border-radius:12px;border:1.5px solid rgba(255,255,255,.9);background:var(--s2)}.strictbox.on{border-color:#3fbf7f;background:color-mix(in srgb,#3fbf7f 12%,var(--s2))}
+.strictbox .hcheck{font-size:15px}.strictbox details{margin-top:6px}.strictbox summary{cursor:pointer;color:var(--accent,#6ea8ff)}
+.strictrules{margin:6px 0 0;padding-left:18px;line-height:1.45}.strictrules li{margin:2px 0}
+.sverdict{margin-top:6px;padding:6px 9px;border-radius:9px;font-size:13px;line-height:1.4}.sverdict.ok{background:color-mix(in srgb,#3fbf7f 18%,transparent)}.sverdict.ok b{color:#5fd99a}
+.sverdict.no{background:color-mix(in srgb,#e5534b 16%,transparent)}.sverdict.no b{color:#ff8a84}.sverdict.warn{background:color-mix(in srgb,#f59e0b 18%,transparent)}.sverdict.warn b{color:#fbbf24}.sverdict.hint{background:var(--s2);color:var(--muted)}.sverdict.hint b{color:var(--text)}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -1087,7 +1093,15 @@ const localDayAfter = (n, now = new Date()) => partsIn(new Date(now.getTime() + 
 /** Update 73: any moment (ISO) in the viewer's time zone, e.g. "Wed 12 Nov 19:30 EST" (the footer's time zone, Automatic = this phone's). */
 const whenLocal = iso => { if (!iso) return ''; const d = new Date(iso); if (Number.isNaN(d.getTime())) return String(iso); const k = koLocal({ ko_utc: d.toISOString() }); return `${fmtDay(k.ymd)} ${k.hm} ${k.abbr}`; };
 /** "Sun 18 Oct · 15:00 BST" or "Sun 25 Oct · time TBC". */
-const fmtKick = f => { const k = koLocal(f); return `${fmtDay(k.ymd)} · ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
+// Update 77 (owner, 12 Nov 2026): NBA and NFL games are dated by their US night everywhere (as My Plays already did), then shown in your
+// own time, with the day when it falls on another day: "Thu 12 Nov · Fri 01:15 GMT" in the UK, "Thu 12 Nov · 18:15 MST" in Colorado.
+// US games are the ones without a football league; their night is the league's own date (local_date) or the US Eastern date of the tip-off.
+const ET_YMD = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+const WD3 = ymd => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(`${ymd}T12:00:00Z`).getUTCDay()];
+const usNight = f => f.local_date || (f.ko_utc ? ET_YMD.format(new Date(f.ko_utc)) : f.date);
+const fmtKick = f => { const k = koLocal(f);
+  if (f && !f.league && f.ko_utc && k.hm) { const n = usNight(f); return `${fmtDay(n)} · ${k.ymd !== n ? `${WD3(k.ymd)} ` : ''}${k.hm} ${k.abbr}`; }
+  return `${fmtDay(k.ymd)} · ${k.hm ? `${k.hm} ${k.abbr}` : 'time TBC'}`; };
 /** The zone name used now, for notes such as "Times shown in BST". */
 const tzNow = () => tzAbbr(new Date());
 const tzLabel = () => { const p = memPref || tzPref(); const c = TZ_CHOICES.find(x => x[0] === p); return p === 'auto' ? `Automatic (${tzNow()})` : `${c[1]} (${tzNow()})`; };
@@ -1144,7 +1158,7 @@ const keepScrollIn = (root, fn) => {
   const r = fn(); if (saved.size) for (const [el, k] of keys()) { const v = saved.get(k); if (v) { el.scrollTop = v[0]; el.scrollLeft = v[1]; } } if (Math.abs(scrollY - wy) > 1) scrollTo(0, wy); return r;
 };
 
-return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, whenLocal, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, isProvisional, timeHtml, SCROLLERS, keepScrollIn };
+return { $, $$, sampleKey, esc, fmt, debounce, fmtDay, fmtShort, fmtLong, todayYmd, daysBetween, avg, pct, encodeId, nowUK, koUK, isUpcoming, TZ_CHOICES, detectTz, tzPref, setTzPref, viewTz, tzAbbr, koLocal, todayLocal, localDayAfter, whenLocal, usNight, fmtKick, tzNow, tzLabel, fixtureId, seasonLabel, LIVE_MS, AWAIT_MAX_MS, STALE_MAX_MS, fxStatus, US_WINDOW_MS, usStatus, recentlyCalledOff, statusBadge, isProvisional, timeHtml, SCROLLERS, keepScrollIn };
 })();
 __m['data'] = (() => {
 // Loads the published dataset (plain JSON files next to the website) and builds lookups. Missing stays missing: nothing here invents a value.
@@ -1804,7 +1818,7 @@ async function viewNbaFixtures(root) {
     if (fx.tab === 'standings') { $('#bfx', root).innerHTML = standingsHtml(); return; }
     let list = fx.tab === 'upcoming' ? nba.games.filter(g => !g.final && g.status !== 'canceled' && fxStatus(g, now, LIVE_NBA) !== 'old').sort(nbaSort) : nba.games.filter(g => g.final).sort((a, b) => -nbaSort(a, b)).slice(0, 90);
     if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? nightOf(g) === viewingNight(now) : d <= in7; }); // Today = the official US schedule date (Phase 2)
-    const byDay = new Map(); for (const g of list) { const k = fx.tab === 'results' ? g.date : koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    const byDay = new Map(); for (const g of list) { const k = fx.tab === 'results' ? g.date : nightOf(g); /* Update 77: US night */ if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     $('#bfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} · NBA${fx.tab === 'results' ? ' (US date)' : ''}</div><div class="card"><div class="list">${gs.map(g => gameRow(g, fx.tab === 'upcoming')).join('')}</div></div>`).join('') : '<div class="banner info">No NBA games for this filter.</div>';
   };
   $('#btabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; fx.tab = b.dataset.t; $$('#btabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#bwhen', root).hidden = fx.tab !== 'upcoming'; draw(); };
@@ -6826,13 +6840,15 @@ async function usCandidates(sport, A, games, onProgress) {
       let raw; try { raw = await A.playerRowsOf(p); } catch { raw = []; }
       const inj = A.injury(p, g); if (isConfirmedOut(inj)) continue;
       const played = raw.filter(x => !x.dnp && (sport === 'nba' ? x.type !== 'P' && x.type !== 'PS' : x.type === 'R'));
+      // Update 77: just back from an injury = he missed one of his team's last 3 games this season for a reason other than a coach's decision
+      const backFrom = (() => { const r3 = raw.filter(x => x.season === cur && (sport === 'nba' ? x.type !== 'P' && x.type !== 'PS' : x.type === 'R')).slice(0, 3); const m = r3.find(x => x.dnp && !/coach|^cd$|dnp-cd|rest/i.test(String(x.dnp))); return m ? String(m.dnp === true ? 'did not play' : m.dnp) : null; })();
       if (played.length < 8) continue;
       const curN = played.filter(x => x.season === cur).length; if (!curN && teamCur.get(t) >= 3) continue; // not played this season while his team has: injured or out of the rotation
       for (const def of defsFor(p)) {
         const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game, raw: x /* box score on a tapped bar (Update 70) */, ...(def.parts ? { parts: def.parts(x) } : {}) /* combo props: each stat's share for coloured bars (owner, 4 Nov) */ })).filter(r => r.value !== null && r.value !== undefined);
         if (rows.length < 8) continue;
         const card = buildUsPlayerCard({ sport, A, p, def, key: def.key, raw, game: g, period: () => 10, periodText: () => 'this season', cid: `rec|${sport}|${p.id}|${def.key}` });
-        out.push({ id: `${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: t, opp: t === g.home ? g.away : g.home, home: t === g.home, f: g, fid: String(g.id), def, card, p, inj, cur,
+        out.push({ id: `${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: t, opp: t === g.home ? g.away : g.home, home: t === g.home, f: g, fid: String(g.id), def, card, p, inj, cur, backFrom,
           newTeam: !!p.new_team, curN, rows, lines: candidateLines(def, rows.map(r => r.value)), grp: def.grp || def.group || '' });
       }
     }
@@ -6897,6 +6913,48 @@ function pickPlays(cands, o, blowout = () => null) {
   }
   return out;
 }
+// ---------------- strict filter (Update 77, owner 12 Nov 2026) ----------------
+// The betting rules agreed with the owner, as a filter. A play is shown only when ALL of these hold:
+//   the line nearest his season average (where bookmakers usually set it, so priced near evens); model 60%+; Strong evidence; Easy / OK
+//   matchup; 6/10+ at that line this season and in his last 10; not poor against tonight's opponent (under 40% over 5+ meetings);
+//   not just back from an injury; one play per player per game (the strongest). Your other filters (games, side, markets, minutes...) apply too.
+const STRICT = { minP: 0.60, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
+function strictLine(c) {
+  const cur = c.rows.filter(q => q.season === c.cur); if (cur.length < STRICT.minHitN || c.def.binary) return null;
+  const avg = cur.reduce((t, q) => t + q.value, 0) / cur.length, L0 = Math.floor(avg) + 0.5;
+  return c.lines.reduce((b, L) => (b == null || Math.abs(L - L0) < Math.abs(b - L0) ? L : b), null);
+}
+const strictSkip = c => !!c.backFrom || !!(c.inj && c.inj.cls && !['none', 'na'].includes(c.inj.cls));
+/** His record at this line against tonight's opponent (last 10 meetings). */
+function vsOppOf(c, L, side) { if (!c.opp) return null; const rs = c.rows.filter(q => q.opp === c.opp).slice(0, 10); if (!rs.length) return null; const hit = rs.filter(q => (side === 'under' ? q.value < L : q.value > L)).length; return { hit, n: rs.length }; }
+function strictPick(cands, o, blowout = () => null) {
+  const best = new Map(), seen = new Set();
+  for (const x of pickPlays(cands, { ...o, minProb: 0, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all' }, blowout)) {
+    const c = x.c; if (seen.has(c)) continue; seen.add(c);
+    if (strictSkip(c)) continue;
+    const L = strictLine(c); if (L == null) continue;
+    for (const side of o.sides) {
+      const r = evalAt(c, L, side); if (!r || r.p < STRICT.minP || !r.conf || r.conf.rank < 3) continue;
+      if (c.sport !== 'football' && !['g', 'y'].includes(r.tier)) continue;
+      const hs = r.hr.season, h10 = r.hr.l10;
+      if (!(hs.n >= STRICT.minHitN && hs.pct >= STRICT.minHit * 100 - 1e-9) || !(h10.n >= STRICT.minHitN && h10.pct >= STRICT.minHit * 100 - 1e-9)) continue;
+      const vo = vsOppOf(c, L, side); if (vo && vo.n >= STRICT.oppN && vo.hit / vo.n < STRICT.oppPoor) continue;
+      const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, strict: true });
+    }
+  }
+  return [...best.values()];
+}
+/** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
+function strictVerdict(p, dec) {
+  const S = STRICT, imp = 1 / dec, edge = p - imp, need = dec > S.longFrom ? S.edgeLong : S.edge, ev = p * dec - 1;
+  if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short, a small model error wipes out the edge` };
+  if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
+  if (edge < need - 1e-9) return { ok: false, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds); it needs ${Math.round(need * 100)}+ pts` };
+  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts, EV +${(ev * 100).toFixed(0)}%: unusually big. Check the news first (injury, minutes, line-up). If you find a reason for the price, pass; if not, back it at half stake` };
+  return { ok: true, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds)` };
+}
+/** The shortest odds that pass the strict rules for a model chance. */
+const strictMinOdds = p => Math.max(STRICT.minOdds, 1 / Math.max(1e-9, p - STRICT.edge));
 /**
  * The most demanding line that passes, found by halving (about 5 evaluations instead of every line). Every filter moves one way with the
  * line: for Over, a higher line lowers the probability and the hit rate and raises the fair odds (Under: the reverse), and confidence and
@@ -6955,7 +7013,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, vsOppOf, strictPick, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -8822,7 +8880,7 @@ __m['v-recommended'] = (() => {
 // carry the play to Compare Price. Each card's line can be changed (everything recalculates; the card stays where it is). Nothing is
 // ranked by EV: there are no bookmaker prices until you type one.
 const { EVID_INTRO } = __m['confidence'];
-const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks } = __m['recplays'];
+const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks, strictPick, strictVerdict, strictMinOdds, STRICT } = __m['recplays'];
 const { carryPrice } = __m['pricecheck'];
 const { muHtml } = __m['matchupui'];
 const { usAdapter } = __m['v-hiwi'];
@@ -8857,7 +8915,7 @@ const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 1
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
     r.conf.rank < 3 ? `${r.conf.label} evidence: less ${(3 - r.conf.rank) * 3}` : 'Strong evidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
+const DEF = { strict: false, mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Strong evidence (was Medium+ until 10 Nov), high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
 const DEFV = 5, RECO = sport => ({ minProb: 60, minFairTxt: inputText(1.3), hitWin: 'season', minConf: 3, hideBlowout: true, mu: sport === 'football' ? 'all' : 'gy', ...(sport === 'nba' ? { minAvg: 25 } : {}) }); // Update 73: NBA players averaging 25+ minutes this season // Green + yellow matchups (NBA / NFL: football plays have no matchup colour), sorted by Best overall
@@ -8913,11 +8971,16 @@ const fxLabel = (sport, f, A) => (sport === 'football' ? `${f.home} v ${f.away}`
 
 // data freshness (owner audit: show it): when the published data was built, and the injury report it used
 const ukTime = iso => whenLocal(iso); // Update 73: in the viewer's time zone (name included)
+// Update 77: the time of the last successful data refresh (data-refresh-status.json), not the season file's own stamp, which only
+// changes when that file changes (NFL showed "Tue 10 Nov ... more than a day old" while its injuries and players were from today).
+let REFRESHED = null;
+const loadRefreshed = () => (REFRESHED ? Promise.resolve(REFRESHED) : fetch(`data-refresh-status.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(j => { REFRESHED = j && j.last_success ? j.last_success : null; document.querySelectorAll('[data-fresh][data-sport]').forEach(el => { const t = document.createElement('div'); t.innerHTML = freshHtml(el.dataset.sport); if (t.firstElementChild) el.replaceWith(t.firstElementChild); }); return REFRESHED; }).catch(() => null));
 function freshHtml(sport) {
-  const meta = sport === 'nba' ? nba.meta : sport === 'nfl' ? nfl.meta : null, at = meta ? meta.updated : store.manifest && store.manifest.generated;
+  if (!REFRESHED) loadRefreshed();
+  const meta = sport === 'nba' ? nba.meta : sport === 'nfl' ? nfl.meta : null, at0 = meta ? meta.updated : store.manifest && store.manifest.generated, at = REFRESHED && (!at0 || REFRESHED > at0) ? REFRESHED : at0;
   const inj = sport === 'nba' && nba.injuries && nba.injuries.report_utc ? ` · injury report ${esc(ukTime(nba.injuries.report_utc))}` : '';
   const old = at && Date.now() - Date.parse(at) > 36 * 3600e3;
-  return at ? `<p class="xs ${old ? 'warn' : 'muted'}" style="margin:0 0 8px" data-fresh>Data updated ${esc(ukTime(at))} (every night at about 23:00)${inj}${old ? '. <b>This is more than a day old</b>: recent games and injury news may be missing.' : ''}</p>` : '';
+  return at ? `<p class="xs ${old ? 'warn' : 'muted'}" style="margin:0 0 8px" data-fresh data-sport="${esc(sport)}">Data updated ${esc(ukTime(at))} (several times a day)${inj}${old ? '. <b>This is more than a day old</b>: recent games and injury news may be missing.' : ''}</p>` : '';
 }
 async function viewRecommended(root, sport) {
   const A = sport === 'football' ? null : usAdapter(sport), s = stateOf(sport);
@@ -8959,7 +9022,16 @@ async function viewRecommended(root, sport) {
   const drawFilters = () => {
     const f = s.f, grps = GRPS[sport], y = scrollY;
     pg.querySelector('#recflt').innerHTML = `<div class="row" style="border:0;padding:0;justify-content:space-between;align-items:center;gap:8px"><b>2. Your filters</b><button type="button" class="chip" data-rreset>Reset to recommended settings</button></div>
-      <p class="small keynote" data-keynote>The recommended settings are already set, so you can leave everything as it is. If you'd like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.</p><div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
+      <p class="small keynote" data-keynote>The recommended settings are already set, so you can leave everything as it is. If you'd like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.</p><div class="strictbox${s.f.strict ? ' on' : ''}" data-strictbox><label class="hcheck strictlbl"><input type="checkbox" data-rstrict ${s.f.strict ? 'checked' : ''}> <b>Strict EV filter</b></label><p class="xs muted" style="margin:2px 0 0">Shows only the plays that meet our betting rules, and tells you <b>Back it</b> or <b>Pass</b> when you type your odds.</p>
+        <details class="xs"><summary>The rules</summary><ol class="strictrules">
+          <li>The usual bookmaker line: the one nearest his season average (so it's priced near evens), and the model gives it ${Math.round(STRICT.minP * 100)}%+.</li>
+          <li>Strong evidence${sport !== 'football' ? ' and an Easy or OK matchup' : ''}.</li>
+          <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season <u>and</u> in his last 10 (the model and his form agree).</li>
+          <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
+          <li>One play per player per game: his strongest.</li>
+          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>: odds ${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}, and the model at least ${Math.round(STRICT.edge * 100)} points above the chance your odds imply (${Math.round(STRICT.edgeLong * 100)} above ${STRICT.longFrom.toFixed(2)}). EV over +${Math.round(STRICT.evCheck * 100)}%: check the news first.</li>
+        </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
+      <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
       <div class="recrow"><label class="field keyf"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
         <label class="field keyf"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
         <label class="field"><span>Max fair odds</span><input class="in" data-rf="maxFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 3.00 or 2/1" value="${esc(f.maxFairTxt)}"></label></div>
@@ -9028,14 +9100,14 @@ async function viewRecommended(root, sport) {
     const want = scope().map(id => s.cands.get(id) || []).flat(), o = opts(); slipRegister(want);
     drawMarkets(want); const off = new Set(s.f.mkOff);
     const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key) && !isHidden(c)); // hidden players (owner, 5 Nov): out for this game only
-    let list = pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false;
+    let list = s.f.strict ? strictPick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false; // Update 77: strict EV filter
     // a search found him (or them) but no line meets every filter: show the strongest lines anyway, marked, instead of "0 plays"
-    if (q && mine.length && !list.length) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
+    if (q && mine.length && !list.length && !s.f.strict) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
       list = pickPlays(mine, r).map(x => ({ ...x, keptOut: true })); relaxed = true; }
     // plays you are adjusting stay on screen, at their position, even if they no longer pass
     const kept = [...s.kept.entries()];
     for (const [id, k] of kept) { if (list.some(x => x.c.id === id && x.side === k.side)) continue; const c = want.find(x => x.id === id); if (!c) continue; const r = evalAt(c, k.L, k.side); if (r) list.push({ c, side: k.side, rep: r, alts: [], keptOut: true }); }
-    for (const x of list) { const k = s.kept.get(x.c.id); if (k && k.side === x.side) { const r = evalAt(x.c, k.L, k.side); if (r) { x.rep = r; x.keptOut = !passes(r, o); } } }
+    for (const x of list) { const k = s.kept.get(x.c.id); if (k && k.side === x.side) { const r = evalAt(x.c, k.L, k.side); if (r) { x.rep = r; x.keptOut = s.f.strict ? false : !passes(r, o); } } }
     list = list.filter(x => !isPlayHidden(x.c, x.side)); // removed plays (Update 70): this play only, the player's other plays stay
     if (keepOrder && current.length) { const pos = new Map(current.map((x, i) => [`${x.c.id}|${x.side}`, i])); list.sort((a, b) => (pos.get(`${a.c.id}|${a.side}`) ?? 1e9) - (pos.get(`${b.c.id}|${b.side}`) ?? 1e9)); const fresh = list.filter(x => !pos.has(`${x.c.id}|${x.side}`)); list = [...list.filter(x => pos.has(`${x.c.id}|${x.side}`)), ...sortPlays(fresh, s.sort, s.f.hitWin)]; }
     else list = sortPlays(list, s.sort, s.f.hitWin);
@@ -9069,7 +9141,10 @@ async function viewRecommended(root, sport) {
       out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
         <button type="button" class="infotag neutral" ${TIP('EV and stake', `EV = model probability ${(r.p * 100).toFixed(1)}% x your odds ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%: the average return per £1 if the model probability is right. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
-    return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span></div>`;
+    let sv = ''; // Update 77: the strict rules' verdict
+    if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? 'Check the news' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+      else sv = `<div class="sverdict hint" data-sneed="${strictMinOdds(r.p).toFixed(4)}">Back it if your odds are at least <b>${esc(fmtOdds(strictMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(STRICT.maxOdds))})</div>`; }
+    return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span>${sv}</div>`;
   }
   /** Names of a combo market's parts, in the order def.parts returns them (null when they cannot be named). */
   function partNames(def) { if (!def || !def.parts) return null; const CLS = { y: 'Yellow cards', r: 'Red cards', oy: 'Yellow cards', or: 'Red cards' };
@@ -9176,6 +9251,7 @@ async function viewRecommended(root, sport) {
   { const onFmt = () => { if (!pg.isConnected) { document.removeEventListener('oddsfmt', onFmt); return; } render(true); }; document.addEventListener('oddsfmt', onFmt); } // Update 73: "Odds shown as" redraws every price here (typed odds are read in any format) // Update 71: stakes in your currency at your unit size
   pg.addEventListener('change', e => {
     const t = e.target;
+    if (t.matches('[data-rstrict]')) { s.f.strict = t.checked; const b = t.closest('[data-strictbox]'); if (b) b.classList.toggle('on', t.checked); s.kept.clear(); s.shown = 30; save(sport, s); render(); return; } // Update 77
     if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-recfx]')) { t.checked ? s.fx.add(t.value) : s.fx.delete(t.value); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
@@ -9185,7 +9261,8 @@ async function viewRecommended(root, sport) {
   });
   const tIn = {}; // one pause per box: typing in a second box never cancels the first one's change
   pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value); slipSetBook(legId(x.c, x.side, x.rep.L), oi.value);
-      const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout')); return; } });
+      const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout'));
+      { const a0 = card.querySelector('.sverdict'), a1 = t2.querySelector('.sverdict'); if (a0) a0.remove(); if (a1) card.querySelector('.revout').after(a1); } return; } });
   pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample', 'minAvg'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : k === 'minAvg' ? 44 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
   // suggestions as you type: names from every listed game (players and teams), best first: names that start with what you typed
   const showSug = v => { const box = pg.querySelector('#recsug'), inp = pg.querySelector('[data-rf="q"]'); if (!box) return; const H = suggest(v);
@@ -12243,7 +12320,7 @@ async function viewNflFixtures(root) {
     const now = new Date(); const todayUK = todayLocal(now); const in7 = localDayAfter(7, now);
     let list = fx.tab === 'upcoming' ? nfl.games.filter(g => !g.final && fxStatus(g, now, LIVE_NFL) !== 'old').sort(nflSort) : nfl.games.filter(g => g.final).sort((a, b) => -nflSort(a, b)).slice(0, 80);
     if (fx.tab === 'upcoming' && fx.when !== 'all') list = list.filter(g => { const d = koLocal(g).ymd; return fx.when === 'today' ? nightOf(g) === viewingNight(now) : d <= in7; }); // Today = the official US schedule date (Phase 2)
-    const byDay = new Map(); for (const g of list) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    const byDay = new Map(); for (const g of list) { const k = nightOf(g); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); } // Update 77: grouped by the US night (Thursday Night Football is Thursday's), like NBA
     $('#nfx', root).innerHTML = list.length ? [...byDay.entries()].map(([d, gs]) => `<div class="dayh">${esc(fmtDay(d))} · NFL</div><div class="card"><div class="list">${gs.map(gameRow).join('')}</div></div>`).join('') : '<div class="banner info">No NFL games for this filter.</div>';
   };
   $('#ntabs', root).onclick = e => { const b = e.target.closest('button'); if (!b) return; fx.tab = b.dataset.t; $$('#ntabs button', root).forEach(x => x.classList.toggle('on', x === b)); $('#nwhen', root).hidden = fx.tab !== 'upcoming'; draw(); };
@@ -12417,7 +12494,7 @@ async function viewNflFinder(root) {
   const selGames = () => { const ids = new Set(gameList().map(g => g.id)); return [...ui.games].filter(id => ids.has(id)).map(id => nfl.gameById.get(id)).filter(Boolean); };
   const drawCtl = () => {
     const m = market(), sup = supportedGroups(), gs = groups(), list = gameList();
-    const byDay = new Map(); for (const g of list.filter(g => g.ko_utc)) { const k = koLocal(g).ymd; if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
+    const byDay = new Map(); for (const g of list.filter(g => g.ko_utc)) { const k = nightOf(g); /* Update 77: US night */ if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(g); }
     const tbc = list.filter(g => !g.ko_utc); const nSel = selGames().length;
     const gRow = g => { const stt = usStatus(g, 'nfl', now); return `<label class="hcheck hfxrow"><input type="checkbox" data-g value="${esc(g.id)}" ${ui.games.has(g.id) ? 'checked' : ''}><span><b>${esc(g.ko_utc ? koLocal(g).hm : 'TBC')}</b> ${esc(teamName(g.away))} at ${esc(teamName(g.home))}${stt !== 'pre' ? ' ' + statusBadge(stt) : ''}</span></label>`; };
     const haveSnaps = (nfl.meta?.sources || []).some(x => /snap/.test(x.used_for || ''));
