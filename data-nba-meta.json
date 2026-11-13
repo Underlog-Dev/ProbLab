@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-12T13:10:47Z",
+ "updated": "2026-11-13T07:12:39Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -225,7 +225,7 @@
    "group": "CHA",
    "file": "data-nba-logs-CHA.json",
    "players": 18,
-   "rows": 3764
+   "rows": 3776
   },
   {
    "group": "CHI",
@@ -243,7 +243,7 @@
    "group": "DAL",
    "file": "data-nba-logs-DAL.json",
    "players": 18,
-   "rows": 3849
+   "rows": 3864
   },
   {
    "group": "DEN",
@@ -255,7 +255,7 @@
    "group": "DET",
    "file": "data-nba-logs-DET.json",
    "players": 18,
-   "rows": 4767
+   "rows": 4780
   },
   {
    "group": "FA",
@@ -315,7 +315,7 @@
    "group": "MIN",
    "file": "data-nba-logs-MIN.json",
    "players": 16,
-   "rows": 4443
+   "rows": 4455
   },
   {
    "group": "NOP",
@@ -345,13 +345,13 @@
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4595
+   "rows": 4608
   },
   {
    "group": "PHX",
    "file": "data-nba-logs-PHX.json",
    "players": 19,
-   "rows": 3881
+   "rows": 3895
   },
   {
    "group": "POR",
@@ -375,7 +375,7 @@
    "group": "TOR",
    "file": "data-nba-logs-TOR.json",
    "players": 17,
-   "rows": 3423
+   "rows": 3435
   },
   {
    "group": "UTA",
@@ -387,14 +387,14 @@
    "group": "WAS",
    "file": "data-nba-logs-WAS.json",
    "players": 18,
-   "rows": 3771
+   "rows": 3784
   }
  ],
  "counts": {
   "games": 8976,
-  "final": 7946,
+  "final": 7950,
   "players": 1192,
-  "player_games": 209039,
+  "player_games": 209143,
   "quarter_points_ok": 169872,
   "quarter_points_dropped": 247,
   "q1_rebounds_ok": 168772,
