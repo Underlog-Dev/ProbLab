@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="33a1378391d8">
+<meta name="proplab-build" content="c89e39b217bd">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -857,6 +857,12 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 
 /* Update 84: Log a bet: date, competition and match each on their own row; an iPhone date box can never spill into its neighbour */
 .blstack{display:grid;grid-template-columns:1fr;gap:8px;margin:6px 0}.blstack .field{margin:0;min-width:0}.blgrid>*,.blstack>*{min-width:0}.blform input[type=date]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+
+/* Update 85: Hit Rates tab; strict acca filter */
+.accasafe .field:has([data-af="legMinTxt"]),.accasafe .field:has([data-af="legMaxTxt"]),.accasafe .field:has([data-afn="minProb"]),.accasafe .field:has([data-aseg="minConf"]),.accasafe .row:has([data-aset="legMinTxt"]){opacity:.4;pointer-events:none;filter:grayscale(1)}
+.hrcard{display:grid;gap:6px;margin:0 0 10px}.hrpct{font-size:20px}.hrpct.g{color:#3fbf7f}.hrpct.y{color:#e3b341}
+.hrvals{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.hrv{min-width:26px;padding:2px 6px;border-radius:8px;text-align:center;font-weight:700;font-size:13px}.hrv.hit{background:color-mix(in srgb,#3fbf7f 30%,transparent)}.hrv.miss{background:color-mix(in srgb,#e5534b 28%,transparent)}
+.hrcard [data-hrslip]{justify-self:start}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7009,6 +7015,18 @@ function strictPick(cands, o, blowout = () => null) {
   }
   return [...best.values()];
 }
+// ---------------- strict acca filter (Update 85, owner 13 Nov 2026) ----------------
+// Acca legs need a high chance more than a big edge: short, safe lines (bookmakers price these around 1.15-1.45) with an insane hit rate.
+// A leg passes only when ALL hold: model 75%+ (fair odds 1.10-1.45); Strong evidence; 8+ of his last 10 and 75%+ this season (6+ games)
+// at that line; not poor against tonight's opponent (under 60% over 5+ meetings); not just back from injury / on the injury report /
+// shrinking minutes (NBA); NBA / NFL: an Easy or OK matchup.
+const ACCA_SAFE = { minP: 0.75, minFair: 1.10, maxFair: 1.45, l10: 0.8, season: 0.75, minN: 6, opp: 0.6, oppN: 5 };
+function accaSafeOk(c, side, r) {
+  const S = ACCA_SAFE; if (!r || r.p < S.minP || r.fair < S.minFair - 1e-9 || r.fair > S.maxFair + 1e-9 || !r.conf || r.conf.rank < 3 || strictSkip(c)) return false;
+  if (c.sport !== 'football' && !['g', 'y'].includes(r.tier)) return false;
+  const hs = r.hr.season, h10 = r.hr.l10; if (!(h10.n >= 10 && h10.hit >= S.l10 * 10) || !(hs.n >= S.minN && hs.pct >= S.season * 100 - 1e-9)) return false;
+  const vo = vsOppOf(c, r.L, side); return !(vo && vo.n >= S.oppN && vo.hit / vo.n < S.opp);
+}
 /** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
 function strictVerdict(p, dec) {
   const S = STRICT, imp = 1 / dec, edge = p - imp, need = dec > S.longFrom ? S.edgeLong : S.edge, ev = p * dec - 1;
@@ -7078,7 +7096,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, vsOppOf, strictPick, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -8476,7 +8494,7 @@ __m['accabuild'] = (() => {
 //    research, never priced, never generated automatically;
 //  * football: one leg per match (same-match team / match markets are left unpriced).
 // Nothing here is a bookmaker price. EV appears only for a price the user types for the whole acca.
-const { evalAt, passes } = __m['recplays'];
+const { evalAt, passes, accaSafeOk } = __m['recplays'];
 
 const ACCA = { legCost: 0.03, tol: 0.15, maxLegs: 8, LEGS_CAP: 40, /* blank Max legs = no limit of your own; 40 is only a safety stop */ beam: 160, shortlist: 140, MIN_SHARED: 30, SHRINK: 30 };
 const RARE_ACCA = new Set(['stl', 'blk', 'sb', 'dd', 'td', 'atd', 'rush_td', 'rec_td', 'tds', 'ftd']);
@@ -8498,7 +8516,7 @@ function legPool(cands, o, excluded = new Set()) {
       const Ls = side === 'under' ? c.lines.slice().reverse() : c.lines, F = k => { const r = evalAt(c, Ls[k], side); return r ? r.fair : null; };
       const first = (test) => { let lo = 0, hi = Ls.length - 1, b = Ls.length; while (lo <= hi) { const m = (lo + hi) >> 1, f = F(m); if (f != null && test(f)) { b = m; hi = m - 1; } else lo = m + 1; } return b; };
       const a = o.minFair ? first(f => f >= o.minFair - 1e-9) : 0, z = o.maxFair ? first(f => f > o.maxFair + 1e-9) - 1 : Ls.length - 1;
-      for (let k = a; k <= z && k < Ls.length; k++) { const r = evalAt(c, Ls[k], side); if (!r || !passes(r, q) || r.p * 100 < mp - 1e-9) continue; const id = legId(c, side, r.L); if (!excluded.has(id)) out.push(mkLeg(c, side, r)); } } }
+      for (let k = a; k <= z && k < Ls.length; k++) { const r = evalAt(c, Ls[k], side); if (!r || !passes(r, q) || r.p * 100 < mp - 1e-9) continue; if (o.safe && !accaSafeOk(c, side, r)) continue; /* Update 85: strict acca filter */ const id = legId(c, side, r.L); if (!excluded.has(id)) out.push(mkLeg(c, side, r)); } } }
   return out;
 }
 function mkLeg(c, side, r) {
@@ -8850,6 +8868,15 @@ function onChange(e) { const t = e.target; if (t.matches('[data-slipfmt]')) { lo
 
 return { combos, formatsFor, selProblem, comboProblem, priceSlip, selOf, slipCount, slipHas, slipToggle, slipSetBook, slipAddMany, slipRegister, slipRoute, syncButtons, toCard };
 })();
+__m['rectabs'] = (() => {
+// The Singles / Acca Builder / Hit Rates tabs of Hiwi's Section (Update 85).
+const { unitChip } = __m['units'];
+const recTabs = (sport, on) => { const h = p => (sport === 'football' ? `#/${p}` : `#/${sport}/${p}`);
+  return `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg">${[['rec', 'Singles'], ['acca', 'Acca Builder'], ['form', 'Hit Rates']].map(([p, l]) => `<a href="${h(p)}"${p === on ? ' class="on" aria-current="page"' : ''}>${l}</a>`).join('')}</div>${unitChip()}</nav>`; };
+
+
+return { recTabs };
+})();
 __m['excl'] = (() => {
 // Hidden players (owner request 5 Nov 2026): in Hiwi's Section you can hide a player for one game (a bench player the bookmakers do not
 // price, or a late injury). He is hidden for THAT game only, in Hiwi's Section and the Acca Builder, and comes back by himself for his
@@ -8993,6 +9020,7 @@ const { selFromCandidate, openBetForm, logSingleNow } = __m['betprefill'];
 const { nightOf } = __m['nightdate'];
 const { nbaSeasonAvgMin } = __m['nbaprefs'];
 const { CUR, unitChip, onUnitChange } = __m['units'];
+const { recTabs } = __m['rectabs'];
 const { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
 const { BEAR_ART } = __m['icons'];
@@ -9090,7 +9118,7 @@ async function viewRecommended(root, sport) {
   if (!s.fx.size) for (const f of firstPick(all)) s.fx.add(fxIdOf(sport, f));
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
-  root.innerHTML = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a class="on" aria-current="page" href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div>${unitChip()}</nav><div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
+  root.innerHTML = `${recTabs(sport, 'rec')}<div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
     ${howToHtml(sport, sportName)}
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
@@ -9443,9 +9471,10 @@ const { EVID } = __m['confidence'];
 const { blowoutOf } = __m['blowout'];
 const { isHidden, hiddenPlayKeys } = __m['excl'];
 const { unitChip } = __m['units'];
+const { recTabs } = __m['rectabs'];
 const { legPool, buildAcca, jointOf, mkLeg, legProblem, ACCA, legId, gameKey, subjOf } = __m['accabuild'];
 const { slipAddMany, slipRegister } = __m['accaslip'];
-const { evalAt, ladderName } = __m['recplays'];
+const { evalAt, ladderName, ACCA_SAFE } = __m['recplays'];
 const { usAdapter } = __m['v-hiwi'];
 const { nba, loadNba, loadNbaInjuries } = __m['nba-data'];
 const { nfl, loadNfl } = __m['nfl-data'];
@@ -9457,7 +9486,7 @@ const { nightOf, viewingNight } = __m['nightdate'];
 const { accaPlan, getFrac } = __m['risk'];
 
 const KEY = 'proplab.acca.v1', SPORTS = [['nba', 'NBA'], ['nfl', 'NFL'], ['football', 'Football']];
-const DEF = { sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all', minProb: 0, minLegs: 2, maxLegs: '', gsel: null, lgs: [], mkOff: [] };
+const DEF = { safe: false, sports: ['nba'], days: 1, targetTxt: '', legMinTxt: '', legMaxTxt: '', allowSame: false, unders: false, noRare: true, minConf: 0, mu: 'all', minProb: 0, minLegs: 2, maxLegs: '', gsel: null, lgs: [], mkOff: [] };
 const LEGS_CAP = ACCA.LEGS_CAP;
 let ST = null; // { f, locks: Map(id -> snapshot), excl: Set (leg ids and `${candidate}|${side}` keys), xp: Map(subj -> { name, sport, team }) excluded players, skip: Set, current: [ids], cands: Map(`${sport}|${fid}` -> candidates) }
 const load = () => { if (ST) return ST; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; }
@@ -9504,7 +9533,7 @@ function aevHtml(J, book) {
 }
 
 async function viewAcca(root, sport) {
-  const S = load(), tabs = `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg"><a href="${sport === 'football' ? '#/rec' : `#/${sport}/rec`}">Singles</a><a class="on" aria-current="page" href="${sport === 'football' ? '#/acca' : `#/${sport}/acca`}">Acca Builder</a></div>${unitChip()}</nav>`;
+  const S = load(), tabs = recTabs(sport, 'acca');
   if (!S.f.sports.length) S.f.sports = [sport];
   root.innerHTML = `${tabs}<div id="accapg"><h1>Acca Builder</h1>
     <p class="muted" style="margin-top:-4px">Choose a target price. PropLab picks the legs from the same plays and probabilities as Recommended Plays. Tick <b>Include</b> on legs you like; <b>Exclude</b> a leg (or a whole player) and it is replaced straight away; <b>Replace Unlocked Plays</b> as often as you like. Fair odds are not bookmaker odds: a 10/1 fair acca is not a 10/1 bet, and it is not value unless your bookmaker pays more.</p>
@@ -9512,10 +9541,14 @@ async function viewAcca(root, sport) {
   const pg = root.querySelector('#accapg'), out = pg.querySelector('#accaout');
   const legsBad = () => legsProblem(intIn(S.f.minLegs, 1, LEGS_CAP), intIn(S.f.maxLegs, 1, LEGS_CAP), S.f.maxLegs);
   const drawF = () => { const f = S.f, fm = oddsFmt(), y = scrollY; // redraw keeps the open panels open and the page where it was
+    pg.querySelector('#accaf').classList.toggle('accasafe', !!f.safe); // Update 85: strict acca filter dulls the per-leg filters it replaces
     pg.querySelector('#accaf').innerHTML = `<div class="field"><span class="xs muted">Sports</span><div class="seg wrap" data-asp>${SPORTS.map(([k, l]) => `<button type="button" data-v="${k}" class="${f.sports.includes(k) ? 'on' : ''}" aria-pressed="${f.sports.includes(k)}">${l}</button>`).join('')}</div></div>
       <div class="field"><span class="xs muted">Games</span><div class="seg" data-adays>${[[1, 'Today / tonight'], [3, 'Next 3 days'], [7, 'Next 7 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${f.days === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
       <details class="recadv accagames" data-agames ${S.gOpen ? 'open' : ''}><summary class="small"><b>Choose games</b> <span class="xs muted" data-agcount>(all games)</span></summary><div data-agbody><p class="xs muted">Loading games…</p></div></details>
       <details class="recadv accamk" data-amkd ${S.mkOpen ? 'open' : ''}><summary class="small"><b>Choose markets</b> <span class="xs muted" data-amkcount>(every market)</span></summary><div data-amkbody><p class="xs muted">Open this to list the markets in your games (every market is on until you untick it).</p></div></details>
+      <div class="strictbox${f.safe ? ' on' : ''}" data-asafebox><label class="hcheck"><input type="checkbox" data-ack="safe" ${f.safe ? 'checked' : ''}> <b>Strict acca filter</b> <span class="xs muted">(safe legs only: short lines he almost always hits)</span></label>
+        <details class="xs"><summary>The rules</summary><ol class="strictrules"><li>Model ${Math.round(ACCA_SAFE.minP * 100)}%+ on the leg: fair odds ${esc(fmtOdds(ACCA_SAFE.minFair))}–${esc(fmtOdds(ACCA_SAFE.maxFair))} (bookmakers usually offer these around 1/6 to 4/9).</li><li>Strong evidence${'' /* */}; NBA / NFL: an Easy or OK matchup.</li><li>Hit it in ${Math.round(ACCA_SAFE.l10 * 10)}+ of his last 10 <u>and</u> ${Math.round(ACCA_SAFE.season * 100)}%+ this season (${ACCA_SAFE.minN}+ games).</li><li>Not poor against tonight's opponent, not just back from injury, not on the injury report, minutes not shrinking.</li></ol>
+        <p class="xs muted" style="margin:4px 0 0">Once ticked, the per-leg odds, minimum probability and evidence filters are replaced by these rules (dulled out below). Your target price, games, markets and legs still apply.</p></details></div>
       <label class="field"><span>Target acca price (fair odds)</span><input class="in" data-af="targetTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.targetTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
       <div class="row" style="border:0;padding:0;gap:6px;flex-wrap:wrap">${PRESET_T.map(d => `<button type="button" class="chip" data-aset="targetTxt" data-d="${d}">${esc(fmtOdds(d))}</button>`).join('')}</div>
       <div class="recrow"><label class="field"><span>Min fair odds per leg</span><input class="in" data-af="legMinTxt" inputmode="${fm === 'dec' ? 'decimal' : 'text'}" value="${esc(f.legMinTxt)}" placeholder="${esc(PLACEHOLDER[fm])}"></label>
@@ -9596,7 +9629,7 @@ async function viewAcca(root, sport) {
     slipRegister(all); /* the slip can measure same-game links for these plays too */
     return all.filter(c => !isHidden(c)); /* players hidden in Hiwi's Section for this game (owner, 5 Nov) */
   };
-  const opts = () => ({ noRare: S.f.noRare, sides: S.f.unders ? ['over', 'under'] : ['over'], minFair: dec(S.f.legMinTxt), maxFair: dec(S.f.legMaxTxt) || 4, /* no per-leg max typed: legs longer than 3/1 are not generated (long shots are where the model is least sure) */ minConf: Number(S.f.minConf) || 0, mu: S.f.mu, grps: null, injOk: true, minProb: Number(S.f.minProb) || 0, xsubj: new Set(S.xp.keys()), games: selected(), mkOff: new Set(S.f.mkOff || []) });
+  const opts = () => ({ safe: !!S.f.safe, noRare: S.f.noRare, sides: S.f.unders ? ['over', 'under'] : ['over'], minFair: S.f.safe ? ACCA_SAFE.minFair : dec(S.f.legMinTxt), maxFair: S.f.safe ? ACCA_SAFE.maxFair : dec(S.f.legMaxTxt) || 4, /* no per-leg max typed: legs longer than 3/1 are not generated (long shots are where the model is least sure) */ minConf: S.f.safe ? 0 : Number(S.f.minConf) || 0, mu: S.f.mu, grps: null, injOk: true, minProb: S.f.safe ? 0 : Number(S.f.minProb) || 0, xsubj: new Set(S.xp.keys()), games: selected(), mkOff: new Set(S.f.mkOff || []) });
   const legN = () => ({ minLegs: intIn(S.f.minLegs, 1, LEGS_CAP) || 1, maxLegs: intIn(S.f.maxLegs, 1, LEGS_CAP) || LEGS_CAP });
   // a locked leg: its live version (re-priced now) if its play still exists, otherwise the saved snapshot, flagged
   const liveLock = (cands, snap) => { const c = cands.find(x => x.id === snap.cid); if (!c) return { snap, problem: 'no longer in the published plays (game finished, player out, data changed, or its game is not selected)' }; const r = evalAt(c, snap.L, snap.side); if (!r) return { snap, problem: 'can no longer be priced' }; const l = mkLeg(c, snap.side, r); return { leg: l, problem: legProblem(l) }; };
@@ -9701,7 +9734,7 @@ async function viewAcca(root, sport) {
       const idx = [...pg.querySelectorAll('[data-aleg]')].indexOf(art); excludeAndReplace(S.built.legs.filter(x => x.subj === subj).map(x => x.id), { top: art.getBoundingClientRect().top, idx }); return; }
   });
   pg.addEventListener('change', e => { const t = e.target;
-    const ck = t.closest('[data-ack]'); if (ck) { S.f[ck.dataset.ack] = ck.checked; save(); return; }
+    const ck = t.closest('[data-ack]'); if (ck) { S.f[ck.dataset.ack] = ck.checked; save(); if (ck.dataset.ack === 'safe') drawF(); return; }
     if (t.matches('[data-amk]')) { const off = new Set(S.f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); S.f.mkOff = [...off]; save(); const c = pg.querySelector('[data-amkcount]'); if (c) { const all = pg.querySelectorAll('[data-amk]').length, on = pg.querySelectorAll('[data-amk]:checked').length; c.textContent = on === all ? `(all ${all} on)` : `(${on} of ${all} on)`; } return; }
     if (t.matches('[data-aggrp]')) { const k = t.dataset.aggrp, xs = gList.filter(x => (k === 'football' ? x.sp === 'football' : grpOf(x) === k)), grs = k === 'football' ? [...new Set(xs.map(grpOf))] : [k];
       const off = new Set(S.f.goff || []), cur = new Set(gList.filter(x => isOn(x.key)).map(x => x.key));
@@ -9724,6 +9757,112 @@ async function viewAcca(root, sport) {
 }
 
 return { fixtures, legsProblem, viewAcca };
+})();
+__m['v-hitrates'] = (() => {
+// Hit Rates (Update 85, owner 13 Nov 2026): the third tab of Hiwi's Section. Players' recent form at the lines bookmakers actually offer:
+// "who has gone over his line in 5 of his last 5". Pure research, not EV: the model's probability and fair odds are shown beside it so a hot
+// streak can be weighed against the longer record. Lines: the bookmaker's main line (the half-point nearest his season average, the line
+// books set so it is priced near evens) or the highest line he is still hitting; football uses the book ladders (recplays FB_BOOK_LINES).
+// Filters are kept on this phone (localStorage).
+const { buildCandidates, evalAt, ladderName } = __m['recplays'];
+const { fixtures } = __m['v-acca'];
+const { usAdapter } = __m['v-hiwi'];
+const { slipAddMany, slipRegister } = __m['accaslip'];
+const { recTabs } = __m['rectabs'];
+const { store } = __m['data'];
+const { nba, loadNbaInjuries } = __m['nba-data'];
+const { nfl } = __m['nfl-data'];
+const { fmtOdds } = __m['oddsfmt'];
+const { esc, fmtKick } = __m['util'];
+
+const KEY = 'proplab.hitrates.v1';
+const DEF = { days: 1, win: 5, minHit: 80, line: 'main', sort: 'hit', mkOff: [], q: '', minN: 0 };
+const RARE = new Set(['red_cards', 'steals', 'blocks', 'stocks', 'dd', 'td', 'anytime_td']);
+let F = null, CACHE = new Map(), MORE = false;
+const load = () => { if (F) return F; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } F = { ...DEF, ...j }; return F; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(F)); } catch { /* this visit only */ } };
+/** The bookmaker's main line: the half-point nearest his season average (all his games when he has fewer than 3 this season), from his lines. */
+function mainLine(c) {
+  const vals = r => r.map(q => q.value).filter(v => v != null); let v = vals(c.rows.filter(q => q.season === c.cur)); if (v.length < 3) v = vals(c.rows); if (!v.length || !c.lines.length) return null;
+  if (c.def.binary) return 0.5;
+  const L0 = Math.floor(v.reduce((t, x) => t + x, 0) / v.length) + 0.5;
+  return c.lines.reduce((b, L) => (b == null || Math.abs(L - L0) < Math.abs(b - L0) ? L : b), null);
+}
+/** One player-market's form over his last `win` games at a line: { L, hit, n, vals } (overs), or null when he has fewer than `win` games. */
+function formAt(c, L, win) { const v = c.rows.map(q => q.value).filter(x => x != null).slice(0, win); if (v.length < win) return null; return { L, hit: v.filter(x => x > L).length, n: v.length, vals: v }; }
+/** The rows the tab shows: { c, fm, r } sorted, filtered by window, min hit rate and line mode. */
+function formRows(cands, o) {
+  const out = [];
+  for (const c of cands) { if (c.kind !== 'player' || (o.mkOff && o.mkOff.has(c.def.key))) continue;
+    if (o.q && !String(c.name).toLowerCase().includes(o.q)) continue;
+    let fm = null;
+    if (o.line === 'best') { for (const L of c.lines) { const x = formAt(c, L, o.win); if (x && x.hit / x.n * 100 >= o.minHit - 1e-9) fm = x; } }
+    else { const L = mainLine(c); if (L != null) { const x = formAt(c, L, o.win); if (x && x.hit / x.n * 100 >= o.minHit - 1e-9) fm = x; } }
+    if (!fm) continue; const r = evalAt(c, fm.L, 'over'); if (!r) continue;
+    if (o.minN && (r.hr.season.n || 0) < o.minN) continue;
+    out.push({ c, fm, r });
+  }
+  const k = o.sort === 'prob' ? (a, b) => b.r.p - a.r.p : o.sort === 'season' ? (a, b) => (b.r.hr.season.pct ?? -1) - (a.r.hr.season.pct ?? -1) || b.fm.hit - a.fm.hit
+    : (a, b) => b.fm.hit / b.fm.n - a.fm.hit / a.fm.n || (b.r.hr.l10.pct ?? -1) - (a.r.hr.l10.pct ?? -1) || b.r.p - a.r.p;
+  return out.sort(k);
+}
+
+async function candsFor(sport, fxs, onP) { const key = `${sport}|${fxs.map(f => f.id ?? `${f.league}|${f.date}|${f.home}|${f.away}`).join(',')}`; if (CACHE.has(key)) return CACHE.get(key);
+  const A = sport === 'football' ? null : usAdapter(sport); const c = await buildCandidates(sport, A, fxs, onP); CACHE.set(key, c); return c; }
+
+async function viewHitRates(root, sport) {
+  const f = load(), D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : store;
+  if (D.status !== 'ready') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
+  if (sport === 'nba') await loadNbaInjuries();
+  root.innerHTML = `${recTabs(sport, 'form')}<div id="hrpg"><h1>Hit Rates</h1>
+    <p class="muted" style="margin-top:-4px">Players' recent form at the lines bookmakers offer: who has gone over in most of his last games. This is form, not value: the model's chance and fair odds sit beside each one, so a short hot streak can be checked against his longer record before you back it.</p>
+    <div class="card stack" id="hrf"></div><p class="small muted" id="hrsum" aria-live="polite"></p><div id="hrout"></div></div>`;
+  const pg = root.querySelector('#hrpg'), out = pg.querySelector('#hrout'), sum = pg.querySelector('#hrsum'); let cands = [], mks = [];
+  const seg = (k, opts) => `<div class="seg wrap" data-hrseg="${k}">${opts.map(([v, l]) => `<button type="button" data-v="${v}" class="${String(f[k]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const drawF = () => { pg.querySelector('#hrf').innerHTML = `
+      <div class="field"><span class="xs muted">Games</span>${seg('days', [[1, 'Today / tonight'], [3, 'Next 3 days'], [7, 'Next 7 days']])}</div>
+      <div class="field"><span class="xs muted">Recent games (window)</span>${seg('win', [[3, 'Last 3'], [5, 'Last 5'], [7, 'Last 7'], [10, 'Last 10']])}</div>
+      <div class="field"><span class="xs muted">Minimum hit rate in that window</span>${seg('minHit', [[60, '60%+'], [70, '70%+'], [80, '80%+'], [90, '90%+'], [100, '100%']])}</div>
+      <details class="recadv" data-hrmore${MORE ? ' open' : ''}><summary class="small"><b>More filters</b> <span class="xs muted">(line, sort, player, markets)</span></summary>
+      <div class="field"><span class="xs muted">Line</span>${seg('line', [['main', "Bookmaker's main line"], ['best', 'Highest line he is hitting']])}
+        <p class="xs muted" style="margin:4px 0 0">${f.line === 'main' ? "Main line = the half-point nearest his season average (where bookmakers set it, priced near evens)." : 'The highest line he has cleared in enough of the window (alt lines: shorter odds the lower the line).'}${sport === 'football' ? ' Football: only the lines UK bookmakers offer (1+, 2+, 3+ ...).' : ''}</p></div>
+      <div class="field"><span class="xs muted">Sort</span>${seg('sort', [['hit', 'Recent hit rate'], ['season', 'Season hit rate'], ['prob', 'Model probability']])}</div>
+      <div class="recrow"><label class="field"><span>Player</span><input class="in" data-hrq placeholder="Search a player" value="${esc(f.q)}"></label>
+        <label class="field"><span>Min games this season</span><select class="in" data-hrminn>${[0, 3, 5, 7, 10].map(n => `<option value="${n}"${Number(f.minN) === n ? ' selected' : ''}>${n ? n + '+' : 'Any'}</option>`).join('')}</select></label></div>
+      <details class="recadv" data-hrmk><summary class="small"><b>Markets</b> <span class="xs muted">(${mks.length ? `${mks.filter(m => !f.mkOff.includes(m[0])).length} of ${mks.length} on` : 'all'})</span></summary>
+        ${mks.map(([k, l]) => `<label class="hcheck"><input type="checkbox" data-hrmkc value="${esc(k)}" ${f.mkOff.includes(k) ? '' : 'checked'}> ${esc(l)}</label>`).join('') || '<p class="xs muted">Markets appear once the games are loaded.</p>'}</details>
+      </details>
+      <p class="xs muted" style="margin:0">Overs only. A play needs at least as many games as the window (no 1-of-1 "100%").</p>`; };
+  const card = ({ c, fm, r }) => { const g = c.f, when = fmtKick(g);
+    const chips = fm.vals.map(v => `<span class="hrv ${v > fm.L ? 'hit' : 'miss'}">${esc(String(v))}</span>`).join('');
+    const pct = Math.round(fm.hit / fm.n * 100), hs = r.hr.season;
+    return `<article class="card hrcard" data-hrc="${esc(c.id)}" data-hrl="${fm.L}"><div class="row" style="border:0;padding:0;gap:8px;align-items:baseline;justify-content:space-between"><div><b>${esc(c.name)}</b> <span class="xs muted">${esc(c.team || '')} v ${esc(c.opp || '')} · ${esc(when)}</span></div><b class="hrpct ${pct >= 80 ? 'g' : pct >= 60 ? 'y' : ''}">${fm.hit}/${fm.n}</b></div>
+      <div class="small"><b>${esc(ladderName(c, r))}</b> <span class="xs muted">(over ${fm.L})</span></div>
+      <div class="hrvals" aria-label="Last ${fm.n} games, newest first">${chips} <span class="xs muted">newest first</span></div>
+      <div class="xs muted">Season ${hs.n ? `${hs.hit}/${hs.n} (${hs.pct}%)` : 'no games'} · last 10 ${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'} · model <b>${(r.p * 100).toFixed(0)}%</b> · fair ${esc(fmtOdds(r.fair))}${r.conf ? ` · ${esc(r.conf.label || '')} evidence` : ''}</div>
+      <button type="button" class="chip" data-hrslip>+ Acca slip</button></article>`; };
+  const draw = () => { const rows = formRows(cands, { win: Number(f.win), minHit: Number(f.minHit), line: f.line, sort: f.sort, mkOff: new Set(f.mkOff), q: String(f.q || '').trim().toLowerCase(), minN: Number(f.minN) || 0 });
+    sum.textContent = cands.length ? `${rows.length} player line${rows.length === 1 ? '' : 's'} at ${f.minHit}%+ over the last ${f.win}` : '';
+    out.innerHTML = rows.length ? rows.slice(0, 150).map(card).join('') + (rows.length > 150 ? `<p class="xs muted">First 150 shown: raise the hit rate or narrow the markets.</p>` : '')
+      : cands.length ? '<div class="card"><p class="small" style="margin:0">No player is hitting that often right now. Lower the hit rate, shorten the window, or switch to the highest line he is hitting.</p></div>' : '<div class="card"><p class="small" style="margin:0">No player data for these games.</p></div>';
+    out._rows = rows; };
+  const loadC = async () => { out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div><p class="xs muted" data-hrprog>Loading players…</p>';
+    const fxs = fixtures(sport, Number(f.days));
+    cands = await candsFor(sport, fxs, x => { const p = out.querySelector('[data-hrprog]'); if (p) p.textContent = `Loading players… ${Math.round(x * 100)}%`; });
+    try { slipRegister(cands); } catch { /* slip not open */ }
+    const m = new Map(); for (const c of cands) if (c.kind === 'player' && !m.has(c.def.key)) m.set(c.def.key, c.def.label); mks = [...m];
+    if (!f._mkInit) { f.mkOff = [...new Set([...(f.mkOff || []), ...mks.filter(([k]) => RARE.has(k)).map(([k]) => k)])]; f._mkInit = true; save(); }
+    drawF(); draw(); };
+  pg.addEventListener('click', e => { const b = e.target.closest('[data-hrseg] button'); if (b) { const k = b.parentElement.dataset.hrseg; f[k] = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v); save(); drawF(); if (k === 'days') loadC(); else draw(); return; }
+    const s = e.target.closest('[data-hrslip]'); if (s) { const a = s.closest('[data-hrc]'), x = (out._rows || []).find(z => z.c.id === a.dataset.hrc && String(z.fm.L) === a.dataset.hrl); if (x) { const n = slipAddMany([{ c: x.c, side: 'over', r: x.r }]); s.textContent = n ? '✓ Added to the Acca slip' : '✓ Already in the Acca slip'; } } });
+  pg.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('[data-hrmore]')) MORE = e.target.open; }, true);
+  pg.addEventListener('change', e => { const t = e.target; if (t.matches('[data-hrmkc]')) { const off = new Set(f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); f.mkOff = [...off]; save(); draw(); const d = pg.querySelector('[data-hrmk] summary .muted'); if (d) d.textContent = `(${mks.filter(m => !f.mkOff.includes(m[0])).length} of ${mks.length} on)`; }
+    if (t.matches('[data-hrminn]')) { f.minN = Number(t.value); save(); draw(); } });
+  pg.addEventListener('input', e => { if (e.target.matches('[data-hrq]')) { f.q = e.target.value; save(); draw(); } });
+  drawF(); await loadC();
+}
+
+return { mainLine, formAt, formRows, viewHitRates };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
@@ -13047,6 +13186,7 @@ const { viewNbaFixtures, viewNbaSearch, viewNbaPlayer } = __m['v-nba'];
 const { viewNbaFinder } = __m['v-nba-finder'];
 const { viewRecommended } = __m['v-recommended'];
 const { viewAcca } = __m['v-acca'];
+const { viewHitRates } = __m['v-hitrates'];
 const { viewMyPlays } = __m['myplays'];
 const { viewModel } = __m['v-model'];
 const { viewNbaPlays } = __m['v-nba-plays'];
@@ -13095,11 +13235,11 @@ const TABS = {
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
-const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', acca: 'acca', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
+const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', acca: 'acca', form: 'form', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', rec: '#/rec', myplays: '#/myplays', model: '#/model', value: '#/value', about: '#/about' };
 const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', rec: '#/nba/rec', myplays: '#/nba/myplays', model: '#/nba/model', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { matchups: '#/nfl/matchups', start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
-const TITLES = { acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
@@ -13162,7 +13302,7 @@ function chrome(w) {
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
     <a class="searchbtn" href="${SEARCH[sp]}" aria-label="Search ${SPORTS[sp].label}">${ICON.search}</a>` : '';
   const tabs = sp ? TABS[sp] : [];
-  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', performance: 'value' }[w.page] || w.page);
+  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', performance: 'value' }[w.page] || w.page);
   $('#nav').hidden = !sp; $('#nav').style.setProperty('--tabs', String(tabs.length || 5)); // one column per tab (no empty slot)
   $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'rec' || k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
   document.body.dataset.sport = sp || 'hub';
@@ -13175,7 +13315,7 @@ const HIDDEN_MODEL = w => (w.sport === 'nfl' && ['picks', 'performance', 'plays'
 const OLD_HOME = w => (w.sport === 'football' && w.page === 'football' ? '#/start' : w.sport === 'nfl' && w.page === 'home' ? '#/nfl/start' : w.sport === 'nba' && w.page === 'home' ? '#/nba/start' : null);
 // Find Plays groups the ranked hit-rate list (Finder) and the match-by-match lists (Plays) as two tabs of one journey.
 const FP = { football: [['rec', "Hiwi's Section", '#/rec'], ['finder', 'Hit rates', '#/finder'], ['plays', 'By match', '#/plays']], nba: [['rec', "Hiwi's Section", '#/nba/rec'], ['finder', 'Hit rates', '#/nba/finder'], ['plays', 'By match', '#/nba/plays']], nfl: [['rec', "Hiwi's Section", '#/nfl/rec'], ['finder', 'Hit rates', '#/nfl/finder']] };
-const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
+const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca' || pg === 'form') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
   return `<nav class="fpnav" aria-label="Plays"><span class="xs muted">Plays:</span><div class="seg">${t.map(([k, l, h]) => `<a href="${h}" class="${k === pg ? 'on' : ''}" ${k === pg ? 'aria-current="page"' : ''}>${esc(l)}</a>`).join('')}</div></nav>`; };
 // Back to Plays (owner request 21 Oct, evening): tapping a player's name remembers the page and its scroll position; returning to that page
 // (the Back to Plays button or the browser's Back) restores it. Find Your Own also restores its exact card order (see v-hiwi.js).
@@ -13217,15 +13357,15 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), form: x => viewHitRates(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       await V(body); return finish();
     }
-    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
+    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), form: x => viewHitRates(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
     await V(body, w.r);
   } catch (e) { console.error(e); body.innerHTML = `<div class="banner bad"><b>Something went wrong on this page.</b><br>${esc(e.message)}</div>`; }
   finish();
