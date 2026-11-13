@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="c89e39b217bd">
+<meta name="proplab-build" content="f53f16b0c1c7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -9272,8 +9272,9 @@ async function viewRecommended(root, sport) {
     const r = x.rep, id = `${x.c.id}|${x.side}`, txt = s.odds.get(id) || '', od = txt.trim() ? parseIn(txt) : null, f = oddsFmt();
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
-    else if (od && od.dec) { const D = od.exact ?? od.dec, fb = sport === 'football', pb = fb ? r.p : blendP(r.p, D), evM = (r.p * D + r.push - 1) * 100, ev = (pb * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: pb }, D, r.conf); // Update 79: EV and stake on the model + bookmaker blend
+    else if (od && od.dec) { const D = od.exact ?? od.dec, fb = sport === 'football', pb = fb ? r.p : blendP(r.p, D), evM = (r.p * D + r.push - 1) * 100, ev = (pb * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: pb }, D, r.conf), PM = fb ? null : stakePlan({ ...r.e, win: r.p }, D, r.conf); // Update 79: EV and stake on the model + bookmaker blend; Update 86: PM = the full model stake, shown in brackets
       out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}" data-revmodel="${evM.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> ${fb ? '<span class="xs muted" data-revnote>(model, full stake)</span>' : `<span class="xs muted" data-revnote>(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>`} · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd>＋ My Plays</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+        ${PM && PM.adj > 0 ? `<span class="xs muted" data-rfull>(full model: <b>${fmtU(PM.adj)}u</b> uncapped, ${CUR()}${(PM.adj * RISK.unitGBP).toFixed(2)})</span>` : ''}
         <button type="button" class="infotag neutral" ${TIP('EV and stake', fb ? `Football (owner, 13 Nov 2026): EV and stake use the model's own ${(r.p * 100).toFixed(1)}%, with no blend with the bookmaker's price. EV = ${(r.p * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model's probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}.` : `EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     let sv = ''; // Update 77: the strict rules' verdict
@@ -9773,12 +9774,13 @@ const { store } = __m['data'];
 const { nba, loadNbaInjuries } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { fmtOdds } = __m['oddsfmt'];
-const { esc, fmtKick } = __m['util'];
+const { esc, fmtKick, fmtDay } = __m['util'];
 
 const KEY = 'proplab.hitrates.v1';
 const DEF = { days: 1, win: 5, minHit: 80, line: 'main', sort: 'hit', mkOff: [], q: '', minN: 0 };
 const RARE = new Set(['red_cards', 'steals', 'blocks', 'stocks', 'dd', 'td', 'anytime_td']);
 let F = null, CACHE = new Map(), MORE = false;
+const OPEN = new Map(); // Update 86: card key -> { w, L, sel } for the bars & details panel
 const load = () => { if (F) return F; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } F = { ...DEF, ...j }; return F; };
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(F)); } catch { /* this visit only */ } };
 /** The bookmaker's main line: the half-point nearest his season average (all his games when he has fewer than 3 this season), from his lines. */
@@ -9840,7 +9842,26 @@ async function viewHitRates(root, sport) {
       <div class="small"><b>${esc(ladderName(c, r))}</b> <span class="xs muted">(over ${fm.L})</span></div>
       <div class="hrvals" aria-label="Last ${fm.n} games, newest first">${chips} <span class="xs muted">newest first</span></div>
       <div class="xs muted">Season ${hs.n ? `${hs.hit}/${hs.n} (${hs.pct}%)` : 'no games'} · last 10 ${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'} · model <b>${(r.p * 100).toFixed(0)}%</b> · fair ${esc(fmtOdds(r.fair))}${r.conf ? ` · ${esc(r.conf.label || '')} evidence` : ''}</div>
-      <button type="button" class="chip" data-hrslip>+ Acca slip</button></article>`; };
+      <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-hrdet aria-expanded="${OPEN.has(keyOf(c, fm)) ? 'true' : 'false'}">${OPEN.has(keyOf(c, fm)) ? 'Hide bars ▴' : 'Bars & details ▾'}</button><button type="button" class="chip" data-hrslip>+ Acca slip</button></div>
+      ${OPEN.has(keyOf(c, fm)) ? detHtml(c, fm) : ''}</article>`; };
+  // Update 86 (owner, 13 Nov): tap a play for the same bars and details as Singles: Season / Last 5 / 10 / 20 / All, the bar chart at
+  // the line (green over, red under, oldest left), tap a bar for that game, and move the line with - / + (model % and fair odds follow).
+  const keyOf = (c, fm) => `${c.id}|${fm.L}`;
+  const WINS = [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']];
+  const winRows = (c, w) => { const v = c.rows.filter(q => q.value != null); return w === 'season' ? v.filter(q => q.season === c.cur) : w === 'l5' ? v.slice(0, 5) : w === 'l20' ? v.slice(0, 20) : w === 'all' ? v : v.slice(0, 10); };
+  function detHtml(c, fm) {
+    const st = OPEN.get(keyOf(c, fm)), L = st.L, r = evalAt(c, L, 'over'), rows = winRows(c, st.w).slice().reverse(), ok = v => v > L;
+    const tiles = WINS.map(([k, l]) => { const rs = winRows(c, k), h = rs.filter(q => ok(q.value)).length; return rs.length ? `<button type="button" class="rh${st.w === k ? ' on' : ''}" data-hrw="${k}" aria-pressed="${st.w === k}"><b>${h}/${rs.length}</b><small>${l}</small></button>` : ''; }).join('');
+    const mx = Math.max(L * 1.25, ...rows.map(q => q.value), 1), wide = rows.length > 20, hitN = rows.filter(q => ok(q.value)).length;
+    const bars = rows.length ? `<p class="xs muted rbcap"><b>${esc(WINS.find(w => w[0] === st.w)[1])}</b>: over ${L} in ${hitN} of ${rows.length} (${Math.round(hitN / rows.length * 100)}%) · oldest left, newest right${wide ? ' (swipe for older)' : ''} · tap a bar for that game</p>
+      <div class="rbwrap${wide ? ' wide' : ''}"><div class="rbars" style="${wide ? `width:${rows.length * 15}px` : ''}"><i class="rbline" style="bottom:${(L / mx) * 100}%"></i>${rows.map((q, i) => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}${st.sel === i ? ' sel' : ''}" style="height:${Math.max(4, (q.value / mx) * 100)}%" data-hrbar="${i}" aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}`)}">${rows.length <= 20 ? `<em>${esc(String(q.value))}</em>` : ''}</button>`).join('')}</div></div>` : '<p class="xs muted">No games in this range.</p>';
+    const q = st.sel != null ? rows[st.sel] : null, mins = q ? (q.min ?? (q.raw && q.raw.minutes)) : null;
+    const box = q ? `<div class="rbox"><div class="rbxh"><b>${esc(fmtDay(q.date))} ${esc(String(q.date || '').slice(0, 4))}</b>${q.opp ? ` · v ${esc(q.opp)}` : ''}</div><div class="small">${esc(c.def.label)}: <b class="${ok(q.value) ? 'hit' : 'miss'}">${q.value}</b> ${ok(q.value) ? 'hit' : 'missed'} over ${L}${mins != null ? ` · ${Math.round(mins)} minutes` : ''}${q.raw && q.raw.comp ? ` · ${esc(q.raw.comp)}` : ''}</div></div>` : '';
+    const i = c.lines.indexOf(L);
+    return `<div class="hrdet" data-hrdetbox><div class="rhits">${tiles}</div>${bars}${box}
+      <div class="rlin"><button type="button" class="hstep" data-hrstep="-1" ${i <= 0 ? 'disabled' : ''} aria-label="Lower the line">−</button><b>Over ${L}</b><button type="button" class="hstep" data-hrstep="1" ${i < 0 || i >= c.lines.length - 1 ? 'disabled' : ''} aria-label="Raise the line">+</button></div>
+      ${r ? `<p class="small" style="margin:4px 0">${esc(ladderName(c, r))}: model <b>${(r.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(r.fair))}</b>${r.conf ? ` · ${esc(r.conf.label)} evidence` : ''}</p>` : '<p class="xs muted">No model estimate at this line.</p>'}</div>`;
+  }
   const draw = () => { const rows = formRows(cands, { win: Number(f.win), minHit: Number(f.minHit), line: f.line, sort: f.sort, mkOff: new Set(f.mkOff), q: String(f.q || '').trim().toLowerCase(), minN: Number(f.minN) || 0 });
     sum.textContent = cands.length ? `${rows.length} player line${rows.length === 1 ? '' : 's'} at ${f.minHit}%+ over the last ${f.win}` : '';
     out.innerHTML = rows.length ? rows.slice(0, 150).map(card).join('') + (rows.length > 150 ? `<p class="xs muted">First 150 shown: raise the hit rate or narrow the markets.</p>` : '')
@@ -9854,7 +9875,15 @@ async function viewHitRates(root, sport) {
     if (!f._mkInit) { f.mkOff = [...new Set([...(f.mkOff || []), ...mks.filter(([k]) => RARE.has(k)).map(([k]) => k)])]; f._mkInit = true; save(); }
     drawF(); draw(); };
   pg.addEventListener('click', e => { const b = e.target.closest('[data-hrseg] button'); if (b) { const k = b.parentElement.dataset.hrseg; f[k] = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v); save(); drawF(); if (k === 'days') loadC(); else draw(); return; }
-    const s = e.target.closest('[data-hrslip]'); if (s) { const a = s.closest('[data-hrc]'), x = (out._rows || []).find(z => z.c.id === a.dataset.hrc && String(z.fm.L) === a.dataset.hrl); if (x) { const n = slipAddMany([{ c: x.c, side: 'over', r: x.r }]); s.textContent = n ? '✓ Added to the Acca slip' : '✓ Already in the Acca slip'; } } });
+    const art = e.target.closest('[data-hrc]'), X = art ? (out._rows || []).find(z => z.c.id === art.dataset.hrc && String(z.fm.L) === art.dataset.hrl) : null;
+    const redraw = () => { const t = document.createElement('div'); t.innerHTML = card(X); const n = t.firstElementChild; art.replaceWith(n); const w = n.querySelector('.rbwrap.wide'); if (w) w.scrollLeft = w.scrollWidth; };
+    if (X && e.target.closest('[data-hrdet]')) { const k = keyOf(X.c, X.fm); OPEN.has(k) ? OPEN.delete(k) : OPEN.set(k, { w: 'l10', L: X.fm.L, sel: null }); return redraw(); }
+    if (X && OPEN.has(keyOf(X.c, X.fm))) { const st = OPEN.get(keyOf(X.c, X.fm));
+      const w = e.target.closest('[data-hrw]'); if (w) { st.w = w.dataset.hrw; st.sel = null; return redraw(); }
+      const bb = e.target.closest('[data-hrbar]'); if (bb) { const n = Number(bb.dataset.hrbar); st.sel = st.sel === n ? null : n; return redraw(); }
+      const sp = e.target.closest('[data-hrstep]'); if (sp) { const i = X.c.lines.indexOf(st.L) + Number(sp.dataset.hrstep); if (i >= 0 && i < X.c.lines.length) { st.L = X.c.lines[i]; st.sel = null; } return redraw(); } }
+    if (X && !e.target.closest('button, a, input, select, [data-hrdetbox]')) { const k = keyOf(X.c, X.fm); OPEN.has(k) ? OPEN.delete(k) : OPEN.set(k, { w: 'l10', L: X.fm.L, sel: null }); return redraw(); }
+    const s = e.target.closest('[data-hrslip]'); if (s) { const a = s.closest('[data-hrc]'), x = (out._rows || []).find(z => z.c.id === a.dataset.hrc && String(z.fm.L) === a.dataset.hrl); if (x) { const st = OPEN.get(keyOf(x.c, x.fm)), rr = st && st.L !== x.fm.L ? evalAt(x.c, st.L, 'over') : x.r; const n = rr ? slipAddMany([{ c: x.c, side: 'over', r: rr }]) : 0; s.textContent = n ? '✓ Added to the Acca slip' : '✓ Already in the Acca slip'; } } });
   pg.addEventListener('toggle', e => { if (e.target.matches && e.target.matches('[data-hrmore]')) MORE = e.target.open; }, true);
   pg.addEventListener('change', e => { const t = e.target; if (t.matches('[data-hrmkc]')) { const off = new Set(f.mkOff); t.checked ? off.delete(t.value) : off.add(t.value); f.mkOff = [...off]; save(); draw(); const d = pg.querySelector('[data-hrmk] summary .muted'); if (d) d.textContent = `(${mks.filter(m => !f.mkOff.includes(m[0])).length} of ${mks.length} on)`; }
     if (t.matches('[data-hrminn]')) { f.minN = Number(t.value); save(); draw(); } });
