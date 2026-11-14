@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="7971b9fa78ae">
+<meta name="proplab-build" content="74d56c661da3">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -880,6 +880,9 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 /* Update 89: five Hiwi's Section tabs; Strict highlighted */
 .rectabs a[href$='/strict'],.rectabs a[href='#/strict']{font-weight:800}.rectabs a[href$='/strict']:not(.on),.rectabs a[href='#/strict']:not(.on){box-shadow:inset 0 0 0 1.5px #3fbf7f;color:#7ee2ad}
 .rectabs a{padding-left:8px;padding-right:8px;font-size:13.5px}
+
+/* Update 90: shots in the Hit Rates bar box */
+.hrshots{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -4559,13 +4562,20 @@ const INTL_RECAL = { A: -0.081, B: 0.799 };
 const intlG = p => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(INTL_RECAL.A + INTL_RECAL.B * Math.log(x / (1 - x))))); };
 function intlRecal(e, side) { const f = p => (Number.isFinite(p) ? (side === 'under' ? 1 - intlG(1 - p) : intlG(p)) : p); const win = f(e.win);
   return { ...e, win, lose: 1 - win, q: f(e.q), lo: f(e.lo), hi: f(e.hi), intlRecal: true }; }
-const NBA_EARLY = { A: -0.1972, B: 0.6803, full: 15, none: 30 };
+const NBA_EARLY = { A: -0.1972, B: 0.6803, full: 15, none: 30,
+  /* Update 90: refit by minutes (avg of last 10 games); backtested 26 Oct-13 Nov, checked on a later date split */
+  bands: [{ max: 20, A: -0.2542, B: 0.4802 }, { max: 28, A: -0.2349, B: 0.7904 }, { max: 999, A: -0.1663, B: 1 }] };
+function recentMinutes(card) { const mn = q => (q && Number.isFinite(q.min) ? q.min : q && q.raw && Number.isFinite(q.raw.min) ? q.raw.min : null); /* card rows run oldest first: newest 10 by date */
+  const m = playedRows(card).filter(q => q.date && mn(q) != null).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, 10).map(mn); return m.length ? m.reduce((a, b) => a + b, 0) / m.length : null; }
+const earlyBand = card => { const m = recentMinutes(card); return m == null ? NBA_EARLY : NBA_EARLY.bands.find(b => m < b.max); };
 /** Games he has played this season: the rows since his last break of 60+ days (the off-season). */
-function seasonGames(card) { const ds = (card.rows || []).map(r => r && r.date).filter(Boolean).sort().reverse(); let n = 0;
+/* Update 90: US player cards keep their games in detail.rows (card.rows is only set once a card is drawn); played games only */
+const playedRows = card => ((card.rows && card.rows.length ? card.rows : card.detail && card.detail.rows) || []).filter(q => q && !q.dnp && q.type !== 'P' && q.type !== 'PS');
+function seasonGames(card) { const ds = playedRows(card).map(r => r && r.date).filter(Boolean).sort().reverse(); let n = 0;
   for (let i = 0; i < ds.length; i++) { n++; if (i + 1 < ds.length && (Date.parse(ds[i]) - Date.parse(ds[i + 1])) / 864e5 > 60) break; } return n; }
-const earlyWeight = card => { const n = seasonGames(card); return n <= NBA_EARLY.full ? 1 : n >= NBA_EARLY.none ? 0 : (NBA_EARLY.none - n) / (NBA_EARLY.none - NBA_EARLY.full); };
-const earlyG = p => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(NBA_EARLY.A + NBA_EARLY.B * Math.log(x / (1 - x))))); };
-function nbaEarly(e, side, w) { const f = p => (Number.isFinite(p) ? (1 - w) * p + w * (side === 'under' ? 1 - earlyG(1 - p) : earlyG(p)) : p); const win = f(e.win);
+const earlyWeight = card => { if (typeof globalThis !== 'undefined' && globalThis.__PL_NO_EARLY) return 0; /* backtests of the raw model */ const n = seasonGames(card); return n <= NBA_EARLY.full ? 1 : n >= NBA_EARLY.none ? 0 : (NBA_EARLY.none - n) / (NBA_EARLY.none - NBA_EARLY.full); };
+const earlyG = (p, k) => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(k.A + k.B * Math.log(x / (1 - x))))); };
+function nbaEarly(e, side, w, k) { const f = p => (Number.isFinite(p) ? (1 - w) * p + w * (side === 'under' ? 1 - earlyG(1 - p, k) : earlyG(p, k)) : p); const win = f(e.win);
   return { ...e, win, lose: 1 - win, q: f(e.q), lo: f(e.lo), hi: f(e.hi), early: w }; }
 function cardEstimate(card, st, sport) {
   const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
@@ -4603,7 +4613,7 @@ function cardEstimate(card, st, sport) {
   // Jan-Mar (101,320) it was right (62% came in 65%). Early in a season roles and minutes change and last season's games mislead. So
   // while a player has fewer than 30 games this season, his estimate is pulled in: p' = 1 / (1 + exp(-(A + B x logit p))), fitted 31 Oct -
   // 6 Nov and tested 7-13 Nov (log loss 0.6694 -> 0.6634); full weight up to 15 games this season, fading to none at 30.
-  if (sport === 'nba' && def.scope !== 'match' && def.scope !== 'team' && def.scope !== 'opp' && !def.binary && !(e.push > 1e-9)) { const w = earlyWeight(card); if (w > 0) e = nbaEarly(e, side, w); }
+  if (sport === 'nba' && def.scope !== 'match' && def.scope !== 'team' && def.scope !== 'opp' && !def.binary && !(e.push > 1e-9)) { const w = earlyWeight(card); if (w > 0) e = nbaEarly(e, side, w, earlyBand(card)); }
   if (sport === 'football' && def.scope === 'player' && !(e.push > 1e-9) && (card.rows || []).some(r => r && r.raw && r.raw.league === 'intl')) e = intlRecal(e, side);
   if (adj) e.adj = adj;
   if (mu) e.mu = mu;
@@ -4669,7 +4679,7 @@ function evBlock(card, st, sport, oddsText) {
     <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
 }
 
-return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, INTL_RECAL, NBA_EARLY, seasonGames, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
+return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, INTL_RECAL, NBA_EARLY, recentMinutes, seasonGames, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
 })();
 __m['hypo'] = (() => {
 // Hypothetical odds & units box on every eligible play card (owner request 27 Oct 2026, late evening).
@@ -6853,7 +6863,7 @@ const { muInfo, muTierOf, POS_NAME } = __m['matchupui'];
 const { nba } = __m['nba-data'];
 const { confidence } = __m['confidence'];
 const { nflDefTable, nflTier } = __m['nflmatchups'];
-const { knownPlayers, loadPlayerRows } = __m['data'];
+const { knownPlayers, loadPlayerRows, store } = __m['data'];
 const { PLAYER_MARKETS } = __m['markets'];
 const { normTeam } = __m['teams'];
 const { fixtureId } = __m['util'];
@@ -6962,6 +6972,7 @@ async function usCandidates(sport, A, games, onProgress) {
       }
     }
     done++; if (onProgress) await onProgress(done / teams.length);
+    await new Promise(r => setTimeout(r, 0)); // let a tap through between teams (the phone stays responsive while plays load)
   }
   if (sport === 'nfl' && out.length) { // matchup colours from what each defence allowed to the position (nflmatchups.js, experimental)
     let T = null; try { T = await nflDefTable(A, cur, [...new Set(out.map(c => c.def))]); } catch { T = null; }
@@ -7000,10 +7011,22 @@ async function footballCandidates(fixtures, onProgress) {
   return out;
 }
 /** Build candidates for the chosen fixtures (US: games; football: fixtures). */
+// Update 90 (owner, 14 Nov: tabs slow / stuck on the phone): each game's candidates are built once and shared by every tab (Strict,
+// Singles, Accas, Hit Rates, Builders) for 10 minutes or until the data changes, so flicking between tabs no longer rebuilds them.
+const CC = new Map(), CC_TTL = 10 * 60e3;
+const gidOf = (sport, g) => (sport === 'football' ? fixtureId(g) : String(g.id));
+const stampOf = (sport, A) => (sport === 'football' ? (store.manifest && store.manifest.generated) || '' : (A && A.d && A.d.meta && A.d.meta.updated) || '');
 async function buildCandidates(sport, A, fixtures, onProgress) {
   await loadCalib();
-  return sport === 'football' ? footballCandidates(fixtures, onProgress) : usCandidates(sport, A, fixtures, onProgress);
+  const now = Date.now(), st = stampOf(sport, A), key = g => `${sport}|${gidOf(sport, g)}|${st}`, out = [], miss = [];
+  for (const g of fixtures) { const e = CC.get(key(g)); if (e && now - e.at < CC_TTL) out.push(...e.list); else miss.push(g); }
+  if (miss.length) { const got = sport === 'football' ? await footballCandidates(miss, onProgress) : await usCandidates(sport, A, miss, onProgress);
+    const by = new Map(miss.map(g => [gidOf(sport, g), []])); for (const c of got) { const l = by.get(String(c.fid)); if (l) l.push(c); else out.push(c); }
+    for (const g of miss) { const l = by.get(gidOf(sport, g)); CC.set(key(g), { at: now, list: l }); out.push(...l); } }
+  else if (onProgress) await onProgress(1);
+  return out;
 }
+const clearCandidateCache = () => CC.clear();
 
 /**
  * Pick each candidate's representative play under the filters: among the lines that pass, Over takes the highest line, Under the lowest
@@ -7184,7 +7207,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, histCandidate, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, strictSkip, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, VALUE, BOOK_MIN_LINE_NBA, VALUE_MIN_LINE, valueWhy, valuePick, valueVerdict, valueMinOdds, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, histCandidate, buildCandidates, clearCandidateCache, pickPlays, STRICT, strictLine, minutesSteady, strictSkip, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, VALUE, BOOK_MIN_LINE_NBA, VALUE_MIN_LINE, valueWhy, valuePick, valueVerdict, valueMinOdds, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -10112,9 +10135,15 @@ async function viewHitRates(root, sport) {
     const bars = rows.length ? `<p class="xs muted rbcap"><b>${esc(st.w === 'opp' ? `v ${c.opp} (last ${rows.length} meetings)` : WINS.find(w => w[0] === st.w)[1])}</b>: over ${L} in ${hitN} of ${rows.length} (${Math.round(hitN / rows.length * 100)}%) · oldest left, newest right${wide ? ' (swipe for older)' : ''} · tap a bar for that game</p>
       <div class="rbwrap${wide ? ' wide' : ''}"><div class="rbars" style="${wide ? `width:${rows.length * 15}px` : ''}"><i class="rbline" style="bottom:${(L / mx) * 100}%"></i>${rows.map((q, i) => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}${st.sel === i ? ' sel' : ''}" style="height:${Math.max(4, (q.value / mx) * 100)}%" data-hrbar="${i}" aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}`)}">${rows.length <= 20 ? `<em>${esc(String(q.value))}</em>` : ''}</button>`).join('')}</div></div>` : '<p class="xs muted">No games in this range.</p>';
     const q = st.sel != null ? rows[st.sel] : null, mins = q ? (q.min ?? (q.raw && q.raw.minutes)) : null;
-    const box = q ? `<div class="rbox"><div class="rbxh"><b>${esc(fmtDay(q.date))} ${esc(String(q.date || '').slice(0, 4))}</b>${q.opp ? ` · v ${esc(q.opp)}` : ''}</div><div class="small">${esc(c.def.label)}: <b class="${ok(q.value) ? 'hit' : 'miss'}">${q.value}</b> ${ok(q.value) ? 'hit' : 'missed'} over ${L}${mins != null ? ` · ${Math.round(mins)} minutes` : ''}${q.raw && q.raw.comp ? ` · ${esc(q.raw.comp)}` : ''}</div></div>` : '';
+    // Update 90 (owner, 14 Nov): the attempts behind it (3/10 or 3/3?), so you can see the volume he needs to get there
+    const x = q && q.raw, n = v => Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null, sh = (m, a, l) => (n(m) != null && n(a) != null ? `<span>${l} <b>${n(m)}/${n(a)}</b>${n(a) > 0 ? ` (${Math.round(n(m) / n(a) * 100)}%)` : ''}</span>` : '');
+    const shots = x && sport === 'nba' ? [sh(x.fgm, x.fga, 'FG'), sh(x.tpm, x.tpa, '3PT'), sh(x.ftm, x.fta, 'FT')].filter(Boolean).join('') : '';
+    const line2 = x && sport === 'nba' ? [n(x.pts) != null ? `${n(x.pts)} pts` : '', n(x.reb) != null ? `${n(x.reb)} reb` : '', n(x.ast) != null ? `${n(x.ast)} ast` : ''].filter(Boolean).join(' · ') : '';
+    const box = q ? `<div class="rbox"><div class="rbxh"><b>${esc(fmtDay(q.date))} ${esc(String(q.date || '').slice(0, 4))}</b>${q.opp ? ` · v ${esc(q.opp)}` : ''}</div><div class="small">${esc(c.def.label)}: <b class="${ok(q.value) ? 'hit' : 'miss'}">${q.value}</b> ${ok(q.value) ? 'hit' : 'missed'} over ${L}${mins != null ? ` · ${Math.round(mins)} minutes` : ''}${q.raw && q.raw.comp ? ` · ${esc(q.raw.comp)}` : ''}</div>${shots ? `<div class="small hrshots" data-hrshots>${shots}</div>` : ''}${line2 ? `<div class="xs muted">${line2}</div>` : ''}</div>` : '';
+    const vol = sport === 'nba' && ['tpm', 'pts', 'pa', 'pr', 'pra'].includes(c.def.key) ? (() => { const a = rows.map(q2 => q2.raw).filter(Boolean), avg = k => { const v = a.map(r => n(r[k])).filter(z => z != null); return v.length ? v.reduce((t, z) => t + z, 0) / v.length : null; };
+      const t = c.def.key === 'tpm' ? [avg('tpm'), avg('tpa'), '3PT'] : [avg('fgm'), avg('fga'), 'FG']; return t[1] != null ? `<p class="xs muted" data-hrvol style="margin:2px 0 0">In these games: ${t[2]} ${t[0].toFixed(1)} made from ${t[1].toFixed(1)} attempts a game (${t[1] > 0 ? Math.round(t[0] / t[1] * 100) : 0}%)${c.def.key === 'tpm' ? `${t[1] > 0 && t[0] / t[1] > 0.42 ? ': shooting well above a normal 36%, which tends not to last' : ''}` : ''}</p>` : ''; })() : '';
     const i = c.lines.indexOf(L);
-    return `<div class="hrdet" data-hrdetbox><div class="rhits">${tiles}</div>${bars}${box}
+    return `<div class="hrdet" data-hrdetbox><div class="rhits">${tiles}</div>${bars}${vol}${box}
       <div class="rlin"><button type="button" class="hstep" data-hrstep="-1" ${i <= 0 ? 'disabled' : ''} aria-label="Lower the line">−</button><b>Over ${L}</b><button type="button" class="hstep" data-hrstep="1" ${i < 0 || i >= c.lines.length - 1 ? 'disabled' : ''} aria-label="Raise the line">+</button></div>
       ${r && sport === 'nba' && c.card && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${r && sport === 'nfl' && c.nflMu ? nflMu(c, r) : ''}
       ${r ? `<p class="small" style="margin:4px 0">${esc(ladderName(c, r))}: model <b>${(r.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(r.fair))}</b>${r.conf ? ` · ${esc(r.conf.label)} evidence` : ''}</p>` : '<p class="xs muted">No model estimate at this line.</p>'}</div>`;
