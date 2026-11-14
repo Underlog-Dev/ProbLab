@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="a099d9068069">
+<meta name="proplab-build" content="726db869299a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7075,6 +7075,7 @@ function strictPick(cands, o, blowout = () => null) {
       const hs = r.hr.season, h10 = r.hr.l10;
       if (!(hs.n >= STRICT.minHitN && hs.pct >= STRICT.minHit * 100 - 1e-9) || !(h10.n >= STRICT.minHitN && h10.pct >= STRICT.minHit * 100 - 1e-9)) continue;
       const vo = vsOppOf(c, L, side); if (vo && vo.n >= STRICT.oppN && vo.hit / vo.n < STRICT.oppPoor) continue;
+      if (strictMaxOdds(r.p) < strictMinOdds(r.p)) continue; /* Update 94 (owner): a play no real price can back (e.g. model 80% = fair 1.25: 1.70+ would be 10+ points below it) is never shown */
       const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, strict: true });
     }
   }
