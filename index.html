@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="659ae2de4f5a">
+<meta name="proplab-build" content="a099d9068069">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -10212,7 +10212,7 @@ __m['v-builder'] = (() => {
 //   season (they came in together 0.99-1.05x as often as multiplying predicts), so NBA builders get a stake. NFL and football same-game
 //   pairs are untested (a striker's shots and his team's corners DO move together): shown and priced, but no stake.
 //   Your price: type the bookmaker's bet-builder odds -> EV = chance x odds - 1, stake = 1/10 Kelly on the combined price (risk.js accaPlan).
-const { buildCandidates, evalAt, ladderName, strictSkip, BOOK_MIN_LINE_NBA } = __m['recplays'];
+const { buildCandidates, evalAt, ladderName, strictSkip, BOOK_MIN_LINE_NBA, STRICT, MARKET_GAP } = __m['recplays'];
 const { fixtures } = __m['v-acca'];
 const { usAdapter } = __m['v-hiwi'];
 const { recTabs } = __m['rectabs'];
@@ -10227,10 +10227,21 @@ const { selFromCandidate, logBuilderNow } = __m['betprefill'];
 const { esc, fmtKick } = __m['util'];
 
 const BB = { minP: 0.65, maxLegs: 3, show: 6 };
+/* Update 93 (owner, 14 Nov): Strict builders. A double needs less than a single (two legs both have to land), but every leg must be strict-quality
+   and the price has to be at least 1.80 with 5%+ EV, and not more than MARKET_GAP below the model (the same "too good to be true" rule as singles). */
+const BB_STRICT = { minCombo: 0.40, minOdds: 1.80, minEV: 0.05, skipKeys: ['stl', 'blk', 'sb'] };
+const strictLeg = l => l.r.conf && l.r.conf.rank >= 3 && !BB_STRICT.skipKeys.includes(l.c.def.key) && l.r.hr && l.r.hr.season && l.r.hr.season.n >= STRICT.minHitN && l.r.hr.season.pct >= STRICT.minHit * 100 - 1e-9 && l.r.hr.l10 && l.r.hr.l10.n >= STRICT.minHitN && l.r.hr.l10.pct >= STRICT.minHit * 100 - 1e-9;
+/** The odds window a strict builder can be backed at: [lo, hi] (lo > hi = no price works). */
+const bbWindow = p => ({ lo: Math.max(BB_STRICT.minOdds, Math.ceil(100 * (1 + BB_STRICT.minEV) / p) / 100), hi: p > MARKET_GAP ? 1 / (p - MARKET_GAP) : Infinity });
+function bbVerdict(p, dec) { const ev = p * dec - 1, imp = 1 / dec;
+  if (dec < BB_STRICT.minOdds - 1e-9) return { ok: false, why: `your odds are below ${BB_STRICT.minOdds.toFixed(2)}` };
+  if (ev < BB_STRICT.minEV - 1e-9) return { ok: false, why: `EV ${(ev * 100).toFixed(1)}%: under the ${Math.round(BB_STRICT.minEV * 100)}% minimum` };
+  if (p - imp > MARKET_GAP + 1e-9) return { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): more likely a model error` };
+  return { ok: true, why: `EV +${(ev * 100).toFixed(1)}% at ${dec.toFixed(2)}` }; }
 const KEY = 'proplab.builders.v1';
 let F = null; const CACHE = new Map();
-const load = () => { if (F) return F; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } F = { gid: '', days: 1, ...j }; return F; };
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ gid: F.gid, days: F.days })); } catch { /* this visit only */ } };
+const load = () => { if (F) return F; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } F = { gid: '', days: 1, strict: false, ...j }; return F; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ gid: F.gid, days: F.days, strict: !!F.strict })); } catch { /* this visit only */ } };
 const gidOf = (sport, g) => String(sport === 'football' ? `${g.league}|${g.date}|${g.home}|${g.away}` : g.id);
 
 /** The legs for one game: each player's most demanding bookmaker line at 65%+ (overs). */
@@ -10261,42 +10272,49 @@ async function viewBuilders(root, sport) {
   const pg = root.querySelector('#bbpg'), out = pg.querySelector('#bbout'); let games = [], legs = [], pick = new Set(); const ODDS = new Map();
   const drawF = () => { games = fixtures(sport, Number(f.days) || 1); if (!games.some(g => gidOf(sport, g) === f.gid)) f.gid = games.length ? gidOf(sport, games[0]) : '';
     pg.querySelector('#bbf').innerHTML = `<div class="field"><span class="xs muted">Games</span><div class="seg wrap" data-bbdays>${[[1, 'Today / tonight'], [3, 'Next 3 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Number(f.days) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-      <label class="field"><span>Match</span><select class="in" data-bbgame>${games.length ? games.map(g => `<option value="${esc(gidOf(sport, g))}"${gidOf(sport, g) === f.gid ? ' selected' : ''}>${esc(sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`)} · ${esc(fmtKick(g))}</option>`).join('') : '<option value="">No games</option>'}</select></label>`; };
+      <label class="field"><span>Match</span><select class="in" data-bbgame>${games.length ? games.map(g => `<option value="${esc(gidOf(sport, g))}"${gidOf(sport, g) === f.gid ? ' selected' : ''}>${esc(sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`)} · ${esc(fmtKick(g))}</option>`).join('') : '<option value="">No games</option>'}</select></label>
+      <div class="strictbox${f.strict ? ' on' : ''}" data-bbstrictbox><label class="hcheck strictlbl"><input type="checkbox" data-bbstrict ${f.strict ? 'checked' : ''}> <b>Strict builders</b> <span class="xs muted">(only the best doubles and trebles)</span></label>
+        <details class="xs"><summary>The rules</summary><ol class="strictrules"><li>Every leg: 65%+, Strong evidence, and he's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season and in his last 10. No steals or blocks legs (not yet checked against real prices).</li>
+        <li>The double or treble comes in ${Math.round(BB_STRICT.minCombo * 100)}%+ of the time (lower than a single needs, as both legs have to land).</li>
+        <li>Type the bookmaker's builder price: <b>Back it</b> at ${BB_STRICT.minOdds.toFixed(2)} or longer with ${Math.round(BB_STRICT.minEV * 100)}%+ EV; a Pass if the model is more than ${Math.round(MARKET_GAP * 100)} points above the price. Each one shows the range of odds worth backing.</li></ol></details></div>`; };
   const legTxt = l => `${esc(l.c.name)}: ${esc(ladderName(l.c, l.r))} <span class="muted">(${(l.r.p * 100).toFixed(0)}%, ${esc(l.r.conf.label)})</span>`;
   const priceBox = (id, cb) => { const txt = ODDS.get(id) || '', od = txt ? parseIn(txt) : null; let o = '<span class="xs muted">Type the bookmaker\'s bet-builder price for the EV and a stake.</span>';
+    if (od && od.dec && f.strict && !cb.own) { const Dd = od.exact ?? od.dec, v = bbVerdict(cb.p, Dd); if (!v.ok) return `<div class="hrodds" data-bbbox="${esc(id)}"><label class="field" style="margin:0"><span>Bookmaker's bet-builder odds</span><input class="in" data-bbodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(txt)}"></label><div class="small" data-bbout aria-live="polite"><div class="sverdict pass" data-sverdict="pass">✕ Pass: ${esc(v.why)}</div></div></div>`; }
     if (od && od.dec) { const Dd = od.exact ?? od.dec, pj = tested ? blendP(cb.p, Dd) : cb.p, ev = (pj * Dd - 1) * 100, evM = (cb.p * Dd - 1) * 100, P = tested ? accaPlan(pj, Dd, { validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf.level === 'Low') }) : null, u = P && P.ok && ev > 0 ? P.units : 0;
-      o = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-bbev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>${tested ? ` <span class="xs muted">(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>` : ''} · ${ev <= 0 ? '<span class="xs muted">no value: the bookmaker is charging more than PropLab\'s price</span>' : u > 0 ? `stake <b data-bbstake>${fmtU(u)}u</b> (${CUR()}${(u * RISK.unitGBP).toFixed(2)})` : `<span class="xs muted">${tested ? 'no stake (edge too small after rounding)' : 'no stake: untested same-game legs'}</span>`}
+      o = `${f.strict && !cb.own ? '<div class="sverdict back" data-sverdict="back">✓ Back it</div>' : ''}<b class="${ev > 0 ? 'hit' : 'miss'}" data-bbev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>${tested ? ` <span class="xs muted">(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>` : ''} · ${ev <= 0 ? '<span class="xs muted">no value: the bookmaker is charging more than PropLab\'s price</span>' : u > 0 ? `stake <b data-bbstake>${fmtU(u)}u</b> (${CUR()}${(u * RISK.unitGBP).toFixed(2)})` : `<span class="xs muted">${tested ? 'no stake (edge too small after rounding)' : 'no stake: untested same-game legs'}</span>`}
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${u > 0 ? '<button type="button" class="chip" data-bbadd="real">＋ Real bet</button>' : ''}${ev > 0 ? '<button type="button" class="chip" data-bbadd="model">＋ Model only</button>' : ''}</div>`; }
     return `<div class="hrodds" data-bbbox="${esc(id)}"><label class="field" style="margin:0"><span>Bookmaker's bet-builder odds</span><input class="in" data-bbodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(txt)}"></label><div class="small" data-bbout aria-live="polite">${o}</div></div>`; };
-  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div><ol class="xs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li>${legTxt(l)}</li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
+  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div>${f.strict && !cb.own ? `<p class="xs" style="margin:2px 0" data-bbwin>Back it if the builder price is <b>${esc(fmtOdds(bbWindow(cb.p).lo))}</b> to <b>${esc(fmtOdds(bbWindow(cb.p).hi))}</b></p>` : ''}<ol class="xs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li>${legTxt(l)}</li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
   let shown = new Map();
   const draw = () => { shown = new Map();
     if (!legs.length) { out.innerHTML = '<div class="card"><p class="small" style="margin:0">No strong legs in this game (65%+ with good evidence at a bookmaker line). Try another game.</p></div>'; return; }
-    const d2 = combosOf(legs, 2).slice(0, BB.show), d3 = combosOf(legs, 3).slice(0, BB.show);
+    const sOk = cb => !f.strict || (cb.legs.every(strictLeg) && cb.p >= BB_STRICT.minCombo - 1e-9 && bbWindow(cb.p).lo <= bbWindow(cb.p).hi);
+    const d2 = combosOf(legs, 2).filter(sOk).slice(0, BB.show), d3 = combosOf(legs, 3).filter(sOk).slice(0, BB.show);
     d2.forEach((c, i) => shown.set(`d${i}`, c)); d3.forEach((c, i) => shown.set(`t${i}`, c));
-    const mine = [...pick].map(i => legs[i]).filter(Boolean), own = mine.length >= 2 ? { legs: mine, p: mine.reduce((t, l) => t * l.r.p, 1) } : null; if (own) { own.fair = 1 / own.p; shown.set('own', own); }
+    const mine = [...pick].map(i => legs[i]).filter(Boolean), own = mine.length >= 2 ? { legs: mine, p: mine.reduce((t, l) => t * l.r.p, 1) } : null; if (own) { own.fair = 1 / own.p; own.own = true; shown.set('own', own); }
     out.innerHTML = `<section class="card stack"><h3 style="margin:0">Build your own</h3><p class="xs muted" style="margin:0">Tick 2 or 3 legs (different players).</p>
         ${legs.map((l, i) => `<label class="hcheck"><input type="checkbox" data-bbleg="${i}" ${pick.has(i) ? 'checked' : ''} ${!pick.has(i) && pick.size >= BB.maxLegs ? 'disabled' : ''}> ${legTxt(l)}</label>`).join('')}
         ${own ? comboCard(own, 'own') : ''}</section>
-      <h3>Best doubles <span class="xs muted">(most likely first)</span></h3>${d2.map((c, i) => comboCard(c, `d${i}`)).join('') || '<p class="small muted">Needs 2 strong legs.</p>'}
-      <h3>Best trebles</h3>${d3.map((c, i) => comboCard(c, `t${i}`)).join('') || '<p class="small muted">Needs 3 strong legs.</p>'}`; };
+      <h3>Best doubles <span class="xs muted">(most likely first)</span></h3>${d2.map((c, i) => comboCard(c, `d${i}`)).join('') || (f.strict ? '<p class="small muted">No double in this game passes the strict rules.</p>' : '<p class="small muted">Needs 2 strong legs.</p>')}
+      <h3>Best trebles</h3>${d3.map((c, i) => comboCard(c, `t${i}`)).join('') || (f.strict ? '<p class="small muted">No treble in this game passes the strict rules.</p>' : '<p class="small muted">Needs 3 strong legs.</p>')}`; };
   const loadG = async () => { const g = games.find(x => gidOf(sport, x) === f.gid); if (!g) { out.innerHTML = '<div class="card"><p class="small" style="margin:0">No games in this window.</p></div>'; return; }
     out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; pick = new Set();
     const key = `${sport}|${f.gid}`; let c = CACHE.get(key); if (!c) { c = await buildCandidates(sport, sport === 'football' ? null : usAdapter(sport), [g]); CACHE.set(key, c); }
     legs = legsOf(c, sport); draw(); };
   pg.addEventListener('click', e => { const b = e.target.closest('[data-bbdays] button'); if (b) { f.days = Number(b.dataset.v); save(); drawF(); loadG(); return; }
-    const ad = e.target.closest('[data-bbadd]'); if (ad) { const id = ad.closest('[data-bbbox]').dataset.bbbox, cb = shown.get(id), txt = ODDS.get(id) || '', od = parseIn(txt); if (!cb || !od || !od.dec) return;
+    const ad = e.target.closest('[data-bbadd]'); if (ad) { const id = ad.closest('[data-bbbox]').dataset.bbbox, cb = shown.get(id), txt = ODDS.get(id) || '', od = parseIn(txt); if (!cb || !od || !od.dec) return; if (f.strict && !cb.own && !bbVerdict(cb.p, od.exact ?? od.dec).ok) return;
       const Dd = od.exact ?? od.dec, pj = tested ? blendP(cb.p, Dd) : cb.p, model = ad.dataset.bbadd === 'model', P = tested || model ? accaPlan(pj, Dd, { validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf.level === 'Low') }) : null, u = P && P.ok ? P.units : 0; // model-only untested builders: the stake it would get if tested
       const saved = u > 0 ? logBuilderNow(cb.legs.map(l => ({ sel: selFromCandidate(l.c, 'over', l.r), fair: l.r.fair })), Dd, txt, u * RISK.unitGBP, model ? 'model' : 'real') : null;
       ad.textContent = saved ? (model ? `✓ Model tracker: ${fmtU(u)}u` : `✓ Real bet: ${CUR()}${saved.stake.toFixed(2)}`) : 'Could not save'; if (saved) ad.parentElement.querySelectorAll('[data-bbadd]').forEach(o => { o.disabled = true; }); } });
-  pg.addEventListener('change', e => { const t = e.target; if (t.matches('[data-bbgame]')) { f.gid = t.value; save(); loadG(); return; }
+  pg.addEventListener('change', e => { const t = e.target; if (t.matches('[data-bbstrict]')) { f.strict = t.checked; save(); t.closest('[data-bbstrictbox]').classList.toggle('on', t.checked); draw(); return; }
+    if (t.matches('[data-bbgame]')) { f.gid = t.value; save(); loadG(); return; }
     if (t.matches('[data-bbleg]')) { const i = Number(t.dataset.bbleg); t.checked ? pick.add(i) : pick.delete(i); draw(); } });
   pg.addEventListener('input', e => { const t = e.target; if (!t.matches('[data-bbodds]')) return; const box = t.closest('[data-bbbox]'), id = box.dataset.bbbox, cb = shown.get(id); ODDS.set(id, t.value); if (!cb) return;
     const tmp = document.createElement('div'); tmp.innerHTML = priceBox(id, cb); box.querySelector('[data-bbout]').replaceWith(tmp.querySelector('[data-bbout]')); });
   drawF(); await loadG();
 }
 
-return { BB, legsOf, combosOf, viewBuilders };
+return { BB, BB_STRICT, bbWindow, bbVerdict, legsOf, combosOf, viewBuilders };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
