@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="77fd7c77131a">
+<meta name="proplab-build" content="659ae2de4f5a">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7051,7 +7051,7 @@ function pickPlays(cands, o, blowout = () => null) {
 //   matchup; 6/10+ at that line this season and in his last 10; not poor against tonight's opponent (under 40% over 5+ meetings);
 //   not just back from an injury; one play per player per game (the strongest). Your other filters (games, side, markets, minutes...) apply too.
 // Update 89: minP 0.58 on the early-season-corrected probability (backtest this season: strict picks at 58%+ came in 64.9%, 57 picks)
-const STRICT = { minMinRatio: 0.85, minP: 0.58, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
+const STRICT = { minMinRatio: 0.85, minP: 0.58, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, minEV: 0.05 /* Update 92 (owner): at least 5% EV */, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
 function strictLine(c) {
   const cur = c.rows.filter(q => q.season === c.cur); if (cur.length < STRICT.minHitN || c.def.binary) return null;
   const avg = cur.reduce((t, q) => t + q.value, 0) / cur.length, L0 = Math.floor(avg) + 0.5;
@@ -7149,6 +7149,7 @@ function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at 
   if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short to be worth the risk` };
   if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
   if (ev <= 0) return { ok: false, why: `not EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds` };
+  if (ev < S.minEV - 1e-9) return { ok: false, why: `EV ${(ev * 100).toFixed(1)}%: under the ${Math.round(S.minEV * 100)}% minimum` };
   { const g = gapPass(p, imp); if (g) return g; }
   return { ok: true, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds${ev > S.evCheck ? '. A big gap: the stake (on the model + bookmaker blend) is already cut down for it' : ''}` };
 }
@@ -7157,7 +7158,7 @@ function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at 
 const gapMaxOdds = p => (p > MARKET_GAP + 1e-9 ? 1 / (p - MARKET_GAP) : Infinity);
 const strictMaxOdds = p => Math.min(STRICT.maxOdds, gapMaxOdds(p));
 const valueMaxOdds = p => Math.min(VALUE.maxOdds, gapMaxOdds(p));
-const strictMinOdds = p => Math.max(STRICT.minOdds, 1 / Math.max(1e-9, p) + 0.01); // the shortest EV+ price
+const strictMinOdds = p => Math.max(STRICT.minOdds, Math.ceil(100 * (1 + STRICT.minEV) / Math.max(1e-9, p)) / 100); // the shortest price with 5%+ EV (Update 92)
 /**
  * The most demanding line that passes, found by halving (about 5 evaluations instead of every line). Every filter moves one way with the
  * line: for Over, a higher line lowers the probability and the hit rate and raises the fair odds (Under: the reverse), and confidence and
@@ -9407,7 +9408,7 @@ async function viewRecommended(root, sport) {
           <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season <u>and</u> in his last 10 (the model and his form agree).</li>
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
           <li>One play per player per game: his strongest.</li>
-          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> whenever it is EV+ at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. The model's figures are corrected for the early season (tested on this season's games: strict picks came in 60% of the time).</li>
+          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> when it is at least ${Math.round(STRICT.minEV * 100)}% EV at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. Under ${Math.round(STRICT.minEV * 100)}% EV is a Pass. The model's figures are corrected for the early season (tested on this season's games: strict picks came in 60% of the time).</li>
           <li>Not too good to be true: if the model is more than ${Math.round(MARKET_GAP * 100)} points above your price, it's a <b>Pass</b>. Checked against real bookmaker prices: a gap that big usually means the model is wrong.</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
       <div class="strictbox valuebox${s.f.value ? ' on' : ''}" data-valuebox><label class="hcheck strictlbl"><input type="checkbox" data-rvalue ${s.f.value ? 'checked' : ''}> <b>Value at 2.0+</b> <span class="xs muted">(about a coin flip or better, on lines you can often get at 2.0 or longer)</span></label>
