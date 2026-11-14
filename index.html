@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="65da000bf9b9">
+<meta name="proplab-build" content="7971b9fa78ae">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -870,6 +870,16 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 
 /* Update 89: Hit Rates price boxes */
 .hrtiles{margin:2px 0}.hrodds{display:grid;gap:4px}.hrodds .in{max-width:160px}
+
+/* Update 89: value doubles & trebles */
+.vdrow{margin:8px 0 0;padding:10px}
+
+/* Update 90: Bet Builders; four Hiwi's Section tabs fit a phone */
+.rectabs a{padding-left:10px;padding-right:10px;font-size:14px}.bbcard{margin:8px 0;display:grid;gap:4px}
+
+/* Update 89: five Hiwi's Section tabs; Strict highlighted */
+.rectabs a[href$='/strict'],.rectabs a[href='#/strict']{font-weight:800}.rectabs a[href$='/strict']:not(.on),.rectabs a[href='#/strict']:not(.on){box-shadow:inset 0 0 0 1.5px #3fbf7f;color:#7ee2ad}
+.rectabs a{padding-left:8px;padding-right:8px;font-size:13.5px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -4549,6 +4559,14 @@ const INTL_RECAL = { A: -0.081, B: 0.799 };
 const intlG = p => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(INTL_RECAL.A + INTL_RECAL.B * Math.log(x / (1 - x))))); };
 function intlRecal(e, side) { const f = p => (Number.isFinite(p) ? (side === 'under' ? 1 - intlG(1 - p) : intlG(p)) : p); const win = f(e.win);
   return { ...e, win, lose: 1 - win, q: f(e.q), lo: f(e.lo), hi: f(e.hi), intlRecal: true }; }
+const NBA_EARLY = { A: -0.1972, B: 0.6803, full: 15, none: 30 };
+/** Games he has played this season: the rows since his last break of 60+ days (the off-season). */
+function seasonGames(card) { const ds = (card.rows || []).map(r => r && r.date).filter(Boolean).sort().reverse(); let n = 0;
+  for (let i = 0; i < ds.length; i++) { n++; if (i + 1 < ds.length && (Date.parse(ds[i]) - Date.parse(ds[i + 1])) / 864e5 > 60) break; } return n; }
+const earlyWeight = card => { const n = seasonGames(card); return n <= NBA_EARLY.full ? 1 : n >= NBA_EARLY.none ? 0 : (NBA_EARLY.none - n) / (NBA_EARLY.none - NBA_EARLY.full); };
+const earlyG = p => { const x = Math.min(1 - 1e-4, Math.max(1e-4, p)); return 1 / (1 + Math.exp(-(NBA_EARLY.A + NBA_EARLY.B * Math.log(x / (1 - x))))); };
+function nbaEarly(e, side, w) { const f = p => (Number.isFinite(p) ? (1 - w) * p + w * (side === 'under' ? 1 - earlyG(1 - p) : earlyG(p)) : p); const win = f(e.win);
+  return { ...e, win, lose: 1 - win, q: f(e.q), lo: f(e.lo), hi: f(e.hi), early: w }; }
 function cardEstimate(card, st, sport) {
   const def = card.def, side = sideOf(st), line = cmpLine(def, st.line), key = sportKey(sport, def), cb = calibFor(key);
   if (!card.historical && card.injury && isConfirmedOut(card.injury)) return { ok: false, reason: `${card.title} is confirmed OUT for this game` };
@@ -4580,6 +4598,12 @@ function cardEstimate(card, st, sport) {
   // fitted on 77,652 international player predictions (2025 to 12 Nov 2026, every market and line, each from the games before it):
   // p' = 1 / (1 + exp(-(A + B x logit p))) on the over side. It pulls extreme estimates towards the middle (the raw model was over-confident:
   // e.g. 95% came in 85-89%, 2% came in 8-11%). Validated out of sample (fitted to 31 Aug 2026, tested on Sep-Nov 2026): log loss 0.4265 -> 0.4212.
+  // Update 89 (owner, 14 Nov 2026: losing nightly). Early-season NBA correction. Backtest of this season (31 Oct - 13 Nov, 12,504
+  // main-line predictions, each from the games before it): the model was over-confident (62% came in 53%, 67% came in 53%); last season
+  // Jan-Mar (101,320) it was right (62% came in 65%). Early in a season roles and minutes change and last season's games mislead. So
+  // while a player has fewer than 30 games this season, his estimate is pulled in: p' = 1 / (1 + exp(-(A + B x logit p))), fitted 31 Oct -
+  // 6 Nov and tested 7-13 Nov (log loss 0.6694 -> 0.6634); full weight up to 15 games this season, fading to none at 30.
+  if (sport === 'nba' && def.scope !== 'match' && def.scope !== 'team' && def.scope !== 'opp' && !def.binary && !(e.push > 1e-9)) { const w = earlyWeight(card); if (w > 0) e = nbaEarly(e, side, w); }
   if (sport === 'football' && def.scope === 'player' && !(e.push > 1e-9) && (card.rows || []).some(r => r && r.raw && r.raw.league === 'intl')) e = intlRecal(e, side);
   if (adj) e.adj = adj;
   if (mu) e.mu = mu;
@@ -4645,7 +4669,7 @@ function evBlock(card, st, sport, oddsText) {
     <p class="xs muted" style="margin:0">${status} The estimate is ${pct(e.win)}; his (or the team's) weighted record alone gives ${pct(e.emp)} and a fitted distribution gives ${pct(e.smooth)}${e.venueUsed ? '; same-venue games are included' : ''}${e.pairNote ? `. For this combined play it is ${esc(e.pairNote)}` : ''}. It is not the card's hit rate, and it cannot know news, line-ups or injuries after the data update. EV is an average over many bets if the estimate were right; it is never guaranteed. <a href="#/about">How it works (Data &amp; sources)</a></p>`;
 }
 
-return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, INTL_RECAL, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
+return { loadCalib, calibFor, sportKey, historyOf, v2CalibFor, v2Games, INTL_RECAL, NBA_EARLY, seasonGames, cardEstimate, STAKING_HTML, unitsTile, KELLY_INFO, evBlock };
 })();
 __m['hypo'] = (() => {
 // Hypothetical odds & units box on every eligible play card (owner request 27 Oct 2026, late evening).
@@ -6903,6 +6927,16 @@ function evalAt(c, L, side) {
 /** All lines of a candidate for a side (the evaluated range). */
 const linesOf = (c, side) => c.lines.map(L => evalAt(c, L, side)).filter(Boolean);
 
+/** Backtest helper (Update 89 audit, owner 14 Nov 2026): the candidate PropLab would have built for a PAST game, from his games before it
+ *  only. rawBefore = his rows (newest first) dated before that game; row = his row for that game (for the opponent). */
+function histCandidate(sport, A, p, rawBefore, g, def, cur, row) {
+  const played = rawBefore.filter(x => !x.dnp && (sport === 'nba' ? x.type !== 'P' && x.type !== 'PS' : x.type === 'R')); if (played.length < 8) return null;
+  const rows = played.map(x => ({ value: def.get(x), season: x.season, date: x.date, min: x.min, opp: x.opp, game: x.game, raw: x })); if (rows.filter(r => r.value != null).length < 8) return null;
+  const r3 = rawBefore.filter(x => x.season === cur && x.type !== 'P' && x.type !== 'PS').slice(0, 3), m = r3.find(x => x.dnp && !/coach|^cd$|dnp-cd|rest/i.test(String(x.dnp)));
+  let card; try { card = buildUsPlayerCard({ sport, A, p, def, key: def.key, raw: rawBefore, game: g, period: () => 10, periodText: () => 'this season', cid: `bt|${sport}|${p.id}|${def.key}|${g.id}` }); } catch { return null; }
+  return { id: `bt|${sport}|${g.id}|${p.id}|${def.key}`, sport, kind: 'player', name: p.name, pid: p.id, team: p.team, opp: row.opp, home: g.home === p.team, f: g, fid: String(g.id), def, card, p, inj: null, cur,
+    backFrom: m ? String(m.dnp) : null, curN: played.filter(x => x.season === cur).length, rows, lines: candidateLines(def, rows.map(r => r.value)), grp: def.grp || '' };
+}
 // ---------------- candidates per sport ----------------
 async function usCandidates(sport, A, games, onProgress) {
   const out = [], cur = A.latestSeason();
@@ -6993,7 +7027,8 @@ function pickPlays(cands, o, blowout = () => null) {
 //   the line nearest his season average (where bookmakers usually set it, so priced near evens); model 60%+; Strong evidence; Easy / OK
 //   matchup; 6/10+ at that line this season and in his last 10; not poor against tonight's opponent (under 40% over 5+ meetings);
 //   not just back from an injury; one play per player per game (the strongest). Your other filters (games, side, markets, minutes...) apply too.
-const STRICT = { minMinRatio: 0.85, minP: 0.60, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
+// Update 89: minP 0.58 on the early-season-corrected probability (backtest this season: strict picks at 58%+ came in 64.9%, 57 picks)
+const STRICT = { minMinRatio: 0.85, minP: 0.58, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
 function strictLine(c) {
   const cur = c.rows.filter(q => q.season === c.cur); if (cur.length < STRICT.minHitN || c.def.binary) return null;
   const avg = cur.reduce((t, q) => t + q.value, 0) / cur.length, L0 = Math.floor(avg) + 0.5;
@@ -7034,17 +7069,63 @@ function accaSafeOk(c, side, r) {
   const hs = r.hr.season, h10 = r.hr.l10; if (!(h10.n >= 10 && h10.hit >= S.l10 * 10) || !(hs.n >= S.minN && hs.pct >= S.season * 100 - 1e-9)) return false;
   const vo = vsOppOf(c, r.L, side); return !(vo && vo.n >= S.oppN && vo.hit / vo.n < S.opp);
 }
-/** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
-function strictVerdict(p, dec) {
-  const S = STRICT, imp = 1 / dec, edge = p - imp, need = dec > S.longFrom ? S.edgeLong : S.edge, ev = p * dec - 1;
-  if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short, a small model error wipes out the edge` };
-  if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
-  if (edge < need - 1e-9) return { ok: false, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds); it needs ${Math.round(need * 100)}+ pts` };
-  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts. The gap with the bookmaker is unusually big, so the stake is already trimmed (blended with the bookmaker's price). A quick look at the news before tip-off is still wise` };
+// ---------------- value at 2.0+ (Update 89, owner 14 Nov 2026) ----------------
+// Plays the model rates about a coin flip or a bit better (fair odds 1.70-2.20) on lines bookmakers really price, which you can often get
+// at 2.0+. Not random stats or flukes, the owner's rules: the player must genuinely produce this stat (bookmaker-sized lines only, e.g.
+// no 1.5 assists; three-pointers need the attempts to back them up), good form this season AND recently AND before that (not a hot
+// streak), good H2H, a good matchup, Strong evidence, and the strict filter's safety checks. One play per player per game.
+const VALUE = { minP: 0.45, maxP: 0.59, minOdds: 1.95, maxOdds: 3.20, edge: 0.06, evCheck: 0.30, formMin: 0.5, baseMin: 0.45, minSeasonN: 8, h2hMin: 0.5, h2hGood: 0.6, h2hN: 3, tpaPerLine: 3 };
+// NBA: only the main markets, and never below the smallest line bookmakers usually offer for a real contributor
+const BOOK_MIN_LINE_NBA = { pts: 9.5, reb: 3.5, ast: 2.5, tpm: 1.5, pr: 12.5, pa: 12.5, ra: 5.5, pra: 15.5 };
+const VALUE_MIN_LINE = { pts: 9.5, reb: 3.5, ast: 2.5, tpm: 1.5, pr: 12.5, pa: 12.5, ra: 5.5, pra: 15.5 };
+function valueLines(c) { // the bookmaker's main line (nearest his season average) and the next line up (the alt line priced around 2.0+)
+  const L0 = strictLine(c); if (L0 == null) return []; const i = c.lines.indexOf(L0); return [L0, c.lines[i + 1]].filter(L => L != null);
+}
+/** Why a play fails the value rules ('' = it passes). */
+function valueWhy(c, side, r) {
+  const S = VALUE; if (!r) return 'no estimate';
+  if (r.p < S.minP || r.p > S.maxP) return 'outside 45-59%';
+  if (!r.conf || r.conf.rank < 3) return 'evidence not Strong';
+  if (c.sport === 'nba') { const m = VALUE_MIN_LINE[c.def.key]; if (m == null) return 'not a main market'; if (r.L < m - 1e-9) return 'line too low to be a real bookmaker market';
+    if (c.def.key === 'tpm') { const a = c.rows.slice(0, 10).map(q => q.raw && Number(q.raw.tpa)).filter(Number.isFinite); if (a.length < 5 || a.reduce((t, x) => t + x, 0) / a.length < S.tpaPerLine * r.L) return 'not enough three-point attempts to trust the makes'; } }
+  const hs = r.hr.season, h10 = r.hr.l10, all = r.hr.all;
+  if (!(hs.n >= S.minSeasonN && hs.pct >= S.formMin * 100 - 1e-9)) return 'form this season too weak';
+  if (!(h10.n >= 8 && h10.pct >= S.formMin * 100 - 1e-9)) return 'recent form too weak';
+  const before = all && hs ? { n: all.n - hs.n, hit: all.hit - hs.hit } : null; if (before && before.n >= 15 && before.hit / before.n < S.baseMin) return 'only hits this line lately (before this season it rarely did): could be a fluke';
+  const vo = vsOppOf(c, r.L, side); if (vo && vo.n >= S.h2hN && vo.hit / vo.n < S.h2hMin) return 'poor against tonight\'s opponent';
+  if (c.sport !== 'football') { const goodH2H = vo && vo.n >= S.h2hN && vo.hit / vo.n >= S.h2hGood; if (!(r.tier === 'g' || (r.tier === 'y' && goodH2H))) return 'matchup not good enough'; }
+  return '';
+}
+function valuePick(cands, o, blowout = () => null) {
+  const best = new Map(), seen = new Set();
+  for (const x of pickPlays(cands, { ...o, minProb: 0, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', hideBlowout: true }, blowout)) {
+    const c = x.c; if (seen.has(c)) continue; seen.add(c); if (strictSkip(c) || c.def.binary) continue;
+    for (const side of o.sides) for (const L of valueLines(c)) {
+      const r = evalAt(c, L, side); if (valueWhy(c, side, r)) continue;
+      const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, value: true });
+    }
+  }
+  return [...best.values()];
+}
+function valueVerdict(p, dec) {
+  const S = VALUE, imp = 1 / dec, edge = p - imp, ev = p * dec - 1;
+  if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: shop around, or use the strict filter for shorter prices` };
+  if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: a price that long usually means the bookmaker knows something (check the news)` };
+  if (edge < S.edge - 1e-9) return { ok: false, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds); it needs ${Math.round(S.edge * 100)}+ pts` };
+  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts, EV +${(ev * 100).toFixed(0)}%: unusually big. Check the news (minutes, line-up, role) first; if nothing explains the price, back it at half stake` };
   return { ok: true, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds)` };
 }
+const valueMinOdds = p => Math.max(VALUE.minOdds, 1 / Math.max(1e-9, p - VALUE.edge));
+/** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
+function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at your odds (inside 1.70-3.00) = Back it; otherwise Pass.
+  const S = STRICT, imp = 1 / dec, ev = p * dec - 1;
+  if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short to be worth the risk` };
+  if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
+  if (ev <= 0) return { ok: false, why: `not EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds` };
+  return { ok: true, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds${ev > S.evCheck ? '. A big gap: the stake (on the model + bookmaker blend) is already cut down for it' : ''}` };
+}
 /** The shortest odds that pass the strict rules for a model chance. */
-const strictMinOdds = p => Math.max(STRICT.minOdds, 1 / Math.max(1e-9, p - STRICT.edge));
+const strictMinOdds = p => Math.max(STRICT.minOdds, 1 / Math.max(1e-9, p) + 0.01); // the shortest EV+ price
 /**
  * The most demanding line that passes, found by halving (about 5 evaluations instead of every line). Every filter moves one way with the
  * line: for Over, a higher line lowers the probability and the hit rate and raises the fair odds (Under: the reverse), and confidence and
@@ -7103,7 +7184,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, histCandidate, buildCandidates, pickPlays, STRICT, strictLine, minutesSteady, strictSkip, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, VALUE, BOOK_MIN_LINE_NBA, VALUE_MIN_LINE, valueWhy, valuePick, valueVerdict, valueMinOdds, strictVerdict, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -7723,13 +7804,13 @@ function logSingleNow(sel, oddsDec, oddsTxt, stakeGBP, extra = {}) { // extra.bo
  * legs drafted, and nothing was logged until you saved there). legs: [{ sel, odds (decimal), oddsTxt }]; one leg = a single.
  * Returns the saved bet, or null.
  */
-function logBetNow(legs, stakeGBP) {
+function logBetNow(legs, stakeGBP, book = 'real') {
   if (!legs.length || !(stakeGBP > 0) || legs.some(l => !(l.odds > 1))) return null;
-  if (legs.length === 1) return logSingleNow(legs[0].sel, legs[0].odds, legs[0].oddsTxt, stakeGBP);
+  if (legs.length === 1) return logSingleNow(legs[0].sel, legs[0].odds, legs[0].oddsTxt, stakeGBP, book === 'model' ? { book: 'model' } : {});
   const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: l.odds, oddsTxt: String(l.oddsTxt || ''), result: '' })), sp = [...new Set(L.map(l => l.sport))];
   const b = { id: `acca|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100, bookOdds: null, date: L.map(l => l.date).sort()[0],
     game: `${L.length}-leg acca`, result: '', logged: new Date().toISOString(), fromSlip: true, unit: getUnit().amt };
-  if (!addToBook('real', b)) return null; // a placed acca: Real bets (and its copy in the Model tracker)
+  if (!addToBook(book === 'model' ? 'model' : 'real', b)) return null; // a placed acca: Real bets (and its copy in the Model tracker); or Model tracker only
   return b;
 }
 function openBetForm(sel, oddsTxt = '') { setBook('real'); /* Update 88: "Log as a real bet" opens Real bets */ try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
@@ -7738,8 +7819,19 @@ function openAccaForm(sels, stakeTxt = '') {
   try { localStorage.setItem(DRAFT, JSON.stringify({ legs, stake: stakeTxt || '', odds: '' })); sessionStorage.setItem(PREFILL, JSON.stringify({ acca: true })); } catch { /* fine */ }
   go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
 }
+/**
+ * Update 90 (owner, 14 Nov 2026): a bet builder (same-game legs at ONE combined bookmaker price). Saved as an acca with the bookmaker's
+ * combined odds (bookOdds); each leg keeps PropLab's fair odds only for reference. book: 'real' (Real bets + Model tracker) or 'model'.
+ */
+function logBuilderNow(legs, bookDec, bookTxt, stakeGBP, book = 'real') {
+  if (legs.length < 2 || !(bookDec > 1) || !(stakeGBP > 0)) return null;
+  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: Math.round(l.fair * 100) / 100, oddsTxt: '', fairOnly: true, result: '' })), sp = [...new Set(L.map(l => l.sport))];
+  const b = { id: `bb|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', builder: true, sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100,
+    bookOdds: bookDec, bookOddsTxt: String(bookTxt || ''), date: L.map(l => l.date).sort()[0], game: `Bet builder: ${L[0].game}`, result: '', logged: new Date().toISOString(), unit: getUnit().amt };
+  return addToBook(book === 'model' ? 'model' : 'real', b) ? b : null;
+}
 
-return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, logBetNow, openBetForm, openAccaForm };
+return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, logBetNow, openBetForm, openAccaForm, logBuilderNow };
 })();
 __m['betlog'] = (() => {
 // Bet log on My Plays: your REAL bets, singles and accas, across NBA, NFL and football (owner requests 5 and 9 Nov 2026).
@@ -8871,7 +8963,7 @@ function slipToggle(c, side, r, bookTxt = '') { const S = load(), x = selOf(c, s
 /** The price typed on a play's card: used for that selection in the slip too (owner, 3 Nov). */
 function slipSetBook(id, txt) { const S = load(), x = S.sel.find(y => y.id === id); if (!x) return; x.bookTxt = txt || ''; x.book = bookOf(txt); save(); if (ST.open) { const inp = el && el.querySelector(`[data-slipi="${S.sel.indexOf(x)}"] [data-slipbook]`); if (inp && document.activeElement !== inp) inp.value = x.bookTxt; drawOut(); } }
 /** Add several (Acca Builder legs); exact duplicates are skipped. Returns how many were added. */
-function slipAddMany(list) { const S = load(); let n = 0; for (const { c, side, r } of list) { reg.set(c.id, c); const x = selOf(c, side, r); if (!S.sel.some(y => y.id === x.id)) { S.sel.push(x); n++; } } changed(n > 0); return n; }
+function slipAddMany(list) { const S = load(); let n = 0; for (const { c, side, r, book } of list) { reg.set(c.id, c); const x = selOf(c, side, r, book || ''); /* Update 89: optional typed odds */ if (!S.sel.some(y => y.id === x.id)) { S.sel.push(x); n++; } } changed(n > 0); return n; }
 /** Fresh candidates are on screen (after the nightly update the probability can change): re-price the selections they cover. */
 function slipRegister(cands) { const S = load(); let ch = false; for (const c of cands) reg.set(c.id, c);
   for (const x of S.sel) { const c = reg.get(x.cid); if (!c) continue; const r = evalAt(c, x.L, x.side); if (r && (Math.abs(r.p - x.p) > 1e-12 || Math.abs(r.fair - x.fair) > 1e-12)) { x.p = r.p; x.fair = r.fair; x.label = ladderName(c, r); ch = true; } }
@@ -8908,7 +9000,7 @@ function drawPanel() {
     <p class="xs muted" data-slipfmttext style="margin:2px 0 8px"></p>
     <label class="field slipstakef"><span data-sliplabel>${esc(stakeLabel(F.find(f => f.id === S.fmt)))}</span><input class="in slipstake" data-slipstake type="text" inputmode="decimal" autocomplete="off" placeholder="Type your stake, e.g. 10" value="${esc(S.stakeTxt)}"></label>
     <div class="slipout" data-slipout aria-live="polite"></div>
-    <button type="button" class="btn primary" data-sliplog style="width:100%;margin-top:8px">Placed it? Log it in My Plays</button><p class="small" data-sliplogmsg style="margin:4px 0 0" aria-live="polite"></p><p class="xs muted" style="margin:2px 0 0">Type your odds for every pick and your stake, then tap: it is saved in My Plays straight away (each bet of the bet type above, at your stake per bet) and settles leg by leg from the published results. Change anything later with Edit in My Plays.</p>
+    <button type="button" class="btn primary" data-sliplog style="width:100%;margin-top:8px">Placed it? Log it in My Plays</button><button type="button" class="chip" data-sliplog data-slipmodel style="width:100%;margin-top:6px">Not betting it: track it in the Model tracker only</button><p class="small" data-sliplogmsg style="margin:4px 0 0" aria-live="polite"></p><p class="xs muted" style="margin:2px 0 0">Type your odds for every pick and your stake, then tap: it is saved in My Plays straight away (each bet of the bet type above, at your stake per bet) and settles leg by leg from the published results. Change anything later with Edit in My Plays.</p>
 `
     : '<p class="small muted" style="margin:12px 0">Your slip is empty. Tap <b>＋ Add to Acca</b> on any play in Hiwi\'s Section to add it.</p>'}
     <p class="xs muted" style="margin:10px 0 0">Fair odds = 1 ÷ PropLab's model probability. A bookmaker will usually pay less, and a fair price is not a price you can get. Bets are worked out with decimal odds; the display follows your odds format. Picks from the same game (a bet builder) are linked: when PropLab can measure how they moved together in their shared earlier games the price is adjusted for it (experimental); otherwise it is the picks multiplied and marked not adjusted. The same pick twice is never priced. Each-way and bookmaker bonuses (for example Lucky 15 bonuses) are not included.</p>`;
@@ -8965,11 +9057,12 @@ function logFromSlip(btn) {
   if (need.length) return say(`Type the odds you got for ${need.map(i => esc(S.sel[i].name)).join(', ')} (the "Your odds" box on each pick).`);
   if (!(R.unit > 0)) return say('Type your stake.');
   if (btn.dataset.done && Date.now() - Number(btn.dataset.done) < 8000 && btn.dataset.sig === sigOf(S)) return say('Already logged: these bets are in My Plays. Change the stake, odds or picks to log another.', true);
-  const saved = R.bets.map(b => logBetNow(b.idx.map(i => ({ sel: selFromSlip(S.sel[i]), odds: S.sel[i].book, oddsTxt: S.sel[i].bookTxt || '' })), R.unit)).filter(Boolean);
+  const book = btn.hasAttribute('data-slipmodel') ? 'model' : 'real'; // Update 89: Model tracker only
+  const saved = R.bets.map(b => logBetNow(b.idx.map(i => ({ sel: selFromSlip(S.sel[i]), odds: S.sel[i].book, oddsTxt: S.sel[i].bookTxt || '' })), R.unit, book)).filter(Boolean);
   if (!saved.length) return say('Could not save on this phone (private browsing?).');
   btn.dataset.done = String(Date.now()); btn.dataset.sig = sigOf(S); if (hooks.betlogRefresh) hooks.betlogRefresh();
   const one = saved[0], odds = x => (x.type === 'acca' ? x.legs.reduce((t, l) => t * l.odds, 1) : x.odds);
-  say(`✓ Logged in My Plays: ${saved.length === 1 ? `${one.type === 'acca' ? `${one.legs.length}-leg acca` : 'single'}, ${money(one.stake)} at ${esc(fmtOdds(odds(one)))}` : `${saved.length} bets of ${money(R.unit)} (${money(R.unit * saved.length)} in total)`}. <a href="${S.sel.every(x => x.sport === S.sel[0].sport) && S.sel[0].sport !== 'football' ? `#/${S.sel[0].sport}/myplays` : '#/myplays'}" data-slipgoplays>Open My Plays</a>`, true);
+  say(`✓ ${book === 'model' ? 'Tracked in the Model tracker' : 'Logged in My Plays'}: ${saved.length === 1 ? `${one.type === 'acca' ? `${one.legs.length}-leg acca` : 'single'}, ${money(one.stake)} at ${esc(fmtOdds(odds(one)))}` : `${saved.length} bets of ${money(R.unit)} (${money(R.unit * saved.length)} in total)`}. <a href="${S.sel.every(x => x.sport === S.sel[0].sport) && S.sel[0].sport !== 'football' ? `#/${S.sel[0].sport}/myplays` : '#/myplays'}" data-slipgoplays>Open My Plays</a>`, true);
 }
 const sigOf = S => `${S.fmt}|${S.stakeTxt}|${S.sel.map(x => `${x.id}@${x.bookTxt || ''}`).join(',')}`;
 /** A bet-log selection from a slip pick: from its Hiwi's Section play when it is on this visit, else from what the slip stored. */
@@ -8993,8 +9086,8 @@ return { combos, formatsFor, selProblem, comboProblem, priceSlip, selOf, slipCou
 __m['rectabs'] = (() => {
 // The Singles / Acca Builder / Hit Rates tabs of Hiwi's Section (Update 85).
 const { unitChip } = __m['units'];
-const recTabs = (sport, on) => { const h = p => (sport === 'football' ? `#/${p}` : `#/${sport}/${p}`);
-  return `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg">${[['rec', 'Singles'], ['acca', 'Acca Builder'], ['form', 'Hit Rates']].map(([p, l]) => `<a href="${h(p)}"${p === on ? ' class="on" aria-current="page"' : ''}>${l}</a>`).join('')}</div>${unitChip()}</nav>`; };
+const recTabs = (sport, on) => { if (on === 'rec') on = 'singles'; const h = p => (sport === 'football' ? `#/${p}` : `#/${sport}/${p}`);
+  return `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg wrap rectabs">${[['strict', 'Strict'], ['singles', 'Singles'], ['acca', 'Accas'], ['form', 'Hit Rates'], ['bb', 'Builders']].map(([p, l]) => `<a href="${h(p)}"${p === on ? ' class="on" aria-current="page"' : ''}>${l}</a>`).join('')}</div>${unitChip()}</nav>`; };
 
 
 return { recTabs };
@@ -9122,7 +9215,7 @@ __m['v-recommended'] = (() => {
 // carry the play to Compare Price. Each card's line can be changed (everything recalculates; the card stays where it is). Nothing is
 // ranked by EV: there are no bookmaker prices until you type one.
 const { EVID_INTRO } = __m['confidence'];
-const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks, strictPick, strictVerdict, strictMinOdds, STRICT } = __m['recplays'];
+const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks, strictPick, strictVerdict, strictMinOdds, STRICT, valuePick, valueVerdict, valueMinOdds, VALUE } = __m['recplays'];
 const { carryPrice } = __m['pricecheck'];
 const { muHtml } = __m['matchupui'];
 const { usAdapter } = __m['v-hiwi'];
@@ -9159,7 +9252,7 @@ const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 1
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
     r.conf.rank < 3 ? `${r.conf.label} evidence: less ${(3 - r.conf.rank) * 3}` : 'Strong evidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { strict: false, mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
+const DEF = { strict: false, value: false, mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Strong evidence (was Medium+ until 10 Nov), high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
 const STRICT_DEF = sport => sport !== 'football' && !(typeof window !== 'undefined' && window.__PL_NO_STRICT); // tests of the normal list set __PL_NO_STRICT
@@ -9228,6 +9321,8 @@ function freshHtml(sport) {
   const old = at && Date.now() - Date.parse(at) > 36 * 3600e3;
   return at ? `<p class="xs ${old ? 'warn' : 'muted'}" style="margin:0 0 8px" data-fresh data-sport="${esc(sport)}">Data updated ${esc(ukTime(at))} (several times a day)${inj}${old ? '. <b>This is more than a day old</b>: recent games and injury news may be missing.' : ''}</p>` : '';
 }
+/** Update 89 (owner, 14 Nov): the Strict tab (strict rules on) and the Singles tab (off) of Hiwi's Section. */
+function setStrict(sport, on) { const s = stateOf(sport); s.f.strict = !!on; if (on) s.f.value = false; s.kept.clear(); save(sport, s); }
 async function viewRecommended(root, sport) {
   const A = sport === 'football' ? null : usAdapter(sport), s = stateOf(sport);
   if (sport === 'nba') await loadNbaInjuries(); // OUT players are left out, Questionable / Doubtful marked: the report must be in first
@@ -9240,7 +9335,7 @@ async function viewRecommended(root, sport) {
   if (!s.fx.size) for (const f of firstPick(all)) s.fx.add(fxIdOf(sport, f));
   const days = []; for (const f of all) { const d = ukDay(f); let e = days.find(x => x[0] === d); if (!e) days.push(e = [d, []]); e[1].push(f); }
   const sportName = { nba: 'NBA', nfl: 'NFL', football: 'football' }[sport];
-  root.innerHTML = `${recTabs(sport, 'rec')}<div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
+  root.innerHTML = `${recTabs(sport, stateOf(sport).f.strict ? 'strict' : 'singles')}<div id="recpg"><div class="hiwihead">${BEAR_ART}<div><h1 style="margin:0">Hiwi's Section</h1><p class="muted" style="margin:4px 0 0"><b>Recommended plays</b>, worked out by PropLab's model.</p></div></div>
     ${howToHtml(sport, sportName)}
     ${freshHtml(sport)}
     <details class="card recfx" id="recfx" ${s.fx.size ? '' : 'open'}><summary><b>1. Games</b> <span class="muted small" data-fxcount></span></summary><div class="row" style="border:0;padding:6px 0;gap:6px;flex-wrap:wrap">
@@ -9275,8 +9370,16 @@ async function viewRecommended(root, sport) {
           <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season <u>and</u> in his last 10 (the model and his form agree).</li>
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
           <li>One play per player per game: his strongest.</li>
-          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>: odds ${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}, and the model at least ${Math.round(STRICT.edge * 100)} points above the chance your odds imply (${Math.round(STRICT.edgeLong * 100)} above ${STRICT.longFrom.toFixed(2)}). Stakes and EV use a blend of the model and your bookmaker's price, so huge gaps (often something the model can't see) are trimmed automatically.</li>
+          <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> whenever it is EV+ at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. The model's figures are corrected for the early season (tested on this season's games: strict picks rated 58%+ came in 65% of the time).</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
+      <div class="strictbox valuebox${s.f.value ? ' on' : ''}" data-valuebox><label class="hcheck strictlbl"><input type="checkbox" data-rvalue ${s.f.value ? 'checked' : ''}> <b>Value at 2.0+</b> <span class="xs muted">(about a coin flip or better, on lines you can often get at 2.0 or longer)</span></label>
+        <details class="xs"><summary>The rules</summary><ol class="strictrules">
+          <li>The model gives it ${Math.round(VALUE.minP * 100)}–${Math.round(VALUE.maxP * 100)}% (fair odds about 1.70–2.20), at the bookmaker's main line or the next line up.</li>
+          <li>A stat he really produces: ${sport === 'nba' ? 'main markets only, never below the smallest line bookmakers offer for a real contributor (points 9.5, rebounds 3.5, assists 2.5, threes 1.5...); threes also need the attempts (3+ a game per three he needs)' : 'only the lines bookmakers price'}.</li>
+          <li>Not a fluke: ${Math.round(VALUE.formMin * 100)}%+ this season (${VALUE.minSeasonN}+ games) and in his last 10, and ${Math.round(VALUE.baseMin * 100)}%+ before this season.</li>
+          <li>${sport !== 'football' ? `A good matchup (Easy; OK only with a good H2H, ${Math.round(VALUE.h2hGood * 100)}%+), ` : ''}not poor against tonight's opponent (${Math.round(VALUE.h2hMin * 100)}%+ over ${VALUE.h2hN}+ meetings), Strong evidence, not just back from an injury, not on the injury report${sport === 'nba' ? ', minutes not shrinking' : ''}.</li>
+          <li>Type your odds: <b>Back it</b> at ${VALUE.minOdds.toFixed(2)}–${VALUE.maxOdds.toFixed(2)} when the model is ${Math.round(VALUE.edge * 100)}+ points above the chance your odds imply. EV over +${Math.round(VALUE.evCheck * 100)}%: check the news, then half stake.</li>
+</ol></details></div>
       <div class="field recsearch"><span>Player or team</span><div class="recsbox"><input class="in" type="search" data-rf="q" placeholder="Start typing a name" value="${esc(f.q || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="recsug">${f.q ? '<button type="button" class="recsx" data-rqclear aria-label="Clear the search">✕</button>' : ''}<div class="recsug" id="recsug" role="listbox" hidden></div></div><span class="xs muted">Searches every listed game, not only the ones ticked above.</span></div>
       <div class="recrow"><label class="field keyf sovr"><span>Minimum model probability</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" step="1" data-rf="minProb" value="${f.minProb}"> %</span></label>
         <label class="field keyf sovr"><span>Min fair odds</span><input class="in" data-rf="minFairTxt" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="e.g. 1.50 or 1/2" value="${esc(f.minFairTxt)}"></label>
@@ -9349,22 +9452,22 @@ async function viewRecommended(root, sport) {
   let current = [];
   // Update 80 (owner, 13 Nov 2026): with the Strict EV filter on, the filters its rules replace are greyed out and locked (with "set by
   // the strict rules"); the ones it still uses stay as they are.
-  const applySovr = () => { const box = pg.querySelector('#recflt'); if (!box) return; const on = !!s.f.strict; box.classList.toggle('strictmode', on);
+  const applySovr = () => { const box = pg.querySelector('#recflt'); if (!box) return; const on = !!(s.f.strict || s.f.value); box.classList.toggle('strictmode', on);
     box.querySelectorAll('.sovr').forEach(el => { el.setAttribute('aria-disabled', on ? 'true' : 'false'); el.querySelectorAll('input, button, select').forEach(c => { c.disabled = on; });
-      if (on && !el.querySelector('.sovrtag')) (el.querySelector('span') || el).insertAdjacentHTML('beforeend', ' <em class="sovrtag">set by the strict rules</em>'); if (!on) el.querySelectorAll('.sovrtag').forEach(t => t.remove()); }); };
+      if (on && !el.querySelector('.sovrtag')) (el.querySelector('span') || el).insertAdjacentHTML('beforeend', ` <em class="sovrtag">set by the ${s.f.value ? 'value' : 'strict'} rules</em>`); if (!on) el.querySelectorAll('.sovrtag').forEach(t => t.remove()); }); };
   const render = (keepOrder = false) => {
     applySovr();
     const want = scope().map(id => s.cands.get(id) || []).flat(), o = opts(); slipRegister(want);
     drawMarkets(want); const off = new Set(s.f.mkOff);
     const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key) && !isHidden(c)); // hidden players (owner, 5 Nov): out for this game only
-    let list = s.f.strict ? strictPick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false; // Update 77: strict EV filter
+    let list = s.f.value ? valuePick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : s.f.strict ? strictPick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false; // Update 77: strict EV filter
     // a search found him (or them) but no line meets every filter: show the strongest lines anyway, marked, instead of "0 plays"
-    if (q && mine.length && !list.length && !s.f.strict) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
+    if (q && mine.length && !list.length && !s.f.strict && !s.f.value) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
       list = pickPlays(mine, r).map(x => ({ ...x, keptOut: true })); relaxed = true; }
     // plays you are adjusting stay on screen, at their position, even if they no longer pass
     const kept = [...s.kept.entries()];
     for (const [id, k] of kept) { if (list.some(x => x.c.id === id && x.side === k.side)) continue; const c = want.find(x => x.id === id); if (!c) continue; const r = evalAt(c, k.L, k.side); if (r) list.push({ c, side: k.side, rep: r, alts: [], keptOut: true }); }
-    for (const x of list) { const k = s.kept.get(x.c.id); if (k && k.side === x.side) { const r = evalAt(x.c, k.L, k.side); if (r) { x.rep = r; x.keptOut = s.f.strict ? false : !passes(r, o); } } }
+    for (const x of list) { const k = s.kept.get(x.c.id); if (k && k.side === x.side) { const r = evalAt(x.c, k.L, k.side); if (r) { x.rep = r; x.keptOut = s.f.strict || s.f.value ? false : !passes(r, o); } } }
     list = list.filter(x => !isPlayHidden(x.c, x.side)); // removed plays (Update 70): this play only, the player's other plays stay
     if (keepOrder && current.length) { const pos = new Map(current.map((x, i) => [`${x.c.id}|${x.side}`, i])); list.sort((a, b) => (pos.get(`${a.c.id}|${a.side}`) ?? 1e9) - (pos.get(`${b.c.id}|${b.side}`) ?? 1e9)); const fresh = list.filter(x => !pos.has(`${x.c.id}|${x.side}`)); list = [...list.filter(x => pos.has(`${x.c.id}|${x.side}`)), ...sortPlays(fresh, s.sort, s.f.hitWin)]; }
     else list = sortPlays(list, s.sort, s.f.hitWin);
@@ -9400,7 +9503,9 @@ async function viewRecommended(root, sport) {
         <button type="button" class="infotag neutral" ${TIP('EV and stake', fb ? `Football (owner, 13 Nov 2026): EV and stake use the model's own ${(r.p * 100).toFixed(1)}%, with no blend with the bookmaker's price. EV = ${(r.p * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model's probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}.` : `EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     let sv = ''; // Update 77: the strict rules' verdict
-    if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? '✓ Back it (quick news check)' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+    if (s.f.value) { if (od && od.dec) { const v = valueVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? 'Check the news' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+      else sv = `<div class="sverdict hint" data-sneed="${valueMinOdds(r.p).toFixed(4)}">Value if your odds are at least <b>${esc(fmtOdds(valueMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(VALUE.maxOdds))})</div>`; }
+    else if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? '✓ Back it (quick news check)' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
       else sv = `<div class="sverdict hint" data-sneed="${strictMinOdds(r.p).toFixed(4)}">Back it if your odds are at least <b>${esc(fmtOdds(strictMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(STRICT.maxOdds))})</div>`; }
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span>${sv}</div>`;
   }
@@ -9509,7 +9614,8 @@ async function viewRecommended(root, sport) {
   { const onFmt = () => { if (!pg.isConnected) { document.removeEventListener('oddsfmt', onFmt); return; } render(true); }; document.addEventListener('oddsfmt', onFmt); } // Update 73: "Odds shown as" redraws every price here (typed odds are read in any format) // Update 71: stakes in your currency at your unit size
   pg.addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('[data-rstrict]')) { s.f.strict = t.checked; const b = t.closest('[data-strictbox]'); if (b) b.classList.toggle('on', t.checked); { const k = pg.querySelector('[data-keynote]'); if (k) k.innerHTML = t.checked ? '<b>Strict EV filter on:</b> the greyed-out filters are set by its rules; the bright ones still work.' : 'The recommended settings are already set, so you can leave everything as it is. If you\'d like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.'; } s.kept.clear(); s.shown = 30; save(sport, s); render(); return; } // Update 77
+    if (t.matches('[data-rvalue]')) { s.f.value = t.checked; if (t.checked) s.f.strict = false; s.kept.clear(); s.shown = 30; save(sport, s); drawFilters(); render(); return; } // Update 89
+    if (t.matches('[data-rstrict]')) { const nv = root.querySelector('.fpnav'); if (nv) nv.outerHTML = recTabs(sport, t.checked ? 'strict' : 'singles'); s.f.strict = t.checked; if (t.checked && s.f.value) { s.f.value = false; save(sport, s); drawFilters(); render(); return; } const b = t.closest('[data-strictbox]'); if (b) b.classList.toggle('on', t.checked); { const k = pg.querySelector('[data-keynote]'); if (k) k.innerHTML = t.checked ? '<b>Strict EV filter on:</b> the greyed-out filters are set by its rules; the bright ones still work.' : 'The recommended settings are already set, so you can leave everything as it is. If you\'d like to tailor the plays to your own style, the boxes <b>outlined in white</b> are the best ones to adjust.'; } s.kept.clear(); s.shown = 30; save(sport, s); render(); return; } // Update 77
     if (t.matches('[data-fxlg]')) { const l = t.dataset.fxlg; if (t.checked) { s.lg.delete(l); for (const f of all) if (f.league === l) s.fx.add(fxIdOf(sport, f)); } else { s.lg.add(l); for (const f of all) if (f.league === l) s.fx.delete(fxIdOf(sport, f)); }
       pg.querySelectorAll('[data-recfx]').forEach(i => { i.checked = s.fx.has(i.value); }); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
     if (t.matches('[data-recfx]')) { t.checked ? s.fx.add(t.value) : s.fx.delete(t.value); s.fxTouched = true; s.kept.clear(); s.shown = 30; fxCount(); save(sport, s); run(); return; }
@@ -9585,7 +9691,7 @@ async function viewRecommended(root, sport) {
 }
 void oddsFmt;
 
-return { inPlay, viewRecommended };
+return { inPlay, setStrict, viewRecommended };
 })();
 __m['v-acca'] = (() => {
 // Acca Builder (owner request 2 Nov 2026): the second tab of Recommended Plays. Choose sports, days, a target price and the per-leg fair-odds
@@ -10049,6 +10155,101 @@ async function viewHitRates(root, sport) {
 }
 
 return { mainLine, formAt, formRows, viewHitRates };
+})();
+__m['v-builder'] = (() => {
+// Bet Builders (Update 90, owner 14 Nov 2026): the fourth tab of Hiwi's Section. Same-game doubles and trebles from one match, priced
+// by PropLab, so you can compare the bookmaker's bet-builder price and see whether it is EV+.
+//   Legs: the strongest line of each player in that game (overs, at lines bookmakers offer: NBA main markets at their usual minimum lines,
+//   football's 1+ / 2+ ladders), model 65%+, Strong or Good evidence, not just back from injury, not on the injury report, minutes steady.
+//   Chance of a combo: the legs multiplied. For two different NBA players in one game that was tested on 11,554 real pairs of last
+//   season (they came in together 0.99-1.05x as often as multiplying predicts), so NBA builders get a stake. NFL and football same-game
+//   pairs are untested (a striker's shots and his team's corners DO move together): shown and priced, but no stake.
+//   Your price: type the bookmaker's bet-builder odds -> EV = chance x odds - 1, stake = 1/10 Kelly on the combined price (risk.js accaPlan).
+const { buildCandidates, evalAt, ladderName, strictSkip, BOOK_MIN_LINE_NBA } = __m['recplays'];
+const { fixtures } = __m['v-acca'];
+const { usAdapter } = __m['v-hiwi'];
+const { recTabs } = __m['rectabs'];
+const { store } = __m['data'];
+const { nba, loadNbaInjuries } = __m['nba-data'];
+const { nfl } = __m['nfl-data'];
+const { fmtOdds, parseIn, oddsFmt, PLACEHOLDER } = __m['oddsfmt'];
+const { accaPlan, RISK, blendP } = __m['risk'];
+const { fmtU } = __m['kelly'];
+const { CUR } = __m['units'];
+const { selFromCandidate, logBuilderNow } = __m['betprefill'];
+const { esc, fmtKick } = __m['util'];
+
+const BB = { minP: 0.65, maxLegs: 3, show: 6 };
+const KEY = 'proplab.builders.v1';
+let F = null; const CACHE = new Map();
+const load = () => { if (F) return F; let j = {}; try { j = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch { j = {}; } F = { gid: '', days: 1, ...j }; return F; };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ gid: F.gid, days: F.days })); } catch { /* this visit only */ } };
+const gidOf = (sport, g) => String(sport === 'football' ? `${g.league}|${g.date}|${g.home}|${g.away}` : g.id);
+
+/** The legs for one game: each player's most demanding bookmaker line at 65%+ (overs). */
+function legsOf(cands, sport) {
+  const best = new Map();
+  for (const c of cands) { if (c.kind !== 'player' || c.def.binary || strictSkip(c)) continue;
+    if (sport === 'nba' && BOOK_MIN_LINE_NBA[c.def.key] == null) continue;
+    let top = null; for (const L of c.lines) { if (sport === 'nba' && L < BOOK_MIN_LINE_NBA[c.def.key] - 1e-9) continue; // his most demanding line still at 65%+
+      const r = evalAt(c, L, 'over'); if (r && r.p >= BB.minP && r.conf && r.conf.rank >= 2) top = r; }
+    if (!top) continue; const k = c.pid ?? c.name, prev = best.get(k); if (!prev || top.rank > prev.r.rank) best.set(k, { c, r: top }); } // one leg per player: his best-ranked market
+  return [...best.values()].sort((a, b) => b.r.p - a.r.p);
+}
+/** Doubles and trebles of different players: { legs, p, fair } sorted by chance. */
+function combosOf(legs, size) { const out = [], n = legs.length;
+  const add = a => { const p = a.reduce((t, l) => t * l.r.p, 1); out.push({ legs: a, p, fair: 1 / p }); };
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { if (size === 2) add([legs[i], legs[j]]); else for (let k = j + 1; k < n; k++) add([legs[i], legs[j], legs[k]]); }
+  return out.sort((a, b) => b.p - a.p); }
+
+async function viewBuilders(root, sport) {
+  const f = load(), D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : store;
+  if (D.status !== 'ready') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
+  if (sport === 'nba') await loadNbaInjuries();
+  const tested = sport === 'nba';
+  root.innerHTML = `${recTabs(sport, 'bb')}<div id="bbpg"><h1>Bet Builders</h1>
+    <p class="muted" style="margin-top:-4px">Same-game doubles and trebles from one match. PropLab works out the chance they all come in and the fair price; type your bookmaker's bet-builder odds to see if it is EV+. Bookmakers usually price builders below the legs multiplied together, so EV+ ones are rare: when one shows up, it is worth a look.</p>
+    ${tested ? '' : `<div class="banner info small">${sport === 'nfl' ? 'NFL' : 'Football'} same-game legs have not been tested for how they move together (a player's shots and his team's corners often do), so these are priced but get <b>no stake</b>. Track them as <b>Model only</b> to test them.</div>`}
+    <div class="card stack" id="bbf"></div><div id="bbout"></div></div>`;
+  const pg = root.querySelector('#bbpg'), out = pg.querySelector('#bbout'); let games = [], legs = [], pick = new Set(); const ODDS = new Map();
+  const drawF = () => { games = fixtures(sport, Number(f.days) || 1); if (!games.some(g => gidOf(sport, g) === f.gid)) f.gid = games.length ? gidOf(sport, games[0]) : '';
+    pg.querySelector('#bbf').innerHTML = `<div class="field"><span class="xs muted">Games</span><div class="seg wrap" data-bbdays>${[[1, 'Today / tonight'], [3, 'Next 3 days']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Number(f.days) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <label class="field"><span>Match</span><select class="in" data-bbgame>${games.length ? games.map(g => `<option value="${esc(gidOf(sport, g))}"${gidOf(sport, g) === f.gid ? ' selected' : ''}>${esc(sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`)} · ${esc(fmtKick(g))}</option>`).join('') : '<option value="">No games</option>'}</select></label>`; };
+  const legTxt = l => `${esc(l.c.name)}: ${esc(ladderName(l.c, l.r))} <span class="muted">(${(l.r.p * 100).toFixed(0)}%, ${esc(l.r.conf.label)})</span>`;
+  const priceBox = (id, cb) => { const txt = ODDS.get(id) || '', od = txt ? parseIn(txt) : null; let o = '<span class="xs muted">Type the bookmaker\'s bet-builder price for the EV and a stake.</span>';
+    if (od && od.dec) { const Dd = od.exact ?? od.dec, pj = tested ? blendP(cb.p, Dd) : cb.p, ev = (pj * Dd - 1) * 100, evM = (cb.p * Dd - 1) * 100, P = tested ? accaPlan(pj, Dd, { validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf.level === 'Low') }) : null, u = P && P.ok && ev > 0 ? P.units : 0;
+      o = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-bbev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>${tested ? ` <span class="xs muted">(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>` : ''} · ${ev <= 0 ? '<span class="xs muted">no value: the bookmaker is charging more than PropLab\'s price</span>' : u > 0 ? `stake <b data-bbstake>${fmtU(u)}u</b> (${CUR()}${(u * RISK.unitGBP).toFixed(2)})` : `<span class="xs muted">${tested ? 'no stake (edge too small after rounding)' : 'no stake: untested same-game legs'}</span>`}
+        <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${u > 0 ? '<button type="button" class="chip" data-bbadd="real">＋ Real bet</button>' : ''}${ev > 0 ? '<button type="button" class="chip" data-bbadd="model">＋ Model only</button>' : ''}</div>`; }
+    return `<div class="hrodds" data-bbbox="${esc(id)}"><label class="field" style="margin:0"><span>Bookmaker's bet-builder odds</span><input class="in" data-bbodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(txt)}"></label><div class="small" data-bbout aria-live="polite">${o}</div></div>`; };
+  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div><ol class="xs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li>${legTxt(l)}</li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
+  let shown = new Map();
+  const draw = () => { shown = new Map();
+    if (!legs.length) { out.innerHTML = '<div class="card"><p class="small" style="margin:0">No strong legs in this game (65%+ with good evidence at a bookmaker line). Try another game.</p></div>'; return; }
+    const d2 = combosOf(legs, 2).slice(0, BB.show), d3 = combosOf(legs, 3).slice(0, BB.show);
+    d2.forEach((c, i) => shown.set(`d${i}`, c)); d3.forEach((c, i) => shown.set(`t${i}`, c));
+    const mine = [...pick].map(i => legs[i]).filter(Boolean), own = mine.length >= 2 ? { legs: mine, p: mine.reduce((t, l) => t * l.r.p, 1) } : null; if (own) { own.fair = 1 / own.p; shown.set('own', own); }
+    out.innerHTML = `<section class="card stack"><h3 style="margin:0">Build your own</h3><p class="xs muted" style="margin:0">Tick 2 or 3 legs (different players).</p>
+        ${legs.map((l, i) => `<label class="hcheck"><input type="checkbox" data-bbleg="${i}" ${pick.has(i) ? 'checked' : ''} ${!pick.has(i) && pick.size >= BB.maxLegs ? 'disabled' : ''}> ${legTxt(l)}</label>`).join('')}
+        ${own ? comboCard(own, 'own') : ''}</section>
+      <h3>Best doubles <span class="xs muted">(most likely first)</span></h3>${d2.map((c, i) => comboCard(c, `d${i}`)).join('') || '<p class="small muted">Needs 2 strong legs.</p>'}
+      <h3>Best trebles</h3>${d3.map((c, i) => comboCard(c, `t${i}`)).join('') || '<p class="small muted">Needs 3 strong legs.</p>'}`; };
+  const loadG = async () => { const g = games.find(x => gidOf(sport, x) === f.gid); if (!g) { out.innerHTML = '<div class="card"><p class="small" style="margin:0">No games in this window.</p></div>'; return; }
+    out.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; pick = new Set();
+    const key = `${sport}|${f.gid}`; let c = CACHE.get(key); if (!c) { c = await buildCandidates(sport, sport === 'football' ? null : usAdapter(sport), [g]); CACHE.set(key, c); }
+    legs = legsOf(c, sport); draw(); };
+  pg.addEventListener('click', e => { const b = e.target.closest('[data-bbdays] button'); if (b) { f.days = Number(b.dataset.v); save(); drawF(); loadG(); return; }
+    const ad = e.target.closest('[data-bbadd]'); if (ad) { const id = ad.closest('[data-bbbox]').dataset.bbbox, cb = shown.get(id), txt = ODDS.get(id) || '', od = parseIn(txt); if (!cb || !od || !od.dec) return;
+      const Dd = od.exact ?? od.dec, pj = tested ? blendP(cb.p, Dd) : cb.p, model = ad.dataset.bbadd === 'model', P = tested || model ? accaPlan(pj, Dd, { validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf.level === 'Low') }) : null, u = P && P.ok ? P.units : 0; // model-only untested builders: the stake it would get if tested
+      const saved = u > 0 ? logBuilderNow(cb.legs.map(l => ({ sel: selFromCandidate(l.c, 'over', l.r), fair: l.r.fair })), Dd, txt, u * RISK.unitGBP, model ? 'model' : 'real') : null;
+      ad.textContent = saved ? (model ? `✓ Model tracker: ${fmtU(u)}u` : `✓ Real bet: ${CUR()}${saved.stake.toFixed(2)}`) : 'Could not save'; if (saved) ad.parentElement.querySelectorAll('[data-bbadd]').forEach(o => { o.disabled = true; }); } });
+  pg.addEventListener('change', e => { const t = e.target; if (t.matches('[data-bbgame]')) { f.gid = t.value; save(); loadG(); return; }
+    if (t.matches('[data-bbleg]')) { const i = Number(t.dataset.bbleg); t.checked ? pick.add(i) : pick.delete(i); draw(); } });
+  pg.addEventListener('input', e => { const t = e.target; if (!t.matches('[data-bbodds]')) return; const box = t.closest('[data-bbbox]'), id = box.dataset.bbbox, cb = shown.get(id); ODDS.set(id, t.value); if (!cb) return;
+    const tmp = document.createElement('div'); tmp.innerHTML = priceBox(id, cb); box.querySelector('[data-bbout]').replaceWith(tmp.querySelector('[data-bbout]')); });
+  drawF(); await loadG();
+}
+
+return { BB, legsOf, combosOf, viewBuilders };
 })();
 __m['v-model'] = (() => {
 // Model Performance (owner model audit, 2 Nov 2026): how the probabilities behind Recommended Plays, Hiwi and Compare did on past seasons
@@ -13370,9 +13571,10 @@ const { nfl, loadNfl } = __m['nfl-data'];
 const { nba, loadNba } = __m['nba-data'];
 const { viewNbaFixtures, viewNbaSearch, viewNbaPlayer } = __m['v-nba'];
 const { viewNbaFinder } = __m['v-nba-finder'];
-const { viewRecommended } = __m['v-recommended'];
+const { viewRecommended, setStrict } = __m['v-recommended'];
 const { viewAcca } = __m['v-acca'];
 const { viewHitRates } = __m['v-hitrates'];
+const { viewBuilders } = __m['v-builder'];
 const { viewMyPlays } = __m['myplays'];
 const { viewModel } = __m['v-model'];
 const { viewNbaPlays } = __m['v-nba-plays'];
@@ -13421,11 +13623,11 @@ const TABS = {
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
-const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', acca: 'acca', form: 'form', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
+const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', strict: 'strict', singles: 'singles', acca: 'acca', form: 'form', bb: 'bb', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', rec: '#/rec', myplays: '#/myplays', model: '#/model', value: '#/value', about: '#/about' };
 const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', rec: '#/nba/rec', myplays: '#/nba/myplays', model: '#/nba/model', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { matchups: '#/nfl/matchups', start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
-const TITLES = { form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { strict: 'Strict plays', singles: 'Singles', bb: 'Bet Builders', form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
   const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
@@ -13488,7 +13690,7 @@ function chrome(w) {
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
     <a class="searchbtn" href="${SEARCH[sp]}" aria-label="Search ${SPORTS[sp].label}">${ICON.search}</a>` : '';
   const tabs = sp ? TABS[sp] : [];
-  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', performance: 'value' }[w.page] || w.page);
+  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec', performance: 'value' }[w.page] || w.page);
   $('#nav').hidden = !sp; $('#nav').style.setProperty('--tabs', String(tabs.length || 5)); // one column per tab (no empty slot)
   $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'rec' || k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
   document.body.dataset.sport = sp || 'hub';
@@ -13501,7 +13703,7 @@ const HIDDEN_MODEL = w => (w.sport === 'nfl' && ['picks', 'performance', 'plays'
 const OLD_HOME = w => (w.sport === 'football' && w.page === 'football' ? '#/start' : w.sport === 'nfl' && w.page === 'home' ? '#/nfl/start' : w.sport === 'nba' && w.page === 'home' ? '#/nba/start' : null);
 // Find Plays groups the ranked hit-rate list (Finder) and the match-by-match lists (Plays) as two tabs of one journey.
 const FP = { football: [['rec', "Hiwi's Section", '#/rec'], ['finder', 'Hit rates', '#/finder'], ['plays', 'By match', '#/plays']], nba: [['rec', "Hiwi's Section", '#/nba/rec'], ['finder', 'Hit rates', '#/nba/finder'], ['plays', 'By match', '#/nba/plays']], nfl: [['rec', "Hiwi's Section", '#/nfl/rec'], ['finder', 'Hit rates', '#/nfl/finder']] };
-const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca' || pg === 'form') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
+const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca' || pg === 'form' || pg === 'bb' || pg === 'strict' || pg === 'singles') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
   return `<nav class="fpnav" aria-label="Plays"><span class="xs muted">Plays:</span><div class="seg">${t.map(([k, l, h]) => `<a href="${h}" class="${k === pg ? 'on' : ''}" ${k === pg ? 'aria-current="page"' : ''}>${esc(l)}</a>`).join('')}</div></nav>`; };
 // Back to Plays (owner request 21 Oct, evening): tapping a player's name remembers the page and its scroll position; returning to that page
 // (the Back to Plays button or the browser's Back) restores it. Find Your Own also restores its exact card order (see v-hiwi.js).
@@ -13543,15 +13745,15 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
     if (w.sport === 'nba' && nba.status === 'loading') return;
     if (w.sport === 'nba') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), bb: x => viewBuilders(x, 'nba'), strict: x => { setStrict('nba', true); return viewRecommended(x, 'nba'); }, singles: x => { setStrict('nba', false); return viewRecommended(x, 'nba'); }, research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), form: x => viewHitRates(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), form: x => viewHitRates(x, 'nfl'), bb: x => viewBuilders(x, 'nfl'), strict: x => { setStrict('nfl', true); return viewRecommended(x, 'nfl'); }, singles: x => { setStrict('nfl', false); return viewRecommended(x, 'nfl'); }, research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       await V(body); return finish();
     }
-    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), form: x => viewHitRates(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
+    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), form: x => viewHitRates(x, 'football'), bb: x => viewBuilders(x, 'football'), strict: x => { setStrict('football', true); return viewRecommended(x, 'football'); }, singles: x => { setStrict('football', false); return viewRecommended(x, 'football'); }, research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
     await V(body, w.r);
   } catch (e) { console.error(e); body.innerHTML = `<div class="banner bad"><b>Something went wrong on this page.</b><br>${esc(e.message)}</div>`; }
   finish();
