@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-13T13:06:10Z",
+ "updated": "2026-11-14T06:59:09Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -207,7 +207,7 @@
    "group": "ATL",
    "file": "data-nba-logs-ATL.json",
    "players": 18,
-   "rows": 4755
+   "rows": 4768
   },
   {
    "group": "BKN",
@@ -230,14 +230,14 @@
   {
    "group": "CHI",
    "file": "data-nba-logs-CHI.json",
-   "players": 17,
-   "rows": 4408
+   "players": 18,
+   "rows": 4608
   },
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
    "players": 16,
-   "rows": 3541
+   "rows": 3553
   },
   {
    "group": "DAL",
@@ -260,32 +260,32 @@
   {
    "group": "FA",
    "file": "data-nba-logs-FA.json",
-   "players": 142,
-   "rows": 26176
+   "players": 141,
+   "rows": 25990
   },
   {
    "group": "GSW",
    "file": "data-nba-logs-GSW.json",
    "players": 18,
-   "rows": 4860
+   "rows": 4873
   },
   {
    "group": "HOU",
    "file": "data-nba-logs-HOU.json",
    "players": 18,
-   "rows": 4667
+   "rows": 4682
   },
   {
    "group": "IND",
    "file": "data-nba-logs-IND.json",
    "players": 17,
-   "rows": 5251
+   "rows": 5263
   },
   {
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
    "players": 19,
-   "rows": 4661
+   "rows": 4674
   },
   {
    "group": "LAL",
@@ -297,19 +297,19 @@
    "group": "MEM",
    "file": "data-nba-logs-MEM.json",
    "players": 18,
-   "rows": 2787
+   "rows": 2799
   },
   {
    "group": "MIA",
    "file": "data-nba-logs-MIA.json",
    "players": 17,
-   "rows": 4792
+   "rows": 4807
   },
   {
    "group": "MIL",
    "file": "data-nba-logs-MIL.json",
    "players": 19,
-   "rows": 4394
+   "rows": 4409
   },
   {
    "group": "MIN",
@@ -321,25 +321,25 @@
    "group": "NOP",
    "file": "data-nba-logs-NOP.json",
    "players": 18,
-   "rows": 4274
+   "rows": 4287
   },
   {
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5465
+   "rows": 5479
   },
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 20,
-   "rows": 3850
+   "rows": 3861
   },
   {
    "group": "ORL",
    "file": "data-nba-logs-ORL.json",
    "players": 17,
-   "rows": 4486
+   "rows": 4499
   },
   {
    "group": "PHI",
@@ -357,19 +357,19 @@
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3860
+   "rows": 3873
   },
   {
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
    "players": 17,
-   "rows": 3464
+   "rows": 3475
   },
   {
    "group": "SAS",
    "file": "data-nba-logs-SAS.json",
    "players": 17,
-   "rows": 4291
+   "rows": 4303
   },
   {
    "group": "TOR",
@@ -381,7 +381,7 @@
    "group": "UTA",
    "file": "data-nba-logs-UTA.json",
    "players": 19,
-   "rows": 4752
+   "rows": 4764
   },
   {
    "group": "WAS",
@@ -392,9 +392,9 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 7950,
+  "final": 7959,
   "players": 1192,
-  "player_games": 209143,
+  "player_games": 209376,
   "quarter_points_ok": 169962,
   "quarter_points_dropped": 247,
   "q1_rebounds_ok": 168862,
