@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="726db869299a">
+<meta name="proplab-build" content="22d78b32f8af">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -884,6 +884,24 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 /* Update 90: shots in the Hit Rates bar box */
 .hrshots{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
 
+/* Update 95: one play fits one iPhone screen */
+.rlin{margin-top:6px}.rlin .raltbtn{margin:0 0 0 auto;padding:4px 0}
+.rhides{display:flex;gap:16px;flex-wrap:wrap;margin-top:2px}.rhides .rhide{margin:0;padding:4px 0}
+.rbuy{margin-top:6px;padding-top:6px;gap:6px}
+.rcard .sverdict{margin:4px 0 0;padding:6px 10px}
+.rbuy{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:6px 8px}
+.rbuy .rodds{grid-column:1;grid-row:1}.rbuy [data-rlogreal]{grid-column:2;grid-row:1}
+.rbuy .sverdict{grid-column:1/3;grid-row:2}.rbuy .revout{grid-column:1/3;grid-row:3;flex-basis:auto}
+.rbuy [data-rlogmodel]{grid-column:1;grid-row:4}.rbuy .slipadd{grid-column:2;grid-row:4;margin:0}
+.rbuy .chip{width:100%;justify-content:center}
+.rhidesr{float:right;gap:12px;margin:0}.rhidesr .rhide{padding:2px 0}
+.rwhyd>summary{padding:2px 0}
+.rbuy{clear:both}
+.rbuy [data-rlogreal]{border-color:var(--accent);color:var(--text);font-weight:600}
+.rlin{clear:both}.rhidesr{line-height:1.2}.rhidesr .rhide{padding:0;min-height:0}
+.rbuy .chip{min-height:38px;padding-top:6px;padding-bottom:6px}.rbuy .rodds .in{min-height:38px;padding-top:6px;padding-bottom:6px}
+.rcard .rlin{margin-top:2px}.rcard .rbuy{margin-top:4px;padding-top:4px}
+
 </style>
 <title>PropLab – football stats and player-prop research</title>
 </head>
@@ -1572,7 +1590,7 @@ async function loadNba(getJson) {
 /** The latest Official NBA Injury Report (fetched without the browser cache, so a stale copy never hides or keeps a player). */
 async function loadNbaInjuries(force = false) {
   if (nba.injuries && !force && nba.injuries._at > Date.now() - 10 * 60e3) return nba.injuries;
-  try { const inj = await nba.getJson('data-nba-injuries.json', { fresh: true });
+  try { const inj = await Promise.race([nba.getJson('data-nba-injuries.json', { fresh: true }), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 8000))]); /* Update 95: a slow injury report never holds the page */
     if (inj && inj.schema === 1 && Array.isArray(inj.items)) { inj._at = Date.now(); inj.byPid = new Map(); for (const x of inj.items) if (x.pid) inj.byPid.set(x.pid, [...(inj.byPid.get(x.pid) || []), x]); nba.injuries = inj; }
   } catch { nba.injuries = { missing: true, items: [], byPid: new Map(), _at: Date.now() }; }
   return nba.injuries;
@@ -7143,7 +7161,9 @@ function valueVerdict(p, dec) {
 const valueMinOdds = p => Math.max(VALUE.minOdds, 1 / Math.max(1e-9, p - VALUE.edge));
 /* Update 91 (owner's prices, 14 Nov: 549 NBA lines): when the model is far above the bookmaker the model is usually the one that's wrong (e.g. Cade 8+ assists: model 80%, price 1.50 = 67%), so a gap this big is a Pass */
 const MARKET_GAP = 0.10;
-const gapPass = (p, imp) => (p - imp > MARKET_GAP + 1e-9 ? { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): bookmakers are rarely that wrong, so this is more likely a model error. Pass` } : null);
+/* Update 95 (owner): compared on the whole-number % shown (65% v 55% = 10 points = fine; 11+ = Pass) */
+const overGap = (p, imp) => Math.round(p * 100) - Math.round(imp * 100) > Math.round(MARKET_GAP * 100);
+const gapPass = (p, imp) => (overGap(p, imp) ? { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): bookmakers are rarely that wrong, so this is more likely a model error. Pass` } : null);
 /** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
 function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at your odds (inside 1.70-3.00) = Back it; otherwise Pass.
   const S = STRICT, imp = 1 / dec, ev = p * dec - 1;
@@ -7156,7 +7176,7 @@ function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at 
 }
 /** The shortest odds that pass the strict rules for a model chance. */
 /* the longest odds before the market-gap rule makes it a Pass (Update 91) */
-const gapMaxOdds = p => (p > MARKET_GAP + 1e-9 ? 1 / (p - MARKET_GAP) : Infinity);
+const gapMaxOdds = p => { const m = Math.round(p * 100) - Math.round(MARKET_GAP * 100) - 0.5; return m > 0 ? Math.floor(10000 / m) / 100 : Infinity; }; /* longest odds whose rounded % is within the gap */
 const strictMaxOdds = p => Math.min(STRICT.maxOdds, gapMaxOdds(p));
 const valueMaxOdds = p => Math.min(VALUE.maxOdds, gapMaxOdds(p));
 const strictMinOdds = p => Math.max(STRICT.minOdds, Math.ceil(100 * (1 + STRICT.minEV) / Math.max(1e-9, p)) / 100); // the shortest price with 5%+ EV (Update 92)
@@ -7218,7 +7238,7 @@ const fmtLineName = (c, r) => (c.def.binary ? `${c.def.label}: ${r.side === 'und
 const ladderName = (c, r) => (c.def.binary || r.side === 'under' ? fmtLineName(c, r) : `${Math.floor(r.L) + 1}+ ${c.def.label}`);
 void sdFor; void nbaLines;
 
-return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, histCandidate, buildCandidates, clearCandidateCache, pickPlays, STRICT, strictLine, minutesSteady, strictSkip, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, VALUE, BOOK_MIN_LINE_NBA, VALUE_MIN_LINE, valueWhy, valuePick, valueVerdict, valueMinOdds, MARKET_GAP, strictVerdict, gapMaxOdds, strictMaxOdds, valueMaxOdds, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
+return { hitRates, FB_BOOK_LINES, confidenceOf, RANK_W, overallOf, evalAt, linesOf, histCandidate, buildCandidates, clearCandidateCache, pickPlays, STRICT, strictLine, minutesSteady, strictSkip, vsOppOf, strictPick, ACCA_SAFE, accaSafeOk, VALUE, BOOK_MIN_LINE_NBA, VALUE_MIN_LINE, valueWhy, valuePick, valueVerdict, valueMinOdds, MARKET_GAP, overGap, strictVerdict, gapMaxOdds, strictMaxOdds, valueMaxOdds, strictMinOdds, bestLine, passes, SORTS, sortPlays, streaks, reasonOf, fmtLineName, ladderName };
 })();
 __m['nbalive'] = (() => {
 // NBA Live Simulator model (owner request 28 Oct 2026). Pure functions shared by the site and the backtest (owner-tools/nba-live-backtest.mjs),
@@ -9364,7 +9384,7 @@ function freshHtml(sport) {
 function setStrict(sport, on) { const s = stateOf(sport); s.f.strict = !!on; if (on) s.f.value = false; s.kept.clear(); save(sport, s); }
 async function viewRecommended(root, sport) {
   const A = sport === 'football' ? null : usAdapter(sport), s = stateOf(sport);
-  if (sport === 'nba') await loadNbaInjuries(); // OUT players are left out, Questionable / Doubtful marked: the report must be in first
+  if (sport === 'nba') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; await loadNbaInjuries(); } // OUT players are left out, Questionable / Doubtful marked: the report must be in first
   if (sport === 'football' && store.status !== 'ready') { root.innerHTML = store.status === 'error' ? '<div class="banner bad"><b>Football data could not be loaded.</b> Try again later.</div>' : '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
   const ukDay = dayOfFor(sport), all = fixturesOf(sport, A), byId = new Map(all.map(f => [fxIdOf(sport, f), f]));
   // default: today's games (UK), the first time
@@ -9410,7 +9430,7 @@ async function viewRecommended(root, sport) {
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
           <li>One play per player per game: his strongest.</li>
           <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> when it is at least ${Math.round(STRICT.minEV * 100)}% EV at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. Under ${Math.round(STRICT.minEV * 100)}% EV is a Pass. The model's figures are corrected for the early season (tested on this season's games: strict picks came in 60% of the time).</li>
-          <li>Not too good to be true: if the model is more than ${Math.round(MARKET_GAP * 100)} points above your price, it's a <b>Pass</b>. Checked against real bookmaker prices: a gap that big usually means the model is wrong.</li>
+          <li>Not too good to be true: if the model is more than ${Math.round(MARKET_GAP * 100)} points above your price (both rounded to whole %), it's a <b>Pass</b>; exactly ${Math.round(MARKET_GAP * 100)} is fine. Checked against real bookmaker prices: a gap that big usually means the model is wrong.</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
       <div class="strictbox valuebox${s.f.value ? ' on' : ''}" data-valuebox><label class="hcheck strictlbl"><input type="checkbox" data-rvalue ${s.f.value ? 'checked' : ''}> <b>Value at 2.0+</b> <span class="xs muted">(about a coin flip or better, on lines you can often get at 2.0 or longer)</span></label>
         <details class="xs"><summary>The rules</summary><ol class="strictrules">
@@ -9539,9 +9559,8 @@ async function viewRecommended(root, sport) {
     let out = '';
     if (od && !od.dec) out = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
     else if (od && od.dec) { const D = od.exact ?? od.dec, fb = sport === 'football', pb = fb ? r.p : blendP(r.p, D), evM = (r.p * D + r.push - 1) * 100, ev = (pb * D + r.push - 1) * 100, P = stakePlan({ ...r.e, win: pb }, D, r.conf), PM = fb ? null : stakePlan({ ...r.e, win: r.p }, D, r.conf); // Update 79: EV and stake on the model + bookmaker blend; Update 86: PM = the full model stake, shown in brackets
-      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}" data-revmodel="${evM.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b> ${fb ? '<span class="xs muted" data-revnote>(model, full stake)</span>' : `<span class="xs muted" data-revnote>(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>`} · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} <button type="button" class="chip" data-radd="real" title="A bet you placed: Real bets (and the Model tracker)">＋ Real bet</button> <button type="button" class="chip" data-radd="model" title="Not betting it: track it for the model only">＋ Model only</button>` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
-        ${PM && PM.adj > 0 ? `<span class="xs muted" data-rfull>(full model: <b>${fmtU(PM.adj)}u</b> uncapped, ${CUR()}${(PM.adj * RISK.unitGBP).toFixed(2)})</span>` : ''}
-        <button type="button" class="infotag neutral" ${TIP('EV and stake', fb ? `Football (owner, 13 Nov 2026): EV and stake use the model's own ${(r.p * 100).toFixed(1)}%, with no blend with the bookmaker's price. EV = ${(r.p * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model's probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}.` : `EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
+      out = `<b class="${ev > 0 ? 'hit' : 'miss'}" data-rev="${ev.toFixed(2)}" data-revmodel="${evM.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>  · ${ev > 0 && P && P.final > 0 ? `stake <b data-rstake>${fmtU(P.final)}u</b> (${CUR()}${(P.final * RISK.unitGBP).toFixed(2)})${P.capped ? ` <span class="xs muted" data-runcapped>· uncapped <b>${fmtU(P.adj)}u</b> (${CUR()}${(P.adj * RISK.unitGBP).toFixed(2)}), over your max</span>` : ''} ` : (ev > 0 ? `<b data-rstake>0.00u</b>: ${P && !P.validated ? 'this market is not validated, so no stake' : 'the edge is too small for a stake after rounding down'}` : '<b data-rstake>0.00u</b>: no bet at this price')}
+        <button type="button" class="infotag neutral" ${TIP('EV and stake', fb ? `Football (owner, 13 Nov 2026): EV and stake use the model's own ${(r.p * 100).toFixed(1)}%, with no blend with the bookmaker's price. EV = ${(r.p * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model's probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}.` : `Model alone: ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}% EV.\n${PM && PM.adj > 0 ? `Full model stake: ${fmtU(PM.adj)}u uncapped (${CUR()}${(PM.adj * RISK.unitGBP).toFixed(2)}), on the model's own ${(r.p * 100).toFixed(1)}% with no blend.\n` : ''}EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     let sv = ''; // Update 77: the strict rules' verdict
     if (s.f.value) { if (od && od.dec) { const v = valueVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? 'Check the news' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
@@ -9611,7 +9630,7 @@ async function viewRecommended(root, sport) {
     const partTip = q => (stk ? '\n' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(' · ') : '');
     void tipOf; void partTip;
     const id = `${x.c.id}|${x.side}`, sel = BOXSEL.get(id), selQ = sel ? rows.find(q => rowKey(q) === sel) : null, hitN = rows.filter(q => ok(q.value)).length, wide = rows.length > 20;
-    const cap = `<p class="xs muted rbcap" data-rbcap><b>${esc(w === 'opp' ? `v ${x.c.opp}` : WIN[w])}</b>: ${x.side === 'under' ? 'under' : 'over'} ${r.L} in ${hitN} of ${rows.length}${rows.length ? ` (${Math.round((hitN / rows.length) * 100)}%)` : ''} · oldest left, newest right${wide ? ' (swipe for older)' : ''} · tap a bar for the box score</p>`;
+    const cap = `<p class="xs muted rbcap" data-rbcap><b>${esc(w === 'opp' ? `v ${x.c.opp}` : WIN[w])}</b>: ${x.side === 'under' ? 'under' : 'over'} ${r.L} in ${hitN} of ${rows.length}${rows.length ? ` (${Math.round((hitN / rows.length) * 100)}%)` : ''} · newest right${wide ? ' (swipe for older)' : ''} · tap a bar</p>`;
     return `${cap}<div class="rbwrap${wide ? ' wide' : ''}"><div class="rbars${stk ? ' rstk' : ''}" style="${wide ? `width:${rows.length * 15}px` : ''}" aria-label="${rows.length} ${unitWord} against the line ${r.L} (tap a bar for that game's box score)"><i class="rbline" style="bottom:${(r.L / mx) * 100}%"></i>${rows.map(q => `<button type="button" class="rbar ${ok(q.value) ? 'h' : 'm'}${selQ === q ? ' sel' : ''}" style="height:${Math.max(4, (q.value / mx) * 100)}%" data-rbar="${esc(rowKey(q))}" aria-pressed="${selQ === q}" aria-label="${esc(`${q.date}${q.opp ? ' v ' + q.opp : ''}: ${q.value}${stk ? ' (' + q.parts.map(([v], i) => `${pn[i]} ${v}`).join(', ') + ')' : ''}`)}">${stk ? `<span class="rsegs">${segs(q)}</span>` : ''}<em>${q.value}</em></button>`).join('')}</div></div>${selQ ? boxHtml(x, selQ) : ''}${stk ? `<p class="xs muted rleg">${pn.map((nm, i) => `<span><i class="hseg ${rows[0].parts[i][1]}"></i>${esc(nm)}</span>`).join('')}<span class="rlegk">top edge: green hit, red miss</span></p>` : ''}`;
   }
   function nflMuHtml(c, r) {
@@ -9630,7 +9649,7 @@ async function viewRecommended(root, sport) {
     const bo = sport !== 'football' ? blowoutOf(g, sport) : null;
     const lo = r.e && Number.isFinite(r.e.lo) ? r.e.lo : null, hi = r.e && Number.isFinite(r.e.hi) ? r.e.hi : null;
     return `<article class="rcard${x.keptOut ? ' rkept' : ''}" data-rid="${esc(id)}">
-      <header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> ${tag}${c.newTeam ? '<button type="button" class="newteam" data-info="newteam">NEW TEAM</button>' : ''}<div class="rmk">${esc(ladderName(c, r))}${c.def.binary ? '' : ` <span class="muted">(${esc(fmtLineName(c, r))})</span>`}</div>
+      <header class="rch"><div class="rct"><b class="rname">${esc(c.name)}</b> ${tag}${c.newTeam ? '<button type="button" class="newteam" data-info="newteam">NEW TEAM</button>' : ''}<div class="rmk">${esc(ladderName(c, r))}${c.def.binary ? '' : ` <span class="muted">(${esc((fmtLineName(c, r).match(/^(Over|Under) [\d.]+/) || [fmtLineName(c, r)])[0])})</span>`}</div>
         <div class="xs muted">${vs} · ${esc(fmtKick(g))}${bo ? ` · <button type="button" class="bo bo-${bo.level.toLowerCase()}" ${TIP(`Blowout risk: ${bo.level}`, bo.text)}>blowout risk: ${bo.level}</button>` : ''}</div></div>
         <button type="button" class="rprob" ${TIP(`Model probability ${(r.p * 100).toFixed(1)}%`, `PropLab's estimated chance that ${c.name} goes ${word} ${c.def.label.toLowerCase()}${lo != null ? ` (likely range ${(lo * 100).toFixed(0)}-${(hi * 100).toFixed(0)}%)` : ''}. It comes from his whole record (recent games count more${sport === 'nba' ? ', each game scaled to the minutes he is expected to play, plus teammates out and the matchup' : ''}) and is calibrated: in tests on a season it never saw, plays given about this figure hit about this often. It is not the hit rate, and it cannot know news after the data update.`)}><b>${(r.p * 100).toFixed(0)}%</b><small>model ⓘ</small></button></header>
       ${x.keptOut ? `<p class="xs warn" style="margin:4px 0">Outside your filters${String(s.f.q || '').trim() ? '' : ' (kept on screen because you changed this play)'}</p>` : ''}
@@ -9639,11 +9658,11 @@ async function viewRecommended(root, sport) {
       <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n && !c.def.binary ? `<button type="button" class="rh${won('opp')}"${wb('opp')}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
+      <div class="rhides rhidesr"><button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove play</button>${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not playing? Hide ${esc(c.name.split(' ').slice(-1)[0])}</button>` : ''}</div>
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
-      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button></div><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Probability &amp; fair odds at every line</button>`}
-      <button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove just this play</button>
-      ${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not available? Hide ${esc(c.name.split(' ').slice(-1)[0])} for this game</button>` : ''}
-      <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button><button type="button" class="chip" data-rlog title="Placed this bet? Log it in My Plays: it settles automatically">Log as a real bet</button></div>
+      ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Every line</button></div>`}
+
+      <div class="rbuy">${evHtml(x)}<button type="button" class="chip slipadd" data-rslip data-slipid="${esc(legId(c, x.side, r.L))}" aria-pressed="false">＋ Add to Acca</button><button type="button" class="chip" data-radd="model" data-rlogmodel title="Not betting it: track it for the model only">＋ Model only</button><button type="button" class="chip" data-radd="real" data-rlogreal title="Placed this bet? Type your odds, then tap: it goes straight into My Plays (Real bets and the Model tracker) at the stake shown">Log as a real bet</button></div>
       <div class="ralt" hidden></div></article>`;
   }
   const findX = el => { const id = el.closest('.rcard').dataset.rid; return current.find(x => `${x.c.id}|${x.side}` === id); };
@@ -9710,13 +9729,13 @@ async function viewRecommended(root, sport) {
       const st = { ...x.rep.st, per: sport === 'football' ? x.rep.st.per : (x.c.card.perDefault || '10') }, cd = x.c.card;
       try { if (cd.rebuild) Object.assign(cd, cd.rebuild(st)); else if (cd.perFn) Object.assign(cd, cd.perFn(st)); } catch (err) { console.error(err); }
       carryPrice(cd, st, sport); return; }
-    if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) return; const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: sport === 'football' ? r.p : blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
+    if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) { const bt = t.closest('[data-radd]'), oi = bt.closest('.rcard').querySelector('[data-rodds]'); bt.textContent = 'Type your odds first'; setTimeout(() => { bt.textContent = bt.dataset.radd === 'model' ? '＋ Model only' : 'Log as a real bet'; }, 1800); if (oi) oi.focus(); return; } /* Update 95 (owner): one tap logs it */ const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: sport === 'football' ? r.p : blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (nightOf(g) || ''), subj: x.c.pid || x.c.name, p: r.p };
       const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
       const b = t.closest('[data-radd]'), model = b.dataset.radd === 'model'; // Update 88: Real bet (both books) or Model only (Model tracker)
       const saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP, model ? { ...extra, book: 'model' } : extra) : null; void info;
       b.textContent = saved ? (model ? `✓ Model tracker: ${fmtU(u)}u at ${fmtOdds(D)}` : `✓ Real bet: ${CUR()}${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}`) : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved;
-      if (saved) b.parentElement.querySelectorAll('[data-radd]').forEach(o => { if (o !== b) o.disabled = true; }); if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
+      if (saved) b.closest('.rcard').querySelectorAll('[data-radd]').forEach(o => { if (o !== b) o.disabled = true; }); if (saved && hooks.betlogRefresh) hooks.betlogRefresh(); return; }
     if (t.closest('[data-ralt]')) { const box = card.querySelector('.ralt'), bt = t.closest('[data-ralt]'); box.hidden = !box.hidden; bt.setAttribute('aria-expanded', String(!box.hidden)); bt.querySelector('b').textContent = box.hidden ? '▸' : '▾'; if (!box.hidden) { const L = linesOf(x.c, x.side), o = opts();
       box.innerHTML = `<table class="ralttb raltcomp"><tr><th>Line</th><th>Model</th><th>Fair</th><th>L10</th><th></th></tr>${L.map(r => `<tr class="${passes(r, o) ? '' : 'muted'}${r.L === x.rep.L ? ' on' : ''}"><td>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</td><td>${(r.p * 100).toFixed(0)}%</td><td>${esc(fmtOdds(r.fair))}</td><td>${r.hr.l10.hit}/${r.hr.l10.n}</td><td><button type="button" class="chip" data-rpick="${r.L}">Use</button></td></tr>`).join('')}</table><p class="xs muted" style="margin:4px 0 0">Greyed lines do not pass your filters.</p>`; } return; }
     const pk = t.closest('[data-rpick]'); if (pk) { const r = evalAt(x.c, Number(pk.dataset.rpick), x.side); if (!r) return; x.rep = r; s.kept.set(x.c.id, { L: r.L, side: x.side }); x.keptOut = !passes(r, opts()); repaint(card, x); return; }
@@ -10092,7 +10111,7 @@ async function candsFor(sport, fxs, onP) { const key = `${sport}|${fxs.map(f => 
 async function viewHitRates(root, sport) {
   const f = load(), D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : store;
   if (D.status !== 'ready') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
-  if (sport === 'nba') await loadNbaInjuries();
+  if (sport === 'nba') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; await loadNbaInjuries(); }
   root.innerHTML = `${recTabs(sport, 'form')}<div id="hrpg"><h1>Hit Rates</h1>
     <p class="muted" style="margin-top:-4px">Players' recent form at the lines bookmakers offer: who has gone over in most of his last games. This is form, not value: the model's chance and fair odds sit beside each one, so a short hot streak can be checked against his longer record before you back it.</p>
     <div class="card stack" id="hrf"></div><p class="small muted" id="hrsum" aria-live="polite"></p><div id="hrout"></div></div>`;
@@ -10213,7 +10232,7 @@ __m['v-builder'] = (() => {
 //   season (they came in together 0.99-1.05x as often as multiplying predicts), so NBA builders get a stake. NFL and football same-game
 //   pairs are untested (a striker's shots and his team's corners DO move together): shown and priced, but no stake.
 //   Your price: type the bookmaker's bet-builder odds -> EV = chance x odds - 1, stake = 1/10 Kelly on the combined price (risk.js accaPlan).
-const { buildCandidates, evalAt, ladderName, strictSkip, BOOK_MIN_LINE_NBA, STRICT, MARKET_GAP } = __m['recplays'];
+const { buildCandidates, evalAt, ladderName, strictSkip, BOOK_MIN_LINE_NBA, STRICT, MARKET_GAP, overGap, gapMaxOdds } = __m['recplays'];
 const { fixtures } = __m['v-acca'];
 const { usAdapter } = __m['v-hiwi'];
 const { recTabs } = __m['rectabs'];
@@ -10233,11 +10252,11 @@ const BB = { minP: 0.65, maxLegs: 3, show: 6 };
 const BB_STRICT = { minCombo: 0.40, minOdds: 1.80, minEV: 0.05, skipKeys: ['stl', 'blk', 'sb'] };
 const strictLeg = l => l.r.conf && l.r.conf.rank >= 3 && !BB_STRICT.skipKeys.includes(l.c.def.key) && l.r.hr && l.r.hr.season && l.r.hr.season.n >= STRICT.minHitN && l.r.hr.season.pct >= STRICT.minHit * 100 - 1e-9 && l.r.hr.l10 && l.r.hr.l10.n >= STRICT.minHitN && l.r.hr.l10.pct >= STRICT.minHit * 100 - 1e-9;
 /** The odds window a strict builder can be backed at: [lo, hi] (lo > hi = no price works). */
-const bbWindow = p => ({ lo: Math.max(BB_STRICT.minOdds, Math.ceil(100 * (1 + BB_STRICT.minEV) / p) / 100), hi: p > MARKET_GAP ? 1 / (p - MARKET_GAP) : Infinity });
+const bbWindow = p => ({ lo: Math.max(BB_STRICT.minOdds, Math.ceil(100 * (1 + BB_STRICT.minEV) / p) / 100), hi: gapMaxOdds(p) });
 function bbVerdict(p, dec) { const ev = p * dec - 1, imp = 1 / dec;
   if (dec < BB_STRICT.minOdds - 1e-9) return { ok: false, why: `your odds are below ${BB_STRICT.minOdds.toFixed(2)}` };
   if (ev < BB_STRICT.minEV - 1e-9) return { ok: false, why: `EV ${(ev * 100).toFixed(1)}%: under the ${Math.round(BB_STRICT.minEV * 100)}% minimum` };
-  if (p - imp > MARKET_GAP + 1e-9) return { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): more likely a model error` };
+  if (overGap(p, imp)) return { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): more likely a model error` };
   return { ok: true, why: `EV +${(ev * 100).toFixed(1)}% at ${dec.toFixed(2)}` }; }
 const KEY = 'proplab.builders.v1';
 let F = null; const CACHE = new Map();
@@ -10264,7 +10283,7 @@ function combosOf(legs, size) { const out = [], n = legs.length;
 async function viewBuilders(root, sport) {
   const f = load(), D = sport === 'nba' ? nba : sport === 'nfl' ? nfl : store;
   if (D.status !== 'ready') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return; }
-  if (sport === 'nba') await loadNbaInjuries();
+  if (sport === 'nba') { root.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; await loadNbaInjuries(); }
   const tested = sport === 'nba';
   root.innerHTML = `${recTabs(sport, 'bb')}<div id="bbpg"><h1>Bet Builders</h1>
     <p class="muted" style="margin-top:-4px">Same-game doubles and trebles from one match. PropLab works out the chance they all come in and the fair price; type your bookmaker's bet-builder odds to see if it is EV+. Bookmakers usually price builders below the legs multiplied together, so EV+ ones are rare: when one shows up, it is worth a look.</p>
@@ -13695,10 +13714,18 @@ const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nb
 const NFL_HREF = { matchups: '#/nfl/matchups', start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
 const TITLES = { strict: 'Strict plays', singles: 'Singles', bb: 'Bet Builders', form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
+/* Update 95 (owner: "this page keeps going blank"): a download that stalls (signal drops, or the app goes to the background mid-load on an iPhone)
+   used to leave the page empty for good. Now every download gives up after 25 s (45 s for the big files), so the page can say so and offer Retry. */
 const getJson = async (file, { fresh = false, v = '' } = {}) => {
-  const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default' });
-  if (!r.ok) throw new Error(`${file}: ${r.status}`); return r.json();
+  const ac = typeof AbortController === 'function' ? new AbortController() : null, lim = /players|games|matches|rows/.test(file) ? 45e3 : 25e3, tm = ac ? setTimeout(() => ac.abort(), lim) : 0;
+  try { const r = await fetch(fresh ? `${file}?t=${Date.now()}` : `${file}?v=${encodeURIComponent(v)}`, { cache: fresh ? 'no-store' : 'default', signal: ac ? ac.signal : undefined });
+    if (!r.ok) throw new Error(`${file}: ${r.status}`); return await r.json(); }
+  catch (e) { throw new Error(e && e.name === 'AbortError' ? `${file}: took too long` : (e && e.message) || String(e)); }
+  finally { clearTimeout(tm); }
 };
+const SKEL = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>';
+const loadFail = (msg, reset) => `<div class="banner bad" data-loadfail><b>${esc(msg || 'The data could not be loaded.')}</b><br><button type="button" class="btn" data-loadretry style="margin-top:8px">Retry</button></div>`;
+document.addEventListener('click', e => { if (!e.target.closest('[data-loadretry]')) return; for (const D of [nba, nfl]) if (D.status === 'error') D.status = 'idle'; if (store.status === 'error') store.status = 'idle'; render(); });
 hooks.getJson = getJson; // for pages that need another sport's data too (the Acca Builder mixes sports)
 
 /** Where the current hash belongs: { sport: 'football'|'nfl'|null (hub), page, arg, r }. */
@@ -13807,9 +13834,11 @@ async function render() {
     if (w.page === 'about') { if (store.status === 'idle') loadCore(getJson).then(() => where().page === 'about' && render()); if (nfl.status === 'idle') loadNfl(getJson).then(() => where().page === 'about' && render()); }
     if (w.sport === 'football' && store.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadCore(getJson).then(() => { if (where().sport === 'football') render(); }); }
     if (w.sport === 'nfl' && nfl.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNfl(getJson).then(() => { if (where().sport === 'nfl') render(); }); return; }
-    if (w.sport === 'nfl' && nfl.status === 'loading') return;
+    if (w.sport === 'nfl' && nfl.status === 'loading') { body.innerHTML = SKEL; return; } /* Update 95: never a blank page while loading */
+    if (w.sport === 'nfl' && nfl.status === 'error') { body.innerHTML = loadFail(nfl.error); return finish(); }
     if (w.sport === 'nba' && nba.status === 'idle') { body.innerHTML = '<div class="skel bearload" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; loadNba(getJson).then(() => { if (where().sport === 'nba') render(); }); return; }
-    if (w.sport === 'nba' && nba.status === 'loading') return;
+    if (w.sport === 'nba' && nba.status === 'loading') { body.innerHTML = SKEL; return; }
+    if (w.sport === 'nba' && nba.status === 'error') { body.innerHTML = loadFail(nba.error); return finish(); }
     if (w.sport === 'nba') {
       const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), bb: x => viewBuilders(x, 'nba'), strict: x => { setStrict('nba', true); return viewRecommended(x, 'nba'); }, singles: x => viewRecommended(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
