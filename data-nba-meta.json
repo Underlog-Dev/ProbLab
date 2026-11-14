@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-14T06:59:09Z",
+ "updated": "2026-11-14T12:51:33Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -236,8 +236,8 @@
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
-   "players": 16,
-   "rows": 3553
+   "players": 18,
+   "rows": 3659
   },
   {
    "group": "DAL",
@@ -260,8 +260,8 @@
   {
    "group": "FA",
    "file": "data-nba-logs-FA.json",
-   "players": 141,
-   "rows": 25990
+   "players": 139,
+   "rows": 25843
   },
   {
    "group": "GSW",
@@ -314,8 +314,8 @@
   {
    "group": "MIN",
    "file": "data-nba-logs-MIN.json",
-   "players": 16,
-   "rows": 4455
+   "players": 17,
+   "rows": 4496
   },
   {
    "group": "NOP",
@@ -393,14 +393,14 @@
  "counts": {
   "games": 8976,
   "final": 7959,
-  "players": 1192,
+  "players": 1193,
   "player_games": 209376,
-  "quarter_points_ok": 169962,
+  "quarter_points_ok": 170155,
   "quarter_points_dropped": 247,
-  "q1_rebounds_ok": 168862,
+  "q1_rebounds_ok": 169055,
   "q1_rebounds_dropped": 1347,
-  "q1_assists_ok": 169688,
-  "q1_assists_dropped": 521
+  "q1_assists_ok": 169880,
+  "q1_assists_dropped": 522
  },
  "problems": [],
  "player_box_all_zero_dropped": [
