@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T07:02:18Z",
+ "updated": "2026-11-15T12:52:20Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -395,11 +395,11 @@
   "final": 7964,
   "players": 1193,
   "player_games": 209508,
-  "quarter_points_ok": 170155,
+  "quarter_points_ok": 170262,
   "quarter_points_dropped": 247,
-  "q1_rebounds_ok": 169055,
+  "q1_rebounds_ok": 169162,
   "q1_rebounds_dropped": 1347,
-  "q1_assists_ok": 169880,
+  "q1_assists_ok": 169987,
   "q1_assists_dropped": 522
  },
  "problems": [],
