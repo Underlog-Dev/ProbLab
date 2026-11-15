@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="9ba432f7aa3c">
+<meta name="proplab-build" content="f9a3476b7dee">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -906,6 +906,7 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .bblegs li{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:2px 0}
 .bbstep{display:flex;gap:4px;flex:none}.bbstep .hstep{width:30px;height:30px;min-width:30px;padding:0;font-size:16px}
 .bbmoved{color:var(--accent);font-weight:600}
+.rcard .rbuy{gap:4px 8px}.rcard .sverdict{padding:4px 10px;margin-top:2px}.rcard .rhits{margin-bottom:2px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7081,7 +7082,10 @@ function pickPlays(cands, o, blowout = () => null) {
 //   matchup; 6/10+ at that line this season and in his last 10; not poor against tonight's opponent (under 40% over 5+ meetings);
 //   not just back from an injury; one play per player per game (the strongest). Your other filters (games, side, markets, minutes...) apply too.
 // Update 89: minP 0.58 on the early-season-corrected probability (backtest this season: strict picks at 58%+ came in 64.9%, 57 picks)
-const STRICT = { minMinRatio: 0.85, minP: 0.58, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, minEV: 0.05 /* Update 92 (owner): at least 5% EV */, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
+/* Update 100 (owner, 15 Nov: 9 games, 1 play): minP 0.58 -> 0.55. Season backtest, main lines: plays the model rates 55-57% that pass the other
+   Strict rules came in 60.7% (275), as well as the 58%+ ones; the 5% EV at your price still decides Back it. The "last 10" rule is dropped
+   (no better with it than without); the season hit-rate rule stays. */
+const STRICT = { minMinRatio: 0.85, minP: 0.55, minHit: 0.60, minHitN: 6, oppPoor: 0.40, oppN: 5, minOdds: 1.70, maxOdds: 3.00, minEV: 0.05 /* Update 92 (owner): at least 5% EV */, edge: 0.05, edgeLong: 0.08, longFrom: 2.50, evCheck: 0.25 };
 function strictLine(c) {
   const cur = c.rows.filter(q => q.season === c.cur); if (cur.length < STRICT.minHitN || c.def.binary) return null;
   const avg = cur.reduce((t, q) => t + q.value, 0) / cur.length, L0 = Math.floor(avg) + 0.5;
@@ -7103,7 +7107,7 @@ function strictPick(cands, o, blowout = () => null) {
       const r = evalAt(c, L, side); if (!r || r.p < STRICT.minP || !r.conf || r.conf.rank < 3) continue;
       if (c.sport !== 'football' && !['g', 'y'].includes(r.tier)) continue;
       const hs = r.hr.season, h10 = r.hr.l10;
-      if (!(hs.n >= STRICT.minHitN && hs.pct >= STRICT.minHit * 100 - 1e-9) || !(h10.n >= STRICT.minHitN && h10.pct >= STRICT.minHit * 100 - 1e-9)) continue;
+      if (!(hs.n >= STRICT.minHitN && hs.pct >= STRICT.minHit * 100 - 1e-9)) continue; void h10;
       const vo = vsOppOf(c, L, side); if (vo && vo.n >= STRICT.oppN && vo.hit / vo.n < STRICT.oppPoor) continue;
       if (strictMaxOdds(r.p) < strictMinOdds(r.p)) continue; /* Update 94 (owner): a play no real price can back (e.g. model 80% = fair 1.25: 1.70+ would be 10+ points below it) is never shown */
       const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, strict: true });
@@ -9444,7 +9448,7 @@ async function viewRecommended(root, sport) {
         <details class="xs"><summary>The rules</summary><ol class="strictrules">
           <li>The usual bookmaker line: the one nearest his season average (so it's priced near evens), and the model gives it ${Math.round(STRICT.minP * 100)}%+.</li>
           <li>Strong evidence${sport !== 'football' ? ' and an Easy or OK matchup' : ''}.</li>
-          <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season <u>and</u> in his last 10 (the model and his form agree).</li>
+          <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season (${STRICT.minHitN}+ games).</li>
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
           <li>One play per player per game: his strongest.</li>
           <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> when it is at least ${Math.round(STRICT.minEV * 100)}% EV at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. Under ${Math.round(STRICT.minEV * 100)}% EV is a Pass. The model's figures are corrected for the early season (tested on this season's games: strict picks came in 60% of the time).</li>
