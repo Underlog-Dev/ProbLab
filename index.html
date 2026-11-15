@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f9a3476b7dee">
+<meta name="proplab-build" content="ca77182f82dc">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -907,6 +907,9 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .bbstep{display:flex;gap:4px;flex:none}.bbstep .hstep{width:30px;height:30px;min-width:30px;padding:0;font-size:16px}
 .bbmoved{color:var(--accent);font-weight:600}
 .rcard .rbuy{gap:4px 8px}.rcard .sverdict{padding:4px 10px;margin-top:2px}.rcard .rhits{margin-bottom:2px}
+
+/* Update 101: form minimum boxes */
+.formmins{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}.fmbox{display:flex;flex-direction:column;gap:2px;font-size:12px}.fmbox>span:last-child{display:flex;align-items:center;gap:3px}.fmbox .in{width:100%;min-width:0;padding:6px;text-align:center}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -9291,7 +9294,7 @@ __m['v-recommended'] = (() => {
 // carry the play to Compare Price. Each card's line can be changed (everything recalculates; the card stays where it is). Nothing is
 // ranked by EV: there are no bookmaker prices until you type one.
 const { EVID_INTRO } = __m['confidence'];
-const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks, strictPick, strictVerdict, strictMinOdds, strictMaxOdds, valueMaxOdds, STRICT, MARKET_GAP, valuePick, valueVerdict, valueMinOdds, VALUE } = __m['recplays'];
+const { buildCandidates, pickPlays, sortPlays, SORTS, evalAt, linesOf, reasonOf, fmtLineName, ladderName, passes, streaks, strictPick, strictVerdict, strictMinOdds, strictMaxOdds, valueMaxOdds, STRICT, MARKET_GAP, valuePick, valueVerdict, valueMinOdds, VALUE, vsOppOf } = __m['recplays'];
 const { carryPrice } = __m['pricecheck'];
 const { muHtml } = __m['matchupui'];
 const { usAdapter } = __m['v-hiwi'];
@@ -9333,7 +9336,7 @@ const rankText = (c, r) => { const P = r.rankParts, f = x => `${Math.round(x * 1
     `Against ${c.opp || 'this opponent'} ${r.vsOpp.hit}/${r.vsOpp.n}, counted as ${f(P.opp)} x 10%`, `Matchup ${r.tier ? { g: 'easy', y: 'neutral', r: 'tough' }[r.tier] : 'not rated'}, counted as ${f(P.matchup)} x 10%`,
     r.conf.rank < 3 ? `${r.conf.label} evidence: less ${(3 - r.conf.rank) * 3}` : 'Strong evidence: nothing taken off', 'Small samples are pulled towards the model probability, so the "counted as" figures sit between the record and the model.', 'The rank score orders the plays; it is not a chance of winning.'].join('\n'); };
 const KEY = sport => `proplab.rec.v1.${sport}`;
-const DEF = { strict: false, value: false, starters: false, mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
+const DEF = { strict: false, value: false, starters: false, l5Min: '', l10Min: '', l20Min: '', h2hMin: '', mu: 'all', minProb: 60, minHit: 0, hitWin: 'season', minFairTxt: '', maxFairTxt: '', sides: 'over', minConf: 2, minSample: 0, venue: 'all', grps: [], mkOff: [], injOk: true, hideBlowout: true, minAvg: 0 };
 // recommended settings (owner, 3 Nov): 60% minimum, fair odds from 1.30, hit rate over the season, Strong evidence (was Medium+ until 10 Nov), high blowout risk hidden.
 // Applied once to phones that already had filters saved (DEFV), and again whenever Reset to recommended settings is tapped.
 const STRICT_DEF = sport => sport !== 'football' && !(typeof window !== 'undefined' && window.__PL_NO_STRICT); // tests of the normal list set __PL_NO_STRICT
@@ -9473,6 +9476,9 @@ async function viewRecommended(root, sport) {
       <details class="recadv" ${s.adv ? 'open' : ''}><summary class="small"><b>More filters</b></summary>
         <div class="recrow"><label class="field keyf sovr"><span>Minimum historical hit rate</span><span class="recpct"><input class="in" type="number" inputmode="numeric" min="0" max="100" data-rf="minHit" value="${f.minHit}"> %</span></label>
           <div class="field"><span class="xs muted">Hit rate over</span>${seg('hitWin', [['season', 'Season'], ['l5', 'Last 5'], ['l10', 'Last 10'], ['l20', 'Last 20'], ['all', 'All']], f.hitWin)}</div></div>
+        <div class="field"><span class="xs muted">Form minimums at the line shown <span class="muted">(leave blank to ignore)</span></span><div class="formmins" data-formmins>
+          ${[['l5Min', 'Last 5', 5], ['l10Min', 'Last 10', 10], ['l20Min', 'Last 20', 20]].map(([k, l, n]) => `<label class="fmbox"><span>${l}</span><span><input class="in" type="number" inputmode="numeric" min="0" max="${n}" placeholder="–" data-rf="${k}" value="${esc(String(f[k] ?? ''))}"> /${n}</span></label>`).join('')}
+          <label class="fmbox"><span>H2H</span><span><input class="in" type="number" inputmode="numeric" min="0" max="100" placeholder="–" data-rf="h2hMin" value="${esc(String(f.h2hMin ?? ''))}"> %</span></label></div></div>
         <div class="field keyf sovr"><span class="xs muted">Minimum evidence</span>${seg('minConf', [['0', 'Any'], ['2', 'Fair+'], ['3', 'Strong']], String(f.minConf))}</div>
         <label class="field keyf"><span>Minimum games behind it</span><input class="in" type="number" inputmode="numeric" min="0" data-rf="minSample" value="${f.minSample}"></label>
         ${sport === 'nba' ? `<label class="field keyf"><span>Minimum average minutes this season</span><input class="in" type="number" inputmode="numeric" min="0" max="44" data-rf="minAvg" value="${f.minAvg || 0}" placeholder="0 = off" aria-describedby="recavgh"><span class="xs muted" id="recavgh">0 = off. Leaves out players who average fewer minutes in the games they have played this regular season (bench players). Updated with every data refresh.</span></label>` : ''}
@@ -9544,6 +9550,13 @@ async function viewRecommended(root, sport) {
     drawMarkets(want); const off = new Set(s.f.mkOff);
     const q = norm(s.f.q), mine = (q ? want.filter(c => nmOf(c).includes(q)) : want).filter(c => !off.has(c.def.key) && !isHidden(c) && (!s.f.starters || sport !== 'nba' || isStarter(c))); // hidden players (owner, 5 Nov): out for this game only
     let list = s.f.value ? valuePick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : s.f.strict ? strictPick(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))) : pickPlays(mine, o, f => (sport === 'football' ? null : blowoutOf(f, sport))), relaxed = false; // Update 77: strict EV filter
+    /* Update 101 (owner, 15 Nov): form minimum boxes. Blank = ignored. Last 5/10/20 are hit counts at the line shown (8 = 8 of his last 10;
+       fewer games played than that can't pass); H2H is a % of his games against tonight's opponent (last 10 meetings). */
+    const fmN = k => (s.f[k] === '' || s.f[k] == null ? null : Number(s.f[k]));
+    if ([fmN('l5Min'), fmN('l10Min'), fmN('l20Min'), fmN('h2hMin')].some(v => v != null)) list = list.filter(x => { const r = x.rep; if (!r || !r.hr) return false;
+      for (const [k, w] of [['l5Min', 'l5'], ['l10Min', 'l10'], ['l20Min', 'l20']]) { const m = fmN(k); if (m != null && !(r.hr[w] && r.hr[w].hit >= m)) return false; }
+      const hm = fmN('h2hMin'); if (hm != null) { const vo = vsOppOf(x.c, r.L, x.side); if (!vo || !vo.n || (vo.hit / vo.n) * 100 < hm - 1e-9) return false; }
+      return true; });
     // a search found him (or them) but no line meets every filter: show the strongest lines anyway, marked, instead of "0 plays"
     if (q && mine.length && !list.length && !s.f.strict && !s.f.value) { const r = { ...o, minFair: 0, maxFair: 0, minHit: 0, minConf: 0, mu: 'all', grps: new Set(), minSample: 0, minAvg: 0, venue: 'all', hideBlowout: false, injOk: true, minProb: Math.min(o.minProb || 0, 50) };
       list = pickPlays(mine, r).map(x => ({ ...x, keptOut: true })); relaxed = true; }
@@ -9710,7 +9723,7 @@ async function viewRecommended(root, sport) {
   pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value); slipSetBook(legId(x.c, x.side, x.rep.L), oi.value);
       const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout'));
       { const a0 = card.querySelector('.sverdict'), a1 = t2.querySelector('.sverdict'); if (a0) a0.remove(); if (a1) card.querySelector('.revout').after(a1); } return; } });
-  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['minProb', 'minHit', 'minSample', 'minAvg'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : k === 'minAvg' ? 44 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
+  pg.addEventListener('input', e => { const t = e.target.closest('[data-rf]'); if (!t) return; const kk = t.dataset.rf; if (kk === 'q') showSug(t.value); clearTimeout(tIn[kk]); tIn[kk] = setTimeout(() => { const k = t.dataset.rf; s.f[k] = ['l5Min', 'l10Min', 'l20Min', 'h2hMin'].includes(k) ? (t.value === '' ? '' : Math.max(0, Math.min(k === 'h2hMin' ? 100 : Number(k.slice(1, -3)), Math.round(Number(t.value) || 0)))) : ['minProb', 'minHit', 'minSample', 'minAvg'].includes(k) ? Math.max(0, Math.min(k === 'minSample' ? 999 : k === 'minAvg' ? 44 : 100, Number(t.value) || 0)) : t.value; s.kept.clear(); s.shown = 30; save(sport, s); if (k === 'q') run(); else render(); }, kk === 'q' ? 450 : 300); });
   // suggestions as you type: names from every listed game (players and teams), best first: names that start with what you typed
   const showSug = v => { const box = pg.querySelector('#recsug'), inp = pg.querySelector('[data-rf="q"]'); if (!box) return; const H = suggest(v);
     box.innerHTML = H.map(h => `<button type="button" role="option" data-rsug="${esc(h.label)}"><b>${esc(h.label)}</b> <small>${esc(h.kind === 'team' ? `team · ${h.sub}` : h.sub)}</small></button>`).join('');
