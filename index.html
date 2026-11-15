@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="90119dd5ffe5">
+<meta name="proplab-build" content="9ba432f7aa3c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7787,7 +7787,13 @@ async function settleLeg(b, now = Date.now()) {
     const def = usDef(b.sport, A, b.key); if (!def) return out('unknown', 'market not known');
     let raw = []; try { raw = await A.playerRowsOf(p); } catch { raw = []; }
     const row = raw.find(r => String(r.game) === String(g.id));
-    if (!row || row.dnp) return raw.length ? out('nostat', 'no stat line for him in this game (did not play?) — bookmakers usually void these') : out('awaiting', 'player statistics not published yet');
+    /* Update 99 (owner, 15 Nov): a player who did not play = void, automatically (as bookmakers settle it). A DNP line in the box score is
+       certain; no line at all only counts once his data has clearly moved past this game (a later game of his, or 12+ hours since the data
+       was updated after tip-off), so a slow data update never voids a bet early. */
+    if (row && row.dnp) return out('void', 'did not play (DNP in the box score): void, as bookmakers settle it');
+    if (!row) { const gd = g.local_date || g.date, later = raw.some(r => r.date > gd), upd = Date.parse((A.d.meta && A.d.meta.updated) || '') || 0, tip = Date.parse(g.ko_utc || g.date) || 0;
+      if (raw.length && (later || (upd && tip && upd - tip > 12 * HOURS))) return out('void', 'no stat line for him in this game (did not play): void, as bookmakers settle it');
+      return raw.length ? out('nostat', 'no stat line for him yet (did not play?): it voids by itself once the data has moved past this game') : out('awaiting', 'player statistics not published yet'); }
     const v = def.get(row); if (v == null) return out('awaiting', `${def.label} not recorded for this game`);
     const res = resultOf(v, b.line, b.side, b.binary || def.binary); return out(res, `${def.label}: ${v}${b.sport === 'nba' ? ' (overtime included)' : b.sport === 'nfl' ? ' (overtime included)' : ''}`, v);
   }
@@ -7809,7 +7815,7 @@ async function settleLeg(b, now = Date.now()) {
     const row = rows.find(x => x.date === r.date && normTeam(x.opp) === (normTeam(x.club) === H ? Aw : H));
     if (!row) { // is the match in the player file at all? then he has no line (did not play); otherwise the player data is not published yet
       const through = (store.manifest?.player_matches || []).filter(e => e.league === fx.league).map(e => e.through).sort().pop() || '';
-      return through >= r.date ? out('nostat', 'no stat line for him in this match (did not play?) — bookmakers usually void these') : out('awaiting', 'player statistics for this match not published yet'); }
+      return through >= r.date ? out('void', 'no stat line for him in this match (did not play): void, as bookmakers settle it') : out('awaiting', 'player statistics for this match not published yet'); } /* Update 99: did not play = void */
     v = def.get(row);
   } else {
     const side = b.scope === 'team' || b.scope === 'opp' ? normTeam(b.team) : H, rows = store.teamRows.get(teamSlug(side)) || [];
