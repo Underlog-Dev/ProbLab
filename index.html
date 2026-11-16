@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="09b07574a7e5">
+<meta name="proplab-build" content="00f2addbac92">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7635,6 +7635,204 @@ function wireCarry(root) {
 
 return { carryPrice, hasCarry, setCarried, carryHtml, wireCarry };
 })();
+__m['rectabs'] = (() => {
+// The Singles / Acca Builder / Hit Rates tabs of Hiwi's Section (Update 85).
+const { unitChip } = __m['units'];
+const recTabs = (sport, on) => { if (on === 'rec' || on === 'strict') on = 'singles'; /* Update 91: Strict is a tick box inside Singles, not a tab */ const h = p => (sport === 'football' ? `#/${p}` : `#/${sport}/${p}`);
+  return `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg wrap rectabs">${[['singles', 'Singles'], ['acca', 'Accas'], ['form', 'Hit Rates'], ['bb', 'Builders'], ['saved', 'Saved']].map(([p, l]) => `<a href="${h(p)}"${p === on ? ' class="on" aria-current="page"' : ''}>${l}</a>`).join('')}</div>${unitChip()}</nav>`; };
+
+
+return { recTabs };
+})();
+__m['booklog'] = (() => {
+// Two books in My Plays (Update 88, owner 14 Nov 2026):
+//   Real bets    (proplab.betlog.v1)   the bets placed with real money. Every one is also copied into the Model tracker.
+//   Model tracker (proplab.modellog.v1) every real bet (marked real: true, kept in step with the real one) PLUS the plays logged only to
+//                                        test the model (EV+ at real odds you typed, not staked). Those never touch the real-money figures.
+// The copy is one way: the real book is the source of truth. A real bet edited or settled on either page is the same bet in both; a real
+// bet can only be removed on Real bets (removing it there removes its copy). Model-only bets live in the Model tracker alone.
+const BOOK_KEYS = { real: 'proplab.betlog.v1', model: 'proplab.modellog.v1' };
+const SEL = 'proplab.book.v1';
+let BOOK = (() => { try { return localStorage.getItem(SEL) === 'model' ? 'model' : 'real'; } catch { return 'real'; } })();
+/** The book shown now (a function: the site's bundler does not keep live bindings). */
+const getBook = () => BOOK;
+function setBook(b) { BOOK = b === 'model' ? 'model' : 'real'; try { localStorage.setItem(SEL, BOOK); } catch { /* this visit only */ } }
+function readBook(book) { try { const a = JSON.parse(localStorage.getItem(BOOK_KEYS[book]) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } }
+const raw = (book, a) => { try { localStorage.setItem(BOOK_KEYS[book], JSON.stringify(a)); return true; } catch { return false; } };
+const strip = b => { const { real, ...r } = b; void real; return r; };
+/** Copy the real book into the Model tracker: every real bet present (and up to date) once; copies of removed real bets go. */
+function mirrorReal(real = readBook('real')) {
+  const m = readBook('model'), ids = new Set(real.map(b => b && b.id)), out = m.filter(x => x && (!x.real || ids.has(x.id))), at = new Map(out.map((x, i) => [x.id, i]));
+  for (const r of real) { if (!r || r.id == null) continue; const c = { ...r, real: true }; if (at.has(r.id)) out[at.get(r.id)] = c; else { at.set(r.id, out.length); out.push(c); } }
+  return raw('model', out);
+}
+/** Save a book. Real: also refresh the copies. Model: changes to a real bet's copy are written back to the real bet (never removes it). */
+function writeBook(book, a) {
+  if (book === 'real') { if (!raw('real', a)) return false; mirrorReal(a); return true; }
+  const real = readBook('real'), at = new Map(real.map((b, i) => [b.id, i])); let back = false;
+  for (const m of a) if (m && m.real && at.has(m.id)) { real[at.get(m.id)] = strip(m); back = true; }
+  if (back) raw('real', real);
+  const ids = new Set(a.map(x => x && x.id)), keep = readBook('model').filter(x => x && x.real && !ids.has(x.id) && at.has(x.id)); // a real copy cannot be dropped here
+  return raw('model', a.concat(keep));
+}
+/** Add one new bet to a book (real also lands in the Model tracker). */
+function addToBook(book, b) { const a = readBook(book); a.push(b); return writeBook(book, a); }
+
+return { BOOK_KEYS, getBook, setBook, readBook, mirrorReal, writeBook, addToBook };
+})();
+__m['betprefill'] = (() => {
+const { addToBook, setBook } = __m['booklog'];
+const { nightOf } = __m['nightdate'];
+const { getUnit } = __m['units'];
+// "Log as a real bet" (owner, 9 Nov 2026): carries a selection from Hiwi's Section, or the whole Acca slip, to the bet log on My Plays,
+// with the match, player / team, market, line and side filled in. You then type the odds and stake you actually got. No heavy imports.
+const PREFILL = 'proplab.betprefill';
+const DRAFT = 'proplab.betdraft.v1'; // one export per line: the bundler registers only the first name of a list (fixed 11 Nov)
+const parseDec = t => { const s = String(t || '').trim(); if (!s) return null; if (/^evens?$/i.test(s)) return 2; const f = /^(\d+)\s*\/\s*(\d+)$/.exec(s); if (f) return 1 + Number(f[1]) / Number(f[2]); const n = Number(s.replace(',', '.')); return n > 1 ? n : null; };
+const go = sp => { location.hash = !sp || sp === 'football' ? '#/myplays' : `#/${sp}/myplays`; };
+/** A selection (bet-log shape, no stake) from a Hiwi's Section candidate c, side and evaluated line r. */
+function selFromCandidate(c, side, r) {
+  const g = c.f || {}, def = c.def, base = { sport: c.sport, key: def.key, market: def.label, binary: !!def.binary, line: def.binary ? 0.5 : r.L, side, p: r.p, push: r.push || 0, fair: r.fair, model: "PropLab's model when you logged it" };
+  if (c.sport === 'football') { const scope = def.scope || (String(def.key).startsWith('m.') ? 'match' : String(def.key).startsWith('o.') ? 'opp' : String(def.key).startsWith('t.') ? 'team' : 'player');
+    const fx = { league: g.league, date: g.date, ko_utc: g.ko_utc || '', local_date: g.local_date || '', home: g.home, away: g.away, source: g.source || '', stage: g.stage || '' };
+    return { ...base, fx, scope, team: scope === 'team' || scope === 'opp' ? c.team : '', pid: scope === 'player' ? c.pid : '', name: scope === 'match' ? `${g.home} v ${g.away}` : c.name, game: `${g.home} v ${g.away}`, date: (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date) };
+  }
+  // NBA / NFL: dated by the US night of the game (Update 64), with the UK kick-off kept
+  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: nightOf(g) || '', ko: g.ko_utc || '', dateUS: true, dateUS2: true, season: g.season }; // Update 87 fix: the US schedule night (NFL: local_date)
+}
+/**
+ * Update 66 (owner, 11 Nov 2026): "＋ Add to My Plays" logs the bet straight into the My Plays list (the same list, in date order, with
+ * Edit / Re-add / automatic settlement), at the suggested stake: units x £ per unit. Returns the saved bet, or null.
+ */
+const BETLOG = 'proplab.betlog.v1';
+function logSingleNow(sel, oddsDec, oddsTxt, stakeGBP, extra = {}) { // extra.book: 'model' = Model tracker only
+  if (!sel || !(oddsDec > 1) || !(stakeGBP > 0)) return null;
+  const b = { ...sel, id: `${sel.sport}|${sel.gameId || (sel.fx ? `${sel.fx.league}|${sel.fx.date}|${sel.fx.home}|${sel.fx.away}` : '')}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`,
+    type: 'single', stake: Math.round(stakeGBP * 100) / 100, odds: oddsDec, oddsTxt: String(oddsTxt || ''), result: '', logged: new Date().toISOString(), unit: getUnit().amt, ...extra };
+  const book = b.book === 'model' ? 'model' : 'real'; delete b.book; // Update 88: real bets go to both books; model-only to the Model tracker
+  if (!addToBook(book, b)) return null;
+  return b;
+}
+/**
+ * Update 70 (owner, 11 Nov 2026): "Placed it? Log it" in the Acca slip saves straight into My Plays (it used to open My Plays with the
+ * legs drafted, and nothing was logged until you saved there). legs: [{ sel, odds (decimal), oddsTxt }]; one leg = a single.
+ * Returns the saved bet, or null.
+ */
+function logBetNow(legs, stakeGBP, book = 'real') {
+  if (!legs.length || !(stakeGBP > 0) || legs.some(l => !(l.odds > 1))) return null;
+  if (legs.length === 1) return logSingleNow(legs[0].sel, legs[0].odds, legs[0].oddsTxt, stakeGBP, book === 'model' ? { book: 'model' } : {});
+  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: l.odds, oddsTxt: String(l.oddsTxt || ''), result: '' })), sp = [...new Set(L.map(l => l.sport))];
+  const b = { id: `acca|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100, bookOdds: null, date: L.map(l => l.date).sort()[0],
+    game: `${L.length}-leg acca`, result: '', logged: new Date().toISOString(), fromSlip: true, unit: getUnit().amt };
+  if (!addToBook(book === 'model' ? 'model' : 'real', b)) return null; // a placed acca: Real bets (and its copy in the Model tracker); or Model tracker only
+  return b;
+}
+function openBetForm(sel, oddsTxt = '') { setBook('real'); /* Update 88: "Log as a real bet" opens Real bets */ try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
+function openAccaForm(sels, stakeTxt = '') {
+  const legs = sels.map((x, i) => ({ ...x.sel, id: `leg|${Date.now()}|${i}`, odds: parseDec(x.oddsTxt), oddsTxt: x.oddsTxt || '', result: '' }));
+  try { localStorage.setItem(DRAFT, JSON.stringify({ legs, stake: stakeTxt || '', odds: '' })); sessionStorage.setItem(PREFILL, JSON.stringify({ acca: true })); } catch { /* fine */ }
+  go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
+}
+/**
+ * Update 90 (owner, 14 Nov 2026): a bet builder (same-game legs at ONE combined bookmaker price). Saved as an acca with the bookmaker's
+ * combined odds (bookOdds); each leg keeps PropLab's fair odds only for reference. book: 'real' (Real bets + Model tracker) or 'model'.
+ */
+function logBuilderNow(legs, bookDec, bookTxt, stakeGBP, book = 'real') {
+  if (legs.length < 2 || !(bookDec > 1) || !(stakeGBP > 0)) return null;
+  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: Math.round(l.fair * 100) / 100, oddsTxt: '', fairOnly: true, result: '' })), sp = [...new Set(L.map(l => l.sport))];
+  const b = { id: `bb|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', builder: true, sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100,
+    bookOdds: bookDec, bookOddsTxt: String(bookTxt || ''), date: L.map(l => l.date).sort()[0], game: `Bet builder: ${L[0].game}`, result: '', logged: new Date().toISOString(), unit: getUnit().amt };
+  return addToBook(book === 'model' ? 'model' : 'real', b) ? b : null;
+}
+
+return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, logBetNow, openBetForm, openAccaForm, logBuilderNow };
+})();
+__m['v-saved'] = (() => {
+// Update 106 (owner, 16 Nov): "Save for later" on every play (Singles, Hit Rates, Builders) and a Saved tab to come back to:
+// type the odds then, see EV and the stake, and add it to Real bets or the Model tracker. The model's figures are the ones from when you saved it.
+const { recTabs } = __m['rectabs'];
+const { fmtOdds, parseIn, oddsFmt, PLACEHOLDER } = __m['oddsfmt'];
+const { stakePlan, accaPlan, RISK, blendP } = __m['risk'];
+const { fmtU } = __m['kelly'];
+const { CUR } = __m['units'];
+const { selFromCandidate, logSingleNow, logBuilderNow } = __m['betprefill'];
+const { ladderName } = __m['recplays'];
+const { esc } = __m['util'];
+
+const KEY = 'proplab.saved.v1';
+const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
+const store = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch { return false; } };
+const dayOf = s => String(s || '').slice(0, 10);
+const keepDays = 2; // a saved play stays 2 days after its game day, then drops off by itself
+const fresh = a => { const cut = new Date(Date.now() - keepDays * 864e5).toISOString().slice(0, 10); return a.filter(x => !x.date || x.date >= cut); };
+const gameOf = c => { const g = c.f || {}; return c.sport === 'football' ? `${g.home || ''} v ${g.away || ''}` : `${g.away || ''} at ${g.home || ''}`; };
+const dateOf = c => { const g = c.f || {}; return dayOf(g.local_date || g.date || ''); };
+const slim = e => (e ? JSON.parse(JSON.stringify(e, (k, v) => (Array.isArray(v) && v.length > 60 ? undefined : v))) : null);
+
+const savedCount = () => fresh(load()).length;
+const isSaved = id => load().some(x => x.id === id);
+
+/** Save a single play (a candidate at a line). */
+function saveSingle(c, side, r) {
+  const id = `s|${c.id}|${side}|${r.L}`, a = fresh(load()); if (a.some(x => x.id === id)) return 'already';
+  a.push({ id, kind: 'single', sport: c.sport, when: new Date().toISOString(), date: dateOf(c), game: gameOf(c), title: c.name, what: ladderName(c, r), side, L: r.L,
+    p: r.p, push: r.push || 0, fair: r.fair, conf: r.conf ? { level: r.conf.level, label: r.conf.label, rank: r.conf.rank } : null, e: slim(r.e), sel: selFromCandidate(c, side, r) });
+  return store(a) ? 'saved' : 'full';
+}
+/** Save a bet builder (double / treble). */
+function saveBuilder(cb, tested) {
+  const id = `b|${cb.legs.map(l => `${l.c.id}|${l.r.L}`).join('+')}`, a = fresh(load()); if (a.some(x => x.id === id)) return 'already';
+  const c0 = cb.legs[0].c;
+  a.push({ id, kind: 'bb', sport: c0.sport, when: new Date().toISOString(), date: dateOf(c0), game: gameOf(c0), title: cb.legs.length === 3 ? 'Treble' : 'Double',
+    legs: cb.legs.map(l => ({ name: l.c.name, what: ladderName(l.c, l.r), p: l.r.p, fair: l.r.fair, sel: selFromCandidate(l.c, 'over', l.r) })), p: cb.p, fair: 1 / cb.p, tested: !!tested,
+    validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf && l.r.conf.level === 'Low') });
+  return store(a) ? 'saved' : 'full';
+}
+const saveLabel = st => (st === 'saved' ? '★ Saved' : st === 'already' ? '★ Already saved' : 'Could not save (storage full)');
+
+/** Stake for a saved item at decimal odds D: { ev, evM, u }. */
+function plan(x, D) {
+  if (x.kind === 'single') { const fb = x.sport === 'football', pb = fb ? x.p : blendP(x.p, D), ev = (pb * D + (x.push || 0) - 1) * 100, evM = (x.p * D + (x.push || 0) - 1) * 100;
+    const P = x.e ? stakePlan({ ...x.e, win: pb }, D, x.conf || { level: 'Medium' }) : null; return { ev, evM, u: ev > 0 && P && P.final > 0 ? P.final : 0 }; }
+  const pj = x.tested ? blendP(x.p, D) : x.p, ev = (pj * D - 1) * 100, evM = (x.p * D - 1) * 100, P = x.tested ? accaPlan(pj, D, { validated: x.validated, thin: x.thin }) : null;
+  return { ev, evM, u: P && P.ok && ev > 0 ? P.units : 0, untested: !x.tested };
+}
+
+async function viewSaved(root, sport) {
+  const ODDS = new Map();
+  const box = x => { const txt = ODDS.get(x.id) || '', od = txt.trim() ? parseIn(txt) : null; let o = '';
+      if (od && !od.dec) o = `<span class="xs warn">${esc(od.error || 'Not a valid price')}</span>`;
+      else if (od && od.dec) { const D = od.exact ?? od.dec, q = plan(x, D);
+        o = `<b class="${q.ev > 0 ? 'hit' : 'miss'}">${q.ev > 0 ? '+' : q.ev < 0 ? '−' : ''}${Math.abs(q.ev).toFixed(1)}% EV</b> · ${q.u > 0 ? `stake <b>${fmtU(q.u)}u</b> (${CUR()}${(q.u * RISK.unitGBP).toFixed(2)})` : q.untested ? 'no stake (same-game builders here are untested)' : 'no stake at this price'}
+          <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${q.u > 0 ? '<button type="button" class="chip" data-svadd="real">＋ Real bet</button>' : ''}<button type="button" class="chip" data-svadd="model">＋ Model only</button></div>`; }
+      return `<div data-svout>${o}</div>`; };
+  const draw = () => {
+    const all = fresh(load()); store(all); const a = all.filter(x => x.sport === sport).sort((p, q) => (p.date < q.date ? -1 : p.date > q.date ? 1 : p.when < q.when ? -1 : 1));
+    const card = x => `<article class="card svcard" data-svid="${esc(x.id)}" style="padding:12px;margin:0 0 10px">
+      <div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(x.title)}</b>${x.kind === 'single' ? ` · ${esc(x.what)}` : ` · chance <b>${Math.round(x.p * 100)}%</b>`}
+        <div class="xs muted">${esc(x.game)}${x.date ? ` · ${esc(x.date)}` : ''} · saved ${esc(new Date(x.when).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}</div></div>
+        <div style="text-align:right"><b>${Math.round(x.p * 100)}%</b><div class="xs muted">fair ${esc(fmtOdds(x.fair))}</div></div></div>
+      ${x.kind === 'bb' ? `<ol class="xs" style="margin:6px 0 6px 18px;padding:0">${x.legs.map(l => `<li>${esc(l.name)}: ${esc(l.what)} <span class="muted">(${Math.round(l.p * 100)}%)</span></li>`).join('')}</ol>` : ''}
+      <label class="field" style="margin:6px 0 0"><span>${x.kind === 'bb' ? "Bookmaker's bet-builder odds" : 'Your odds'}</span><input class="in" data-svodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(ODDS.get(x.id) || '')}"></label>
+      ${box(x)}<button type="button" class="linkbtn xs" data-svdel style="margin-top:4px">✕ Remove</button></article>`;
+    root.innerHTML = `${recTabs(sport, 'saved')}<section class="recpg" id="svpg"><h2 style="margin:6px 0">Saved plays</h2>
+      <p class="xs muted" style="margin:0 0 10px">Plays you saved with ☆ Save for later. Type your odds when you're ready, then add them to Real bets or the Model tracker. The model's figures are the ones from when you saved it. A saved play drops off ${keepDays} days after its game.</p>
+      ${a.length ? a.map(card).join('') : '<p class="small muted">Nothing saved yet. Tap ☆ Save for later on any play in Singles, Hit Rates or Builders.</p>'}</section>`;
+  };
+  draw();
+  root.addEventListener('input', e => { const i = e.target.closest('[data-svodds]'); if (!i) return; const cd = i.closest('[data-svid]'), id = cd.dataset.svid, x = load().find(y => y.id === id); if (!x) return;
+    ODDS.set(id, i.value); cd.querySelector('[data-svout]').outerHTML = box(x); });
+  root.addEventListener('click', e => { const t = e.target, cd = t.closest('[data-svid]'); if (!cd) return; const id = cd.dataset.svid, all = load(), x = all.find(y => y.id === id); if (!x) return;
+    if (t.closest('[data-svdel]')) { store(all.filter(y => y.id !== id)); draw(); return; }
+    const b = t.closest('[data-svadd]'); if (!b) return; const od = parseIn(ODDS.get(id) || ''); if (!od || !od.dec) return; const D = od.exact ?? od.dec, model = b.dataset.svadd === 'model';
+    let u = plan(x, D).u; if (!(u > 0) && model && x.kind === 'bb') { const P = accaPlan(x.p, D, { validated: x.validated, thin: x.thin }); u = P && P.ok ? P.units : 0; }
+    const saved = !(u > 0) ? null : x.kind === 'single' ? logSingleNow(x.sel, D, ODDS.get(id), u * RISK.unitGBP, model ? { book: 'model' } : {}) : logBuilderNow(x.legs.map(l => ({ sel: l.sel, fair: l.fair })), D, ODDS.get(id), u * RISK.unitGBP, model ? 'model' : 'real');
+    b.textContent = saved ? (model ? `✓ Model tracker: ${fmtU(u)}u` : `✓ Real bet: ${CUR()}${saved.stake.toFixed(2)}`) : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved;
+    if (saved) { cd.querySelectorAll('[data-svadd]').forEach(o => { if (o !== b) o.disabled = true; }); store(load().filter(y => y.id !== id)); } });
+}
+
+return { savedCount, isSaved, saveSingle, saveBuilder, saveLabel, viewSaved };
+})();
 __m['backup'] = (() => {
 // Back up / restore (Update 87, owner 13 Nov 2026): on iPhone each Home Screen web app keeps its own storage, so moving to a new address
 // (the repository rename ProbLab -> PropLab) starts an empty app. This copies everything PropLab keeps on this phone (My Plays, units,
@@ -7697,42 +7895,6 @@ function wireBackup(root, onDone) {
 }
 
 return { backupText, backupSummary, restoreText, backupHtml, wireBackup };
-})();
-__m['booklog'] = (() => {
-// Two books in My Plays (Update 88, owner 14 Nov 2026):
-//   Real bets    (proplab.betlog.v1)   the bets placed with real money. Every one is also copied into the Model tracker.
-//   Model tracker (proplab.modellog.v1) every real bet (marked real: true, kept in step with the real one) PLUS the plays logged only to
-//                                        test the model (EV+ at real odds you typed, not staked). Those never touch the real-money figures.
-// The copy is one way: the real book is the source of truth. A real bet edited or settled on either page is the same bet in both; a real
-// bet can only be removed on Real bets (removing it there removes its copy). Model-only bets live in the Model tracker alone.
-const BOOK_KEYS = { real: 'proplab.betlog.v1', model: 'proplab.modellog.v1' };
-const SEL = 'proplab.book.v1';
-let BOOK = (() => { try { return localStorage.getItem(SEL) === 'model' ? 'model' : 'real'; } catch { return 'real'; } })();
-/** The book shown now (a function: the site's bundler does not keep live bindings). */
-const getBook = () => BOOK;
-function setBook(b) { BOOK = b === 'model' ? 'model' : 'real'; try { localStorage.setItem(SEL, BOOK); } catch { /* this visit only */ } }
-function readBook(book) { try { const a = JSON.parse(localStorage.getItem(BOOK_KEYS[book]) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } }
-const raw = (book, a) => { try { localStorage.setItem(BOOK_KEYS[book], JSON.stringify(a)); return true; } catch { return false; } };
-const strip = b => { const { real, ...r } = b; void real; return r; };
-/** Copy the real book into the Model tracker: every real bet present (and up to date) once; copies of removed real bets go. */
-function mirrorReal(real = readBook('real')) {
-  const m = readBook('model'), ids = new Set(real.map(b => b && b.id)), out = m.filter(x => x && (!x.real || ids.has(x.id))), at = new Map(out.map((x, i) => [x.id, i]));
-  for (const r of real) { if (!r || r.id == null) continue; const c = { ...r, real: true }; if (at.has(r.id)) out[at.get(r.id)] = c; else { at.set(r.id, out.length); out.push(c); } }
-  return raw('model', out);
-}
-/** Save a book. Real: also refresh the copies. Model: changes to a real bet's copy are written back to the real bet (never removes it). */
-function writeBook(book, a) {
-  if (book === 'real') { if (!raw('real', a)) return false; mirrorReal(a); return true; }
-  const real = readBook('real'), at = new Map(real.map((b, i) => [b.id, i])); let back = false;
-  for (const m of a) if (m && m.real && at.has(m.id)) { real[at.get(m.id)] = strip(m); back = true; }
-  if (back) raw('real', real);
-  const ids = new Set(a.map(x => x && x.id)), keep = readBook('model').filter(x => x && x.real && !ids.has(x.id) && at.has(x.id)); // a real copy cannot be dropped here
-  return raw('model', a.concat(keep));
-}
-/** Add one new bet to a book (real also lands in the Model tracker). */
-function addToBook(book, b) { const a = readBook(book); a.push(b); return writeBook(book, a); }
-
-return { BOOK_KEYS, getBook, setBook, readBook, mirrorReal, writeBook, addToBook };
 })();
 __m['settle'] = (() => {
 // Automatic settlement of your logged bets (owner, 9 Nov 2026). PropLab is a static site: there is no server watching your bets. Your bets
@@ -7860,73 +8022,6 @@ function accaOf(legs) {
 }
 
 return { STATUS_LABEL, SETTLED, resultOf, factorOf, usGame, settleLeg, accaOf };
-})();
-__m['betprefill'] = (() => {
-const { addToBook, setBook } = __m['booklog'];
-const { nightOf } = __m['nightdate'];
-const { getUnit } = __m['units'];
-// "Log as a real bet" (owner, 9 Nov 2026): carries a selection from Hiwi's Section, or the whole Acca slip, to the bet log on My Plays,
-// with the match, player / team, market, line and side filled in. You then type the odds and stake you actually got. No heavy imports.
-const PREFILL = 'proplab.betprefill';
-const DRAFT = 'proplab.betdraft.v1'; // one export per line: the bundler registers only the first name of a list (fixed 11 Nov)
-const parseDec = t => { const s = String(t || '').trim(); if (!s) return null; if (/^evens?$/i.test(s)) return 2; const f = /^(\d+)\s*\/\s*(\d+)$/.exec(s); if (f) return 1 + Number(f[1]) / Number(f[2]); const n = Number(s.replace(',', '.')); return n > 1 ? n : null; };
-const go = sp => { location.hash = !sp || sp === 'football' ? '#/myplays' : `#/${sp}/myplays`; };
-/** A selection (bet-log shape, no stake) from a Hiwi's Section candidate c, side and evaluated line r. */
-function selFromCandidate(c, side, r) {
-  const g = c.f || {}, def = c.def, base = { sport: c.sport, key: def.key, market: def.label, binary: !!def.binary, line: def.binary ? 0.5 : r.L, side, p: r.p, push: r.push || 0, fair: r.fair, model: "PropLab's model when you logged it" };
-  if (c.sport === 'football') { const scope = def.scope || (String(def.key).startsWith('m.') ? 'match' : String(def.key).startsWith('o.') ? 'opp' : String(def.key).startsWith('t.') ? 'team' : 'player');
-    const fx = { league: g.league, date: g.date, ko_utc: g.ko_utc || '', local_date: g.local_date || '', home: g.home, away: g.away, source: g.source || '', stage: g.stage || '' };
-    return { ...base, fx, scope, team: scope === 'team' || scope === 'opp' ? c.team : '', pid: scope === 'player' ? c.pid : '', name: scope === 'match' ? `${g.home} v ${g.away}` : c.name, game: `${g.home} v ${g.away}`, date: (g.ko_utc ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(g.ko_utc)) : g.date) };
-  }
-  // NBA / NFL: dated by the US night of the game (Update 64), with the UK kick-off kept
-  return { ...base, gameId: String(c.fid), scope: 'player', pid: String(c.pid), name: c.name, team: c.team, game: `${g.away} at ${g.home}`, date: nightOf(g) || '', ko: g.ko_utc || '', dateUS: true, dateUS2: true, season: g.season }; // Update 87 fix: the US schedule night (NFL: local_date)
-}
-/**
- * Update 66 (owner, 11 Nov 2026): "＋ Add to My Plays" logs the bet straight into the My Plays list (the same list, in date order, with
- * Edit / Re-add / automatic settlement), at the suggested stake: units x £ per unit. Returns the saved bet, or null.
- */
-const BETLOG = 'proplab.betlog.v1';
-function logSingleNow(sel, oddsDec, oddsTxt, stakeGBP, extra = {}) { // extra.book: 'model' = Model tracker only
-  if (!sel || !(oddsDec > 1) || !(stakeGBP > 0)) return null;
-  const b = { ...sel, id: `${sel.sport}|${sel.gameId || (sel.fx ? `${sel.fx.league}|${sel.fx.date}|${sel.fx.home}|${sel.fx.away}` : '')}|${sel.pid || sel.team || 'match'}|${sel.key}|${sel.line}|${sel.side}|${Date.now()}`,
-    type: 'single', stake: Math.round(stakeGBP * 100) / 100, odds: oddsDec, oddsTxt: String(oddsTxt || ''), result: '', logged: new Date().toISOString(), unit: getUnit().amt, ...extra };
-  const book = b.book === 'model' ? 'model' : 'real'; delete b.book; // Update 88: real bets go to both books; model-only to the Model tracker
-  if (!addToBook(book, b)) return null;
-  return b;
-}
-/**
- * Update 70 (owner, 11 Nov 2026): "Placed it? Log it" in the Acca slip saves straight into My Plays (it used to open My Plays with the
- * legs drafted, and nothing was logged until you saved there). legs: [{ sel, odds (decimal), oddsTxt }]; one leg = a single.
- * Returns the saved bet, or null.
- */
-function logBetNow(legs, stakeGBP, book = 'real') {
-  if (!legs.length || !(stakeGBP > 0) || legs.some(l => !(l.odds > 1))) return null;
-  if (legs.length === 1) return logSingleNow(legs[0].sel, legs[0].odds, legs[0].oddsTxt, stakeGBP, book === 'model' ? { book: 'model' } : {});
-  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: l.odds, oddsTxt: String(l.oddsTxt || ''), result: '' })), sp = [...new Set(L.map(l => l.sport))];
-  const b = { id: `acca|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100, bookOdds: null, date: L.map(l => l.date).sort()[0],
-    game: `${L.length}-leg acca`, result: '', logged: new Date().toISOString(), fromSlip: true, unit: getUnit().amt };
-  if (!addToBook(book === 'model' ? 'model' : 'real', b)) return null; // a placed acca: Real bets (and its copy in the Model tracker); or Model tracker only
-  return b;
-}
-function openBetForm(sel, oddsTxt = '') { setBook('real'); /* Update 88: "Log as a real bet" opens Real bets */ try { sessionStorage.setItem(PREFILL, JSON.stringify({ ...sel, odds: oddsTxt })); } catch { /* fine */ } go(sel.sport); }
-function openAccaForm(sels, stakeTxt = '') {
-  const legs = sels.map((x, i) => ({ ...x.sel, id: `leg|${Date.now()}|${i}`, odds: parseDec(x.oddsTxt), oddsTxt: x.oddsTxt || '', result: '' }));
-  try { localStorage.setItem(DRAFT, JSON.stringify({ legs, stake: stakeTxt || '', odds: '' })); sessionStorage.setItem(PREFILL, JSON.stringify({ acca: true })); } catch { /* fine */ }
-  go(legs[0] && legs.every(l => l.sport === legs[0].sport) ? legs[0].sport : 'football');
-}
-/**
- * Update 90 (owner, 14 Nov 2026): a bet builder (same-game legs at ONE combined bookmaker price). Saved as an acca with the bookmaker's
- * combined odds (bookOdds); each leg keeps PropLab's fair odds only for reference. book: 'real' (Real bets + Model tracker) or 'model'.
- */
-function logBuilderNow(legs, bookDec, bookTxt, stakeGBP, book = 'real') {
-  if (legs.length < 2 || !(bookDec > 1) || !(stakeGBP > 0)) return null;
-  const t = Date.now(), L = legs.map((l, i) => ({ ...l.sel, id: `leg|${t}|${i}`, odds: Math.round(l.fair * 100) / 100, oddsTxt: '', fairOnly: true, result: '' })), sp = [...new Set(L.map(l => l.sport))];
-  const b = { id: `bb|${t}|${Math.random().toString(36).slice(2, 7)}`, type: 'acca', builder: true, sport: sp.length === 1 ? sp[0] : 'mixed', legs: L, stake: Math.round(stakeGBP * 100) / 100,
-    bookOdds: bookDec, bookOddsTxt: String(bookTxt || ''), date: L.map(l => l.date).sort()[0], game: `Bet builder: ${L[0].game}`, result: '', logged: new Date().toISOString(), unit: getUnit().amt };
-  return addToBook(book === 'model' ? 'model' : 'real', b) ? b : null;
-}
-
-return { PREFILL, DRAFT, selFromCandidate, BETLOG, logSingleNow, logBetNow, openBetForm, openAccaForm, logBuilderNow };
 })();
 __m['betlog'] = (() => {
 // Bet log on My Plays: your REAL bets, singles and accas, across NBA, NFL and football (owner requests 5 and 9 Nov 2026).
@@ -9183,15 +9278,6 @@ function onChange(e) { const t = e.target; if (t.matches('[data-slipfmt]')) { lo
 
 return { combos, formatsFor, selProblem, comboProblem, priceSlip, selOf, slipCount, slipHas, slipToggle, slipSetBook, slipAddMany, slipRegister, slipRoute, syncButtons, toCard };
 })();
-__m['rectabs'] = (() => {
-// The Singles / Acca Builder / Hit Rates tabs of Hiwi's Section (Update 85).
-const { unitChip } = __m['units'];
-const recTabs = (sport, on) => { if (on === 'rec' || on === 'strict') on = 'singles'; /* Update 91: Strict is a tick box inside Singles, not a tab */ const h = p => (sport === 'football' ? `#/${p}` : `#/${sport}/${p}`);
-  return `<nav class="fpnav" aria-label="Recommended Plays"><div class="seg wrap rectabs">${[['singles', 'Singles'], ['acca', 'Accas'], ['form', 'Hit Rates'], ['bb', 'Builders']].map(([p, l]) => `<a href="${h(p)}"${p === on ? ' class="on" aria-current="page"' : ''}>${l}</a>`).join('')}</div>${unitChip()}</nav>`; };
-
-
-return { recTabs };
-})();
 __m['excl'] = (() => {
 // Hidden players (owner request 5 Nov 2026): in Hiwi's Section you can hide a player for one game (a bench player the bookmakers do not
 // price, or a late injury). He is hidden for THAT game only, in Hiwi's Section and the Acca Builder, and comes back by himself for his
@@ -9325,6 +9411,7 @@ const { store, selectableFixtures, leagueName, leagueOrder } = __m['data'];
 const { normTeam } = __m['teams'];
 const { fmtOdds, parseIn, oddsFmt, inputText, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK, blendP } = __m['risk'];
+const { saveSingle, saveLabel } = __m['v-saved'];
 const { fmtU } = __m['kelly'];
 const { addPlay } = __m['myplays'];
 const { esc, fmtKick, fmtDay, fixtureId, koUK, US_WINDOW_MS, LIVE_MS, isUpcoming, whenLocal } = __m['util'];
@@ -9722,7 +9809,7 @@ async function viewRecommended(root, sport) {
       <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n && !c.def.binary ? `<button type="button" class="rh${won('opp')}"${wb('opp')}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
-      <div class="rhides rhidesr"><button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove play</button>${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not playing? Hide ${esc(c.name.split(' ').slice(-1)[0])}</button>` : ''}</div>
+      <div class="rhides rhidesr"><button type="button" class="linkbtn xs rhide" data-rsave aria-label="Save this play for later">☆ Save</button><button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove play</button>${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not playing? Hide ${esc(c.name.split(' ').slice(-1)[0])}</button>` : ''}</div>
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
       ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Every line</button></div>`}
 
@@ -9796,6 +9883,7 @@ async function viewRecommended(root, sport) {
       const st = { ...x.rep.st, per: sport === 'football' ? x.rep.st.per : (x.c.card.perDefault || '10') }, cd = x.c.card;
       try { if (cd.rebuild) Object.assign(cd, cd.rebuild(st)); else if (cd.perFn) Object.assign(cd, cd.perFn(st)); } catch (err) { console.error(err); }
       carryPrice(cd, st, sport); return; }
+    if (t.closest('[data-rsave]')) { t.closest('[data-rsave]').textContent = saveLabel(saveSingle(x.c, x.side, x.rep)); return; } /* Update 106 */
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) { const bt = t.closest('[data-radd]'), oi = bt.closest('.rcard').querySelector('[data-rodds]'); bt.textContent = 'Type your odds first'; setTimeout(() => { bt.textContent = bt.dataset.radd === 'model' ? '＋ Model only' : 'Log as a real bet'; }, 1800); if (oi) oi.focus(); return; } /* Update 95 (owner): one tap logs it */ const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: sport === 'football' ? r.p : blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (nightOf(g) || ''), subj: x.c.pid || x.c.name, p: r.p };
       const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D, mktOf(`${x.c.id}|${x.side}`)) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
@@ -10134,6 +10222,7 @@ const { nba, loadNbaInjuries } = __m['nba-data'];
 const { nfl } = __m['nfl-data'];
 const { fmtOdds, parseIn, oddsFmt, PLACEHOLDER } = __m['oddsfmt'];
 const { stakePlan, RISK, blendP } = __m['risk'];
+const { saveSingle, saveLabel } = __m['v-saved'];
 const { fmtU } = __m['kelly'];
 const { CUR } = __m['units'];
 const { selFromCandidate, logSingleNow } = __m['betprefill'];
@@ -10211,7 +10300,7 @@ async function viewHitRates(root, sport) {
   const card = ({ c, fm, r }) => { const g = c.f, when = fmtKick(g);
     const chips = fm.vals.map(v => `<span class="hrv ${v > fm.L ? 'hit' : 'miss'}">${esc(String(v))}</span>`).join('');
     const pct = Math.round(fm.hit / fm.n * 100), hs = r.hr.season;
-    return `<article class="card hrcard" data-hrc="${esc(c.id)}" data-hrl="${fm.L}"><div class="row" style="border:0;padding:0;gap:8px;align-items:baseline;justify-content:space-between"><div><b>${esc(c.name)}</b> <span class="xs muted">${esc(c.team || '')} v ${esc(c.opp || '')} · ${esc(when)}</span></div><button type="button" class="linkbtn xs" data-hrhide title="Hide this play">✕ Hide</button> <b class="hrpct ${pct >= 80 ? 'g' : pct >= 60 ? 'y' : ''}">${fm.hit}/${fm.n}</b></div>
+    return `<article class="card hrcard" data-hrc="${esc(c.id)}" data-hrl="${fm.L}"><div class="row" style="border:0;padding:0;gap:8px;align-items:baseline;justify-content:space-between"><div><b>${esc(c.name)}</b> <span class="xs muted">${esc(c.team || '')} v ${esc(c.opp || '')} · ${esc(when)}</span></div><button type="button" class="linkbtn xs" data-hrsave title="Save for later (Saved tab)">☆ Save</button> <button type="button" class="linkbtn xs" data-hrhide title="Hide this play">✕ Hide</button> <b class="hrpct ${pct >= 80 ? 'g' : pct >= 60 ? 'y' : ''}">${fm.hit}/${fm.n}</b></div>
       <div class="small"><b>${esc(ladderName(c, r))}</b> <span class="xs muted">(over ${fm.L})</span></div>
       <div class="hrvals" aria-label="Last ${fm.n} games, newest first">${chips} <span class="xs muted">newest first</span></div>
       <div class="xs muted">Season ${hs.n ? `${hs.hit}/${hs.n} (${hs.pct}%)` : 'no games'} · last 10 ${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</div>
@@ -10279,6 +10368,7 @@ async function viewHitRates(root, sport) {
     if (e.target.closest('[data-hrunhideall]')) { f.hide = []; save(); drawF(); draw(); return; }
     const b = e.target.closest('[data-hrseg] button'); if (b) { const k = b.parentElement.dataset.hrseg; f[k] = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v); save(); drawF(); if (k === 'days') loadC(); else draw(); return; }
     const art = e.target.closest('[data-hrc]'), X = art ? (out._rows || []).find(z => z.c.id === art.dataset.hrc && String(z.fm.L) === art.dataset.hrl) : null;
+    if (X && e.target.closest('[data-hrsave]')) { const r = evalAt(X.c, X.fm.L, 'over'), bt = e.target.closest('[data-hrsave]'); bt.textContent = r ? saveLabel(saveSingle(X.c, 'over', r)) : 'Could not save'; return; } /* Update 106 */
     const redraw = () => { const t = document.createElement('div'); t.innerHTML = card(X); const n = t.firstElementChild; art.replaceWith(n); const w = n.querySelector('.rbwrap.wide'); if (w) w.scrollLeft = w.scrollWidth; };
     if (X && e.target.closest('[data-hrdet]')) { const k = keyOf(X.c, X.fm); OPEN.has(k) ? OPEN.delete(k) : OPEN.set(k, { w: 'l10', L: X.fm.L, sel: null }); return redraw(); }
     if (X && OPEN.has(keyOf(X.c, X.fm))) { const st = OPEN.get(keyOf(X.c, X.fm));
@@ -10324,6 +10414,7 @@ const { accaPlan, RISK, blendP } = __m['risk'];
 const { fmtU } = __m['kelly'];
 const { CUR } = __m['units'];
 const { selFromCandidate, logBuilderNow } = __m['betprefill'];
+const { saveBuilder, saveLabel } = __m['v-saved'];
 const { esc, fmtKick } = __m['util'];
 
 const BB = { minP: 0.65, maxLegs: 3, show: 6 };
@@ -10387,7 +10478,7 @@ async function viewBuilders(root, sport) {
       const vg = f.strict && !cb.own ? bbVerdict(cb.p, Dd) : null; o = `${vg ? (vg.ok ? '<div class="sverdict back" data-sverdict="back">✓ Back it</div>' : `<div class="sverdict warn" data-sverdict="gap">⚠ Big gap: ${esc(vg.why)}. The stake below is what the model says; your call.</div>`) : ''}<b class="${ev > 0 ? 'hit' : 'miss'}" data-bbev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>${tested ? ` <span class="xs muted">(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>` : ''} · ${ev <= 0 ? '<span class="xs muted">no value: the bookmaker is charging more than PropLab\'s price</span>' : u > 0 ? `stake <b data-bbstake>${fmtU(u)}u</b> (${CUR()}${(u * RISK.unitGBP).toFixed(2)})` : `<span class="xs muted">${tested ? 'no stake (edge too small after rounding)' : 'no stake: untested same-game legs'}</span>`}
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${u > 0 ? '<button type="button" class="chip" data-bbadd="real">＋ Real bet</button>' : ''}${ev > 0 ? '<button type="button" class="chip" data-bbadd="model">＋ Model only</button>' : ''}</div>`; }
     return `<div class="hrodds" data-bbbox="${esc(id)}"><label class="field" style="margin:0"><span>Bookmaker's bet-builder odds</span><input class="in" data-bbodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(txt)}"></label><div class="small" data-bbout aria-live="polite">${o}</div></div>`; };
-  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div>${f.strict && !cb.own ? `<p class="xs" style="margin:2px 0" data-bbwin>Back it if the builder price is <b>${esc(fmtOdds(bbWindow(cb.p).lo))}</b> to <b>${esc(fmtOdds(bbWindow(cb.p).hi))}</b></p>` : ''}<ol class="xs bblegs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li><span>${legTxt(l)}${l.base ? ' <b class="bbmoved">line changed</b>' : ''}</span><span class="bbstep"><button type="button" class="hstep" data-bbstep="-1" data-bbc="${esc(l.c.id)}" aria-label="Lower ${esc(l.c.name)}'s line">−</button><button type="button" class="hstep" data-bbstep="1" data-bbc="${esc(l.c.id)}" aria-label="Raise ${esc(l.c.name)}'s line">+</button></span></li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
+  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><button type="button" class="linkbtn xs" data-bbsave style="float:right" title="Save for later (Saved tab)">☆ Save</button><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div>${f.strict && !cb.own ? `<p class="xs" style="margin:2px 0" data-bbwin>Back it if the builder price is <b>${esc(fmtOdds(bbWindow(cb.p).lo))}</b> to <b>${esc(fmtOdds(bbWindow(cb.p).hi))}</b></p>` : ''}<ol class="xs bblegs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li><span>${legTxt(l)}${l.base ? ' <b class="bbmoved">line changed</b>' : ''}</span><span class="bbstep"><button type="button" class="hstep" data-bbstep="-1" data-bbc="${esc(l.c.id)}" aria-label="Lower ${esc(l.c.name)}'s line">−</button><button type="button" class="hstep" data-bbstep="1" data-bbc="${esc(l.c.id)}" aria-label="Raise ${esc(l.c.name)}'s line">+</button></span></li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
   let shown = new Map();
   /* Update 97 (owner, 15 Nov): a mini − / + on every leg to match the bookmaker's line. The change follows that player's leg in every double and treble. */
   const LOV = new Map();
@@ -10412,6 +10503,7 @@ async function viewBuilders(root, sport) {
       const cur = LOV.has(id) ? LOV.get(id) : l.r.L, ls = l.c.lines, i = ls.indexOf(cur), n = ls[i + Number(st.dataset.bbstep)]; if (n == null) return;
       if (n === l.r.L) LOV.delete(id); else LOV.set(id, n); const y = window.scrollY; draw(); window.scrollTo(0, y); return; }
     const b = e.target.closest('[data-bbdays] button'); if (b) { f.days = Number(b.dataset.v); save(); drawF(); loadG(); return; }
+    const sv = e.target.closest('[data-bbsave]'); if (sv) { const cb = shown.get(sv.closest('[data-bbid]').dataset.bbid); sv.textContent = cb ? saveLabel(saveBuilder(cb, tested)) : 'Could not save'; return; } /* Update 106 */
     const ad = e.target.closest('[data-bbadd]'); if (ad) { const id = ad.closest('[data-bbbox]').dataset.bbbox, cb = shown.get(id), txt = ODDS.get(id) || '', od = parseIn(txt); if (!cb || !od || !od.dec) return; if (f.strict && !cb.own) { const vv = bbVerdict(cb.p, od.exact ?? od.dec); if (!vv.ok && !vv.gap) return; } /* Update 105: a big-gap warning can still be logged */
       const Dd = od.exact ?? od.dec, pj = tested ? blendP(cb.p, Dd) : cb.p, model = ad.dataset.bbadd === 'model', P = tested || model ? accaPlan(pj, Dd, { validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf.level === 'Low') }) : null, u = P && P.ok ? P.units : 0; // model-only untested builders: the stake it would get if tested
       const saved = u > 0 ? logBuilderNow(cb.legs.map(l => ({ sel: selFromCandidate(l.c, 'over', l.r), fair: l.r.fair })), Dd, txt, u * RISK.unitGBP, model ? 'model' : 'real') : null;
@@ -13750,6 +13842,7 @@ const { viewRecommended, setStrict } = __m['v-recommended'];
 const { viewAcca } = __m['v-acca'];
 const { viewHitRates } = __m['v-hitrates'];
 const { viewBuilders } = __m['v-builder'];
+const { viewSaved } = __m['v-saved'];
 const { viewMyPlays } = __m['myplays'];
 const { viewModel } = __m['v-model'];
 const { viewNbaPlays } = __m['v-nba-plays'];
@@ -13798,11 +13891,11 @@ const TABS = {
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
-const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', strict: 'strict', singles: 'singles', acca: 'acca', form: 'form', bb: 'bb', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
+const FB = { research: 'search', start: 'start', football: 'home', players: 'search', player: 'search', team: 'search', match: 'fixtures', fixtures: 'fixtures', plays: 'plays', hiwi: 'hiwi', finder: 'finder', rec: 'rec', strict: 'strict', singles: 'singles', acca: 'acca', form: 'form', bb: 'bb', saved: 'saved', myplays: 'myplays', model: 'model', value: 'value', about: 'about' };
 const FB_HREF = { start: '#/start', home: '#/start', search: '#/players', fixtures: '#/fixtures', plays: '#/plays', hiwi: '#/hiwi', finder: '#/finder', rec: '#/rec', myplays: '#/myplays', model: '#/model', value: '#/value', about: '#/about' };
 const NBA_HREF = { matchups: '#/nba/matchups', start: '#/nba/start', home: '#/nba/start', search: '#/nba/search', fixtures: '#/nba/fixtures', plays: '#/nba/plays', hiwi: '#/nba/hiwi', finder: '#/nba/finder', rec: '#/nba/rec', myplays: '#/nba/myplays', model: '#/nba/model', value: '#/nba/value', about: '#/about' };
 const NFL_HREF = { matchups: '#/nfl/matchups', start: '#/nfl/start', home: '#/nfl/start', search: '#/nfl/search', fixtures: '#/nfl/fixtures', plays: '#/nfl/plays', hiwi: '#/nfl/hiwi', finder: '#/nfl/finder', rec: '#/nfl/rec', myplays: '#/nfl/myplays', model: '#/nfl/model', value: '#/nfl/value', about: '#/about' };
-const TITLES = { strict: 'Strict plays', singles: 'Singles', bb: 'Bet Builders', form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
+const TITLES = { strict: 'Strict plays', singles: 'Singles', bb: 'Bet Builders', saved: 'Saved plays', form: 'Hit Rates', acca: 'Acca Builder', model: 'Model Performance', myplays: 'My Plays', rec: "Hiwi's Section", matchups: 'Team matchups', research: 'Player research', start: 'Start', picks: 'Recommended Plays', performance: 'Model Performance', home: 'Home', search: 'Search', fixtures: 'Fixtures', plays: 'Plays', hiwi: "Find Your Own", finder: 'Hit Rate Finder', value: 'Value Research', about: 'Data & sources', player: 'Player', team: 'Team', match: 'Match research' };
 
 /* Update 95 (owner: "this page keeps going blank"): a download that stalls (signal drops, or the app goes to the background mid-load on an iPhone)
    used to leave the page empty for good. Now every download gives up after 25 s (45 s for the big files), so the page can say so and offer Retry. */
@@ -13873,7 +13966,7 @@ function chrome(w) {
   $('#topctl').innerHTML = sp ? `<label class="sportsel"><span class="vh">Sport</span><select id="sportsel" aria-label="Sport">${Object.entries(SPORTS).map(([k, s]) => `<option value="${k}" ${k === sp ? 'selected' : ''}>${s.label} ${s.emoji}</option>`).join('')}</select></label>
     <a class="searchbtn" href="${SEARCH[sp]}" aria-label="Search ${SPORTS[sp].label}">${ICON.search}</a>` : '';
   const tabs = sp ? TABS[sp] : [];
-  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', strict: 'rec', singles: 'rec', performance: 'value' }[w.page] || w.page);
+  const active = sp === 'football' ? ({ plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', saved: 'rec', strict: 'rec', singles: 'rec' }[FB[w.page]] || FB[w.page]) : sp === 'nba' ? ({ player: 'search', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', saved: 'rec', strict: 'rec', singles: 'rec' }[w.page] || w.page) : ({ player: 'search', team: 'search', picks: 'rec', plays: 'rec', finder: 'rec', acca: 'rec', form: 'rec', bb: 'rec', saved: 'rec', strict: 'rec', singles: 'rec', performance: 'value' }[w.page] || w.page);
   $('#nav').hidden = !sp; $('#nav').style.setProperty('--tabs', String(tabs.length || 5)); // one column per tab (no empty slot)
   $('#nav').innerHTML = tabs.map(([k, l, h, i]) => `<a href="${h}" class="${k === active ? 'on' : ''}${k === 'rec' || k === 'hiwi' ? ' hiwitab' : ''}" ${k === active ? 'aria-current="page"' : ''}>${i === 'bear' ? BEAR_ICON : ICON[i]}<span class="f">${esc(l)}</span><span class="s">${esc(l)}</span></a>`).join('');
   document.body.dataset.sport = sp || 'hub';
@@ -13886,7 +13979,7 @@ const HIDDEN_MODEL = w => (w.sport === 'nfl' && ['picks', 'performance', 'plays'
 const OLD_HOME = w => (w.sport === 'football' && w.page === 'football' ? '#/start' : w.sport === 'nfl' && w.page === 'home' ? '#/nfl/start' : w.sport === 'nba' && w.page === 'home' ? '#/nba/start' : null);
 // Find Plays groups the ranked hit-rate list (Finder) and the match-by-match lists (Plays) as two tabs of one journey.
 const FP = { football: [['rec', "Hiwi's Section", '#/rec'], ['finder', 'Hit rates', '#/finder'], ['plays', 'By match', '#/plays']], nba: [['rec', "Hiwi's Section", '#/nba/rec'], ['finder', 'Hit rates', '#/nba/finder'], ['plays', 'By match', '#/nba/plays']], nfl: [['rec', "Hiwi's Section", '#/nfl/rec'], ['finder', 'Hit rates', '#/nfl/finder']] };
-const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca' || pg === 'form' || pg === 'bb' || pg === 'strict' || pg === 'singles') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
+const fpNav = w => { const t = FP[w.sport]; const pg = w.page; if (pg === 'rec' || pg === 'acca' || pg === 'form' || pg === 'bb' || pg === 'saved' || pg === 'strict' || pg === 'singles') return ''; /* those pages carry their own Singles / Acca Builder tabs */ if (!t || t.length < 2 || !t.some(([k]) => k === pg)) return '';
   return `<nav class="fpnav" aria-label="Plays"><span class="xs muted">Plays:</span><div class="seg">${t.map(([k, l, h]) => `<a href="${h}" class="${k === pg ? 'on' : ''}" ${k === pg ? 'aria-current="page"' : ''}>${esc(l)}</a>`).join('')}</div></nav>`; };
 // Back to Plays (owner request 21 Oct, evening): tapping a player's name remembers the page and its scroll position; returning to that page
 // (the Back to Plays button or the browser's Back) restores it. Find Your Own also restores its exact card order (see v-hiwi.js).
@@ -13930,15 +14023,15 @@ async function render() {
     if (w.sport === 'nba' && nba.status === 'loading') { body.innerHTML = SKEL; return; }
     if (w.sport === 'nba' && nba.status === 'error') { body.innerHTML = loadFail(nba.error); return finish(); }
     if (w.sport === 'nba') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), bb: x => viewBuilders(x, 'nba'), strict: x => { setStrict('nba', true); return viewRecommended(x, 'nba'); }, singles: x => viewRecommended(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nba'), acca: x => viewAcca(x, 'nba'), form: x => viewHitRates(x, 'nba'), bb: x => viewBuilders(x, 'nba'), saved: x => viewSaved(x, 'nba'), strict: x => { setStrict('nba', true); return viewRecommended(x, 'nba'); }, singles: x => viewRecommended(x, 'nba'), research: x => viewResearch(x, 'nba', w.arg), start: x => viewStart(x, 'nba'), value: x => viewNbaValue(x, w.r), search: viewNbaSearch, player: x => viewNbaPlayer(x, w.arg), fixtures: viewNbaFixtures, hiwi: x => viewHiwi(x, w.r, 'nba'), finder: x => viewNbaFinder(x, w.r), plays: x => viewNbaPlays(x, w.r), matchups: x => viewNbaMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNbaFixtures;
       await V(body); return finish();
     }
     if (!w.sport) return void viewSports(body);
     if (w.sport === 'nfl') {
-      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), form: x => viewHitRates(x, 'nfl'), bb: x => viewBuilders(x, 'nfl'), strict: x => { setStrict('nfl', true); return viewRecommended(x, 'nfl'); }, singles: x => viewRecommended(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
+      const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'nfl'), acca: x => viewAcca(x, 'nfl'), form: x => viewHitRates(x, 'nfl'), bb: x => viewBuilders(x, 'nfl'), saved: x => viewSaved(x, 'nfl'), strict: x => { setStrict('nfl', true); return viewRecommended(x, 'nfl'); }, singles: x => viewRecommended(x, 'nfl'), research: x => viewResearch(x, 'nfl', w.arg), start: x => viewStart(x, 'nfl'), home: viewNflHome, search: viewNflSearch, player: x => viewNflPlayer(x, w.arg), team: x => viewNflTeam(x, w.arg), fixtures: viewNflFixtures, plays: viewNflRecommended, hiwi: x => viewHiwi(x, w.r, 'nfl'), finder: viewNflFinder, value: x => usValuePage(x, w.r, 'nfl') /* the model calculator (viewNflEv) is hidden with Model Picks */, picks: viewNflRecommended, performance: viewNflPerformance, matchups: x => viewNflMatchups(x, w.r), about: x => viewAbout(x, w.r) }[w.page] || viewNflHome;
       await V(body); return finish();
     }
-    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), form: x => viewHitRates(x, 'football'), bb: x => viewBuilders(x, 'football'), strict: x => { setStrict('football', true); return viewRecommended(x, 'football'); }, singles: x => viewRecommended(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
+    const V = { model: viewModel, myplays: viewMyPlays, rec: x => viewRecommended(x, 'football'), acca: x => viewAcca(x, 'football'), form: x => viewHitRates(x, 'football'), bb: x => viewBuilders(x, 'football'), saved: x => viewSaved(x, 'football'), strict: x => { setStrict('football', true); return viewRecommended(x, 'football'); }, singles: x => viewRecommended(x, 'football'), research: (x, rr) => viewResearch(x, 'football', rr.arg), start: x => viewStart(x, 'football'), football: viewHome, players: viewPlayers, player: viewPlayer, team: viewTeam, fixtures: viewFixtures, plays: viewPlays, match: viewMatch, finder: viewFinder, value: viewValue, about: viewAbout, hiwi: (x, r) => viewHiwi(x, r, 'football') }[w.page] || viewHome;
     await V(body, w.r);
   } catch (e) { console.error(e); body.innerHTML = `<div class="banner bad"><b>Something went wrong on this page.</b><br>${esc(e.message)}</div>`; }
   finish();
