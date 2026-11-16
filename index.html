@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f66ece25d123">
+<meta name="proplab-build" content="577a31d27038">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -914,6 +914,12 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 /* Update 102: combo-market cards (two matchup rows) still fit one screen */
 .rcard .mugrid .mub{min-height:36px;padding:2px 3px;gap:0}.rcard .mugrid .mub>b{height:20px;font-size:13px}.rcard .mugrid{gap:3px 6px}.rcard .hmu{margin-bottom:4px}
 .rcard .rcm{line-height:1.3}
+
+/* Update 103 */
+.rmkt{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}.rmkt .in{width:90px;padding:4px 6px;min-height:30px}
+
+/* Update 104 */
+.bldname{margin-top:4px;width:100%;padding:6px 8px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7175,30 +7181,33 @@ function valuePick(cands, o, blowout = () => null) {
   }
   return [...best.values()];
 }
-function valueVerdict(p, dec) {
+function valueVerdict(p, dec, ref) {
   const S = VALUE, imp = 1 / dec, edge = p - imp, ev = p * dec - 1;
   if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: shop around, or use the strict filter for shorter prices` };
   if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: a price that long usually means the bookmaker knows something (check the news)` };
-  { const g = gapPass(p, imp); if (g) return g; }
+  { const g = gapPass(p, ref > 1 && ref < dec ? 1 / ref : imp); if (g) return g; } const viaRef = ref > 1 && ref < dec && overGap(p, imp); /* Update 103: the gap is checked against the shortest price you have seen */
   if (edge < S.edge - 1e-9) return { ok: false, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds); it needs ${Math.round(S.edge * 100)}+ pts` };
-  if (ev > S.evCheck) return { ok: true, warn: true, why: `edge ${(edge * 100).toFixed(1)} pts, EV +${(ev * 100).toFixed(0)}%: unusually big. Check the news (minutes, line-up, role) first; if nothing explains the price, back it at half stake` };
-  return { ok: true, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds)` };
+  if (ev > S.evCheck) return { ok: true, warn: true, viaRef, why: `edge ${(edge * 100).toFixed(1)} pts, EV +${(ev * 100).toFixed(0)}%: unusually big. Check the news (minutes, line-up, role) first; if nothing explains the price, back it at half stake` };
+  return { ok: true, viaRef, why: `edge ${(edge * 100).toFixed(1)} pts (model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds)` };
 }
 const valueMinOdds = p => Math.max(VALUE.minOdds, 1 / Math.max(1e-9, p - VALUE.edge));
 /* Update 91 (owner's prices, 14 Nov: 549 NBA lines): when the model is far above the bookmaker the model is usually the one that's wrong (e.g. Cade 8+ assists: model 80%, price 1.50 = 67%), so a gap this big is a Pass */
 const MARKET_GAP = 0.10;
 /* Update 95 (owner): compared on the whole-number % shown (65% v 55% = 10 points = fine; 11+ = Pass) */
 const overGap = (p, imp) => Math.round(p * 100) - Math.round(imp * 100) > Math.round(MARKET_GAP * 100);
+/* Update 103 (owner, 16 Nov): bet365 priced a play longer than the 10-point rule allowed, while other bookmakers were within it. The rule is
+   there to catch a wrong model, and other bookmakers' shorter prices show the model isn't the outlier, so you can give it the shortest price
+   seen elsewhere; EV still uses your own odds. */
 const gapPass = (p, imp) => (overGap(p, imp) ? { ok: false, gap: true, why: `the model (${(p * 100).toFixed(0)}%) is more than ${Math.round(MARKET_GAP * 100)} points above your price (${(imp * 100).toFixed(0)}%): bookmakers are rarely that wrong, so this is more likely a model error. Pass` } : null);
 /** The strict verdict for a price: { ok, warn, why }. p = the model chance, dec = your odds (decimal). */
-function strictVerdict(p, dec) { // Update 89 (owner, 14 Nov): one rule. EV+ at your odds (inside 1.70-3.00) = Back it; otherwise Pass.
+function strictVerdict(p, dec, ref) { // Update 89 (owner, 14 Nov): one rule. EV+ at your odds (inside 1.70-3.00) = Back it; otherwise Pass.
   const S = STRICT, imp = 1 / dec, ev = p * dec - 1;
   if (dec < S.minOdds - 1e-9) return { ok: false, why: `your odds are below ${S.minOdds.toFixed(2)}: too short to be worth the risk` };
   if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
   if (ev <= 0) return { ok: false, why: `not EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds` };
   if (ev < S.minEV - 1e-9) return { ok: false, why: `EV ${(ev * 100).toFixed(1)}%: under the ${Math.round(S.minEV * 100)}% minimum` };
-  { const g = gapPass(p, imp); if (g) return g; }
-  return { ok: true, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds${ev > S.evCheck ? '. A big gap: the stake (on the model + bookmaker blend) is already cut down for it' : ''}` };
+  { const g = gapPass(p, ref > 1 && ref < dec ? 1 / ref : imp); if (g) return g; } const viaRef = ref > 1 && ref < dec && overGap(p, imp); /* Update 103: the gap is checked against the shortest price you have seen */
+  return { ok: true, viaRef, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds${ev > S.evCheck ? '. A big gap: the stake (on the model + bookmaker blend) is already cut down for it' : ''}` };
 }
 /** The shortest odds that pass the strict rules for a model chance. */
 /* the longest odds before the market-gap rule makes it a Pass (Update 91) */
@@ -8293,12 +8302,12 @@ function wireBetLog(root, sport) {
     const co = d.legs.reduce((t, l) => t * (l.odds || 1), 1), st = Number(String(d.stake).replace(/[£$€,\s]/g, '')), bo = parseIn(d.odds || '').dec, missing = d.legs.filter(l => !(l.odds > 1)).length;
     const games = new Map(); for (const l of d.legs) { const k = l.gameId ? `${l.sport}|${l.gameId}` : l.fx ? `f|${l.fx.league}|${l.fx.home}|${l.fx.away}` : l.id; games.set(k, (games.get(k) || 0) + 1); }
     const same = [...games.values()].some(n => n > 1);
-    const A0 = draftAcca(d), U0 = accaUnits(A0), legRow = (l, i, grouped) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div>${grouped ? '' : `<label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" ${NO_} value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label>`}<button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`;
+    const A0 = draftAcca(d), U0 = accaUnits(A0), legRow = (l, i, grouped) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}${l.scope === 'other' ? `<input class="in bldname" data-bldname autocomplete="off" placeholder="What is it? e.g. Arsenal to win" value="${esc(l.name === 'Other leg' ? '' : l.name)}">` : ''}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div>${grouped ? '' : `<label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" ${NO_} value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label>`}<button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`;
     const legsHtml = A0.mode === 'match' ? U0.map(u => (u.group ? `<div class="blgroup" data-bldg="${esc(u.key)}"><div class="blgrid"><div class="small"><b>Same match: ${esc(d.legs[u.idx[0]].game)}</b> <span class="xs muted">(${u.idx.length} legs, one price: your bet builder)</span></div><label class="field" style="max-width:130px"><span class="xs muted">Price for these ${u.idx.length}</span><input class="in" data-bldgodds="${esc(u.key)}" inputmode="text" ${NO_} value="${esc((d.godds || {})[u.key] || '')}" placeholder="e.g. 5/1"></label></div>${u.idx.map(i => legRow(d.legs[i], i, true)).join('')}</div>` : legRow(d.legs[u.idx[0]], u.idx[0], false))).join('') : '';
     el.innerHTML = `<section class="card stack blbuild"><h3 style="margin:0">Acca being built (${d.legs.length} leg${d.legs.length === 1 ? '' : 's'})</h3>
       <div><span class="xs muted">Odds</span><div class="seg" data-bldmode><button type="button" data-v="leg" class="${A0.mode === 'leg' ? 'on' : ''}">Per leg</button><button type="button" data-v="match" class="${A0.mode === 'match' ? 'on' : ''}">Per match</button></div>
         <p class="xs muted" style="margin:2px 0 0">${A0.mode === 'match' ? 'Legs from the same match share one price (a bet builder inside the acca); legs on their own keep their own odds. A group still needs every leg to win.' : 'Each leg has its own odds (a normal acca, or a stand-alone bet builder). Choose "Per match" if your acca has a bet builder in it.'}</p></div>
-      ${A0.mode === 'match' ? legsHtml : ''}${A0.mode === 'match' ? '' : ''}${A0.mode !== 'match' ? d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('') : ''}
+      ${A0.mode === 'match' ? legsHtml : ''}${A0.mode === 'match' ? '' : ''}${A0.mode !== 'match' ? d.legs.map((l, i) => `<div class="blleg" data-bldl="${i}"><div>${selLine(l)}${l.scope === 'other' ? `<input class="in bldname" data-bldname autocomplete="off" placeholder="What is it? e.g. Arsenal to win" value="${esc(l.name === 'Other leg' ? '' : l.name)}">` : ''}<div class="xs muted">${esc(l.game)}${l.ko && !l.fx ? ` · ${esc(ukWhen(l.ko))}` : ''}</div></div><label class="field" style="max-width:110px"><span class="xs muted">Your odds</span><input class="in" data-bldodds inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(l.oddsTxt || (l.odds ? String(l.odds) : ''))}" placeholder="e.g. 1.80 or 4/5"></label><button type="button" class="linkbtn xs" data-bldrm>✕</button></div>`).join('') : ''}
       ${same && A0.mode !== 'match' ? '<p class="xs warn" style="margin:4px 0">Two or more legs come from the same match. Bookmakers usually price these as a bet builder, not by multiplying, and settle them under their own rules: type the bookmaker\'s acca odds below and check the result yourself.</p>' : ''}
       <div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(d.promo, true)}</span><input class="in slipstake" data-bldstake inputmode="decimal" value="${esc(d.stake)}" placeholder="${d.promo ? '0 if it is all free bet' : 'e.g. 5'}"></label>
       <label class="field"><span>Bookmaker's acca odds <small>(only if different: price boosts, bet builders)</small></span><input class="in" data-bldbook inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(d.odds || '')}" placeholder="optional"></label></div>
@@ -8462,6 +8471,7 @@ function wireBetLog(root, sport) {
     if (t.matches('[data-blotext]')) F.otext = t.value;
     if (t.matches('[data-blline]')) { F.line = t.value; F.p = null; clearTimeout(tm); tm = setTimeout(drawPrice, 400); }
     const dl = t.closest('[data-bldl]'), d = loadDraft();
+    if (dl && t.matches('[data-bldname]')) { const l = d.legs[Number(dl.dataset.bldl)]; if (l) { l.name = t.value.trim() || 'Other leg'; l.market = l.name; saveDraft(d); } return; } /* Update 104: name an Other leg */
     if (dl && t.matches('[data-bldodds]')) { const l = d.legs[Number(dl.dataset.bldl)]; if (l) { l.oddsTxt = t.value; const o = parseIn(t.value); l.odds = o.dec ? (o.exact || o.dec) : null; saveDraft(d); clearTimeout(tm); tm = setTimeout(() => { const y = scrollY, ae = document.activeElement && document.activeElement.matches('[data-bldodds]') ? Number(document.activeElement.closest('[data-bldl]').dataset.bldl) : -1; drawDraft(); if (ae >= 0) { const i = box.querySelector(`[data-bldl="${ae}"] [data-bldodds]`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } } scrollTo(0, y); }, 500); } }
     if (t.matches('[data-bldgodds]')) { d.godds = { ...(d.godds || {}), [t.dataset.bldgodds]: t.value }; saveDraft(d); }
     if (t.matches('[data-bldstake]')) { d.stake = t.value; saveDraft(d); }
@@ -8549,26 +8559,27 @@ function wireBetLog(root, sport) {
   });
   /** Read an edit box and save the bet (returns nothing; shows a message on a problem). */
   const saveEdit = async ebox => {
-    const msg = ebox.querySelector('[data-blemsg]'), a = loadLog(), i = a.findIndex(x => x.id === ebox.dataset.bleditfor); if (i < 0) { ebox.remove(); return; }
+    const msg = ebox.querySelector('[data-blemsg]'), say = t => { msg.textContent = t; msg.scrollIntoView({ block: 'center' }); } /* Update 104: an error is always shown on screen */, a = loadLog(), i = a.findIndex(x => x.id === ebox.dataset.bleditfor); if (i < 0) { ebox.remove(); return; }
     const b = JSON.parse(JSON.stringify(a[i])), num = v => Number(String(v || '').replace(/[£$€,\s]/g, '').replace(',', '.'));
-    const readLeg = (x, el) => { const q = k => el.querySelector(`[data-ble="${k}"]`), o = parseIn(q('odds') ? q('odds').value : ''); if (q('odds') && !o.dec) return `Type valid odds${x.name ? ` for ${x.name}` : ''} (e.g. 1.80 or 4/5).`;
+    const readLeg = (x, el, acca) => { const q = k => el.querySelector(`[data-ble="${k}"]`), o = parseIn(q('odds') ? q('odds').value : ''); if (q('odds') && !(acca && !q('odds').value.trim()) && !o.dec) return `Type valid odds${x.name ? ` for ${x.name}` : ''} (e.g. 1.80 or 4/5).`;
       const before = `${x.line}|${x.side}|${x.name}`;
       if (q('name')) { const d = q('name').value.trim(); if (!d) return 'Describe the bet.'; x.name = d; }
       if (q('line')) { const L = num(q('line').value); if (!Number.isFinite(L) || (x.key !== 'g.hcap' && L < 0)) return 'Type a valid line.'; x.line = L; }
       const sd = el.querySelector('[data-ble="side"] button.on'); if (sd) x.side = sd.dataset.v;
-      if (q('odds')) { x.odds = o.exact || o.dec; x.oddsTxt = q('odds').value.trim(); }
+      if (q('odds')) { if (acca && !q('odds').value.trim()) { x.odds = null; x.oddsTxt = ''; } else { x.odds = o.exact || o.dec; x.oddsTxt = q('odds').value.trim(); } } /* Update 104: an acca leg can be left without odds */
       const rs = el.querySelector('[data-ble="result"] button.on'); if (rs) x.result = rs.dataset.v;
       if (`${x.line}|${x.side}|${x.name}` !== before) { delete x.auto; x.p = null; x.push = 0; x.fair = null; x._reprice = true; }
       return ''; };
     if (isAcca(b)) { const keep = [...ebox.querySelectorAll('[data-bleleg]')].map(el => Number(el.dataset.bleleg)), els = [...ebox.querySelectorAll('[data-bleleg]')];
-      b.legs = keep.map(j => b.legs[j]); for (let j = 0; j < b.legs.length; j++) { const m = readLeg(b.legs[j], els[j]); if (m) { msg.textContent = m; return; } }
+      b.legs = keep.map(j => b.legs[j]); for (let j = 0; j < b.legs.length; j++) { const m = readLeg(b.legs[j], els[j], true); if (m) { say(m); return; } }
       const ar = ebox.querySelector('[data-ble="accaresult"] button.on'); if (ar) b.result = ar.dataset.v;
-      for (const gi of ebox.querySelectorAll('[data-bleg]')) { const o = parseIn(gi.value); if (!o.dec) { msg.textContent = 'Type a valid price for every same-match group.'; return; } b.groups[gi.dataset.bleg] = { odds: o.exact || o.dec, oddsTxt: gi.value.trim() }; }
-      const bk = ebox.querySelector('[data-ble="book"]').value.trim(); if (bk) { const o = parseIn(bk); if (!o.dec) { msg.textContent = 'Type valid acca odds, or leave it empty.'; return; } b.bookOdds = o.exact || o.dec; b.bookOddsTxt = bk; } else { delete b.bookOdds; delete b.bookOddsTxt; } }
-    else { const m = readLeg(b, ebox.querySelector('.bleleg')); if (m) { msg.textContent = m; return; } }
+      for (const gi of ebox.querySelectorAll('[data-bleg]')) { const o = parseIn(gi.value); if (!o.dec) { say('Type a valid price for every same-match group.'); return; } b.groups[gi.dataset.bleg] = { odds: o.exact || o.dec, oddsTxt: gi.value.trim() }; }
+      const bk = ebox.querySelector('[data-ble="book"]').value.trim(); if (bk) { const o = parseIn(bk); if (!o.dec) { say('Type valid acca odds, or leave it empty.'); return; } b.bookOdds = o.exact || o.dec; b.bookOddsTxt = bk; } else { delete b.bookOdds; delete b.bookOddsTxt; } }
+    if (isAcca(b) && !(Number(b.bookOdds) > 1) && accaUnits(b).some(u => !(u.odds > 1))) { say("Type the bookmaker's acca odds (or every leg's odds)."); return; }
+    else if (!isAcca(b)) { const m = readLeg(b, ebox.querySelector('.bleleg')); if (m) { say(m); return; } }
     const sv = ebox.querySelector('[data-ble="stake"]').value, st = String(sv || '').trim() ? num(sv) : 0, PR = readPromo(ebox);
-    if (!(st >= 0)) { msg.textContent = 'Type the stake as a number, e.g. 10.'; return; } if (PR.bad) { msg.textContent = 'Type the free bet amount as a number, e.g. 5.'; return; }
-    if (!(st > 0) && !(PR.free > 0)) { msg.textContent = PR.promo ? 'Type the free bet amount and / or your own money.' : 'Type the stake.'; return; }
+    if (!(st >= 0)) { say('Type the stake as a number, e.g. 10.'); return; } if (PR.bad) { say('Type the free bet amount as a number, e.g. 5.'); return; }
+    if (!(st > 0) && !(PR.free > 0)) { say(PR.promo ? 'Type the free bet amount and / or your own money.' : 'Type the stake.'); return; }
     if (ebox.querySelector('[data-blstrict]')) { if (ebox.querySelector('[data-blstrict]').checked) b.strict = true; else delete b.strict; }
     b.stake = st; if (ebox.querySelector('[data-inplay]') && ebox.querySelector('[data-inplay]').checked) b.inplay = true; else delete b.inplay; if (PR.free > 0) b.free = PR.free; else delete b.free; if (PR.boost > 0) b.boost = PR.boost; else delete b.boost;
     // a single NBA / NFL player bet with a new line or side gets its fair price again (as it would when logged)
@@ -8576,7 +8587,7 @@ function wireBetLog(root, sport) {
       if ((x.sport === 'nba' || x.sport === 'nfl') && x.scope === 'player') { try { const r = await priceAtGame(x.sport, x.gameId, x.pid, x.key, x.line, x.side); if (r.ok) { x.p = r.p; x.push = r.push; x.fair = r.fair; } } catch { /* stays without a fair price */ } } }
     b.edited = new Date().toISOString();
     const cur = loadLog(), k = cur.findIndex(x => x.id === b.id); if (k < 0) { ebox.remove(); return; } cur[k] = b;
-    if (!saveLog(cur)) { msg.textContent = 'Could not save on this phone (private browsing?).'; return; }
+    if (!saveLog(cur)) { say('Could not save on this phone (private browsing?).'); return; }
     ebox.remove(); drawTotals(); settleAll().then(() => { drawTotals(); if (isAcca(b)) reopen(b.id); }); if (isAcca(b)) reopen(b.id);
     alertMsg(`Saved your changes to ${isAcca(b) ? `the ${b.legs.length}-leg acca` : `${b.name} ${b.market}`}.`); };
   const oddsText = x => x.oddsTxt || (x.odds ? fmtOdds(x.odds) : '');
@@ -9376,7 +9387,7 @@ function stateOf(sport) {
   const up5 = sport === 'nba' ? { minAvg: 25 } : {};
   // DEFV 6 (Update 78, owner): the Strict EV filter is on by default; applied once to every phone, then your own choice is kept.
   const first = saved.f && saved.defv === DEFV ? {} : saved.f && saved.defv === 5 ? { strict: STRICT_DEF(sport) } : saved.f && saved.defv === 4 ? { ...up5, strict: STRICT_DEF(sport) } : saved.f && saved.defv === 3 ? { minConf: 3, ...up5, strict: STRICT_DEF(sport) } : RECO(sport), once = saved.f && saved.defv !== DEFV;
-  S[sport] = { odds: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: ((saved.defv === DEFV || saved.defv === 3) && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
+  S[sport] = { odds: new Map(), mkt: new Map(), lg: new Set(saved.lgOff || []), /* football competitions unticked (hidden) */ fx: new Set(saved.fx || []), f: once ? { ...DEF, ...saved.f, ...first } : { ...DEF, ...first, ...(saved.f || {}) }, sort: ((saved.defv === DEFV || saved.defv === 3) && saved.sort) || 'best', adv: false, kept: new Map(), shown: 30, cands: new Map(), fxTouched: !!(saved.fx && saved.fx.length) };
   S[sport].f.grps = []; /* owner, 3 Nov: every market is on by default; the Markets list below the filters replaces the market-type buttons */ if (!Array.isArray(S[sport].f.mkOff)) S[sport].f.mkOff = [];
   if (once) save(sport, S[sport]); /* the recommended settings, once */
   return S[sport];
@@ -9599,6 +9610,12 @@ async function viewRecommended(root, sport) {
   const TIP = (title, text) => `data-info="rtip" data-title="${esc(title)}" data-text="${esc(text)}" aria-haspopup="dialog"`;
   const WIN = { season: 'Season', l5: 'Last 5', l10: 'Last 10', l20: 'Last 20', all: 'All' };
   const unitWord = sport === 'football' ? 'matches' : 'games';
+  /* Update 103: the verdict, plus (when the 10-point rule says Pass, or a price is typed there) a box for a shorter price at another bookmaker */
+  const mktOf = id => { const o = parseIn(s.mkt.get(id) || ''); return o && o.dec ? (o.exact ?? o.dec) : null; };
+  const verdictOf = (r, D, id) => (s.f.value ? valueVerdict(r.p, D, mktOf(id)) : strictVerdict(r.p, D, mktOf(id)));
+  const svInner = (v, val) => `<span class="svtext"><b>${v.ok ? (v.warn ? (val ? 'Check the news' : '✓ Back it (quick news check)') : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}${v.ok && v.viaRef ? ' <span class="xs">(10-point rule checked on the other bookmaker\'s price)</span>' : ''}</span>`;
+  const svHtml = (r, D, id) => { const v = verdictOf(r, D, id), m = s.mkt.get(id) || '', box = v.gap || m;
+    return `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}">${svInner(v, s.f.value)}${box ? `<label class="rmkt xs">Another bookmaker shorter? Their odds: <input class="in" data-rmkt inputmode="text" autocomplete="off" placeholder="e.g. 1.85" value="${esc(m)}"></label>` : ''}</div>`; };
   function evHtml(x) { // the odds box on every play (owner, 2 Nov: check EV+ / EV- on the play itself)
     const r = x.rep, id = `${x.c.id}|${x.side}`, txt = s.odds.get(id) || '', od = txt.trim() ? parseIn(txt) : null, f = oddsFmt();
     let out = '';
@@ -9608,9 +9625,9 @@ async function viewRecommended(root, sport) {
         <button type="button" class="infotag neutral" ${TIP('EV and stake', fb ? `Football (owner, 13 Nov 2026): EV and stake use the model's own ${(r.p * 100).toFixed(1)}%, with no blend with the bookmaker's price. EV = ${(r.p * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}%. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the model's probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}.` : `Model alone: ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}% EV.\n${PM && PM.adj > 0 ? `Full model stake: ${fmtU(PM.adj)}u uncapped (${CUR()}${(PM.adj * RISK.unitGBP).toFixed(2)}), on the model's own ${(r.p * 100).toFixed(1)}% with no blend.\n` : ''}EV uses a blend: half the model's ${(r.p * 100).toFixed(1)}% and half the ${(100 / D).toFixed(1)}% your odds imply = ${(pb * 100).toFixed(1)}%. EV = ${(pb * 100).toFixed(1)}% x ${D.toFixed(2)} - 1 = ${ev.toFixed(1)}% (the model alone: ${evM.toFixed(1)}%). When the model and the bookmaker disagree a lot, part of the gap is usually something the model can't see, so the stake follows the believable edge: big gaps are trimmed, small ones barely change. Positive = the price is above the fair odds (${fmtOdds(r.fair)}).\nStake: ${P ? `1/${P.den} Kelly at the blended probability, after the caps (your max ${fmtU(RISK.cap)}u a play, less on long odds), ${fmtU(P.final)}u. Theoretical uncapped ${fmtU(P.theory)}u.` : 'none'} 1 unit = ${CUR()}${RISK.unitGBP}. Change the Kelly fraction on the Value page.\nPropLab has no bookmaker prices: this uses the price you typed.`)}>i</button>`; }
     if (od && od.dec && r.p * (od.exact ?? od.dec) + r.push - 1 < 0) out += ' <button type="button" class="chip rdropev" data-rdrop aria-label="Remove this play only">✕ Remove this play</button>';
     let sv = ''; // Update 77: the strict rules' verdict
-    if (s.f.value) { if (od && od.dec) { const v = valueVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? 'Check the news' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+    if (s.f.value) { if (od && od.dec) { sv = svHtml(r, od.exact ?? od.dec, id); }
       else sv = valueMaxOdds(r.p) < valueMinOdds(r.p) ? noPrice(r.p, VALUE.minOdds) : `<div class="sverdict hint" data-sneed="${valueMinOdds(r.p).toFixed(4)}">Value if your odds are at least <b>${esc(fmtOdds(valueMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(valueMaxOdds(r.p)))})</div>`; }
-    else if (s.f.strict) { if (od && od.dec) { const v = strictVerdict(r.p, od.exact ?? od.dec); sv = `<div class="sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}" data-sverdict="${v.ok ? (v.warn ? 'check' : 'back') : 'pass'}"><b>${v.ok ? (v.warn ? '✓ Back it (quick news check)' : '✓ Back it') : '✕ Pass'}</b>: ${esc(v.why)}</div>`; }
+    else if (s.f.strict) { if (od && od.dec) { sv = svHtml(r, od.exact ?? od.dec, id); }
       else sv = strictMaxOdds(r.p) < strictMinOdds(r.p) ? noPrice(r.p, STRICT.minOdds) : `<div class="sverdict hint" data-sneed="${strictMinOdds(r.p).toFixed(4)}" data-smax="${strictMaxOdds(r.p).toFixed(4)}">Back it if your odds are at least <b>${esc(fmtOdds(strictMinOdds(r.p)))}</b> (and up to ${esc(fmtOdds(strictMaxOdds(r.p)))})</div>`; }
     return `<div class="rev"><label class="rodds"><span class="xs">Your odds</span><input class="in" data-rodds type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${esc(PLACEHOLDER[f])}" value="${esc(txt)}" aria-label="Bookmaker odds for this play"></label><span class="revout" aria-live="polite">${out}</span>${sv}</div>`;
   }
@@ -9730,6 +9747,9 @@ async function viewRecommended(root, sport) {
     if (t.matches('[data-rck]')) { s.f[t.dataset.rck] = t.checked; s.kept.clear(); save(sport, s); render(); return; }
   });
   const tIn = {}; // one pause per box: typing in a second box never cancels the first one's change
+  pg.addEventListener('input', e => { const mi = e.target.closest('[data-rmkt]'); if (!mi) return; const card = mi.closest('.rcard'), x = findX(card); if (!x) return; const id = `${x.c.id}|${x.side}`;
+    s.mkt.set(id, mi.value); const od = parseIn(s.odds.get(id) || ''); if (!od || !od.dec) return; const v = verdictOf(x.rep, od.exact ?? od.dec, id), box = card.querySelector('.sverdict'); if (!box) return;
+    box.className = `sverdict ${v.ok ? (v.warn ? 'warn' : 'ok') : 'no'}`; box.dataset.sverdict = v.ok ? (v.warn ? 'check' : 'back') : 'pass'; const t2 = document.createElement('div'); t2.innerHTML = svInner(v, s.f.value); box.querySelector('.svtext').replaceWith(t2.firstChild); });
   pg.addEventListener('input', e => { const oi = e.target.closest('[data-rodds]'); if (oi) { const card = oi.closest('.rcard'), x = findX(card); if (!x) return; s.odds.set(`${x.c.id}|${x.side}`, oi.value); slipSetBook(legId(x.c, x.side, x.rep.L), oi.value);
       const t2 = document.createElement('div'); t2.innerHTML = evHtml(x); card.querySelector('.revout').replaceWith(t2.querySelector('.revout'));
       { const a0 = card.querySelector('.sverdict'), a1 = t2.querySelector('.sverdict'); if (a0) a0.remove(); if (a1) card.querySelector('.revout').after(a1); } return; } });
@@ -9776,7 +9796,7 @@ async function viewRecommended(root, sport) {
       carryPrice(cd, st, sport); return; }
     if (t.closest('[data-radd]')) { const r = x.rep, txt = s.odds.get(`${x.c.id}|${x.side}`) || '', od = parseIn(txt); if (!od || !od.dec) { const bt = t.closest('[data-radd]'), oi = bt.closest('.rcard').querySelector('[data-rodds]'); bt.textContent = 'Type your odds first'; setTimeout(() => { bt.textContent = bt.dataset.radd === 'model' ? '＋ Model only' : 'Log as a real bet'; }, 1800); if (oi) oi.focus(); return; } /* Update 95 (owner): one tap logs it */ const D = od.exact ?? od.dec, P = stakePlan({ ...r.e, win: sport === 'football' ? r.p : blendP(r.p, D) }, D, r.conf), g = x.c.f; // Update 79: blended stake
       const info = { sport, name: x.c.name, market: x.c.def.label, key: x.c.def.key, line: r.L, side: x.side, binary: !!x.c.def.binary, gameId: String(x.c.fid), game: sport === 'football' ? `${g.home} v ${g.away}` : `${g.away} at ${g.home}`, date: sport === 'football' ? g.date : (nightOf(g) || ''), subj: x.c.pid || x.c.name, p: r.p };
-      const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
+      const u = P ? P.final : 0, sv = s.f.strict ? strictVerdict(r.p, D, mktOf(`${x.c.id}|${x.side}`)) : null, extra = sv && sv.ok ? { strict: true, edge: Math.round((r.p - 1 / D) * 1e4) / 1e4 } : {}; // Update 78: counted in the strict record when the rules said Back it
       const b = t.closest('[data-radd]'), model = b.dataset.radd === 'model'; // Update 88: Real bet (both books) or Model only (Model tracker)
       const saved = u > 0 ? logSingleNow(selFromCandidate(x.c, x.side, r), D, txt, u * RISK.unitGBP, model ? { ...extra, book: 'model' } : extra) : null; void info;
       b.textContent = saved ? (model ? `✓ Model tracker: ${fmtU(u)}u at ${fmtOdds(D)}` : `✓ Real bet: ${CUR()}${saved.stake.toFixed(2)} (${fmtU(u)}u) at ${fmtOdds(D)}`) : u > 0 ? 'Could not save' : 'No stake at this price'; b.disabled = !!saved;
