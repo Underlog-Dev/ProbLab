@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-17T05:02:08Z",
+ "updated": "2026-11-17T15:58:58Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -260,8 +260,8 @@
   {
    "group": "FA",
    "file": "data-nba-logs-FA.json",
-   "players": 140,
-   "rows": 25847
+   "players": 141,
+   "rows": 25918
   },
   {
    "group": "GSW",
@@ -380,8 +380,8 @@
   {
    "group": "UTA",
    "file": "data-nba-logs-UTA.json",
-   "players": 19,
-   "rows": 4776
+   "players": 18,
+   "rows": 4705
   },
   {
    "group": "WAS",
@@ -395,11 +395,11 @@
   "final": 7981,
   "players": 1194,
   "player_games": 209951,
-  "quarter_points_ok": 170461,
+  "quarter_points_ok": 170647,
   "quarter_points_dropped": 247,
-  "q1_rebounds_ok": 169355,
-  "q1_rebounds_dropped": 1353,
-  "q1_assists_ok": 170184,
+  "q1_rebounds_ok": 169540,
+  "q1_rebounds_dropped": 1354,
+  "q1_assists_ok": 170370,
   "q1_assists_dropped": 524
  },
  "problems": [],

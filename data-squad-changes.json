@@ -1,6 +1,6 @@
 {
 "schema": 1,
-"updated": "2026-11-16",
+"updated": "2026-11-17",
 "source": "Wikipedia club articles (CC BY-SA 4.0), compared night by night",
 "note": "A player leaving a list may have been sold, released, retired or loaned out: the list does not say which.",
 "items": [
@@ -131,6 +131,22 @@
 "from": "New York Red Bulls",
 "to": null,
 "kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-17",
+"league": "epl",
+"player": "Daniel Ballard",
+"from": "Sunderland",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-17",
+"league": "epl",
+"player": "Dan Ballard",
+"from": null,
+"to": "Sunderland",
+"kind": "joined the squad list"
 }
 ]
 }
