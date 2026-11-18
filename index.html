@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="4ac0b19390e8">
+<meta name="proplab-build" content="f1d4d96a2a3c">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -936,6 +936,10 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .blrow.needs-odds{box-shadow:0 0 0 2px rgba(245,184,61,.75)}
 .blacts .chip.hot{background:var(--amber);color:#1a1200;border-color:var(--amber);font-weight:800}
 .amber{color:var(--amber)}
+
+/* Update 109 (owner, 18 Nov): card header carries the date/time top right; game line under the title */
+.blwhen{margin-left:auto;font-size:12px;color:var(--muted)}
+.blgame{font-size:13px;color:var(--muted);margin-top:2px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -9267,7 +9271,9 @@ function wireBetLog(root, sport) {
     TWINS = new Map(); for (const b of L) if (isAcca(b)) { const k = accaSig(b.legs); TWINS.set(k, (TWINS.get(k) || 0) + 1); }
     box.querySelector('#bllist').innerHTML = NEED.length ? needHtml : ''; box.querySelector('#bllist').insertAdjacentHTML('beforeend', L.length ? days.map(d => { const B = LD.filter(b => b.date === d), st = B.map(stOf), pl = B.map(profitOf).filter(x => x != null), w = st.filter(x => x === 'won' || x === 'halfwon').length, l = st.filter(x => x === 'lost' || x === 'halflost').length, o = st.filter(x => !SETTLED.has(x)).length, tot = pl.reduce((t, x) => t + x, 0);
       const vd = st.filter(x => x === 'void').length;
-      return `<details class="bldat" data-bldate="${esc(d)}"${OPEN_DAYS.has(d) || OPEN_ALL ? ' open' : ''}><summary class="bldh"><b>${esc(fmtDay(d))}</b><span>${B.length} bet${B.length === 1 ? '' : 's'}${w || l || vd ? ` · ${w}W ${l}L${vd ? ` ${vd}V` : ''}` : ''}${o ? ` · ${o} pending` : ''}${pl.length ? ` · <b class="${tot > 0 ? 'hit' : tot < 0 ? 'miss' : ''}">${sgbp(tot)}</b>` : ''}</span></summary>${B.map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</details>`; }).join('')
+      /* Update 109 (owner, 18 Nov): EV% total for the day, same basis as the Average edge: expected profit / stake on priced singles */
+      const priced = B.filter(b => evOf(b) != null), evPct = priced.length ? 100 * priced.reduce((t, b) => t + evOf(b), 0) / priced.reduce((t, b) => t + b.stake, 0) : null;
+      return `<details class="bldat" data-bldate="${esc(d)}"${OPEN_DAYS.has(d) || OPEN_ALL ? ' open' : ''}><summary class="bldh"><b>${esc(fmtDay(d))}</b><span>${B.length} bet${B.length === 1 ? '' : 's'}${w || l || vd ? ` · ${w}W ${l}L${vd ? ` ${vd}V` : ''}` : ''}${o ? ` · ${o} pending` : ''}${pl.length ? ` · <b class="${tot > 0 ? 'hit' : tot < 0 ? 'miss' : ''}">${sgbp(tot)}</b>` : ''}${evPct != null ? ` · <b class="${evPct >= 0 ? 'hit' : 'miss'}">EV ${evPct >= 0 ? '+' : '−'}${Math.abs(evPct).toFixed(1)}%</b>` : ''}</span></summary>${B.map(b => (isAcca(b) ? accaRow(b) : singleRow(b))).join('')}</details>`; }).join('')
       : `<div class="banner info"><b>No bets ${F.view === 'acca' ? 'accas ' : ''}logged${F.sportF ? ` for ${SPORT_NAME[F.sportF]}` : ''} yet.</b> Open <b>Log a bet</b> above.</div>`);
   };
   const dataStamp = () => { const t = store.manifest?.generated || (nba.meta && nba.meta.generated) || ''; return t ? whenLocal(t) : 'on this visit'; };
@@ -9313,17 +9319,20 @@ function wireBetLog(root, sport) {
   // Update 109 (owner, 18 Nov): a tidier card. Labelled cells, the stat he actually got, EV in colour. No "automatic" or "edited" words.
   const blCell = (lbl, html) => `<div class="blcell"><span class="bllbl">${lbl}</span><div>${html}</div></div>`;
   const statGot = x => { const v = x.auto && x.auto.value;
-    if (v != null) return `<b>${esc(String(v))}</b>${x.line != null && x.key !== 'g.win' ? ` <span class="xs muted">(line ${esc(String(x.line))})</span>` : ''}`;
+    if (v != null) return `<b>${esc(String(v))}</b>`;
     if (x.auto && x.auto.status === 'void') return '<span class="muted">did not play</span>';
     return x.result ? '<span class="muted">set by you</span>' : '<span class="muted">waiting for the stats</span>'; };
   const evPill = ev => (ev == null ? '<span class="muted">–</span>' : `<span class="evpill ${ev > 0 ? 'pos' : 'neg'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>`);
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
     const when = b.ko && !b.fx ? ukWhen(b.ko) : '';
-    const game = `${b.fx ? `${esc(leagueName(b.fx.league))} · ` : ''}${esc(b.game)}${when ? `<br><span class="xs muted">${esc(when)}</span>` : ''}`;
+    const game = `${b.fx ? `${esc(leagueName(b.fx.league))} · ` : ''}${esc(b.game)}`;
+    const plain = b.stake > 0 && !(Number(b.free) > 0) && !(Number(b.boost) > 0) && b.odds > 1;
+    const stakeTxt = plain ? `${gbp(b.stake)} <span class="muted">→</span> ${gbp(b.stake * b.odds)}` : esc(promoTxt(b));
     return `<div class="blrow blcard ${resCls(st)}" data-bl="${esc(b.id)}"><div class="blcbody">
-      <div class="blhead">${badge(st)}${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}${getBook() === 'model' ? (b.real ? ' <span class="bltag real">Real bet</span>' : ' <span class="bltag model">Model only</span>') : ''}${isInplay(b) ? ' <span class="blip">In-play</span>' : ''}</div>
+      <div class="blhead">${badge(st)}${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}${ev != null ? `<span class="evpill ${ev > 0 ? 'pos' : 'neg'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>` : ''}<span class="blwhen">${esc(when)}</span></div>
       <div class="blsel">${selLine(b)}</div>
-      <div class="blcells">${blCell('Game', game)}${blCell('Stake', esc(promoTxt(b)))}${blCell('Your odds', `<b class="${ev != null && ev > 0 ? 'hit' : ''}">${esc(fmtOdds(b.odds))}</b>`)}${blCell('Fair odds', b.fair ? esc(fmtOdds(b.fair)) : '<span class="muted">–</span>')}${blCell('Stat he got', statGot(b))}${blCell('EV', evPill(ev))}</div>
+      <div class="blgame">${game}${getBook() === 'model' ? (b.real ? ' · <span class="bltag real">Real bet</span>' : ' · <span class="bltag model">Model only</span>') : ''}${isInplay(b) ? ' · <span class="blip">In-play</span>' : ''}</div>
+      <div class="blcells">${blCell('Fair odds', b.fair ? esc(fmtOdds(b.fair)) : '<span class="muted">–</span>')}${blCell('Your odds', `<b class="${ev != null && ev > 0 ? 'hit' : ''}">${esc(fmtOdds(b.odds))}</b>`)}${blCell('Stake → returns', stakeTxt)}${blCell('Stat he got', statGot(b))}</div>
       ${flags(b)}<div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button></div></div></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
     return `<details class="blrow blacca ${resCls(s.status)}${s.needOdds ? ' needs-odds' : ''}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip${s.needOdds ? ' hot' : ''}" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${getBook() === 'model' ? (b.real ? '<span class="bltag real">Real bet</span> ' : '<span class="bltag model">Model only</span> ') : ''}<b>${b.legs.length}-leg acca</b>${isInplay(b) ? ' <span class="blip">In-play</span>' : ''} · ${esc(promoTxt(b))} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''}${promoOf(b).free || promoOf(b).boost ? ` · profit ${sgbp(winIfWon(b.stake, promoOf(b).free, promoOf(b).boost, Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}` : ` · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}`} if every leg wins
