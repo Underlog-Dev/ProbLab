@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="13e1188027d9">
+<meta name="proplab-build" content="b5157a820657">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -9107,8 +9107,9 @@ function accaStateMatch(b) {
 // a free bet); `free` is the free bet amount (its stake is never returned, so it can only add winnings); `boost` is a profit boost (0.25,
 // 0.5 or 1 = 25 / 50 / 100% more winnings), applied to all the bet's winnings. A lost bet costs only your own money; a void bet costs
 // nothing (the free bet usually comes back as a token).
-const BOOSTS = [0.25, 0.5, 1];
-const promoOf = b => ({ free: Number(b.free) > 0 ? Number(b.free) : 0, boost: BOOSTS.includes(Number(b.boost)) ? Number(b.boost) : 0 });
+/* Update 112 (owner, 18 Nov): any profit boost from 0% to 200%, in steps of 5% (the buttons give 25/50/75/100). */
+const boostOf = v => { const n = Number(v); return Number.isFinite(n) && n > 0 && n <= 2 ? Math.round(n * 20) / 20 : 0; };
+const promoOf = b => ({ free: Number(b.free) > 0 ? Number(b.free) : 0, boost: boostOf(b.boost) });
 const WIN = { won: [1, 0], halfwon: [0.5, 0], halflost: [0, 0.5], lost: [0, 1], void: [0, 0] };
 /** Pure: profit from your money and a free bet at a result: winnings x (1 + boost), less your own money lost. */
 function promoProfit(real, free, boost, odds, res) { const w = WIN[res]; if (!w) return null; return (real + free) * (odds - 1) * w[0] * (1 + boost) - real * w[1]; }
@@ -9431,12 +9432,15 @@ function wireBetLog(root, sport) {
   const STAKE_LBL = (promo, acca) => (promo ? `Your own money (${CUR()})` : acca ? `Acca stake (${CUR()})` : `Your stake (${CUR()})`);
   const promoHtml = (ctx, P, sum = true) => `<div class="blpromo" data-pr="${ctx}"><label class="blchk"><input type="checkbox" data-prtick${P.promo ? ' checked' : ''}> <b>Free bet / boost</b></label>
       <div class="stack" data-prbody${P.promo ? '' : ' hidden'} style="gap:6px;margin-top:6px"><div class="blgrid"><label class="field"><span>Free bet amount (${CUR()})</span><input class="in" data-prfree inputmode="decimal" value="${esc(P.free ? String(P.free) : '')}" placeholder="0 if no free bet"></label>
-      <div><span class="xs muted">Profit boost</span><div class="seg" data-prboost>${[[0, 'None'], [0.25, '25%'], [0.5, '50%'], [1, '100%']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Number(P.boost || 0) === v ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
+      <div><span class="xs muted">Profit boost</span><div class="seg" data-prboost>${[[0, 'None'], [0.25, '25%'], [0.5, '50%'], [0.75, '75%'], [1, '100%']].map(([v, l]) => `<button type="button" data-v="${v}" class="${Math.abs(boostOf(P.boost) - v) < 1e-9 ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="boostbar"><input type="range" class="boostrange" data-prslide min="0" max="200" step="5" value="${Math.round(boostOf(P.boost) * 100)}" aria-label="Profit boost percent"><b data-prpct>${Math.round(boostOf(P.boost) * 100)}%</b></div></div></div>
       <p class="xs muted" style="margin:0">Put your own money in the stake box: leave it empty or 0 if it is all free bet, or type it if you added real money to the free bet. A free bet's stake is not paid back, so a win pays the winnings only; a loss costs only your own money. The boost is added to all the winnings (if your bookmaker caps the extra, it may pay a little less).</p>
       ${sum ? '<p class="small" data-prsum style="margin:0"></p>' : ''}</div></div>`;
   const readPromo = root => { const el = root && root.querySelector('[data-pr]'); if (!el || !el.querySelector('[data-prtick]').checked) return { promo: false, free: 0, boost: 0 };
     const raw = String(el.querySelector('[data-prfree]').value || '').trim(), f = Number(raw.replace(/[£$€,\s]/g, '')), on = el.querySelector('[data-prboost] button.on');
-    return { promo: true, free: f > 0 ? f : 0, bad: raw !== '' && !(f >= 0), boost: on ? Number(on.dataset.v) : 0 }; };
+    return { promo: true, free: f > 0 ? f : 0, bad: raw !== '' && !(f >= 0), boost: boostFromSlider(el) }; };
+  /* Update 112: the boost is whatever the slider says (the buttons only set it) */
+  const boostFromSlider = pr => { const sl = pr && pr.querySelector('[data-prslide]'); return sl ? Math.round(Number(sl.value)) / 100 : 0; };
   /** The "if it wins / if it loses" line for your own money + free bet + boost at these odds. */
   const promoSum = (real, free, boost, odds) => (!(odds > 1) ? 'Type your odds to see the profit.' : !(real + free > 0) ? 'Type the free bet amount and / or your own money.'
     : `If it wins: profit <b class="hit">${sgbp(winIfWon(real, free, boost, odds))}</b> (you get back ${gbp(real + winIfWon(real, free, boost, odds))})${boost ? `, of which ${sgbp(winIfWon(real, free, boost, odds) - winIfWon(real, free, 0, odds))} is the boost` : ''} · if it loses: <b class="${real > 0 ? 'miss' : ''}">${sgbp(-real)}</b>${real > 0 ? '' : ' (free bet only)'}`);
@@ -9536,7 +9540,16 @@ function wireBetLog(root, sport) {
       const have = loadLog(), ids = new Set(have.map(b => b.id)), add = a.filter(b => b && b.id && !ids.has(b.id)); saveLog(have.concat(add)); alertMsg(`Restored ${add.length} bet${add.length === 1 ? '' : 's'} (${a.length - add.length} already here).`); } catch (err) { alertMsg(`Could not restore: ${err.message}`); } t.value = ''; drawTotals(); }
   });
   let tm = null;
+  /* Update 112: one place for a change to a free bet / boost box (tick, button or slider) */
+  const promoChanged = pr => { const c = pr.dataset.pr, root = c === 'form' ? body : c === 'draft' ? box.querySelector('#bldraft') : pr.closest('.bleditbox');
+    const on = pr.querySelector('[data-prtick]').checked, boost = boostFromSlider(pr);
+    pr.querySelector('[data-prbody]').hidden = !on; const lb = root && root.querySelector('[data-stakelbl]'); if (lb) lb.textContent = STAKE_LBL(on, c === 'draft');
+    if (c === 'form') { F.promo = on; F.boost = boost; drawFormSum(); drawPrice(); }
+    else if (c === 'draft') { const d = loadDraft(); d.promo = on; d.boost = boost; saveDraft(d); const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(d); }
+    else drawEditSum(root); };
   box.addEventListener('input', e => { const t = e.target;
+    if (t.matches('[data-prslide]')) { const pr = t.closest('[data-pr]'); if (!pr) return; const pct = Math.round(Number(t.value)); pr.querySelector('[data-prpct]').textContent = `${pct}%`;
+      pr.querySelectorAll('[data-prboost] button').forEach(x => x.classList.toggle('on', Math.abs(Number(x.dataset.v) * 100 - pct) < 0.5)); promoChanged(pr); return; }
     if (t.matches('[data-blstake]')) { F.stake = t.value; drawFormSum(); clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
     if (t.matches('[data-prfree]')) { const c = t.closest('[data-pr]').dataset.pr;
       if (c === 'form') { F.free = t.value; drawFormSum(); clearTimeout(tm); tm = setTimeout(drawPrice, 250); }
@@ -9565,12 +9578,8 @@ function wireBetLog(root, sport) {
         return; } }
     { const t = e.target, pr = t.closest('[data-pr]');
       if (pr && (t.matches('[data-prtick]') || t.closest('[data-prboost] button'))) { const c = pr.dataset.pr, root = c === 'form' ? body : c === 'draft' ? box.querySelector('#bldraft') : pr.closest('.bleditbox');
-        const bb = t.closest('[data-prboost] button'); if (bb) bb.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === bb));
-        const on = pr.querySelector('[data-prtick]').checked, boost = Number((pr.querySelector('[data-prboost] button.on') || { dataset: { v: 0 } }).dataset.v);
-        pr.querySelector('[data-prbody]').hidden = !on; const lb = root && root.querySelector('[data-stakelbl]'); if (lb) lb.textContent = STAKE_LBL(on, c === 'draft');
-        if (c === 'form') { F.promo = on; F.boost = boost; drawFormSum(); drawPrice(); }
-        else if (c === 'draft') { const d = loadDraft(); d.promo = on; d.boost = boost; saveDraft(d); const q = box.querySelector('[data-bldsum]'); if (q) q.innerHTML = draftSum(d); }
-        else drawEditSum(root);
+        const bb = t.closest('[data-prboost] button'); if (bb) { bb.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === bb)); const sl = pr.querySelector('[data-prslide]'); if (sl) { sl.value = String(Math.round(Number(bb.dataset.v) * 100)); pr.querySelector('[data-prpct]').textContent = `${sl.value}%`; } }
+        promoChanged(pr);
         if (!t.matches('[data-prtick]')) e.preventDefault(); return; } }
     const t = e.target;
     const vw = t.closest('[data-blview] button'); if (vw) { if (F.view !== vw.dataset.v) { F.view = vw.dataset.v; drawTotals(); } return; }
@@ -9695,7 +9704,7 @@ function wireBetLog(root, sport) {
   hooks.betlogRefresh = () => settleAll().then(n => { if (n && box.isConnected) drawTotals(); });
 }
 
-return { loadLog, effOf, gkOf, accaUnits, legSig, accaSig, capGBP, accaState, BOOSTS, promoOf, promoProfit, profitOf, winIfWon, combinedOdds, isInplay, strictRecord, evOf, totals, settleAll, priceAtGame, resultFrom, betLogHtml, wireBetLog };
+return { loadLog, effOf, gkOf, accaUnits, legSig, accaSig, capGBP, accaState, boostOf, promoOf, promoProfit, profitOf, winIfWon, combinedOdds, isInplay, strictRecord, evOf, totals, settleAll, priceAtGame, resultFrom, betLogHtml, wireBetLog };
 })();
 __m['myplays'] = (() => {
 // My Plays (owner model audit, 2 Nov 2026): the plays you add from Compare Price, kept on this device, with the exposure limits the audit
