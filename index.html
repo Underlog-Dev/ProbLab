@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f1d4d96a2a3c">
+<meta name="proplab-build" content="13e1188027d9">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -940,6 +940,11 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 /* Update 109 (owner, 18 Nov): card header carries the date/time top right; game line under the title */
 .blwhen{margin-left:auto;font-size:12px;color:var(--muted)}
 .blgame{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* Update 110 (owner): a big star to save; a bigger Remove play button */
+.starbtn{font-size:30px;line-height:1;min-width:52px;min-height:48px;padding:4px 12px;border:1px solid var(--line);background:var(--s1);color:var(--amber);border-radius:12px;font-weight:700;cursor:pointer}
+.starbtn:disabled{opacity:.6}
+.svdel{min-height:46px;padding:10px 18px;font-size:15px;margin-top:6px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -7782,9 +7787,16 @@ const { esc } = __m['util'];
 const KEY = 'proplab.saved.v1';
 const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 const store = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch { return false; } };
+/** Move plays out of the saved list into the removed list (sport: only that sport's plays). */
+const moveOut = (ids, sport) => { const a = load(), mv = a.filter(x => ids.includes(x.id) && (!sport || x.sport === sport)), keep = a.filter(x => !mv.includes(x)), out = loadOut().filter(o => !mv.some(m => m.id === o.id)); storeOut([...mv, ...out]); store(keep); };
+/** Bring back the removed plays for a sport. */
+const restoreSport = sport => { const out = loadOut(), back = out.filter(x => x.sport === sport), a = load(); storeOut(out.filter(x => x.sport !== sport)); store([...a, ...back.filter(b => !a.some(y => y.id === b.id))]); };
 const dayOf = s => String(s || '').slice(0, 10);
-const keepDays = 2; // a saved play stays 2 days after its game day, then drops off by itself
-const fresh = a => { const cut = new Date(Date.now() - keepDays * 864e5).toISOString().slice(0, 10); return a.filter(x => !x.date || x.date >= cut); };
+/* Update 110 (owner): a saved play drops off by itself the day after its game (the event is over). Removed plays wait in their own list until you bring them back. */
+const KEY_OUT = 'proplab.saved.removed.v1';
+const loadOut = () => { try { const a = JSON.parse(localStorage.getItem(KEY_OUT) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
+const storeOut = a => { try { localStorage.setItem(KEY_OUT, JSON.stringify(a)); return true; } catch { return false; } };
+const fresh = a => { const cut = new Date(Date.now() - 864e5).toISOString().slice(0, 10); return a.filter(x => !x.date || x.date >= cut); };
 const gameOf = c => { const g = c.f || {}; return c.sport === 'football' ? `${g.home || ''} v ${g.away || ''}` : `${g.away || ''} at ${g.home || ''}`; };
 const dateOf = c => { const g = c.f || {}; return dayOf(g.local_date || g.date || ''); };
 const slim = e => (e ? JSON.parse(JSON.stringify(e, (k, v) => (Array.isArray(v) && v.length > 60 ? undefined : v))) : null);
@@ -7810,7 +7822,7 @@ function saveBuilder(cb, tested, oddsTxt = '') {
     validated: cb.legs.every(l => l.r.e && l.r.e.cb && l.r.e.cb.passed), thin: cb.legs.some(l => l.r.conf && l.r.conf.level === 'Low') });
   return store(a) ? 'saved' : 'full';
 }
-const saveLabel = st => (st === 'saved' ? '★ Saved' : st === 'updated' ? '★ Saved (odds updated)' : st === 'already' ? '★ Already saved' : 'Could not save (storage full)');
+const saveLabel = st => (st === 'saved' || st === 'updated' || st === 'already' ? '★' : 'Full'); /* Update 110: a big star; the Saved tab says what is saved */
 
 /** Stake for a saved item at decimal odds D: { ev, evM, u }. */
 function plan(x, D) {
@@ -7828,24 +7840,34 @@ async function viewSaved(root, sport) {
         o = `<b class="${q.ev > 0 ? 'hit' : 'miss'}">${q.ev > 0 ? '+' : q.ev < 0 ? '−' : ''}${Math.abs(q.ev).toFixed(1)}% EV</b> · ${q.u > 0 ? `stake <b>${fmtU(q.u)}u</b> (${CUR()}${(q.u * RISK.unitGBP).toFixed(2)})` : q.untested ? 'no stake (same-game builders here are untested)' : 'no stake at this price'}
           <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${q.u > 0 ? '<button type="button" class="chip" data-svadd="real">＋ Real bet</button>' : ''}<button type="button" class="chip" data-svadd="model">＋ Model only</button></div>`; }
       return `<div data-svout>${o}</div>`; };
+  const totalHtml = list => { let u = 0, n = 0, need = 0, nostake = 0; for (const x of list) { const t = (ODDS.get(x.id) || '').trim(), od = t ? parseIn(t) : null; if (!od || !od.dec) { need++; continue; } const q = plan(x, od.exact ?? od.dec); if (q.u > 0) { u += q.u; n++; } else nostake++; }
+    return `<div class="card" data-svtotal style="padding:12px;margin:0 0 10px"><div class="row" style="border:0;padding:0;justify-content:space-between;gap:8px;align-items:baseline"><div><b style="font-size:20px">${fmtU(u)}u</b> <span class="muted">· ${CUR()}${(u * RISK.unitGBP).toFixed(2)}</span></div><span class="xs muted">${n} play${n === 1 ? '' : 's'} with a stake</span></div><div class="xs muted" style="margin-top:4px">${need ? `${need} still need${need === 1 ? 's' : ''} odds` : 'All priced'}${nostake ? ` · ${nostake} with no stake at the price` : ''}</div></div>`; };
   const draw = () => {
     const all = fresh(load()); store(all); const a = all.filter(x => x.sport === sport).sort((p, q) => (p.date < q.date ? -1 : p.date > q.date ? 1 : p.when < q.when ? -1 : 1));
+    const outN = loadOut().filter(x => x.sport === sport).length;
+    const tot = totalHtml(a), bar = `<div class="row" style="gap:8px;flex-wrap:wrap;margin:0 0 10px"><button type="button" class="chip" data-svall${a.length ? '' : ' disabled'}>✕ Remove all these</button>${outN ? `<button type="button" class="chip" data-svback>↺ Bring back removed (${outN})</button>` : ''}</div>`;
     const card = x => `<article class="card svcard" data-svid="${esc(x.id)}" style="padding:12px;margin:0 0 10px">
       <div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(x.title)}</b>${x.kind === 'single' ? ` · ${esc(x.what)}` : ` · chance <b>${Math.round(x.p * 100)}%</b>`}
         <div class="xs muted">${esc(x.game)}${x.date ? ` · ${esc(x.date)}` : ''} · saved ${esc(new Date(x.when).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' }))}</div></div>
         <div style="text-align:right"><b>${Math.round(x.p * 100)}%</b><div class="xs muted">fair ${esc(fmtOdds(x.fair))}</div></div></div>
       ${x.kind === 'bb' ? `<ol class="xs" style="margin:6px 0 6px 18px;padding:0">${x.legs.map(l => `<li>${esc(l.name)}: ${esc(l.what)} <span class="muted">(${Math.round(l.p * 100)}%)</span></li>`).join('')}</ol>` : ''}
       <label class="field" style="margin:6px 0 0"><span>${x.kind === 'bb' ? "Bookmaker's bet-builder odds" : 'Your odds'}</span><input class="in" data-svodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(ODDS.get(x.id) || '')}"></label>
-      ${box(x)}<button type="button" class="linkbtn xs" data-svdel style="margin-top:4px">✕ Remove</button></article>`;
+      ${box(x)}<button type="button" class="chip rdropev svdel" data-svdel>✕ Remove play</button></article>`;
     root.innerHTML = `${recTabs(sport, 'saved')}<section class="recpg" id="svpg"><h2 style="margin:6px 0">Saved plays</h2>
-      <p class="xs muted" style="margin:0 0 10px">Plays you saved with ☆ Save for later. Type your odds when you're ready, then add them to Real bets or the Model tracker. The model's figures are the ones from when you saved it. A saved play drops off ${keepDays} days after its game.</p>
-      ${a.length ? a.map(card).join('') : '<p class="small muted">Nothing saved yet. Tap ☆ Save for later on any play in Singles, Hit Rates or Builders.</p>'}</section>`;
+      <p class="xs muted" style="margin:0 0 10px">Plays you saved with ☆. Type your odds when you're ready, then add them to Real bets or the Model tracker. A saved play drops off the day after its game.</p>
+      ${tot}${bar}
+      ${a.length ? a.map(card).join('') : '<p class="small muted">Nothing saved here. Tap ☆ on any play in Singles, Hit Rates or Builders.</p>'}</section>`;
   };
   draw();
   root.addEventListener('input', e => { const i = e.target.closest('[data-svodds]'); if (!i) return; const cd = i.closest('[data-svid]'), id = cd.dataset.svid, x = load().find(y => y.id === id); if (!x) return;
-    ODDS.set(id, i.value); cd.querySelector('[data-svout]').outerHTML = box(x); });
-  root.addEventListener('click', e => { const t = e.target, cd = t.closest('[data-svid]'); if (!cd) return; const id = cd.dataset.svid, all = load(), x = all.find(y => y.id === id); if (!x) return;
-    if (t.closest('[data-svdel]')) { store(all.filter(y => y.id !== id)); draw(); return; }
+    ODDS.set(id, i.value); cd.querySelector('[data-svout]').outerHTML = box(x); const tb = root.querySelector('[data-svtotal]'); if (tb) tb.outerHTML = totalHtml(fresh(load()).filter(y => y.sport === sport)); });
+  root.addEventListener('click', e => { const t = e.target;
+    if (t.closest('[data-svall]')) { moveOut(fresh(load()).filter(y => y.sport === sport).map(y => y.id), sport); draw(); return; } /* Update 110 */
+    if (t.closest('[data-svback]')) { restoreSport(sport); draw(); return; }
+    const cd = t.closest('[data-svid]'); if (!cd) return; const id = cd.dataset.svid, all = load(), x = all.find(y => y.id === id);
+    if (!x && t.closest('[data-svdel]')) { draw(); return; } /* Update 110: a play already added to a bet has left the list; Remove just tidies the card */
+    if (!x) return;
+    if (t.closest('[data-svdel]')) { moveOut([id]); draw(); return; }
     const b = t.closest('[data-svadd]'); if (!b) return; const od = parseIn(ODDS.get(id) || ''); if (!od || !od.dec) return; const D = od.exact ?? od.dec, model = b.dataset.svadd === 'model';
     let u = plan(x, D).u; if (!(u > 0) && model && x.kind === 'bb') { const P = accaPlan(x.p, D, { validated: x.validated, thin: x.thin }); u = P && P.ok ? P.units : 0; }
     const saved = !(u > 0) ? null : x.kind === 'single' ? logSingleNow(x.sel, D, ODDS.get(id), u * RISK.unitGBP, model ? { book: 'model' } : {}) : logBuilderNow(x.legs.map(l => ({ sel: l.sel, fair: l.fair })), D, ODDS.get(id), u * RISK.unitGBP, model ? 'model' : 'real');
@@ -8723,7 +8745,7 @@ async function viewBuilders(root, sport) {
       const vg = f.strict && !cb.own ? bbVerdict(cb.p, Dd) : null; o = `${vg ? (vg.ok ? '<div class="sverdict back" data-sverdict="back">✓ Back it</div>' : `<div class="sverdict warn" data-sverdict="gap">⚠ Big gap: ${esc(vg.why)}. The stake below is what the model says; your call.</div>`) : ''}<b class="${ev > 0 ? 'hit' : 'miss'}" data-bbev="${ev.toFixed(2)}">${ev > 0 ? '+' : ev < 0 ? '−' : ''}${Math.abs(ev).toFixed(1)}% EV</b>${tested ? ` <span class="xs muted">(model alone ${evM > 0 ? '+' : evM < 0 ? '−' : ''}${Math.abs(evM).toFixed(1)}%)</span>` : ''} · ${ev <= 0 ? '<span class="xs muted">no value: the bookmaker is charging more than PropLab\'s price</span>' : u > 0 ? `stake <b data-bbstake>${fmtU(u)}u</b> (${CUR()}${(u * RISK.unitGBP).toFixed(2)})` : `<span class="xs muted">${tested ? 'no stake (edge too small after rounding)' : 'no stake: untested same-game legs'}</span>`}
         <div class="row" style="border:0;padding:0;gap:8px;margin-top:4px">${u > 0 ? '<button type="button" class="chip" data-bbadd="real">＋ Real bet</button>' : ''}${ev > 0 ? '<button type="button" class="chip" data-bbadd="model">＋ Model only</button>' : ''}</div>`; }
     return `<div class="hrodds" data-bbbox="${esc(id)}"><label class="field" style="margin:0"><span>Bookmaker's bet-builder odds</span><input class="in" data-bbodds inputmode="text" autocomplete="off" placeholder="${esc(PLACEHOLDER[oddsFmt()] || PLACEHOLDER.dec)}" value="${esc(txt)}"></label><div class="small" data-bbout aria-live="polite">${o}</div></div>`; };
-  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><button type="button" class="linkbtn xs" data-bbsave style="float:right" title="Save for later (Saved tab)">☆ Save</button><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div>${f.strict && !cb.own ? `<p class="xs" style="margin:2px 0" data-bbwin>Back it if the builder price is ${rangeTxt(bbWindow(cb.p))}</p>` : ''}<ol class="xs bblegs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li><span>${legTxt(l)}${l.base ? ' <b class="bbmoved">line changed</b>' : ''}</span><span class="bbstep"><button type="button" class="hstep" data-bbstep="-1" data-bbc="${esc(l.c.id)}" aria-label="Lower ${esc(l.c.name)}'s line">−</button><button type="button" class="hstep" data-bbstep="1" data-bbc="${esc(l.c.id)}" aria-label="Raise ${esc(l.c.name)}'s line">+</button></span></li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
+  const comboCard = (cb, id) => `<article class="card bbcard" data-bbid="${esc(id)}"><button type="button" class="starbtn" data-bbsave style="float:right" title="Save for later (Saved tab)" aria-label="Save for later">☆</button><div class="small"><b>${cb.legs.length === 2 ? 'Double' : 'Treble'}</b> · chance <b>${(cb.p * 100).toFixed(0)}%</b> · fair odds <b>${esc(fmtOdds(cb.fair))}</b></div>${f.strict && !cb.own ? `<p class="xs" style="margin:2px 0" data-bbwin>Back it if the builder price is ${rangeTxt(bbWindow(cb.p))}</p>` : ''}<ol class="xs bblegs" style="margin:4px 0 6px 18px;padding:0">${cb.legs.map(l => `<li><span>${legTxt(l)}${l.base ? ' <b class="bbmoved">line changed</b>' : ''}</span><span class="bbstep"><button type="button" class="hstep" data-bbstep="-1" data-bbc="${esc(l.c.id)}" aria-label="Lower ${esc(l.c.name)}'s line">−</button><button type="button" class="hstep" data-bbstep="1" data-bbc="${esc(l.c.id)}" aria-label="Raise ${esc(l.c.name)}'s line">+</button></span></li>`).join('')}</ol>${priceBox(id, cb)}</article>`;
   let shown = new Map();
   /* Update 97 (owner, 15 Nov): a mini − / + on every leg to match the bookmaker's line. The change follows that player's leg in every double and treble. */
   const LOV = new Map();
@@ -10297,7 +10319,7 @@ async function viewRecommended(root, sport) {
       <div class="rhits">${hit('season')}${hit('l5')}${hit('l10')}${hit('l20')}${hit('all')}${r.vsOpp && r.vsOpp.n && !c.def.binary ? `<button type="button" class="rh${won('opp')}"${wb('opp')}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : r.vsOpp && r.vsOpp.n ? `<button type="button" class="rh" ${TIP(`Against ${c.opp}: ${r.vsOpp.hit} of ${r.vsOpp.n}`, `His last ${r.vsOpp.n} ${unitWord} against ${c.opp} (all seasons): ${word} in ${r.vsOpp.hit}. Few games: in the rank score this is pulled towards the model probability.`)}><b>${r.vsOpp.hit}/${r.vsOpp.n}</b><small>v ${esc(c.opp)}</small></button>` : ''}</div>
       ${barsHtml(x)}
       ${sport === 'nba' && c.card.mu ? `<div class="hmu">${muHtml(c.card, r.st)}</div>` : ''}${sport === 'nfl' ? nflMuHtml(c, r) : ''}
-      <div class="rhides rhidesr"><button type="button" class="linkbtn xs rhide" data-rsave aria-label="Save this play for later">☆ Save</button><button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove play</button>${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not playing? Hide ${esc(c.name.split(' ').slice(-1)[0])}</button>` : ''}</div>
+      <div class="rhides rhidesr"><button type="button" class="starbtn" data-rsave aria-label="Save this play for later">☆</button><button type="button" class="linkbtn xs rhide" data-rdrop aria-label="Remove this play only">✕ Remove play</button>${c.kind === 'player' ? `<button type="button" class="linkbtn xs rhide" data-rhide aria-label="Hide ${esc(c.name)} for this game">Not playing? Hide ${esc(c.name.split(' ').slice(-1)[0])}</button>` : ''}</div>
       <details class="rwhyd"><summary class="xs">Why this play</summary><p class="rwhy">${esc(r.why)}.${why.length ? ` ${esc(why.filter(w => !/ in \d+ of \d+ (games|matches) this season$/.test(w)).join(' · '))}.` : ''}</p></details>
       ${c.def.binary ? '' : `<div class="rlin"><button type="button" class="hstep" data-rstepl="-1" aria-label="Lower the line">−</button><b>${x.side === 'under' ? 'Under' : 'Over'} ${r.L}</b><button type="button" class="hstep" data-rstepl="1" aria-label="Raise the line">+</button><button type="button" class="raltbtn" data-ralt aria-expanded="false"><b aria-hidden="true">▸</b> Every line</button></div>`}
 
@@ -10494,7 +10516,7 @@ async function viewHitRates(root, sport) {
   const card = ({ c, fm, r }) => { const g = c.f, when = fmtKick(g);
     const chips = fm.vals.map(v => `<span class="hrv ${v > fm.L ? 'hit' : 'miss'}">${esc(String(v))}</span>`).join('');
     const pct = Math.round(fm.hit / fm.n * 100), hs = r.hr.season;
-    return `<article class="card hrcard" data-hrc="${esc(c.id)}" data-hrl="${fm.L}"><div class="row" style="border:0;padding:0;gap:8px;align-items:baseline;justify-content:space-between"><div><b>${esc(c.name)}</b> <span class="xs muted">${esc(c.team || '')} v ${esc(c.opp || '')} · ${esc(when)}</span></div><button type="button" class="linkbtn xs" data-hrsave title="Save for later (Saved tab)">☆ Save</button> <button type="button" class="linkbtn xs" data-hrhide title="Hide this play">✕ Hide</button> <b class="hrpct ${pct >= 80 ? 'g' : pct >= 60 ? 'y' : ''}">${fm.hit}/${fm.n}</b></div>
+    return `<article class="card hrcard" data-hrc="${esc(c.id)}" data-hrl="${fm.L}"><div class="row" style="border:0;padding:0;gap:8px;align-items:baseline;justify-content:space-between"><div><b>${esc(c.name)}</b> <span class="xs muted">${esc(c.team || '')} v ${esc(c.opp || '')} · ${esc(when)}</span></div><button type="button" class="starbtn" data-hrsave title="Save for later (Saved tab)" aria-label="Save for later">☆</button> <button type="button" class="linkbtn xs" data-hrhide title="Hide this play">✕ Hide</button> <b class="hrpct ${pct >= 80 ? 'g' : pct >= 60 ? 'y' : ''}">${fm.hit}/${fm.n}</b></div>
       <div class="small"><b>${esc(ladderName(c, r))}</b> <span class="xs muted">(over ${fm.L})</span></div>
       <div class="hrvals" aria-label="Last ${fm.n} games, newest first">${chips} <span class="xs muted">newest first</span></div>
       <div class="xs muted">Season ${hs.n ? `${hs.hit}/${hs.n} (${hs.pct}%)` : 'no games'} · last 10 ${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</div>
