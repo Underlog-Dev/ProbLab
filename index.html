@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="b5157a820657">
+<meta name="proplab-build" content="f09f9afb5fde">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -945,6 +945,10 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .starbtn{font-size:30px;line-height:1;min-width:52px;min-height:48px;padding:4px 12px;border:1px solid var(--line);background:var(--s1);color:var(--amber);border-radius:12px;font-weight:700;cursor:pointer}
 .starbtn:disabled{opacity:.6}
 .svdel{min-height:46px;padding:10px 18px;font-size:15px;margin-top:6px}
+/* Update 112 (owner): profit boost slider 0-200% beside the 25/50/75/100 buttons */
+.boostbar{display:flex;align-items:center;gap:10px;margin-top:8px}
+.boostrange{flex:1;min-width:0;accent-color:var(--amber)}
+.boostbar b{min-width:52px;text-align:right}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -9330,7 +9334,7 @@ function wireBetLog(root, sport) {
       : `<div><span class="xs muted">Side</span><div class="seg" data-ble="side">${sideSeg.map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.side || 'over') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div><label class="field"><span>Line</span><input class="in" data-ble="line" inputmode="decimal" value="${esc(String(x.line))}"></label>`;
     const resSeg = `<div><span class="xs muted">Result${i == null ? '' : ' of this leg'}</span><div class="seg wrap mpres" data-ble="result">${[['', 'Automatic'], ['won', 'Won'], ['lost', 'Lost'], ['void', 'Void'], ['halfwon', '½ Won'], ['halflost', '½ Lost'], ['pending', 'Pending']].map(([v, l]) => `<button type="button" data-v="${v}" class="${(x.result || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
     return `<div class="bleleg"${pre}>${i == null ? '' : `<div class="small"><b>Leg ${i + 1}:</b> ${selLine(x)}</div>`}${resSeg}<div class="blgrid">${lineBox}${grouped ? '' : `<label class="field"><span>${i == null ? 'Your odds' : 'Odds'}</span><input class="in" data-ble="odds" inputmode="text"${NO}${x.fairOnly && !x.oddsTxt ? ' placeholder="type the price"' : ''} value="${esc(odds)}"></label>`}</div>${i == null ? '' : `<button type="button" class="linkbtn xs" data-blelegrm>✕ Remove this leg</button>`}</div>`; };
-  const editHtml = b => `<div class="bleditbox card stack" data-bleditfor="${esc(b.id)}"><b>Edit ${isAcca(b) ? `this ${b.legs.length}-leg acca` : 'this bet'}</b>
+  const editHtml = b => `<div class="bleditbox card stack" data-bleditfor="${esc(b.id)}"><div class="row" style="border:0;padding:0;gap:8px;align-items:center;justify-content:space-between"><b>Edit ${isAcca(b) ? `this ${b.legs.length}-leg acca` : 'this bet'}</b><button type="button" class="btn primary" style="padding:4px 12px" data-blesave>Save</button></div>
       ${isAcca(b) && b.mode === 'match' ? accaUnits(b).filter(u => u.group).map(u => `<label class="field"><span>Price for the same-match group: ${esc(b.legs[u.idx[0]].game)} (${u.idx.length} legs)</span><input class="in" data-bleg="${esc(u.key)}" inputmode="text"${NO} value="${esc((b.groups[u.key] && (b.groups[u.key].oddsTxt || fmtOdds(b.groups[u.key].odds))) || '')}"></label>`).join('') : ''}
       ${isAcca(b) ? b.legs.map((l, i) => legEditHtml(l, i, b.mode === 'match' && accaUnits(b).some(u => u.group && u.idx.includes(i)))).join('') : legEditHtml(b, null)}
       <div class="blgrid"><label class="field"><span data-stakelbl>${STAKE_LBL(!!(promoOf(b).free || promoOf(b).boost))}</span><input class="in" data-ble="stake" inputmode="decimal" value="${esc(b.stake > 0 || !promoOf(b).free ? String(b.stake) : '')}" placeholder="${promoOf(b).free ? '0 if it is all free bet' : ''}"></label>
@@ -9343,7 +9347,7 @@ function wireBetLog(root, sport) {
   const blCell = (lbl, html) => `<div class="blcell"><span class="bllbl">${lbl}</span><div>${html}</div></div>`;
   const statGot = x => { const v = x.auto && x.auto.value;
     if (v != null) return `<b>${esc(String(v))}</b>`;
-    if (x.auto && x.auto.status === 'void') return '<span class="muted">did not play</span>';
+    if (x.auto && x.auto.status === 'void') return '<span class="muted">DNP</span>';
     return x.result ? '<span class="muted">set by you</span>' : '<span class="muted">waiting for the stats</span>'; };
   const evPill = ev => (ev == null ? '<span class="muted">–</span>' : `<span class="evpill ${ev > 0 ? 'pos' : 'neg'}">${ev > 0 ? 'EV+' : 'EV−'} ${sgbp(ev)}</span>`);
   function singleRow(b) { const ev = evOf(b), pl = profitOf(b), st = stOf(b);
@@ -9644,8 +9648,8 @@ function wireBetLog(root, sport) {
     // list
     const row = t.closest('[data-bl]');
     if (row) { const a = loadLog(), i = a.findIndex(x => x.id === row.dataset.bl); if (i < 0) return;
-      const lr = t.closest('[data-bllegres]'); if (lr) { e.preventDefault(); const j = Number(lr.closest('[data-blleg]').dataset.blleg), leg = a[i].legs[j]; leg.result = lr.dataset.bllegres === 'auto' ? '' : leg.result === lr.dataset.bllegres ? '' : lr.dataset.bllegres; saveLog(a); drawTotals(); reopen(a[i].id); if (!leg.result) settleAll().then(() => { drawTotals(); reopen(a[i].id); }); return; }
-      const rr = t.closest('[data-blres]'); if (rr) { e.preventDefault(); const v = rr.dataset.blres; a[i].result = v === 'auto' ? '' : a[i].result === v ? '' : v; saveLog(a); drawTotals(); if (isAcca(a[i])) reopen(a[i].id); if (!a[i].result) settleAll().then(() => { drawTotals(); if (isAcca(a[i])) reopen(a[i].id); }); return; }
+      const lr = t.closest('[data-bllegres]'); if (lr) { e.preventDefault(); const j = Number(lr.closest('[data-blleg]').dataset.blleg), leg = a[i].legs[j]; leg.result = lr.dataset.bllegres === 'auto' ? '' : leg.result === lr.dataset.bllegres ? '' : lr.dataset.bllegres; saveLog(a); drawTotals(); reopen(a[i].id); settleAll().then(() => { drawTotals(); reopen(a[i].id); }); return; }
+      const rr = t.closest('[data-blres]'); if (rr) { e.preventDefault(); const v = rr.dataset.blres; a[i].result = v === 'auto' ? '' : a[i].result === v ? '' : v; saveLog(a); drawTotals(); if (isAcca(a[i])) reopen(a[i].id); settleAll().then(() => { drawTotals(); if (isAcca(a[i])) reopen(a[i].id); }); return; }
       if (t.closest('[data-bldel]') && getBook() === 'model' && a[i].real) { e.preventDefault(); alertMsg('This is a real bet: remove it on Real bets (that removes it here too).'); return; }
       if (t.closest('[data-bldel]')) { e.preventDefault(); const b0 = t.closest('[data-bldel]'); if (b0.dataset.arm && Date.now() - Number(b0.dataset.arm) < 4000) { a.splice(i, 1); saveLog(a); drawTotals(); } else { b0.dataset.arm = String(Date.now()); b0.textContent = 'Tap again to remove'; } return; } }
     if (t.closest('[data-blbackup]')) { const blob = new Blob([JSON.stringify({ app: 'PropLab bet log', saved: new Date().toISOString(), bets: loadLog() }, null, 1)], { type: 'application/json' });
@@ -10198,8 +10202,12 @@ async function viewRecommended(root, sport) {
     const evaluated = want.length, n = list.filter(x => !x.keptOut).length;
     if (!list.length && want.length && !want.some(c => !off.has(c.def.key))) { out.innerHTML = '<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No markets selected.</b> Open 3. Markets and tick at least one (or tap All markets).</div>'; return; }
     if (!list.length) { const hits = q ? suggest(s.f.q) : [];
-      const blowHid = !q && o.hideBlowout && sport !== 'football' && pickPlays(mine, { ...o, hideBlowout: false }, f => blowoutOf(f, sport)).length;
-      if (blowHid) { out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>Every play here is in a game rated high blowout risk</b>, and "Hide games with high blowout risk" is on (More filters), so they are hidden: ${blowHid} play${blowHid === 1 ? '' : 's'} would show without it. Tick more games, or untick that box to see them.</div>`; return; }
+      /* Update 113 (owner, 18 Nov): the blowout message used to count plays from the plain picker even when Strict or Value was on, so it blamed blowouts
+         for empty lists that Strict had simply no plays for. Now the blowout reason is only given when the SAME picker finds plays once blowouts are not hidden. */
+      const hidesBlow = !q && sport !== 'football' && (s.f.strict || s.f.value || o.hideBlowout);
+      const blowHid = hidesBlow ? (s.f.value ? valuePick(mine, o, () => null) : s.f.strict ? strictPick(mine, o, () => null) : pickPlays(mine, { ...o, hideBlowout: false }, () => null)).length : 0;
+      if (blowHid) { const why = s.f.strict || s.f.value ? 'Strict and Value hide games with high blowout risk' : '"Hide games with high blowout risk" is on (More filters)';
+        out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>Every play here is in a game rated high blowout risk</b>, and ${why}, so they are hidden: ${blowHid} play${blowHid === 1 ? '' : 's'} would show without it. Tick more games${s.f.strict || s.f.value ? '' : ', or untick that box to see them'}.</div>`; return; }
       out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info">${q ? (mine.length ? `<b>No line of ${esc(s.f.q)} reaches even a 50% model probability.</b>` : hits.length ? `<b>PropLab has no plays for ${esc(hits.map(h => h.label).slice(0, 3).join(', '))} in the listed games.</b> A player needs at least 8 recorded games and to be playing this season, and players listed OUT are left out.` : `<b>No player or team called "${esc(s.f.q)}" is in the listed games.</b>`) : s.f.strict ? `<div data-strictnone><b>No plays meet the strict rules for these games: no bets is the right call.</b> ${evaluated ? `${evaluated} player / team markets were checked. ` : ''}Nothing is wrong with the page; on nights like this the model's edges are too small or too uncertain to bet. Untick <i>Strict EV filter</i> to browse every play.</div>` : `<b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.`}</div>`; return; }
     out.innerHTML = `<p class="pcbanner" id="recbanner">${relaxed ? `${list.length} play${list.length === 1 ? '' : 's'} for "${esc(s.f.q)}" <span class="xs muted">(none meets every filter)</span>` : `${n} play${n === 1 ? '' : 's'} match your filters${q ? ` for "${esc(s.f.q)}"` : ''} <span class="xs muted">(from ${evaluated} player / team markets checked)</span>`}</p>
       ${relaxed ? `<div class="banner info"><b>None of the plays for "${esc(s.f.q)}" meets all your filters</b>, so the strongest line of each market is shown without the fair-odds, hit-rate, confidence, matchup and market-type filters (model probability at least ${Math.min(o.minProb || 0, 50)}%). Each card is marked "outside your filters".</div>` : ''}
