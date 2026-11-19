@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f09f9afb5fde">
+<meta name="proplab-build" content="ff6659f2b6b7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -7155,7 +7155,8 @@ function strictPick(cands, o, blowout = () => null) {
       if (!(hs.n >= STRICT.minHitN && hs.pct >= STRICT.minHit * 100 - 1e-9)) continue; void h10;
       const vo = vsOppOf(c, L, side); if (vo && vo.n >= STRICT.oppN && vo.hit / vo.n < STRICT.oppPoor) continue;
       if (strictMaxOdds(r.p) < strictMinOdds(r.p)) continue; /* Update 94 (owner): a play no real price can back (e.g. model 80% = fair 1.25: 1.70+ would be 10+ points below it) is never shown */
-      const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, strict: true });
+      /* Update 115 (owner, 19 Nov): no player limit. Every play that passes the rules is listed, including several from the same player or game. */
+      const k = `${c.id}|${side}`; best.set(k, { c, side, rep: r, strict: true });
     }
   }
   return [...best.values()];
@@ -7205,7 +7206,8 @@ function valuePick(cands, o, blowout = () => null) {
     const c = x.c; if (seen.has(c)) continue; seen.add(c); if (strictSkip(c) || c.def.binary) continue;
     for (const side of o.sides) for (const L of valueLines(c)) {
       const r = evalAt(c, L, side); if (valueWhy(c, side, r)) continue;
-      const k = `${c.fid}|${c.pid ?? c.name}`, prev = best.get(k); if (!prev || r.p > prev.rep.p) best.set(k, { c, side, rep: r, value: true });
+      /* Update 115 (owner, 19 Nov): no player limit (see strictPick). */
+      const k = `${c.id}|${side}`; best.set(k, { c, side, rep: r, value: true });
     }
   }
   return [...best.values()];
@@ -7957,12 +7959,14 @@ const pkOf = (c, side) => `${c.id}|${side}`;
 const isPlayHidden = (c, side) => !!(c && pmem[pkOf(c, side)]);
 function hidePlay(c, side, label) { if (!c) return; pmem = prune(pread()); pmem[pkOf(c, side)] = { sport: c.sport, fid: String(c.fid), name: c.name, label: label || '', t: Date.now() }; pwrite(pmem); }
 function unhidePlay(k) { pmem = prune(pread()); delete pmem[k]; pwrite(pmem); }
+/* Update 114 (owner, 19 Nov): bring back every removed play for these games at once (the Hiwi "Bring back all" button). */
+function unhidePlaysFor(sport, fids) { const ks = hiddenPlaysFor(sport, fids).map(h => h.k); if (!ks.length) return; pmem = prune(pread()); ks.forEach(k => delete pmem[k]); pwrite(pmem); }
 /** Removed plays for these games: [{ k, name, label }]. */
 const hiddenPlaysFor = (sport, fids) => { const f = new Set((fids || []).map(String)); return Object.entries(pmem).filter(([, v]) => v.sport === sport && (!fids || f.has(v.fid))).map(([k, v]) => ({ k, ...v })); };
 /** Keys in the form the Acca Builder's leg pool skips (`${candidate id}|${side}`). */
 const hiddenPlayKeys = () => Object.keys(pmem);
 
-return { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor, hiddenPlayKeys };
+return { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, unhidePlaysFor, hiddenPlaysFor, hiddenPlayKeys };
 })();
 __m['accabuild'] = (() => {
 // Acca Builder engine (owner request 2 Nov 2026). Builds an accumulator close to a target fair price from the same plays, lines,
@@ -9946,7 +9950,7 @@ const { nightOf } = __m['nightdate'];
 const { nbaSeasonAvgMin } = __m['nbaprefs'];
 const { CUR, unitChip, onUnitChange } = __m['units'];
 const { recTabs } = __m['rectabs'];
-const { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor } = __m['excl'];
+const { isHidden, hide, unhide, hiddenFor, isPlayHidden, hidePlay, unhidePlay, hiddenPlaysFor, unhidePlaysFor } = __m['excl'];
 const { blowoutOf } = __m['blowout'];
 const { recentMinutes } = __m['valueev'];
 /* Update 91 (owner): Starters only = 28+ minutes a game over his last 10 (no starter flag in the free box scores; same cut as the model's minutes bands) */
@@ -10084,7 +10088,7 @@ async function viewRecommended(root, sport) {
           <li>Strong evidence${sport !== 'football' ? ' and an Easy or OK matchup' : ''}.</li>
           <li>He's hit it in ${Math.round(STRICT.minHit * 10)}+ of 10 this season (${STRICT.minHitN}+ games).</li>
           <li>Not poor against tonight's opponent (under ${Math.round(STRICT.oppPoor * 100)}% over ${STRICT.oppN}+ meetings), not just back from an injury, and not on the injury report.</li>
-          <li>One play per player per game: his strongest.</li>
+          <li>Every play that passes the rules is shown, including several from the same player or game.</li>
           <li>Type your odds and each play says <b>Back it</b> or <b>Pass</b>, nothing in between: <b>Back it</b> when it is at least ${Math.round(STRICT.minEV * 100)}% EV at your odds (${STRICT.minOdds.toFixed(2)}–${STRICT.maxOdds.toFixed(2)}), at the stake shown. Under ${Math.round(STRICT.minEV * 100)}% EV is a Pass. The model's figures are corrected for the early season (tested on this season's games: strict picks came in 60% of the time).</li>
           <li>Not too good to be true: if the model is more than ${Math.round(MARKET_GAP * 100)} points above your price (both rounded to whole %), it's a <b>Pass</b>; exactly ${Math.round(MARKET_GAP * 100)} is fine. Checked against real bookmaker prices: a gap that big usually means the model is wrong.</li>
         </ol><p class="xs muted" style="margin:4px 0 0">Your games, side (over / under), markets and minimum minutes still apply. The other filters are replaced by these rules while it's ticked.</p></details></div>
@@ -10201,19 +10205,21 @@ async function viewRecommended(root, sport) {
     current = list;
     const evaluated = want.length, n = list.filter(x => !x.keptOut).length;
     if (!list.length && want.length && !want.some(c => !off.has(c.def.key))) { out.innerHTML = '<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No markets selected.</b> Open 3. Markets and tick at least one (or tap All markets).</div>'; return; }
+    /* Update 114 (owner, 19 Nov): removed plays are listed with a "Bring back all" button even when every play is gone, so the empty list never hides them. */
+    const hidChips = () => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} ${H.length > 1 ? `<button type="button" class="btn" style="padding:4px 10px" data-runall>Bring back all ${H.length}</button>` : ''}</p>` : ''; };
     if (!list.length) { const hits = q ? suggest(s.f.q) : [];
       /* Update 113 (owner, 18 Nov): the blowout message used to count plays from the plain picker even when Strict or Value was on, so it blamed blowouts
          for empty lists that Strict had simply no plays for. Now the blowout reason is only given when the SAME picker finds plays once blowouts are not hidden. */
       const hidesBlow = !q && sport !== 'football' && (s.f.strict || s.f.value || o.hideBlowout);
       const blowHid = hidesBlow ? (s.f.value ? valuePick(mine, o, () => null) : s.f.strict ? strictPick(mine, o, () => null) : pickPlays(mine, { ...o, hideBlowout: false }, () => null)).length : 0;
       if (blowHid) { const why = s.f.strict || s.f.value ? 'Strict and Value hide games with high blowout risk' : '"Hide games with high blowout risk" is on (More filters)';
-        out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>Every play here is in a game rated high blowout risk</b>, and ${why}, so they are hidden: ${blowHid} play${blowHid === 1 ? '' : 's'} would show without it. Tick more games${s.f.strict || s.f.value ? '' : ', or untick that box to see them'}.</div>`; return; }
-      out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info">${q ? (mine.length ? `<b>No line of ${esc(s.f.q)} reaches even a 50% model probability.</b>` : hits.length ? `<b>PropLab has no plays for ${esc(hits.map(h => h.label).slice(0, 3).join(', '))} in the listed games.</b> A player needs at least 8 recorded games and to be playing this season, and players listed OUT are left out.` : `<b>No player or team called "${esc(s.f.q)}" is in the listed games.</b>`) : s.f.strict ? `<div data-strictnone><b>No plays meet the strict rules for these games: no bets is the right call.</b> ${evaluated ? `${evaluated} player / team markets were checked. ` : ''}Nothing is wrong with the page; on nights like this the model's edges are too small or too uncertain to bet. Untick <i>Strict EV filter</i> to browse every play.</div>` : `<b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.`}</div>`; return; }
+        out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>Every play here is in a game rated high blowout risk</b>, and ${why}, so they are hidden: ${blowHid} play${blowHid === 1 ? '' : 's'} would show without it. Tick more games${s.f.strict || s.f.value ? '' : ', or untick that box to see them'}.</div>${hidChips()}`; return; }
+      out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info">${q ? (mine.length ? `<b>No line of ${esc(s.f.q)} reaches even a 50% model probability.</b>` : hits.length ? `<b>PropLab has no plays for ${esc(hits.map(h => h.label).slice(0, 3).join(', '))} in the listed games.</b> A player needs at least 8 recorded games and to be playing this season, and players listed OUT are left out.` : `<b>No player or team called "${esc(s.f.q)}" is in the listed games.</b>`) : s.f.strict ? `<div data-strictnone><b>No plays meet the strict rules for these games: no bets is the right call.</b> ${evaluated ? `${evaluated} player / team markets were checked. ` : ''}Nothing is wrong with the page; on nights like this the model's edges are too small or too uncertain to bet. Untick <i>Strict EV filter</i> to browse every play.</div>` : `<b>No plays meet your current filters and model reliability requirements.</b> ${evaluated ? `${evaluated} player / team markets were checked.` : ''} Lower the minimum probability or widen the fair-odds range to see more.`}</div>${hidChips()}`; return; }
     out.innerHTML = `<p class="pcbanner" id="recbanner">${relaxed ? `${list.length} play${list.length === 1 ? '' : 's'} for "${esc(s.f.q)}" <span class="xs muted">(none meets every filter)</span>` : `${n} play${n === 1 ? '' : 's'} match your filters${q ? ` for "${esc(s.f.q)}"` : ''} <span class="xs muted">(from ${evaluated} player / team markets checked)</span>`}</p>
       ${relaxed ? `<div class="banner info"><b>None of the plays for "${esc(s.f.q)}" meets all your filters</b>, so the strongest line of each market is shown without the fair-odds, hit-rate, confidence, matchup and market-type filters (model probability at least ${Math.min(o.minProb || 0, 50)}%). Each card is marked "outside your filters".</div>` : ''}
       <div class="row" style="border:0;padding:0;gap:8px;align-items:center;margin-bottom:8px"><button type="button" class="chip" data-resort>⇅ Re-sort</button><button type="button" class="infotag" data-info="recrank" data-title="How plays are chosen and ranked" data-text="${esc(RANK_TXT)}" aria-haspopup="dialog">How it works<span class="ii" aria-hidden="true">i</span></button><span class="xs muted">Cards stay in place while you change lines; Re-sort re-ranks them.</span></div>
       ${(() => { const H = hiddenFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhidden>Hidden for this game: ${H.map(h => `<button type="button" class="chip" data-runhide="${esc(h.k)}" aria-label="Show ${esc(h.name)} again">${esc(h.name)} ✕</button>`).join(' ')} <span>They come back by themselves for their next game. Tap a name to show him again now.</span></p>` : ''; })()}
-      ${(() => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} <span>Only that play is removed; the player's other plays stay. It comes back by itself for his next game. Tap it to show it again now.</span></p>` : ''; })()}
+      ${(() => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} ${H.length > 1 ? `<button type="button" class="btn" style="padding:4px 10px" data-runall>Bring back all ${H.length}</button>` : ''} <span>Only that play is removed; the player's other plays stay. It comes back by itself for his next game. Tap it to show it again now.</span></p>` : ''; })()}
       <div id="rcards" data-total="${list.length}">${list.slice(0, s.shown).map(cardHtml).join('')}</div>
       ${list.length > s.shown ? `<button type="button" class="btn" data-rmore>Show more (${list.length - s.shown} more)</button>` : ''}
       ${(() => { const av = streaks(mine, o); return av.length ? `<details class="card recavoid"><summary><b>Avoid: hot streaks the model does not trust</b> <span class="xs muted">(${av.length})</span></summary><p class="xs muted" style="margin:6px 0">Hit in 8+ of the last 10, but the longer record does not back it up, so the model rates them below 55%. In PropLab's test on 2025/26 games the model's figure was a better guide than a recent hit rate (see Model Performance); the hit rate on its own over-states plays like these.</p>${av.map(x => `<p class="small" style="margin:4px 0"><b>${esc(x.c.name)}</b> ${esc(ladderName(x.c, x.rep))} · last 10: <b>${x.rep.hr.l10.hit}/10</b> · all games: ${x.rep.hr.all.hit}/${x.rep.hr.all.n} (${x.rep.hr.all.pct}%) · model <b>${(x.rep.p * 100).toFixed(0)}%</b></p>`).join('')}</details>` : ''; })()}
@@ -10396,6 +10402,7 @@ async function viewRecommended(root, sport) {
     if (t.closest('[data-rhide]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { hide(x0.c); render(true); } return; }
     const uh = t.closest('[data-runhide]'); if (uh) { unhide(uh.dataset.runhide); render(); return; }
     const up = t.closest('[data-runplay]'); if (up) { unhidePlay(up.dataset.runplay); render(); return; }
+    if (t.closest('[data-runall]')) { unhidePlaysFor(sport, scope()); render(); return; }
     if (t.closest('[data-rlog]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) openBetForm(selFromCandidate(x0.c, x0.side, x0.rep), s.odds.get(`${x0.c.id}|${x0.side}`) || ''); return; }
     if (t.closest('[data-rslip]')) { const card0 = t.closest('.rcard'), x0 = card0 && findX(card0); if (x0) { slipToggle(x0.c, x0.side, x0.rep, s.odds.get(`${x0.c.id}|${x0.side}`) || ''); } return; }
     if (t.closest('[data-rmore]')) { s.shown += 30; render(true); return; }
