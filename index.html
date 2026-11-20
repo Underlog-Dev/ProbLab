@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="ff6659f2b6b7">
+<meta name="proplab-build" content="b4e74b87ade4">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -10462,7 +10462,7 @@ const { stakePlan, RISK, blendP } = __m['risk'];
 const { saveSingle, saveLabel } = __m['v-saved'];
 const { fmtU } = __m['kelly'];
 const { CUR } = __m['units'];
-const { selFromCandidate, logSingleNow } = __m['betprefill'];
+const { selFromCandidate, logSingleNow, openBetForm } = __m['betprefill'];
 const { esc, fmtKick, fmtDay } = __m['util'];
 const { muHtml } = __m['matchupui'];
 
@@ -10545,7 +10545,7 @@ async function viewHitRates(root, sport) {
       <div class="hrvals" aria-label="Last ${fm.n} games, newest first">${chips} <span class="xs muted">newest first</span></div>
       <div class="xs muted">Season ${hs.n ? `${hs.hit}/${hs.n} (${hs.pct}%)` : 'no games'} · last 10 ${r.hr.l10.n ? `${r.hr.l10.hit}/${r.hr.l10.n}` : '–'}</div>
       ${priceHtml(c, fm)}
-      <div class="row" style="border:0;padding:0;gap:8px"><button type="button" class="chip" data-hrdet aria-expanded="${OPEN.has(keyOf(c, fm)) ? 'true' : 'false'}">${OPEN.has(keyOf(c, fm)) ? 'Hide bars ▴' : 'Bars & details ▾'}</button><button type="button" class="chip" data-hrslip>+ Acca slip</button></div>
+      <div class="row" style="border:0;padding:0;gap:8px;align-items:center"><span class="rlin" style="margin:0"><button type="button" class="hstep" data-hrcstep="-1" ${c.lines.indexOf(fm.L) <= 0 ? 'disabled' : ''} aria-label="Lower this card's line">−</button><b>Over ${fm.L}</b><button type="button" class="hstep" data-hrcstep="1" ${c.lines.indexOf(fm.L) < 0 || c.lines.indexOf(fm.L) >= c.lines.length - 1 ? 'disabled' : ''} aria-label="Raise this card's line">+</button></span><button type="button" class="chip" data-hrdet aria-expanded="${OPEN.has(keyOf(c, fm)) ? 'true' : 'false'}">${OPEN.has(keyOf(c, fm)) ? 'Hide bars ▴' : 'Bars & details ▾'}</button><button type="button" class="chip" data-hrslip>+ Acca slip</button><button type="button" class="chip" data-hrform title="Open My Plays with this play filled in: type your odds and stake, then save">＋ My Plays</button></div>
       ${OPEN.has(keyOf(c, fm)) ? detHtml(c, fm) : ''}</article>`; };
   // Update 86 (owner, 13 Nov): tap a play for the same bars and details as Singles: Season / Last 5 / 10 / 20 / All, the bar chart at
   // the line (green over, red under, oldest left), tap a bar for that game, and move the line with - / + (model % and fair odds follow).
@@ -10608,8 +10608,13 @@ async function viewHitRates(root, sport) {
     if (e.target.closest('[data-hrunhideall]')) { f.hide = []; save(); drawF(); draw(); return; }
     const b = e.target.closest('[data-hrseg] button'); if (b) { const k = b.parentElement.dataset.hrseg; f[k] = isNaN(Number(b.dataset.v)) ? b.dataset.v : Number(b.dataset.v); save(); drawF(); if (k === 'days') loadC(); else draw(); return; }
     const art = e.target.closest('[data-hrc]'), X = art ? (out._rows || []).find(z => z.c.id === art.dataset.hrc && String(z.fm.L) === art.dataset.hrl) : null;
+    /* Update 116 (owner, 20 Nov): visible ＋ My Plays on each Hit Rates card opens the bet form with this play filled in. */
+    if (X && e.target.closest('[data-hrform]')) { const rF = repAt(X.c, X.fm, X.r); if (rF) openBetForm(selFromCandidate(X.c, 'over', rF), ODDS.get(`${X.c.id}|${lineOf(X.c, X.fm)}`) || ''); return; }
     if (X && e.target.closest('[data-hrsave]')) { const r = evalAt(X.c, X.fm.L, 'over'), bt = e.target.closest('[data-hrsave]'); bt.textContent = r ? saveLabel(saveSingle(X.c, 'over', r, ODDS.get(`${X.c.id}|${lineOf(X.c, X.fm)}`) || '')) : 'Could not save'; return; } /* Update 106 */
     const redraw = () => { const t = document.createElement('div'); t.innerHTML = card(X); const n = t.firstElementChild; art.replaceWith(n); const w = n.querySelector('.rbwrap.wide'); if (w) w.scrollLeft = w.scrollWidth; };
+    /* Update 116 (owner, 20 Nov): the line steppers sit on the card; each step moves this card to the neighbouring bookmaker line and recounts it in place. */
+    const cs = X && e.target.closest('[data-hrcstep]');
+    if (cs) { const i = X.c.lines.indexOf(X.fm.L), j = i + Number(cs.dataset.hrcstep); if (i >= 0 && j >= 0 && j < X.c.lines.length) { const nL = X.c.lines[j], nfm = formAt(X.c, nL, Number(f.win)); if (nfm) { X.fm = nfm; X.r = evalAt(X.c, nL, 'over'); } } return redraw(); }
     if (X && e.target.closest('[data-hrdet]')) { const k = keyOf(X.c, X.fm); OPEN.has(k) ? OPEN.delete(k) : OPEN.set(k, { w: 'l10', L: X.fm.L, sel: null }); return redraw(); }
     if (X && OPEN.has(keyOf(X.c, X.fm))) { const st = OPEN.get(keyOf(X.c, X.fm));
       const w = e.target.closest('[data-hrw]'); if (w) { st.w = w.dataset.hrw; st.sel = null; return redraw(); }
@@ -13254,7 +13259,7 @@ async function viewNflHome(root) {
   if (nflLoading(root)) return;
   const next = nflUpcoming().slice(0, 8), m = nfl.meta, cur = nfl.players.filter(p => p.current);
   root.innerHTML = `<section class="hero"><h1>NFL player props, game by game.</h1><p>Hit rates for passing, rushing, receiving, touchdown, kicking and defensive props from real game logs (${m.seasons[0]}–${m.seasons[m.seasons.length - 1]}). Research only, not tips.</p>
-    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/hiwi"><b>Find Your Own</b><span>Ready-made shortlist</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
+    <div class="tiles2"><a class="tool" href="#/nfl/search"><b>Players</b><span>Search ${cur.length.toLocaleString()} current players</span></a><a class="tool" href="#/nfl/finder"><b>Finder</b><span>Discover across players</span></a></div></section>
     <section class="sec"><h2>Next games <a href="#/nfl/fixtures">All games</a></h2><div class="card"><div class="list">${next.length ? next.map(gameRow).join('') : '<p class="muted" style="margin:0">No upcoming games are published.</p>'}</div></div></section>
     ${credit}`;
 }
@@ -13691,7 +13696,7 @@ function viewStart(root, sport) {
     ["Hiwi's Section", `Recommended plays: choose your ${s.unit === 'game' ? 'games' : 'matches'}, set a minimum chance and fair-odds range, and PropLab ranks every market it can price, with the line, the model probability, the fair odds and the record behind it.`, s.plays, "Open Hiwi's Section"],
     ['Choose a Match', `Pick a ${s.unit === 'game' ? 'game' : 'fixture'}, then research both teams and their players.`, s.matches, 'See matches'],
     ['Find a Player or Team', 'Search by name (nicknames work) and open their record.', s.search, 'Search'],
-    ['Find Your Own', 'Build your own cards for any market and line, with every filter.', s.hiwi, 'Find your own'],
+    /* Update 116 (owner, 20 Nov): Find Your Own tab and tile removed; Hiwi's Section does this with its filters. The page still opens by its link. */
     ...(sport === 'nba' ? [['Team Matchups', 'Every team ranked 1-30 for what its defence allows to guards, forwards and centres and what its offence produces, updated every night.', '#/nba/matchups', 'See matchups']] : []),
     ['Compare a Price', 'Type the odds you can see at a bookmaker and compare them with what happened in the past.', s.value, 'Compare a price'],
   ];
@@ -14000,9 +14005,9 @@ const SPORTS = { football: { label: 'Football', emoji: '⚽' }, nfl: { label: 'A
 // Redesign (21 Oct): the same five journeys in every sport. Start = plain-English entry page; Matches = fixtures and results;
 // Find Plays = Finder (and Plays) ranked by hit rate; Find Your Own = advanced research; Value = compare a price.
 const TABS = {
-  football: [['start', 'Start', '#/start', 'home'], ['fixtures', 'Matches', '#/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/rec', 'bear'], ['hiwi', 'Find Your Own', '#/hiwi', 'search'], ['myplays', 'My Plays', '#/myplays', 'value']],
-  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nfl/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nfl/hiwi', 'search'], ['myplays', 'My Plays', '#/nfl/myplays', 'value'], ['matchups', 'Matchups', '#/nfl/matchups', 'matchups']],
-  nba: [['start', 'Start', '#/nba/start', 'home'], ['fixtures', 'Matches', '#/nba/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nba/rec', 'bear'], ['hiwi', 'Find Your Own', '#/nba/hiwi', 'search'], ['myplays', 'My Plays', '#/nba/myplays', 'value'], ['matchups', 'Matchups', '#/nba/matchups', 'matchups']],
+  football: [['start', 'Start', '#/start', 'home'], ['fixtures', 'Matches', '#/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/rec', 'bear'], ['myplays', 'My Plays', '#/myplays', 'value']],
+  nfl: [['start', 'Start', '#/nfl/start', 'home'], ['fixtures', 'Matches', '#/nfl/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nfl/rec', 'bear'], ['myplays', 'My Plays', '#/nfl/myplays', 'value'], ['matchups', 'Matchups', '#/nfl/matchups', 'matchups']],
+  nba: [['start', 'Start', '#/nba/start', 'home'], ['fixtures', 'Matches', '#/nba/fixtures', 'fixtures'], ['rec', "Hiwi's Section", '#/nba/rec', 'bear'], ['myplays', 'My Plays', '#/nba/myplays', 'value'], ['matchups', 'Matchups', '#/nba/matchups', 'matchups']],
 };
 const SEARCH = { football: '#/players', nfl: '#/nfl/search', nba: '#/nba/search' };
 // Football page -> its page id (for the tab and for switching sport).
