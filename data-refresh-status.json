@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "last_run": "2026-11-21T19:08:17+00:00",
+ "last_run": "2026-11-21T20:41:37+00:00",
  "result": "ok-with-gaps",
  "completeness": {
   "ran": true,
@@ -16,20 +16,26 @@
    "TEAM NAMES: 2 fixture club names not seen in that league's results (new spelling, or a promoted club before its first match): superlig: Amed, superlig: Bb Erzurumspor"
   ]
  },
- "last_success": "2026-11-21T19:08:17+00:00",
+ "last_success": "2026-11-21T20:41:37+00:00",
  "changed_files": [
+  "data-nba-games.json",
   "data-nba-injuries.json",
-  "data-nfl-forward-2026-w12.json",
+  "data-nba-logs-MIL.json",
+  "data-nba-logs-PHI.json",
+  "data-nba-matchups.json",
+  "data-nba-meta.json",
+  "data-nba-players.json",
   "data-nfl-model-forward.json",
   "data-nfl-model.json",
   "data-team-matches-bundesliga-2026.json",
-  "data-team-matches-championship-2026.json",
+  "data-team-matches-eliteserien-2026.json",
   "data-team-matches-epl-2026.json",
   "data-team-matches-eredivisie-2026.json",
   "data-team-matches-laliga-2026.json",
-  "data-team-matches-leagueone-2026.json",
-  "data-team-matches-leaguetwo-2026.json",
+  "data-team-matches-ligue1-2026.json",
+  "data-team-matches-scotprem-2026.json",
   "data-team-matches-seriea-2026.json",
+  "data-team-matches-superlig-2026.json",
   "data-manifest.json"
  ],
  "validation": {
@@ -47,22 +53,24 @@
   "openfootball tr.1 2026-27: not published yet (Süper Lig fixtures come from football-data fixtures.csv, about one week ahead)",
   "openfootball text Süper Lig: 306 matches written (252 of them provisional: one round date, no kick-off times); left out: 0 without a date, 0 in rounds marked TBC",
   "Süper Lig: 252 provisional fixtures (round date only, no kick-off times)",
-  "squad lists not read this run (last read 4.5 hours ago; read at most every 10 hours)",
+  "squad lists not read this run (last read 6.1 hours ago; read at most every 10 hours)",
   "International football (ESPN): {\"events\": 2657, \"downloaded\": 1, \"team_matches\": 2588, \"player_matches\": 2248, \"player_rows\": 71752, \"rows_with_shots\": 34092, \"fixtures\": 2, \"failed\": 0, \"failures\": []}",
   "NFL trades: 745 player trades since 2021 (latest 2026-04-17); 2 without a gsis id were left out",
   "NFL injury reports: {\"season\": 2026, \"latest_week\": 11, \"items\": 394, \"teams\": 32, \"teams_on_latest_week\": 26, \"kept_newer_published\": []}",
-  "NFL model: 2838 predictions in total for 2026 (week 11: 12 upcoming games scheduled in the window, 12 covered (complete), 1480 predictions; week 12: 11 upcoming games scheduled in the window, 11 covered (complete), 1358 predictions); generated 2026-11-21T19:07:34+00:00",
-  "NBA: {\"games\": 8976, \"final\": 8011, \"players\": 1196, \"player_games\": 210719, \"quarter_points_ok\": 171296, \"quarter_points_dropped\": 250, \"q1_rebounds_ok\": 170189, \"q1_rebounds_dropped\": 1357, \"q1_assists_ok\": 171020, \"q1_assists_dropped\": 526} files 31 problems 0",
-  "NBA injuries: https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-11-21_02_00PM.pdf: 11/21/26 02:00 PM · 60 players (0 not matched to a PropLab id) · 15 teams not yet submitted",
-  "NBA matchups: 30 teams, season 2027 (235 games so far, blended with last season), markets in the model: pts, reb, ast, stl, blk, tpm, pr, pa, ra, pra, sb"
+  "NFL model: 2838 predictions in total for 2026 (week 11: 12 upcoming games scheduled in the window, 12 covered (complete), 1480 predictions; week 12: 11 upcoming games scheduled in the window, 11 covered (complete), 1358 predictions); generated 2026-11-21T20:41:01+00:00",
+  "NBA: 1 finished game(s) not yet in the source were filled from ESPN: MIL 129-132 PHI (2026-11-21)",
+  "NBA: {\"games\": 8976, \"final\": 8012, \"players\": 1196, \"player_games\": 210744, \"quarter_points_ok\": 171296, \"quarter_points_dropped\": 250, \"q1_rebounds_ok\": 170189, \"q1_rebounds_dropped\": 1357, \"q1_assists_ok\": 171020, \"q1_assists_dropped\": 526} files 31 problems 0",
+  "NBA injuries: https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-11-21_03_30PM.pdf: 11/21/26 03:30 PM · 64 players (0 not matched to a PropLab id) · 14 teams not yet submitted",
+  "NBA matchups: 30 teams, season 2027 (236 games so far, blended with last season), markets in the model: pts, reb, ast, stl, blk, tpm, pr, pa, ra, pra, sb"
  ],
  "warnings": [
   "Premier League: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "La Liga: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "Serie A: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "Bundesliga: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
-  "Ligue 1: results to 2026-11-20 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
+  "Ligue 1: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "Eredivisie: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
+  "Scottish Premiership: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "Championship: results to 2026-11-21 are score-only; match statistics only to 2026-11-07 (statistics source not updated yet)",
   "League One: no upcoming fixtures in the data (no permitted source has published them yet)",
   "League One: results to 2026-11-21 are score-only; match statistics only to 2026-11-14 (statistics source not updated yet)",
@@ -70,6 +78,7 @@
   "League Two: results to 2026-11-21 are score-only; match statistics only to 2026-11-14 (statistics source not updated yet)",
   "Belgian Pro League: fixtures only until 2026-11-22 (the only permitted source publishes about one week ahead)",
   "Belgian Pro League: results to 2026-11-20 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
+  "Süper Lig: results to 2026-11-21 are score-only; match statistics only to 2026-11-08 (statistics source not updated yet)",
   "Eliteserien: fixtures only until 2026-11-22 (the only permitted source publishes about one week ahead)",
   "Squad lists (Premier League): 16 club(s) last stated by the source over 75 days ago or undated: Arsenal, Aston Villa, Brentford, Brighton, Chelsea, Crystal Palace",
   "Squad lists (MLS): 8 club(s) last stated by the source over 75 days ago or undated: Atlanta United, Chicago Fire, LA Galaxy, Nashville SC, Orlando City, Philadelphia Union",
@@ -83,596 +92,596 @@
  "sources": {
   "football-data NOR.csv (Eliteserien, final scores)": {
    "ok": true,
-   "checked": "2026-11-21T19:05:45+00:00",
-   "last_success": "2026-11-21T19:05:45+00:00",
+   "checked": "2026-11-21T20:39:26+00:00",
+   "last_success": "2026-11-21T20:39:26+00:00",
    "detail": ""
   },
   "football-data new_league_fixtures.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:05:46+00:00",
-   "last_success": "2026-11-21T19:05:46+00:00",
+   "checked": "2026-11-21T20:39:27+00:00",
+   "last_success": "2026-11-21T20:39:27+00:00",
    "detail": ""
   },
   "football-data E0 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:47+00:00",
-   "last_success": "2026-11-21T19:05:47+00:00",
+   "checked": "2026-11-21T20:39:28+00:00",
+   "last_success": "2026-11-21T20:39:28+00:00",
    "detail": ""
   },
   "football-data SP1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:48+00:00",
-   "last_success": "2026-11-21T19:05:48+00:00",
+   "checked": "2026-11-21T20:39:29+00:00",
+   "last_success": "2026-11-21T20:39:29+00:00",
    "detail": ""
   },
   "football-data I1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:49+00:00",
-   "last_success": "2026-11-21T19:05:49+00:00",
+   "checked": "2026-11-21T20:39:30+00:00",
+   "last_success": "2026-11-21T20:39:30+00:00",
    "detail": ""
   },
   "football-data D1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:50+00:00",
-   "last_success": "2026-11-21T19:05:50+00:00",
+   "checked": "2026-11-21T20:39:30+00:00",
+   "last_success": "2026-11-21T20:39:30+00:00",
    "detail": ""
   },
   "football-data F1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:51+00:00",
-   "last_success": "2026-11-21T19:05:51+00:00",
+   "checked": "2026-11-21T20:39:31+00:00",
+   "last_success": "2026-11-21T20:39:31+00:00",
    "detail": ""
   },
   "football-data P1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:52+00:00",
-   "last_success": "2026-11-21T19:05:52+00:00",
+   "checked": "2026-11-21T20:39:32+00:00",
+   "last_success": "2026-11-21T20:39:32+00:00",
    "detail": ""
   },
   "football-data N1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:53+00:00",
-   "last_success": "2026-11-21T19:05:53+00:00",
+   "checked": "2026-11-21T20:39:33+00:00",
+   "last_success": "2026-11-21T20:39:33+00:00",
    "detail": ""
   },
   "football-data SC0 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:55+00:00",
-   "last_success": "2026-11-21T19:05:55+00:00",
+   "checked": "2026-11-21T20:39:34+00:00",
+   "last_success": "2026-11-21T20:39:34+00:00",
    "detail": ""
   },
   "football-data E1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:56+00:00",
-   "last_success": "2026-11-21T19:05:56+00:00",
+   "checked": "2026-11-21T20:39:35+00:00",
+   "last_success": "2026-11-21T20:39:35+00:00",
    "detail": ""
   },
   "football-data E2 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:57+00:00",
-   "last_success": "2026-11-21T19:05:57+00:00",
+   "checked": "2026-11-21T20:39:35+00:00",
+   "last_success": "2026-11-21T20:39:35+00:00",
    "detail": ""
   },
   "football-data E3 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:05:58+00:00",
-   "last_success": "2026-11-21T19:05:58+00:00",
+   "checked": "2026-11-21T20:39:36+00:00",
+   "last_success": "2026-11-21T20:39:36+00:00",
    "detail": ""
   },
   "football-data B1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:06:00+00:00",
-   "last_success": "2026-11-21T19:06:00+00:00",
+   "checked": "2026-11-21T20:39:37+00:00",
+   "last_success": "2026-11-21T20:39:37+00:00",
    "detail": ""
   },
   "football-data T1 2627": {
    "ok": true,
-   "checked": "2026-11-21T19:06:01+00:00",
-   "last_success": "2026-11-21T19:06:01+00:00",
+   "checked": "2026-11-21T20:39:38+00:00",
+   "last_success": "2026-11-21T20:39:38+00:00",
    "detail": ""
   },
   "football-data E0 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:02+00:00",
-   "last_success": "2026-11-21T19:06:02+00:00",
+   "checked": "2026-11-21T20:39:39+00:00",
+   "last_success": "2026-11-21T20:39:39+00:00",
    "detail": ""
   },
   "football-data SP1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:03+00:00",
-   "last_success": "2026-11-21T19:06:03+00:00",
+   "checked": "2026-11-21T20:39:40+00:00",
+   "last_success": "2026-11-21T20:39:40+00:00",
    "detail": ""
   },
   "football-data I1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:05+00:00",
-   "last_success": "2026-11-21T19:06:05+00:00",
+   "checked": "2026-11-21T20:39:41+00:00",
+   "last_success": "2026-11-21T20:39:41+00:00",
    "detail": ""
   },
   "football-data D1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:06+00:00",
-   "last_success": "2026-11-21T19:06:06+00:00",
+   "checked": "2026-11-21T20:39:42+00:00",
+   "last_success": "2026-11-21T20:39:42+00:00",
    "detail": ""
   },
   "football-data F1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:07+00:00",
-   "last_success": "2026-11-21T19:06:07+00:00",
+   "checked": "2026-11-21T20:39:43+00:00",
+   "last_success": "2026-11-21T20:39:43+00:00",
    "detail": ""
   },
   "football-data P1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:08+00:00",
-   "last_success": "2026-11-21T19:06:08+00:00",
+   "checked": "2026-11-21T20:39:44+00:00",
+   "last_success": "2026-11-21T20:39:44+00:00",
    "detail": ""
   },
   "football-data N1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:10+00:00",
-   "last_success": "2026-11-21T19:06:10+00:00",
+   "checked": "2026-11-21T20:39:45+00:00",
+   "last_success": "2026-11-21T20:39:45+00:00",
    "detail": ""
   },
   "football-data SC0 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:11+00:00",
-   "last_success": "2026-11-21T19:06:11+00:00",
+   "checked": "2026-11-21T20:39:46+00:00",
+   "last_success": "2026-11-21T20:39:46+00:00",
    "detail": ""
   },
   "football-data E1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:13+00:00",
-   "last_success": "2026-11-21T19:06:13+00:00",
+   "checked": "2026-11-21T20:39:47+00:00",
+   "last_success": "2026-11-21T20:39:47+00:00",
    "detail": ""
   },
   "football-data E2 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:14+00:00",
-   "last_success": "2026-11-21T19:06:14+00:00",
+   "checked": "2026-11-21T20:39:48+00:00",
+   "last_success": "2026-11-21T20:39:48+00:00",
    "detail": ""
   },
   "football-data E3 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:15+00:00",
-   "last_success": "2026-11-21T19:06:15+00:00",
+   "checked": "2026-11-21T20:39:49+00:00",
+   "last_success": "2026-11-21T20:39:49+00:00",
    "detail": ""
   },
   "football-data B1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:17+00:00",
-   "last_success": "2026-11-21T19:06:17+00:00",
+   "checked": "2026-11-21T20:39:50+00:00",
+   "last_success": "2026-11-21T20:39:50+00:00",
    "detail": ""
   },
   "football-data T1 2526": {
    "ok": true,
-   "checked": "2026-11-21T19:06:18+00:00",
-   "last_success": "2026-11-21T19:06:18+00:00",
+   "checked": "2026-11-21T20:39:51+00:00",
+   "last_success": "2026-11-21T20:39:51+00:00",
    "detail": ""
   },
   "football-data fixtures.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:19+00:00",
-   "last_success": "2026-11-21T19:06:19+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball en.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:19+00:00",
-   "last_success": "2026-11-21T19:06:19+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball es.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:20+00:00",
-   "last_success": "2026-11-21T19:06:20+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball it.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:20+00:00",
-   "last_success": "2026-11-21T19:06:20+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball de.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:20+00:00",
-   "last_success": "2026-11-21T19:06:20+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball fr.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:20+00:00",
-   "last_success": "2026-11-21T19:06:20+00:00",
+   "checked": "2026-11-21T20:39:52+00:00",
+   "last_success": "2026-11-21T20:39:52+00:00",
    "detail": ""
   },
   "openfootball pt.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:21+00:00",
-   "last_success": "2026-11-21T19:06:21+00:00",
+   "checked": "2026-11-21T20:39:53+00:00",
+   "last_success": "2026-11-21T20:39:53+00:00",
    "detail": ""
   },
   "openfootball nl.1 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:21+00:00",
-   "last_success": "2026-11-21T19:06:21+00:00",
+   "checked": "2026-11-21T20:39:53+00:00",
+   "last_success": "2026-11-21T20:39:53+00:00",
    "detail": ""
   },
   "openfootball en.2 2026-27": {
    "ok": true,
-   "checked": "2026-11-21T19:06:21+00:00",
-   "last_success": "2026-11-21T19:06:21+00:00",
+   "checked": "2026-11-21T20:39:53+00:00",
+   "last_success": "2026-11-21T20:39:53+00:00",
    "detail": ""
   },
   "openfootball text europe/master/scotland/2026-27_sco1.txt": {
    "ok": true,
-   "checked": "2026-11-21T19:06:22+00:00",
-   "last_success": "2026-11-21T19:06:22+00:00",
+   "checked": "2026-11-21T20:39:53+00:00",
+   "last_success": "2026-11-21T20:39:53+00:00",
    "detail": ""
   },
   "openfootball text belgium/master/2026-27/be1.txt": {
    "ok": true,
-   "checked": "2026-11-21T19:06:22+00:00",
-   "last_success": "2026-11-21T19:06:22+00:00",
+   "checked": "2026-11-21T20:39:53+00:00",
+   "last_success": "2026-11-21T20:39:53+00:00",
    "detail": ""
   },
   "openfootball text europe/master/turkey/2026-27_tr1.txt": {
    "ok": true,
-   "checked": "2026-11-21T19:06:23+00:00",
-   "last_success": "2026-11-21T19:06:23+00:00",
+   "checked": "2026-11-21T20:39:54+00:00",
+   "last_success": "2026-11-21T20:39:54+00:00",
    "detail": ""
   },
   "Wikipedia season results tables": {
    "ok": true,
-   "checked": "2026-11-21T19:06:41+00:00",
-   "last_success": "2026-11-21T19:06:41+00:00",
+   "checked": "2026-11-21T20:40:10+00:00",
+   "last_success": "2026-11-21T20:40:10+00:00",
    "detail": ""
   },
   "Wikipedia UEFA Champions League season articles": {
    "ok": true,
-   "checked": "2026-11-21T19:06:42+00:00",
-   "last_success": "2026-11-21T19:06:42+00:00",
+   "checked": "2026-11-21T20:40:11+00:00",
+   "last_success": "2026-11-21T20:40:11+00:00",
    "detail": ""
   },
   "Wikipedia UEFA Europa League season articles": {
    "ok": true,
-   "checked": "2026-11-21T19:06:43+00:00",
-   "last_success": "2026-11-21T19:06:43+00:00",
+   "checked": "2026-11-21T20:40:11+00:00",
+   "last_success": "2026-11-21T20:40:11+00:00",
    "detail": ""
   },
   "Wikipedia UEFA Conference League season articles": {
    "ok": true,
-   "checked": "2026-11-21T19:06:44+00:00",
-   "last_success": "2026-11-21T19:06:44+00:00",
+   "checked": "2026-11-21T20:40:12+00:00",
+   "last_success": "2026-11-21T20:40:12+00:00",
    "detail": ""
   },
   "American Soccer Analysis MLS 2026": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse games.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2021.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2022.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2023.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2024.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2025.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:57+00:00",
-   "last_success": "2026-11-21T19:06:57+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse stats_player_week_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:58+00:00",
-   "last_success": "2026-11-21T19:06:58+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse play_by_play_2026.csv.gz": {
    "ok": true,
-   "checked": "2026-11-21T19:06:58+00:00",
-   "last_success": "2026-11-21T19:06:58+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse roster_weekly_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:58+00:00",
-   "last_success": "2026-11-21T19:06:58+00:00",
+   "checked": "2026-11-21T20:40:31+00:00",
+   "last_success": "2026-11-21T20:40:31+00:00",
    "detail": ""
   },
   "nflverse injuries_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:59+00:00",
-   "last_success": "2026-11-21T19:06:59+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse trades.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:59+00:00",
-   "last_success": "2026-11-21T19:06:59+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse players.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:59+00:00",
-   "last_success": "2026-11-21T19:06:59+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:59+00:00",
-   "last_success": "2026-11-21T19:06:59+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:06:59+00:00",
-   "last_success": "2026-11-21T19:06:59+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:00+00:00",
-   "last_success": "2026-11-21T19:07:00+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:00+00:00",
-   "last_success": "2026-11-21T19:07:00+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:00+00:00",
-   "last_success": "2026-11-21T19:07:00+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "nflverse snap_counts_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:00+00:00",
-   "last_success": "2026-11-21T19:07:00+00:00",
+   "checked": "2026-11-21T20:40:32+00:00",
+   "last_success": "2026-11-21T20:40:32+00:00",
    "detail": ""
   },
   "ESPN international football": {
    "ok": true,
-   "checked": "2026-11-21T19:07:07+00:00",
-   "last_success": "2026-11-21T19:07:07+00:00",
+   "checked": "2026-11-21T20:40:37+00:00",
+   "last_success": "2026-11-21T20:40:37+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2021.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2022.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2023.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2024.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2025.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2026.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:45+00:00",
-   "last_success": "2026-11-21T19:07:45+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse nba_schedule_2027.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:46+00:00",
-   "last_success": "2026-11-21T19:07:46+00:00",
+   "checked": "2026-11-21T20:41:10+00:00",
+   "last_success": "2026-11-21T20:41:10+00:00",
    "detail": ""
   },
   "sportsdataverse team_box_2027.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:46+00:00",
-   "last_success": "2026-11-21T19:07:46+00:00",
+   "checked": "2026-11-21T20:41:11+00:00",
+   "last_success": "2026-11-21T20:41:11+00:00",
    "detail": ""
   },
   "sportsdataverse player_box_2027.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:46+00:00",
-   "last_success": "2026-11-21T19:07:46+00:00",
+   "checked": "2026-11-21T20:41:11+00:00",
+   "last_success": "2026-11-21T20:41:11+00:00",
    "detail": ""
   },
   "sportsdataverse rosters_2027.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:47+00:00",
-   "last_success": "2026-11-21T19:07:47+00:00",
+   "checked": "2026-11-21T20:41:11+00:00",
+   "last_success": "2026-11-21T20:41:11+00:00",
    "detail": ""
   },
   "sportsdataverse play_by_play_2027.csv": {
    "ok": true,
-   "checked": "2026-11-21T19:07:48+00:00",
-   "last_success": "2026-11-21T19:07:48+00:00",
+   "checked": "2026-11-21T20:41:12+00:00",
+   "last_success": "2026-11-21T20:41:12+00:00",
    "detail": ""
   },
   "ESPN NBA results top-up": {
    "ok": true,
-   "checked": "2026-11-21T19:07:49+00:00",
-   "last_success": "2026-11-21T19:07:49+00:00",
+   "checked": "2026-11-21T20:41:13+00:00",
+   "last_success": "2026-11-21T20:41:13+00:00",
    "detail": ""
   },
   "Official NBA Injury Report": {
    "ok": true,
-   "checked": "2026-11-21T19:07:58+00:00",
-   "last_success": "2026-11-21T19:07:58+00:00",
+   "checked": "2026-11-21T20:41:21+00:00",
+   "last_success": "2026-11-21T20:41:21+00:00",
    "detail": ""
   },
   "Wikipedia club squad lists (Premier League, MLS)": {
@@ -699,10 +708,10 @@
      "openfootball football.json": 270
     },
     "current_season_stat_coverage_pct": {
-     "hs": 94,
-     "hc": 94,
-     "hy": 94,
-     "hf": 94
+     "hs": 93,
+     "hc": 93,
+     "hy": 93,
+     "hf": 93
     },
     "markets_without_data": [
      "player props"
@@ -713,20 +722,20 @@
     "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 256,
-    "with_kickoff_time": 6,
+    "upcoming_fixtures": 255,
+    "with_kickoff_time": 5,
     "date_only": 250,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2027-05-30",
     "fixture_sources": {
-     "football-data.co.uk fixtures": 6,
+     "football-data.co.uk fixtures": 5,
      "openfootball football.json": 250
     },
     "current_season_stat_coverage_pct": {
-     "hs": 98,
-     "hc": 98,
-     "hy": 98,
-     "hf": 98
+     "hs": 97,
+     "hc": 97,
+     "hy": 97,
+     "hf": 97
     },
     "markets_without_data": [
      "player props"
@@ -737,20 +746,20 @@
     "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 267,
-    "with_kickoff_time": 7,
+    "upcoming_fixtures": 266,
+    "with_kickoff_time": 6,
     "date_only": 260,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2027-05-30",
     "fixture_sources": {
-     "openfootball football.json": 266,
+     "openfootball football.json": 265,
      "football-data.co.uk fixtures": 1
     },
     "current_season_stat_coverage_pct": {
-     "hs": 98,
-     "hc": 98,
-     "hy": 98,
-     "hf": 98
+     "hs": 97,
+     "hc": 97,
+     "hy": 97,
+     "hf": 97
     },
     "markets_without_data": [
      "player props"
@@ -771,10 +780,10 @@
      "openfootball football.json": 216
     },
     "current_season_stat_coverage_pct": {
-     "hs": 93,
-     "hc": 93,
-     "hy": 93,
-     "hf": 93
+     "hs": 92,
+     "hc": 92,
+     "hy": 92,
+     "hf": 92
     },
     "markets_without_data": [
      "player props"
@@ -782,22 +791,22 @@
    },
    "ligue1": {
     "name": "Ligue 1",
-    "latest_result": "2026-11-20",
+    "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 214,
-    "with_kickoff_time": 22,
+    "upcoming_fixtures": 210,
+    "with_kickoff_time": 18,
     "date_only": 192,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2027-05-29",
     "fixture_sources": {
-     "openfootball football.json": 214
+     "openfootball football.json": 210
     },
     "current_season_stat_coverage_pct": {
-     "hs": 99,
-     "hc": 99,
-     "hy": 99,
-     "hf": 99
+     "hs": 98,
+     "hc": 98,
+     "hy": 98,
+     "hf": 98
     },
     "markets_without_data": [
      "player props"
@@ -831,20 +840,20 @@
     "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 195,
-    "with_kickoff_time": 77,
+    "upcoming_fixtures": 193,
+    "with_kickoff_time": 75,
     "date_only": 118,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2027-05-23",
     "fixture_sources": {
-     "football-data.co.uk fixtures": 6,
+     "football-data.co.uk fixtures": 4,
      "openfootball football.json": 189
     },
     "current_season_stat_coverage_pct": {
-     "hs": 99,
-     "hc": 99,
-     "hy": 99,
-     "hf": 99
+     "hs": 97,
+     "hc": 97,
+     "hy": 97,
+     "hf": 97
     },
     "markets_without_data": [
      "player props"
@@ -852,23 +861,22 @@
    },
    "scotprem": {
     "name": "Scottish Premiership",
-    "latest_result": "2026-11-08",
+    "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 118,
-    "with_kickoff_time": 21,
+    "upcoming_fixtures": 117,
+    "with_kickoff_time": 20,
     "date_only": 97,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2027-04-10",
     "fixture_sources": {
-     "football-data.co.uk fixtures": 1,
      "Wikipedia season article": 117
     },
     "current_season_stat_coverage_pct": {
-     "hs": 100,
-     "hc": 100,
-     "hy": 100,
-     "hf": 100
+     "hs": 94,
+     "hc": 94,
+     "hy": 94,
+     "hf": 94
     },
     "markets_without_data": [
      "player props"
@@ -1051,13 +1059,13 @@
     "latest_result": "2026-11-20",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
-    "upcoming_fixtures": 6,
-    "with_kickoff_time": 6,
+    "upcoming_fixtures": 4,
+    "with_kickoff_time": 4,
     "date_only": 0,
     "postponed_or_abandoned": 0,
     "fixtures_until": "2026-11-22",
     "fixture_sources": {
-     "football-data.co.uk fixtures": 6
+     "football-data.co.uk fixtures": 4
     },
     "current_season_stat_coverage_pct": {
      "hs": 99,
@@ -1071,7 +1079,7 @@
    },
    "superlig": {
     "name": "Süper Lig",
-    "latest_result": "2026-11-08",
+    "latest_result": "2026-11-21",
     "latest_team_stats": "2026-11-08",
     "latest_player_stats": null,
     "upcoming_fixtures": 205,
@@ -1084,10 +1092,10 @@
      "football-data.co.uk fixtures": 5
     },
     "current_season_stat_coverage_pct": {
-     "hs": 100,
-     "hc": 100,
-     "hy": 100,
-     "hf": 100
+     "hs": 96,
+     "hc": 96,
+     "hy": 96,
+     "hf": 96
     },
     "markets_without_data": [
      "player props"
@@ -1095,7 +1103,7 @@
    },
    "eliteserien": {
     "name": "Eliteserien",
-    "latest_result": "2026-11-20",
+    "latest_result": "2026-11-21",
     "latest_team_stats": null,
     "latest_player_stats": null,
     "upcoming_fixtures": 4,
