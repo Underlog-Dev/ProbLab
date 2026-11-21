@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="b4e74b87ade4">
+<meta name="proplab-build" content="066629f09fb7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -950,6 +950,15 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .boostrange{flex:1;min-width:0;accent-color:var(--amber)}
 .boostbar b{min-width:52px;text-align:right}
 
+/* Update 117: top-right bankroll and Kelly box */
+.bankslot{display:flex;align-items:center;margin-left:auto}
+.bankbox{display:flex;align-items:center;gap:6px;font-size:12px;flex-wrap:wrap;justify-content:flex-end}
+.bb-bk{display:flex;align-items:center;gap:2px}
+.bb-bk input{width:64px;padding:2px 4px;font-size:12px}
+.bb-unit{opacity:.75;white-space:nowrap}
+.bb-seg button{padding:2px 6px;font-size:12px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:4px;margin-left:2px;cursor:pointer}
+.bb-seg button.on{font-weight:700;background:currentColor;color:#fff}
+
 </style>
 <title>PropLab – football stats and player-prop research</title>
 </head>
@@ -957,6 +966,67 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 <noscript><main><div class="card">PropLab needs JavaScript turned on.</div></main></noscript>
 <script>
 const __m = {};
+__m['kelly'] = (() => {
+// Units (owner request 27 Oct 2026; changed to 1/10 Kelly with stakes rounded DOWN to 2 decimals on 28 Oct): 1 unit = 1% of bankroll, capped at
+// 2.00 units per selection.
+//   full Kelly f* = (b·p − q) / b with b = decimal odds − 1, p = the estimated win probability, q = the estimated loss probability. With no
+//   push (q = 1 − p) this is exactly (p × odds − 1) / (odds − 1), the owner's formula; on a whole-number line a push returns the stake, so it
+//   is neither a win nor a loss. fractional = max(0, f*) / 10; uncapped units = fractional × 100; units = min(uncapped, 2).
+//   The cap is applied before display rounding; only the shown figures are rounded, always DOWN to 2 decimals (1.178 -> 1.17), never up.
+//   Odds of 1.00 or below, or a missing / invalid probability, give no units at all (never NaN, Infinity or an invented figure).
+const KELLY_FRACTION = 1 / 10; // default; the chosen 1/10, 1/15 or 1/20 is read by kellyDenom()
+/* Update 117 (owner, 21 Nov): the Kelly fraction chosen in the top-right box (or the risk panel) drives every unit figure. */
+const KELLY_DENOMS = [10, 15, 20];
+const kellyDenom = () => { try { const v = Number(localStorage.getItem('proplab.kelly.v1')); return KELLY_DENOMS.includes(v) ? v : 10; } catch { return 10; } };
+const UNIT_PCT = 1;
+const MAX_UNITS = 2;
+function kellyUnits(p, dec, push = 0) {
+  if (![p, dec, push].every(Number.isFinite) || dec <= 1 || p < 0 || p > 1 || push < 0 || p + push > 1 + 1e-12) return null;
+  const b = dec - 1, q = Math.max(0, 1 - p - push), full = (b * p - q) / b;
+  const uncapped = Math.max(0, full) * (1 / kellyDenom()) * 100 / UNIT_PCT;
+  if (!Number.isFinite(uncapped)) return null;
+  return { full, uncapped, units: Math.min(uncapped, MAX_UNITS), capped: uncapped > MAX_UNITS };
+}
+/** "0.93u", "2.00u (2.75u uncapped)", "0.00u", or "Units unavailable". */
+/** Units shown: rounded DOWN to 2 decimals (owner, 28 Oct). */
+const fmtU = x => (Math.floor(x * 100 + 1e-9) / 100).toFixed(2);
+const unitsText = k => (!k ? 'Units unavailable' : k.capped ? `${fmtU(k.units)}u (${fmtU(k.uncapped)}u uncapped)` : `${fmtU(k.units)}u`);
+const KELLY_NOTE = 'Calculated using 1/10 Kelly, capped at 2.00u. Results depend on the accuracy of the estimated probability.';
+const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.00u selections together are not automatically safe or within a daily bankroll budget.';
+
+return { KELLY_FRACTION, KELLY_DENOMS, kellyDenom, UNIT_PCT, MAX_UNITS, kellyUnits, fmtU, unitsText, KELLY_NOTE, CAP_NOTE };
+})();
+__m['bankbox'] = (() => {
+// Update 117 (owner, 21 Nov): top-right box with your bankroll (£), the unit size (1u = 1% of bankroll) and the Kelly fraction.
+// Buttons: 1/20, 1/15, 1/10 (default 1/10). The choice is kept on this device and drives every unit figure on the site (kelly.js).
+const { kellyDenom, KELLY_DENOMS } = __m['kelly'];
+const BKEY = 'proplab.bankroll.v1', FKEY = 'proplab.kelly.v1';
+const getBankroll = () => { try { const v = Number(localStorage.getItem(BKEY)); return v > 0 ? v : 1000; } catch { return 1000; } };
+const draw = el => {
+  const bk = getBankroll(), d = kellyDenom();
+  el.innerHTML = `<div class="bankbox" role="group" aria-label="Bankroll and Kelly fraction">
+    <label class="bb-bk">£<input id="bankin" type="number" min="1" step="1" value="${bk}" aria-label="Bankroll in pounds"></label>
+    <span class="bb-unit">1u = £${(bk / 100).toFixed(2)}</span>
+    <span class="bb-seg">${KELLY_DENOMS.slice().reverse().map(n => `<button type="button" data-kd="${n}" class="${n === d ? 'on' : ''}" aria-pressed="${n === d}">1/${n}</button>`).join('')}</span></div>`;
+};
+function mountBankBox() {
+  const el = document.getElementById('bankslot'); if (!el) return;
+  draw(el);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-kd]'); if (!b) return;
+    try { localStorage.setItem(FKEY, String(Number(b.dataset.kd))); } catch { /* this visit only */ }
+    draw(el); window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+  el.addEventListener('change', e => {
+    if (e.target.id !== 'bankin') return;
+    const v = Number(e.target.value); if (!(v > 0)) return;
+    try { localStorage.setItem(BKEY, String(v)); } catch { /* this visit only */ }
+    setTimeout(() => { draw(el); window.dispatchEvent(new HashChangeEvent('hashchange')); }, 0); /* after the blur finishes: redrawing the field during its own change event breaks the DOM */
+  });
+}
+
+return { getBankroll, mountBankBox };
+})();
 __m['teams'] = (() => {
 // Names differ between sources ("Man United" / "Manchester United"). These helpers make them comparable.
 
@@ -4063,33 +4133,6 @@ function estimate(values, line, side, { binary = false, calib = null, lastDate =
 const evPct = (win, odds, push = 0) => Math.round((win * odds + push - 1) * 1000) / 10;
 
 return { HALF_LIFE, MAX_GAMES, K_SMOOTH, MIN_GAMES, STALE_DAYS, normCdf, countCdf, weigh, smooth, empirical, estimate, evPct };
-})();
-__m['kelly'] = (() => {
-// Units (owner request 27 Oct 2026; changed to 1/10 Kelly with stakes rounded DOWN to 2 decimals on 28 Oct): 1 unit = 1% of bankroll, capped at
-// 2.00 units per selection.
-//   full Kelly f* = (b·p − q) / b with b = decimal odds − 1, p = the estimated win probability, q = the estimated loss probability. With no
-//   push (q = 1 − p) this is exactly (p × odds − 1) / (odds − 1), the owner's formula; on a whole-number line a push returns the stake, so it
-//   is neither a win nor a loss. fractional = max(0, f*) / 10; uncapped units = fractional × 100; units = min(uncapped, 2).
-//   The cap is applied before display rounding; only the shown figures are rounded, always DOWN to 2 decimals (1.178 -> 1.17), never up.
-//   Odds of 1.00 or below, or a missing / invalid probability, give no units at all (never NaN, Infinity or an invented figure).
-const KELLY_FRACTION = 1 / 10;
-const UNIT_PCT = 1;
-const MAX_UNITS = 2;
-function kellyUnits(p, dec, push = 0) {
-  if (![p, dec, push].every(Number.isFinite) || dec <= 1 || p < 0 || p > 1 || push < 0 || p + push > 1 + 1e-12) return null;
-  const b = dec - 1, q = Math.max(0, 1 - p - push), full = (b * p - q) / b;
-  const uncapped = Math.max(0, full) * KELLY_FRACTION * 100 / UNIT_PCT;
-  if (!Number.isFinite(uncapped)) return null;
-  return { full, uncapped, units: Math.min(uncapped, MAX_UNITS), capped: uncapped > MAX_UNITS };
-}
-/** "0.93u", "2.00u (2.75u uncapped)", "0.00u", or "Units unavailable". */
-/** Units shown: rounded DOWN to 2 decimals (owner, 28 Oct). */
-const fmtU = x => (Math.floor(x * 100 + 1e-9) / 100).toFixed(2);
-const unitsText = k => (!k ? 'Units unavailable' : k.capped ? `${fmtU(k.units)}u (${fmtU(k.uncapped)}u uncapped)` : `${fmtU(k.units)}u`);
-const KELLY_NOTE = 'Calculated using 1/10 Kelly, capped at 2.00u. Results depend on the accuracy of the estimated probability.';
-const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.00u selections together are not automatically safe or within a daily bankroll budget.';
-
-return { KELLY_FRACTION, UNIT_PCT, MAX_UNITS, kellyUnits, fmtU, unitsText, KELLY_NOTE, CAP_NOTE };
 })();
 __m['units'] = (() => {
 // Unit size (owner request 11 Nov 2026, Update 71): each person using PropLab sets what 1 unit is worth for them (amount and currency:
@@ -7237,7 +7280,10 @@ function strictVerdict(p, dec, ref) { // Update 89 (owner, 14 Nov): one rule. EV
   if (dec > S.maxOdds + 1e-9) return { ok: false, why: `your odds are above ${S.maxOdds.toFixed(2)}: too long for these rules` };
   if (ev <= 0) return { ok: false, why: `not EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds` };
   if (ev < S.minEV - 1e-9) return { ok: false, why: `EV ${(ev * 100).toFixed(1)}%: under the ${Math.round(S.minEV * 100)}% minimum` };
+  /* Update 117 (owner, 21 Nov): 6% maximum. Edges above this lost in the owner's own log, so they are not shown. */
+  const overMax = ev > 0.06 + 1e-9; /* Update 117: over 6% is still shown, with a warning that it may be unreliable */
   { const g = gapPass(p, ref > 1 && ref < dec ? 1 / ref : imp); if (g) return g; } const viaRef = ref > 1 && ref < dec && overGap(p, imp); /* Update 103: the gap is checked against the shortest price you have seen */
+  if (overMax) return { ok: true, warn: true, viaRef, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds. EV ${(ev * 100).toFixed(1)}% is over the 6% maximum, so this may be unreliable. Check the news first.` };
   return { ok: true, viaRef, why: `EV+: model ${(p * 100).toFixed(0)}% v ${(imp * 100).toFixed(0)}% in your odds${ev > S.evCheck ? '. A big gap: the stake (on the model + bookmaker blend) is already cut down for it' : ''}` };
 }
 /** The shortest odds that pass the strict rules for a model chance. */
@@ -13953,6 +13999,7 @@ return { currentBuild, freshUrl, checkForUpdates, startUpdateChecks };
 __m['app'] = (() => {
 // PropLab shell: sport selection hub, a sport dropdown at the top of every page (switching keeps the equivalent page),
 // per-sport bottom navigation, and data loaded only for the sport in use.
+const { mountBankBox } = __m['bankbox'];
 const { store, loadCore } = __m['data'];
 const { nfl, loadNfl } = __m['nfl-data'];
 const { nba, loadNba } = __m['nba-data'];
@@ -14049,8 +14096,9 @@ function equivalentHref(w, to) {
 let note = '';
 function shell() {
   document.body.insertAdjacentHTML('afterbegin', `<header class="top"><div class="top-in"><button type="button" class="navback" id="navback" aria-label="Back to the previous page" hidden>‹</button><a class="brand" href="#/sports" aria-label="PropLab: choose a sport">${LOGO}<span>Prop<b>Lab</b></span></a>
-    <div class="topctl" id="topctl"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
+    <div class="topctl" id="topctl"></div><div class="bankslot" id="bankslot"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
   <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select> <label for="oddsel">Odds shown as</label> <select id="oddsel" class="in" aria-label="Odds format">${ODDS_FORMATS.map(([v, l]) => `<option value="${v}" ${v === oddsFmt() ? 'selected' : ''}>${l}</option>`).join('')}</select></p><p class="xs muted updline">Version <span data-build></span> · <button type="button" class="linkbtn" data-updcheck>Check for updates</button> <span data-updmsg role="status"></span></p></footer>`);
+  mountBankBox();
   drawTz();
   // Back to top (owner request 26 Oct): appears while scrolling DOWN a long page, hides at once on any upward scroll or near the top;
   // follows the page scroll only (not lists or sheets inside it); smooth unless the visitor prefers reduced motion.
