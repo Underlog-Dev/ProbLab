@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="066629f09fb7">
+<meta name="proplab-build" content="f1f10074e77e">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -950,14 +950,25 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 .boostrange{flex:1;min-width:0;accent-color:var(--amber)}
 .boostbar b{min-width:52px;text-align:right}
 
-/* Update 117: top-right bankroll and Kelly box */
-.bankslot{display:flex;align-items:center;margin-left:auto}
-.bankbox{display:flex;align-items:center;gap:6px;font-size:12px;flex-wrap:wrap;justify-content:flex-end}
-.bb-bk{display:flex;align-items:center;gap:2px}
-.bb-bk input{width:64px;padding:2px 4px;font-size:12px}
-.bb-unit{opacity:.75;white-space:nowrap}
-.bb-seg button{padding:2px 6px;font-size:12px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:4px;margin-left:2px;cursor:pointer}
-.bb-seg button.on{font-weight:700;background:currentColor;color:#fff}
+/* Update 118: small top-right Kelly and unit tab */
+.bankslot{position:relative;display:flex;align-items:center;margin-left:auto}
+.stk-tab{font-size:12px;padding:4px 8px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:6px;cursor:pointer;white-space:nowrap}
+.stk-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:50;min-width:230px;background:var(--card,#fff);color:var(--ink,#111);border:1px solid #ccc;border-radius:8px;padding:10px;box-shadow:0 4px 14px rgba(0,0,0,.18);text-align:left}
+.stk-panel[hidden]{display:none}
+.stk-h{margin:0 0 6px;font-weight:700;font-size:13px}
+.stk-seg{display:flex;gap:6px;margin-bottom:8px}
+.stk-seg button{flex:1;padding:6px 0;font-size:13px;border:1px solid #888;background:transparent;color:inherit;border-radius:6px;cursor:pointer}
+.stk-seg button.on{background:#222;color:#fff;border-color:#222}
+.stk-u{display:flex;align-items:center;gap:6px;font-size:13px}
+.stk-u input{width:80px;padding:4px 6px;font-size:13px}
+.stk-note{margin:8px 0 0;font-size:11px;opacity:.75}
+
+/* Update 118: entry code screen */
+.pl-lock{position:fixed;inset:0;z-index:9999;background:#0f1622;display:flex;align-items:center;justify-content:center;padding:20px}
+.pl-lockbox{display:flex;flex-direction:column;gap:10px;align-items:stretch;width:min(86vw,300px);background:#fff;color:#111;border-radius:14px;padding:20px;text-align:center}
+.pl-lockbox b{font-size:22px}
+.pl-lockbox input{font-size:20px;text-align:center;letter-spacing:.3em;padding:10px;border:1px solid #bbb;border-radius:8px}
+.pl-lockmsg{margin:0;min-height:1.2em;color:#b00020;font-size:14px}
 
 </style>
 <title>PropLab – football stats and player-prop research</title>
@@ -966,6 +977,31 @@ details.bldat>summary.bldh::after{content:'▸';position:absolute;right:4px;top:
 <noscript><main><div class="card">PropLab needs JavaScript turned on.</div></main></noscript>
 <script>
 const __m = {};
+__m['lock'] = (() => {
+// Update 118 (owner, 21 Nov): entry code before the site opens, asked once per device.
+// Only a check value is kept here, not the code. This is a light lock: anyone determined can read the site files. It is not real security.
+// Local test servers (localhost / 127.0.0.1) skip it so the automated checks keep working.
+const KEY = 'proplab.unlocked.v1', CHECK = '5b26aa39';
+const hash = s => { let h = 0x811c9dc5; s = 'proplab:' + s; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16); };
+const isOpen = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
+const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+function lockGate() {
+  if (local || isOpen()) return;
+  const el = document.createElement('div');
+  el.className = 'pl-lock'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  el.innerHTML = `<form class="pl-lockbox"><b>PropLab</b><label for="plcode">Enter the code</label>
+    <input id="plcode" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Code">
+    <button type="submit" class="btn primary">Enter</button><p class="pl-lockmsg" aria-live="polite"></p></form>`;
+  document.body.appendChild(el); document.documentElement.style.overflow = 'hidden';
+  el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault(); const inp = el.querySelector('#plcode');
+    if (hash(inp.value.trim()) === CHECK) { try { localStorage.setItem(KEY, '1'); } catch { /* this visit only */ } inp.blur(); el.remove(); document.documentElement.style.overflow = ''; }
+    else { inp.value = ''; el.querySelector('.pl-lockmsg').textContent = 'Wrong code'; }
+  });
+}
+
+return { lockGate };
+})();
 __m['kelly'] = (() => {
 // Units (owner request 27 Oct 2026; changed to 1/10 Kelly with stakes rounded DOWN to 2 decimals on 28 Oct): 1 unit = 1% of bankroll, capped at
 // 2.00 units per selection.
@@ -997,35 +1033,40 @@ const CAP_NOTE = 'The 2.00u cap is per selection, not a daily limit: several 2.0
 return { KELLY_FRACTION, KELLY_DENOMS, kellyDenom, UNIT_PCT, MAX_UNITS, kellyUnits, fmtU, unitsText, KELLY_NOTE, CAP_NOTE };
 })();
 __m['bankbox'] = (() => {
-// Update 117 (owner, 21 Nov): top-right box with your bankroll (£), the unit size (1u = 1% of bankroll) and the Kelly fraction.
-// Buttons: 1/20, 1/15, 1/10 (default 1/10). The choice is kept on this device and drives every unit figure on the site (kelly.js).
+// Update 118 (owner, 21 Nov): a small tab at the top right. Tap it to open the Kelly fraction and the £ per unit.
+// Kelly: 1/20, 1/15, 1/10 (default 1/10), kept on this device and used by every unit figure (kelly.js).
+// £ per unit: default £10. Units stay 1% of bankroll as before; this only sets what a unit is worth in £.
 const { kellyDenom, KELLY_DENOMS } = __m['kelly'];
-const BKEY = 'proplab.bankroll.v1', FKEY = 'proplab.kelly.v1';
-const getBankroll = () => { try { const v = Number(localStorage.getItem(BKEY)); return v > 0 ? v : 1000; } catch { return 1000; } };
-const draw = el => {
-  const bk = getBankroll(), d = kellyDenom();
-  el.innerHTML = `<div class="bankbox" role="group" aria-label="Bankroll and Kelly fraction">
-    <label class="bb-bk">£<input id="bankin" type="number" min="1" step="1" value="${bk}" aria-label="Bankroll in pounds"></label>
-    <span class="bb-unit">1u = £${(bk / 100).toFixed(2)}</span>
-    <span class="bb-seg">${KELLY_DENOMS.slice().reverse().map(n => `<button type="button" data-kd="${n}" class="${n === d ? 'on' : ''}" aria-pressed="${n === d}">1/${n}</button>`).join('')}</span></div>`;
+const FKEY = 'proplab.kelly.v1', UKEY = 'proplab.unitgbp.v1';
+const getUnitGbp = () => { try { const v = Number(localStorage.getItem(UKEY)); return v > 0 ? v : 10; } catch { return 10; } };
+const pnl = el => {
+  const d = kellyDenom(), u = getUnitGbp(), open = el.dataset.open === '1';
+  el.innerHTML = `<button type="button" class="stk-tab" aria-expanded="${open}" aria-controls="stkpanel">Kelly 1/${d} · £${u} a unit</button>
+    <div class="stk-panel" id="stkpanel" ${open ? '' : 'hidden'}>
+      <p class="stk-h">Kelly fraction</p>
+      <div class="stk-seg">${KELLY_DENOMS.slice().reverse().map(n => `<button type="button" data-kd="${n}" class="${n === d ? 'on' : ''}" aria-pressed="${n === d}">1/${n}</button>`).join('')}</div>
+      <label class="stk-u">£ per unit <input id="unitin" type="number" min="1" step="1" value="${u}" aria-label="£ per unit"></label>
+      <p class="stk-note">1u = 1% of your bankroll. The Kelly fraction and £ per unit are kept on this device.</p></div>`;
 };
+const refresh = () => setTimeout(() => window.dispatchEvent(new HashChangeEvent('hashchange')), 0);
 function mountBankBox() {
   const el = document.getElementById('bankslot'); if (!el) return;
-  draw(el);
+  el.dataset.open = '0'; pnl(el);
   el.addEventListener('click', e => {
+    if (e.target.closest('.stk-tab')) { el.dataset.open = el.dataset.open === '1' ? '0' : '1'; pnl(el); return; }
     const b = e.target.closest('[data-kd]'); if (!b) return;
     try { localStorage.setItem(FKEY, String(Number(b.dataset.kd))); } catch { /* this visit only */ }
-    draw(el); window.dispatchEvent(new HashChangeEvent('hashchange'));
+    pnl(el); refresh();
   });
   el.addEventListener('change', e => {
-    if (e.target.id !== 'bankin') return;
+    if (e.target.id !== 'unitin') return;
     const v = Number(e.target.value); if (!(v > 0)) return;
-    try { localStorage.setItem(BKEY, String(v)); } catch { /* this visit only */ }
-    setTimeout(() => { draw(el); window.dispatchEvent(new HashChangeEvent('hashchange')); }, 0); /* after the blur finishes: redrawing the field during its own change event breaks the DOM */
+    try { localStorage.setItem(UKEY, String(v)); } catch { /* this visit only */ }
+    setTimeout(() => { pnl(el); refresh(); }, 0);
   });
 }
 
-return { getBankroll, mountBankBox };
+return { getUnitGbp, mountBankBox };
 })();
 __m['teams'] = (() => {
 // Names differ between sources ("Man United" / "Manchester United"). These helpers make them comparable.
@@ -13999,6 +14040,7 @@ return { currentBuild, freshUrl, checkForUpdates, startUpdateChecks };
 __m['app'] = (() => {
 // PropLab shell: sport selection hub, a sport dropdown at the top of every page (switching keeps the equivalent page),
 // per-sport bottom navigation, and data loaded only for the sport in use.
+const { lockGate } = __m['lock'];
 const { mountBankBox } = __m['bankbox'];
 const { store, loadCore } = __m['data'];
 const { nfl, loadNfl } = __m['nfl-data'];
@@ -14099,6 +14141,7 @@ function shell() {
     <div class="topctl" id="topctl"></div><div class="bankslot" id="bankslot"></div><nav class="tabbar" id="nav" aria-label="Main"></nav></div></header><main id="view"></main>
   <footer class="site"><p>PropLab publishes statistics for research. It does not give betting tips, and past results do not predict future ones. Figures come from the sources listed on <a href="#/about">Data &amp; sources</a>; check them before relying on them. 18+. Gambling support: <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a> · 0808 8020 133.</p><p class="tzset"><label for="tzsel">Times shown in</label> <select id="tzsel" class="in" aria-label="Time zone for kick-off times"></select> <label for="oddsel">Odds shown as</label> <select id="oddsel" class="in" aria-label="Odds format">${ODDS_FORMATS.map(([v, l]) => `<option value="${v}" ${v === oddsFmt() ? 'selected' : ''}>${l}</option>`).join('')}</select></p><p class="xs muted updline">Version <span data-build></span> · <button type="button" class="linkbtn" data-updcheck>Check for updates</button> <span data-updmsg role="status"></span></p></footer>`);
   mountBankBox();
+  lockGate();
   drawTz();
   // Back to top (owner request 26 Oct): appears while scrolling DOWN a long page, hides at once on any upward scroll or near the top;
   // follows the page scroll only (not lists or sheets inside it); smooth unless the visitor prefers reduced motion.
