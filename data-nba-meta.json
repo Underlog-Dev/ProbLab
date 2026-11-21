@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-20T15:20:58Z",
+ "updated": "2026-11-21T03:53:41Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -207,13 +207,13 @@
    "group": "ATL",
    "file": "data-nba-logs-ATL.json",
    "players": 18,
-   "rows": 4788
+   "rows": 4800
   },
   {
    "group": "BKN",
    "file": "data-nba-logs-BKN.json",
    "players": 18,
-   "rows": 3301
+   "rows": 3316
   },
   {
    "group": "BOS",
@@ -225,19 +225,19 @@
    "group": "CHA",
    "file": "data-nba-logs-CHA.json",
    "players": 18,
-   "rows": 3800
+   "rows": 3812
   },
   {
    "group": "CHI",
    "file": "data-nba-logs-CHI.json",
    "players": 18,
-   "rows": 4647
+   "rows": 4659
   },
   {
    "group": "CLE",
    "file": "data-nba-logs-CLE.json",
    "players": 19,
-   "rows": 3694
+   "rows": 3705
   },
   {
    "group": "DAL",
@@ -255,7 +255,7 @@
    "group": "DET",
    "file": "data-nba-logs-DET.json",
    "players": 18,
-   "rows": 4816
+   "rows": 4828
   },
   {
    "group": "FA",
@@ -279,7 +279,7 @@
    "group": "IND",
    "file": "data-nba-logs-IND.json",
    "players": 17,
-   "rows": 5289
+   "rows": 5302
   },
   {
    "group": "LAC",
@@ -321,7 +321,7 @@
    "group": "NOP",
    "file": "data-nba-logs-NOP.json",
    "players": 18,
-   "rows": 4326
+   "rows": 4338
   },
   {
    "group": "NYK",
@@ -333,13 +333,13 @@
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
    "players": 20,
-   "rows": 3885
+   "rows": 3897
   },
   {
    "group": "ORL",
    "file": "data-nba-logs-ORL.json",
    "players": 17,
-   "rows": 4523
+   "rows": 4535
   },
   {
    "group": "PHI",
@@ -375,7 +375,7 @@
    "group": "TOR",
    "file": "data-nba-logs-TOR.json",
    "players": 17,
-   "rows": 3474
+   "rows": 3486
   },
   {
    "group": "UTA",
@@ -387,14 +387,14 @@
    "group": "WAS",
    "file": "data-nba-logs-WAS.json",
    "players": 18,
-   "rows": 3822
+   "rows": 3835
   }
  ],
  "counts": {
   "games": 8976,
-  "final": 8002,
+  "final": 8008,
   "players": 1196,
-  "player_games": 210493,
+  "player_games": 210641,
   "quarter_points_ok": 171115,
   "quarter_points_dropped": 250,
   "q1_rebounds_ok": 170009,
