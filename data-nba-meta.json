@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-21T20:41:13Z",
+ "updated": "2026-11-22T03:32:42Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -243,7 +243,7 @@
    "group": "DAL",
    "file": "data-nba-logs-DAL.json",
    "players": 18,
-   "rows": 3903
+   "rows": 3915
   },
   {
    "group": "DEN",
@@ -285,7 +285,7 @@
    "group": "LAC",
    "file": "data-nba-logs-LAC.json",
    "players": 19,
-   "rows": 4714
+   "rows": 4727
   },
   {
    "group": "LAL",
@@ -297,7 +297,7 @@
    "group": "MEM",
    "file": "data-nba-logs-MEM.json",
    "players": 18,
-   "rows": 2851
+   "rows": 2863
   },
   {
    "group": "MIA",
@@ -315,19 +315,19 @@
    "group": "MIN",
    "file": "data-nba-logs-MIN.json",
    "players": 17,
-   "rows": 4547
+   "rows": 4560
   },
   {
    "group": "NOP",
    "file": "data-nba-logs-NOP.json",
    "players": 18,
-   "rows": 4338
+   "rows": 4349
   },
   {
    "group": "NYK",
    "file": "data-nba-logs-NYK.json",
    "players": 17,
-   "rows": 5521
+   "rows": 5533
   },
   {
    "group": "OKC",
@@ -357,7 +357,7 @@
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3911
+   "rows": 3925
   },
   {
    "group": "SAC",
@@ -369,7 +369,7 @@
    "group": "SAS",
    "file": "data-nba-logs-SAS.json",
    "players": 17,
-   "rows": 4339
+   "rows": 4351
   },
   {
    "group": "TOR",
@@ -392,9 +392,9 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 8012,
+  "final": 8016,
   "players": 1196,
-  "player_games": 210744,
+  "player_games": 210843,
   "quarter_points_ok": 171296,
   "quarter_points_dropped": 250,
   "q1_rebounds_ok": 170189,
