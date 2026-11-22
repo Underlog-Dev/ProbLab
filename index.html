@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="f1f10074e77e">
+<meta name="proplab-build" content="544fee3f1e37">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -9086,7 +9086,7 @@ __m['betlog'] = (() => {
 //  * Fair odds "at the time" (NBA / NFL player props): from his games before that match only. Kept on this device (backup file below).
 //    There is no server: your bets live in this browser and are reconciled with the shared data whenever My Plays opens; no syncing.
 const { nightOf } = __m['nightdate'];
-const { getBook, readBook, writeBook, mirrorReal } = __m['booklog'];
+const { getBook, readBook, writeBook, mirrorReal, addToBook } = __m['booklog'];
 const { esc, koUK, fmtKick, fmtDay, koLocal, whenLocal } = __m['util'];
 const { fmtOdds, parseIn } = __m['oddsfmt'];
 const { usAdapter } = __m['v-hiwi'];
@@ -9451,9 +9451,9 @@ function wireBetLog(root, sport) {
       <div class="blsel">${selLine(b)}</div>
       <div class="blgame">${game}${getBook() === 'model' ? (b.real ? ' · <span class="bltag real">Real bet</span>' : ' · <span class="bltag model">Model only</span>') : ''}${isInplay(b) ? ' · <span class="blip">In-play</span>' : ''}</div>
       <div class="blcells">${blCell('Fair odds', b.fair ? esc(fmtOdds(b.fair)) : '<span class="muted">–</span>')}${blCell('Your odds', `<b class="${ev != null && ev > 0 ? 'hit' : ''}">${esc(fmtOdds(b.odds))}</b>`)}${blCell('Stake → returns', stakeTxt)}${blCell('Stat he got', statGot(b))}</div>
-      ${flags(b)}<div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button></div></div></div>`; }
+      ${flags(b)}<div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Log this bet again">↻ Re-add</button><button type="button" class="chip" data-bledit aria-label="Edit this bet">✎ Edit</button>${getBook() === 'model' && !b.real ? '<button type="button" class="chip blmkreal" data-blmkreal aria-label="Add this model play to Real bets">＋ Add as real play</button>' : ''}</div></div></div>`; }
   function accaRow(b) { const s = accaState(b), pl = profitOf(b), co = combinedOdds(b);
-    return `<details class="blrow blacca ${resCls(s.status)}${s.needOdds ? ' needs-odds' : ''}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip${s.needOdds ? ' hot' : ''}" data-bledit aria-label="Edit this acca">✎ Edit</button></div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${getBook() === 'model' ? (b.real ? '<span class="bltag real">Real bet</span> ' : '<span class="bltag model">Model only</span> ') : ''}<b>${b.legs.length}-leg acca</b>${isInplay(b) ? ' <span class="blip">In-play</span>' : ''} · ${esc(promoTxt(b))} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''}${promoOf(b).free || promoOf(b).boost ? ` · profit ${sgbp(winIfWon(b.stake, promoOf(b).free, promoOf(b).boost, Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}` : ` · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}`} if every leg wins
+    return `<details class="blrow blacca ${resCls(s.status)}${s.needOdds ? ' needs-odds' : ''}" data-bl="${esc(b.id)}"><summary><div class="blacts"><button type="button" class="chip" data-blreadd aria-label="Build this acca again">↻ Re-add</button><button type="button" class="chip${s.needOdds ? ' hot' : ''}" data-bledit aria-label="Edit this acca">✎ Edit</button>${getBook() === 'model' && !b.real ? '<button type="button" class="chip blmkreal" data-blmkreal aria-label="Add this model play to Real bets">＋ Add as real play</button>' : ''}</div><div>${badge(s.status)} ${pl != null ? `<b class="blpl ${pl > 0 ? 'hit' : pl < 0 ? 'miss' : ''}">${sgbp(pl)}</b>` : ''}<div class="blsel">${getBook() === 'model' ? (b.real ? '<span class="bltag real">Real bet</span> ' : '<span class="bltag model">Model only</span> ') : ''}<b>${b.legs.length}-leg acca</b>${isInplay(b) ? ' <span class="blip">In-play</span>' : ''} · ${esc(promoTxt(b))} at ${esc(fmtOdds(Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}${Number(b.bookOdds) > 1 ? ` <span class="xs muted">(legs multiply to ${esc(fmtOdds(co))})</span>` : ''}${promoOf(b).free || promoOf(b).boost ? ` · profit ${sgbp(winIfWon(b.stake, promoOf(b).free, promoOf(b).boost, Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}` : ` · returns ${gbp(b.stake * (Number(b.bookOdds) > 1 ? Number(b.bookOdds) : co))}`} if every leg wins
 </div>
       ${flags(b, TWINS)}<div class="small"><span class="xs muted">${s.needOdds ? '<b class="amber">waiting for a price</b>' : s.manual ? 'set by you' : SETTLED.has(s.status) ? 'from the legs' : 'settles from the legs'}${b.mode === 'match' ? ' · odds per match' : ''}</span> · ${b.legs.map(l => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'); return `<span class="bldot ${resCls(r)}" title="${esc(`${l.name} ${l.market}: ${STATUS_LABEL[r] || r}`)}"></span>`; }).join('')} <span class="xs muted">tap to see the legs</span></div>${s.needOdds ? `<div class="blnote">⚠ A leg did not play, so it is void. <b>Tap Edit</b> and type the bookmaker's odds for the leg${b.legs.filter(l => effOf(l) !== 'void' && l.fairOnly && !l.oddsTxt).length === 1 ? '' : 's'} still in play: the acca stays pending until then.</div>` : ''}</div></summary>
       ${b.legs.map((l, i) => { const r = effOf(l) || (l.auto ? l.auto.status : 'pending'), gu = b.mode === 'match' ? accaUnits(b).find(u => u.group && u.idx.includes(i)) : null;
@@ -9741,6 +9741,13 @@ function wireBetLog(root, sport) {
     if (row) { const a = loadLog(), i = a.findIndex(x => x.id === row.dataset.bl); if (i < 0) return;
       const lr = t.closest('[data-bllegres]'); if (lr) { e.preventDefault(); const j = Number(lr.closest('[data-blleg]').dataset.blleg), leg = a[i].legs[j]; leg.result = lr.dataset.bllegres === 'auto' ? '' : leg.result === lr.dataset.bllegres ? '' : lr.dataset.bllegres; saveLog(a); drawTotals(); reopen(a[i].id); settleAll().then(() => { drawTotals(); reopen(a[i].id); }); return; }
       const rr = t.closest('[data-blres]'); if (rr) { e.preventDefault(); const v = rr.dataset.blres; a[i].result = v === 'auto' ? '' : a[i].result === v ? '' : v; saveLog(a); drawTotals(); if (isAcca(a[i])) reopen(a[i].id); settleAll().then(() => { drawTotals(); if (isAcca(a[i])) reopen(a[i].id); }); return; }
+      /* Update 119 (owner, 22 Nov): a model-only play can be moved to Real bets (two taps, like Remove). It keeps its odds, stake and
+         result; the Model tracker then shows it as a real bet (the same play, not a second copy). */
+      const mk = t.closest('[data-blmkreal]');
+      if (mk) { e.preventDefault(); e.stopPropagation(); if (getBook() !== 'model' || a[i].real) return;
+        if (mk.dataset.arm && Date.now() - Number(mk.dataset.arm) < 4000) { const { real, ...b } = a[i]; void real; if (addToBook('real', b)) { drawTotals(); alertMsg('Added to Real bets. Check the stake and odds there with Edit.'); } else alertMsg('Could not save: storage is full.'); }
+        else { mk.dataset.arm = String(Date.now()); mk.textContent = 'Tap again to add to Real bets'; }
+        return; }
       if (t.closest('[data-bldel]') && getBook() === 'model' && a[i].real) { e.preventDefault(); alertMsg('This is a real bet: remove it on Real bets (that removes it here too).'); return; }
       if (t.closest('[data-bldel]')) { e.preventDefault(); const b0 = t.closest('[data-bldel]'); if (b0.dataset.arm && Date.now() - Number(b0.dataset.arm) < 4000) { a.splice(i, 1); saveLog(a); drawTotals(); } else { b0.dataset.arm = String(Date.now()); b0.textContent = 'Tap again to remove'; } return; } }
     if (t.closest('[data-blbackup]')) { const blob = new Blob([JSON.stringify({ app: 'PropLab bet log', saved: new Date().toISOString(), bets: loadLog() }, null, 1)], { type: 'application/json' });
