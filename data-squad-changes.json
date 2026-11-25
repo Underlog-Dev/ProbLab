@@ -275,6 +275,30 @@
 "from": null,
 "to": "D.C. United",
 "kind": "joined the squad list"
+},
+{
+"date": "2026-11-25",
+"league": "mls",
+"player": "Fabian Herbers",
+"from": "CF Montréal",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-25",
+"league": "mls",
+"player": "Frankie Amaya",
+"from": "CF Montréal",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
+},
+{
+"date": "2026-11-25",
+"league": "mls",
+"player": "Thomas Gillier",
+"from": "CF Montréal",
+"to": null,
+"kind": "left the squad list (reason not recorded)"
 }
 ]
 }
