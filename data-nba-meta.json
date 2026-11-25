@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-25T02:47:07Z",
+ "updated": "2026-11-25T05:22:26Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -219,7 +219,7 @@
    "group": "BOS",
    "file": "data-nba-logs-BOS.json",
    "players": 17,
-   "rows": 4736
+   "rows": 4749
   },
   {
    "group": "CHA",
@@ -387,14 +387,14 @@
    "group": "WAS",
    "file": "data-nba-logs-WAS.json",
    "players": 18,
-   "rows": 3848
+   "rows": 3861
   }
  ],
  "counts": {
   "games": 8976,
-  "final": 8035,
+  "final": 8036,
   "players": 1196,
-  "player_games": 211341,
+  "player_games": 211367,
   "quarter_points_ok": 171798,
   "quarter_points_dropped": 250,
   "q1_rebounds_ok": 170688,
