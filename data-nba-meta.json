@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-25T05:22:26Z",
+ "updated": "2026-11-25T05:44:24Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -243,13 +243,13 @@
    "group": "DAL",
    "file": "data-nba-logs-DAL.json",
    "players": 18,
-   "rows": 3928
+   "rows": 3942
   },
   {
    "group": "DEN",
    "file": "data-nba-logs-DEN.json",
    "players": 17,
-   "rows": 4658
+   "rows": 4672
   },
   {
    "group": "DET",
@@ -392,9 +392,9 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 8036,
+  "final": 8037,
   "players": 1196,
-  "player_games": 211367,
+  "player_games": 211395,
   "quarter_points_ok": 171798,
   "quarter_points_dropped": 250,
   "q1_rebounds_ok": 170688,
