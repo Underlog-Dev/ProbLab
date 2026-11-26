@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-25T17:07:17Z",
+ "updated": "2026-11-26T00:57:05Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -303,7 +303,7 @@
    "group": "MIA",
    "file": "data-nba-logs-MIA.json",
    "players": 17,
-   "rows": 4867
+   "rows": 4881
   },
   {
    "group": "MIL",
@@ -345,7 +345,7 @@
    "group": "PHI",
    "file": "data-nba-logs-PHI.json",
    "players": 17,
-   "rows": 4670
+   "rows": 4683
   },
   {
    "group": "PHX",
@@ -392,9 +392,9 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 8037,
+  "final": 8038,
   "players": 1196,
-  "player_games": 211395,
+  "player_games": 211422,
   "quarter_points_ok": 171868,
   "quarter_points_dropped": 250,
   "q1_rebounds_ok": 170755,
