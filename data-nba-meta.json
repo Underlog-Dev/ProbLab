@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-26T04:52:35Z",
+ "updated": "2026-11-26T16:48:20Z",
  "current_season": 2027,
  "seasons": [
   2021,
@@ -267,13 +267,13 @@
    "group": "GSW",
    "file": "data-nba-logs-GSW.json",
    "players": 18,
-   "rows": 4923
+   "rows": 4936
   },
   {
    "group": "HOU",
    "file": "data-nba-logs-HOU.json",
-   "players": 18,
-   "rows": 4765
+   "players": 17,
+   "rows": 4749
   },
   {
    "group": "IND",
@@ -332,8 +332,8 @@
   {
    "group": "OKC",
    "file": "data-nba-logs-OKC.json",
-   "players": 20,
-   "rows": 3933
+   "players": 19,
+   "rows": 3837
   },
   {
    "group": "ORL",
@@ -357,19 +357,19 @@
    "group": "POR",
    "file": "data-nba-logs-POR.json",
    "players": 17,
-   "rows": 3939
+   "rows": 3952
   },
   {
    "group": "SAC",
    "file": "data-nba-logs-SAC.json",
-   "players": 18,
-   "rows": 3966
+   "players": 20,
+   "rows": 4093
   },
   {
    "group": "SAS",
    "file": "data-nba-logs-SAS.json",
    "players": 17,
-   "rows": 4363
+   "rows": 4375
   },
   {
    "group": "TOR",
@@ -392,14 +392,14 @@
  ],
  "counts": {
   "games": 8976,
-  "final": 8044,
+  "final": 8046,
   "players": 1196,
-  "player_games": 211577,
-  "quarter_points_ok": 171868,
+  "player_games": 211630,
+  "quarter_points_ok": 172060,
   "quarter_points_dropped": 250,
-  "q1_rebounds_ok": 170755,
-  "q1_rebounds_dropped": 1363,
-  "q1_assists_ok": 171592,
+  "q1_rebounds_ok": 170944,
+  "q1_rebounds_dropped": 1366,
+  "q1_assists_ok": 171784,
   "q1_assists_dropped": 526
  },
  "problems": [],
