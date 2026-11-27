@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="proplab-build" content="1805a6a1c8ce">
+<meta name="proplab-build" content="ec7c307475b7">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d12">
 <meta name="color-scheme" content="dark">
@@ -10338,7 +10338,13 @@ async function viewRecommended(root, sport) {
     const evaluated = want.length, n = list.filter(x => !x.keptOut).length;
     if (!list.length && want.length && !want.some(c => !off.has(c.def.key))) { out.innerHTML = '<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>No markets selected.</b> Open 3. Markets and tick at least one (or tap All markets).</div>'; return; }
     /* Update 114 (owner, 19 Nov): removed plays are listed with a "Bring back all" button even when every play is gone, so the empty list never hides them. */
-    const hidChips = () => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} ${H.length > 1 ? `<button type="button" class="btn" style="padding:4px 10px" data-runall>Bring back all ${H.length}</button>` : ''}</p>` : ''; };
+    const hidPlayers = () => { const H = hiddenFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhidden>Hidden for this game: ${H.map(h => `<button type="button" class="chip" data-runhide="${esc(h.k)}" aria-label="Show ${esc(h.name)} again">${esc(h.name)} ✕</button>`).join(' ')} <span>Tap a name to show him again.</span></p>` : ''; };
+    const hidChips0 = () => { const H = hiddenPlaysFor(sport, scope()); return H.length ? `<p class="xs muted rhidden" data-rhiddenplays>Removed plays: ${H.map(h => `<button type="button" class="chip" data-runplay="${esc(h.k)}" aria-label="Show ${esc(h.name)} ${esc(h.label)} again">${esc(h.name)} ${esc(h.label)} ✕</button>`).join(' ')} ${H.length > 1 ? `<button type="button" class="btn" style="padding:4px 10px" data-runall>Bring back all ${H.length}</button>` : ''}</p>` : ''; };
+    const hidChips = () => hidPlayers() + hidChips0();
+    /* Update 121 (owner, 27 Nov): searching for a player hidden with "Not playing? Hide ..." used to show nothing and no way back
+       (Reset does not undo it). Now the empty list says he is hidden and offers to show him again. */
+    const hidHits = q && !list.length ? [...new Map(want.filter(c => isHidden(c) && nmOf(c).includes(q)).map(c => [`${c.sport}|${c.pid}|${c.fid}`, c])).entries()] : [];
+    if (hidHits.length) { out.innerHTML = `<p class="pcbanner" id="recbanner">0 plays</p><div class="banner info"><b>${esc(hidHits.map(([, c]) => c.name).join(', '))} ${hidHits.length === 1 ? 'is' : 'are'} hidden for this game.</b> You tapped "Not playing? Hide" on ${hidHits.length === 1 ? 'his' : 'their'} card. ${hidHits.map(([k, c]) => `<button type="button" class="btn primary" style="margin-top:8px" data-runhide="${esc(k)}">Show ${esc(c.name)} again</button>`).join(' ')}</div>${hidChips()}`; return; }
     if (!list.length) { const hits = q ? suggest(s.f.q) : [];
       /* Update 113 (owner, 18 Nov): the blowout message used to count plays from the plain picker even when Strict or Value was on, so it blamed blowouts
          for empty lists that Strict had simply no plays for. Now the blowout reason is only given when the SAME picker finds plays once blowouts are not hidden. */
